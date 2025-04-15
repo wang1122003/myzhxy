@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.ClassroomDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Classroom">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="building" property="building" jdbcType="VARCHAR"/>
+        <result column="room_number" property="roomNumber" jdbcType="VARCHAR"/>
+        <result column="floor" property="floor" jdbcType="INTEGER"/>
+        <result column="capacity" property="capacity" jdbcType="INTEGER"/>
+        <result column="type" property="type" jdbcType="VARCHAR"/>
+        <result column="equipment" property="equipment" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, building, room_number, floor, capacity,
+        type, equipment, status, create_time, update_time
+    </sql>
+
+    <!-- 获取所有教室 -->
+    <select id="getAllClassrooms" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        ORDER BY building, room_number
+    </select>
+
+    <!-- 根据ID获取教室 -->
+    <select id="getClassroomById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据教学楼获取教室 -->
+    <select id="getClassroomsByBuilding" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE building = #{building,jdbcType=VARCHAR}
+        ORDER BY room_number
+    </select>
+
+    <!-- 根据楼层获取教室 -->
+    <select id="getClassroomsByFloor" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE floor = #{floor,jdbcType=INTEGER}
+        ORDER BY building, room_number
+    </select>
+
+    <!-- 根据容量获取教室 -->
+    <select id="getClassroomsByCapacity" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE capacity >= #{capacity,jdbcType=INTEGER}
+        ORDER BY capacity, building, room_number
+    </select>
+
+    <!-- 根据类型获取教室 -->
+    <select id="getClassroomsByType" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE type = #{type,jdbcType=VARCHAR}
+        ORDER BY building, room_number
+    </select>
+
+    <!-- 根据状态获取教室 -->
+    <select id="getClassroomsByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE status = #{status,jdbcType=INTEGER}
+        ORDER BY building, room_number
+    </select>
+
+    <!-- 搜索教室 -->
+    <select id="searchClassrooms" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        WHERE building LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR room_number LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR type LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR equipment LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY building, room_number
+    </select>
+
+    <!-- 添加教室 -->
+    <insert id="addClassroom" parameterType="com.campus.entity.Classroom" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO classroom (
+            building, room_number, floor, capacity,
+            type, equipment, status, create_time, update_time
+        )
+        VALUES (
+            #{building,jdbcType=VARCHAR}, #{roomNumber,jdbcType=VARCHAR},
+            #{floor,jdbcType=INTEGER}, #{capacity,jdbcType=INTEGER},
+            #{type,jdbcType=VARCHAR}, #{equipment,jdbcType=VARCHAR},
+            #{status,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新教室 -->
+    <update id="updateClassroom" parameterType="com.campus.entity.Classroom">
+        UPDATE classroom
+        SET building = #{building,jdbcType=VARCHAR},
+            room_number = #{roomNumber,jdbcType=VARCHAR},
+            floor = #{floor,jdbcType=INTEGER},
+            capacity = #{capacity,jdbcType=INTEGER},
+            type = #{type,jdbcType=VARCHAR},
+            equipment = #{equipment,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除教室 -->
+    <delete id="deleteClassroom" parameterType="java.lang.Integer">
+        DELETE FROM classroom
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 更新教室状态 -->
+    <update id="updateClassroomStatus">
+        UPDATE classroom
+        SET status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查教室编号是否存在 -->
+    <select id="checkRoomNumberExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM classroom
+        WHERE building = #{building,jdbcType=VARCHAR}
+        AND room_number = #{roomNumber,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取教室统计信息 -->
+    <select id="getClassroomStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_classrooms,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as available_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as unavailable_count,
+            COUNT(DISTINCT building) as total_buildings,
+            COUNT(DISTINCT floor) as total_floors,
+            COUNT(DISTINCT type) as total_types,
+            SUM(capacity) as total_capacity,
+            AVG(capacity) as average_capacity
+        FROM classroom
+    </select>
+
+    <!-- 获取教学楼统计信息 -->
+    <select id="getBuildingStats" resultType="java.util.Map">
+        SELECT
+            building,
+            COUNT(*) as classroom_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as available_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as unavailable_count,
+            COUNT(DISTINCT floor) as floor_count,
+            COUNT(DISTINCT type) as type_count,
+            SUM(capacity) as total_capacity,
+            AVG(capacity) as average_capacity
+        FROM classroom
+        GROUP BY building
+        ORDER BY classroom_count DESC
+    </select>
+
+    <!-- 获取教室类型统计信息 -->
+    <select id="getTypeStats" resultType="java.util.Map">
+        SELECT
+            type,
+            COUNT(*) as classroom_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as available_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as unavailable_count,
+            COUNT(DISTINCT building) as building_count,
+            COUNT(DISTINCT floor) as floor_count,
+            SUM(capacity) as total_capacity,
+            AVG(capacity) as average_capacity
+        FROM classroom
+        GROUP BY type
+        ORDER BY classroom_count DESC
+    </select>
+</mapper> 

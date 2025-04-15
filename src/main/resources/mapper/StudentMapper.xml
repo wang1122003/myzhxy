@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.StudentDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Student">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="INTEGER"/>
+        <result column="student_no" property="studentNo" jdbcType="VARCHAR"/>
+        <result column="class_name" property="className" jdbcType="VARCHAR"/>
+        <result column="major" property="major" jdbcType="VARCHAR"/>
+        <result column="grade" property="grade" jdbcType="VARCHAR"/>
+        <result column="enrollment_year" property="enrollmentYear" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联属性 -->
+        <association property="user" javaType="com.campus.entity.User">
+            <id column="u_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="email" property="email"/>
+            <result column="phone" property="phone"/>
+            <result column="avatar" property="avatar"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        s.id, s.user_id, s.student_no, s.class_name, s.major, s.grade,
+        s.enrollment_year, s.status, s.create_time, s.update_time
+    </sql>
+
+    <!-- 获取所有学生 -->
+    <select id="getAllStudents" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 根据ID获取学生 -->
+    <select id="getStudentById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据学号获取学生 -->
+    <select id="getStudentByNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.student_no = #{studentNo,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据班级获取学生 -->
+    <select id="getStudentsByClass" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.class_name = #{className,jdbcType=VARCHAR}
+        ORDER BY s.student_no
+    </select>
+
+    <!-- 根据专业获取学生 -->
+    <select id="getStudentsByMajor" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.major = #{major,jdbcType=VARCHAR}
+        ORDER BY s.grade DESC, s.class_name, s.student_no
+    </select>
+
+    <!-- 根据年级获取学生 -->
+    <select id="getStudentsByGrade" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.grade = #{grade,jdbcType=VARCHAR}
+        ORDER BY s.class_name, s.student_no
+    </select>
+
+    <!-- 搜索学生 -->
+    <select id="searchStudents" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM student s
+        LEFT JOIN user u ON s.user_id = u.id
+        WHERE s.student_no LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.real_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR s.class_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR s.major LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR s.grade LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY s.grade DESC, s.class_name, s.student_no
+    </select>
+
+    <!-- 添加学生 -->
+    <insert id="addStudent" parameterType="com.campus.entity.Student" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student (
+            user_id, student_no, class_name, major, grade,
+            enrollment_year, status, create_time, update_time
+        )
+        VALUES (
+            #{userId,jdbcType=INTEGER}, #{studentNo,jdbcType=VARCHAR}, #{className,jdbcType=VARCHAR},
+            #{major,jdbcType=VARCHAR}, #{grade,jdbcType=VARCHAR}, #{enrollmentYear,jdbcType=VARCHAR},
+            #{status,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新学生 -->
+    <update id="updateStudent" parameterType="com.campus.entity.Student">
+        UPDATE student
+        SET
+            student_no = #{studentNo,jdbcType=VARCHAR},
+            class_name = #{className,jdbcType=VARCHAR},
+            major = #{major,jdbcType=VARCHAR},
+            grade = #{grade,jdbcType=VARCHAR},
+            enrollment_year = #{enrollmentYear,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除学生 -->
+    <delete id="deleteStudent" parameterType="java.lang.Integer">
+        DELETE FROM student
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 更新学生状态 -->
+    <update id="updateStudentStatus">
+        UPDATE student
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查学号是否存在 -->
+    <select id="checkStudentNoExists" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM student
+        WHERE student_no = #{studentNo,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 获取学生统计信息 -->
+    <select id="getStudentStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_students,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_students,
+            COUNT(DISTINCT class_name) as total_classes,
+            COUNT(DISTINCT major) as total_majors,
+            COUNT(DISTINCT grade) as total_grades
+        FROM student
+    </select>
+
+    <!-- 获取专业统计信息 -->
+    <select id="getMajorStats" resultType="java.util.Map">
+        SELECT
+            major,
+            COUNT(*) as student_count,
+            COUNT(DISTINCT class_name) as class_count,
+            COUNT(DISTINCT grade) as grade_count
+        FROM student
+        GROUP BY major
+        ORDER BY student_count DESC
+    </select>
+
+    <!-- 获取班级统计信息 -->
+    <select id="getClassStats" resultType="java.util.Map">
+        SELECT
+            class_name,
+            COUNT(*) as student_count,
+            major,
+            grade
+        FROM student
+        GROUP BY class_name, major, grade
+        ORDER BY grade DESC, class_name
+    </select>
+</mapper> 

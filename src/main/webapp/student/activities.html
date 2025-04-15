@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园活动 - 智慧校园服务系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="../static/js/api.js"></script>
+    <script src="../static/js/ui.js"></script>
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div id="loadingMask" class="loading-mask">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 页面头部 -->
+    <header class="header">
+        <div class="logo-container">
+            <h1 class="logo">校园活动</h1>
+        </div>
+        <div class="user-menu">
+            <span id="userName" class="user-name">同学</span>
+            <i class="bi bi-person-circle"></i>
+            <div class="dropdown-menu">
+                <a href="profile.html" class="menu-item">
+                    <i class="bi bi-person"></i>
+                    <span>个人信息</span>
+                </a>
+                <a href="settings.html" class="menu-item">
+                    <i class="bi bi-gear"></i>
+                    <span>设置</span>
+                </a>
+                <a href="#" id="logoutBtn" class="menu-item">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="main-content">
+        <!-- 活动内容区域 -->
+        <div class="container">
+            <!-- 顶部导航栏 -->
+            <div class="activity-nav">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="all">全部活动</button>
+                    <button class="tab-btn" data-tab="ongoing">进行中</button>
+                    <button class="tab-btn" data-tab="upcoming">即将开始</button>
+                    <button class="tab-btn" data-tab="my">我的活动</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索活动...">
+                    <button id="searchBtn"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+
+            <!-- 筛选区域 -->
+            <div class="filter-area">
+                <div class="filter-group">
+                    <label>活动类型：</label>
+                    <select id="activityTypeFilter">
+                        <option value="">全部</option>
+                        <option value="0">学术讲座</option>
+                        <option value="1">文化活动</option>
+                        <option value="2">体育赛事</option>
+                        <option value="3">志愿服务</option>
+                        <option value="4">社团活动</option>
+                        <option value="5">招聘宣讲</option>
+                        <option value="6">娱乐比赛</option>
+                        <option value="7">公益服务</option>
+                        <option value="9">其他活动</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>时间范围：</label>
+                    <select id="timeRangeFilter">
+                        <option value="">全部</option>
+                        <option value="today">今天</option>
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 活动列表 -->
+            <div class="activity-list" id="activityList">
+                <!-- 活动卡片将在这里动态生成 -->
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination-container">
+                <div class="pagination" id="pagination">
+                    <!-- 分页按钮将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 活动详情模态框 -->
+        <div class="modal" id="activityDetailModal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <div class="activity-detail">
+                    <div class="activity-header">
+                        <h2 id="modalActivityTitle">活动标题</h2>
+                        <span class="activity-status" id="modalActivityStatus">状态</span>
+                    </div>
+
+                    <div class="activity-info">
+                        <div class="info-item">
+                            <i class="bi bi-tag"></i>
+                            <span id="modalActivityType">活动类型</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span id="modalActivityLocation">活动地点</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-calendar-event"></i>
+                            <span id="modalActivityTime">活动时间</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-person"></i>
+                            <span id="modalActivityOrganizer">组织者</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-telephone"></i>
+                            <span id="modalActivityContact">联系方式</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-people"></i>
+                            <span id="modalActivityParticipants">报名人数</span>
+                        </div>
+                    </div>
+
+                    <div class="activity-content" id="modalActivityContent">
+                        活动内容将在这里显示
+                    </div>
+
+                    <div class="activity-poster" id="modalActivityPoster">
+                        <!-- 活动海报将在这里显示 -->
+                    </div>
+
+                    <div class="activity-actions">
+                        <button class="btn-primary" id="btnSignUp">立即报名</button>
+                        <button class="btn-secondary" id="btnCancel" style="display: none;">取消报名</button>
+                        <button class="btn-secondary" id="btnShare">分享活动</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="copyright">
+            &copy; 智慧校园服务系统 - 版权所有
+        </div>
+    </footer>
+
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 全局变量
+            let currentPage = 1;
+            let pageSize = 8;
+            let totalPages = 0;
+            let currentTab = 'all';
+            let currentActivityType = '';
+            let currentTimeRange = '';
+            let currentKeyword = '';
+            let currentActivityId = null;
+            
+            // 初始化页面
+            initPage();
+            
+            // 页面初始化
+            function initPage() {
+                // 显示加载遮罩
+                showLoading();
+                
+                // 加载用户信息
+                loadUserInfo();
+                
+                // 加载活动列表
+                loadActivities();
+                
+                // 绑定事件
+                bindEvents();
+                
+                // 隐藏加载遮罩
+                hideLoading();
+            }
+            
+            // 加载用户信息
+            function loadUserInfo() {
+                const userInfo = UI.getUserInfo();
+                if (userInfo) {
+                    document.getElementById('userName').textContent = userInfo.name || '同学';
+                }
+            }
+            
+            // 加载活动列表
+            function loadActivities() {
+                showLoading();
+                
+                let apiMethod = 'getAllActivities';
+                let params = {
+                    page: currentPage,
+                    size: pageSize
+                };
+                
+                // 根据当前选项卡选择不同的API方法
+                if (currentTab === 'ongoing') {
+                    apiMethod = 'getOngoingActivities';
+                } else if (currentTab === 'upcoming') {
+                    apiMethod = 'getUpcomingActivities';
+                    params.days = 30; // 获取未来30天的活动
+                } else if (currentTab === 'my') {
+                    apiMethod = 'getMyActivities';
+                }
+                
+                // 添加筛选条件
+                if (currentActivityType) {
+                    params.activityType = currentActivityType;
+                }
+                
+                if (currentTimeRange) {
+                    // 根据时间范围设置日期参数
+                    const now = new Date();
+                    if (currentTimeRange === 'today') {
+                        params.startDate = formatDate(now);
+                        params.endDate = formatDate(now);
+                    } else if (currentTimeRange === 'week') {
+                        const weekStart = new Date(now);
+                        weekStart.setDate(now.getDate() - now.getDay());
+                        const weekEnd = new Date(now);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        params.startDate = formatDate(weekStart);
+                        params.endDate = formatDate(weekEnd);
+                    } else if (currentTimeRange === 'month') {
+                        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        params.startDate = formatDate(monthStart);
+                        params.endDate = formatDate(monthEnd);
+                    }
+                }
+                
+                if (currentKeyword) {
+                    params.keyword = currentKeyword;
+                }
+                
+                // 调用API
+                API[apiMethod](params, function(response) {
+                    hideLoading();
+                    
+                    if (response.success) {
+                        renderActivityList(response.data.list);
+                        renderPagination(response.data.total, response.data.pages);
+                    } else {
+                        UI.showToast('error', '加载活动失败: ' + response.message);
+                    }
+                });
+            }
+            
+            // 渲染活动列表
+            function renderActivityList(activities) {
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = '';
+                
+                if (!activities || activities.length === 0) {
+                    activityList.innerHTML = '<div class="no-data">暂无活动</div>';
+                    return;
+                }
+                
+                const typeMap = {
+                    0: '学术讲座',
+                    1: '文化活动',
+                    2: '体育赛事',
+                    3: '志愿服务',
+                    4: '社团活动',
+                    5: '招聘宣讲',
+                    6: '娱乐比赛',
+                    7: '公益服务',
+                    9: '其他活动'
+                };
+                
+                const statusMap = {
+                    0: '未开始',
+                    1: '进行中',
+                    2: '已结束',
+                    3: '已取消'
+                };
+                
+                const statusClassMap = {
+                    0: 'status-upcoming',
+                    1: 'status-ongoing',
+                    2: 'status-ended',
+                    3: 'status-canceled'
+                };
+                
+                activities.forEach(activity => {
+                    const startTime = new Date(activity.startTime);
+                    const endTime = new Date(activity.endTime);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'activity-card';
+                    card.dataset.id = activity.id;
+                    
+                    // 活动海报
+                    let posterHtml = '';
+                    if (activity.posterUrl) {
+                        posterHtml = `<div class="activity-poster"><img src="${activity.posterUrl}" alt="${activity.title}"></div>`;
+                    } else {
+                        posterHtml = `<div class="activity-poster no-poster"><i class="bi bi-image"></i></div>`;
+                    }
+                    
+                    // 活动状态徽章
+                    const statusBadge = `<span class="status-badge ${statusClassMap[activity.status]}">${statusMap[activity.status]}</span>`;
+                    
+                    // 活动时间格式化
+                    const timeFormatted = `${formatDateTime(startTime)} ~ ${formatTime(endTime)}`;
+                    
+                    card.innerHTML = `
+                        ${posterHtml}
+                        <div class="activity-info">
+                            <div class="activity-header">
+                                <h3 class="activity-title">${activity.title}</h3>
+                                ${statusBadge}
+                            </div>
+                            <div class="activity-meta">
+                                <span class="activity-type">${typeMap[activity.activityType] || '未知类型'}</span>
+                                <span class="activity-time"><i class="bi bi-clock"></i> ${timeFormatted}</span>
+                                <span class="activity-location"><i class="bi bi-geo-alt"></i> ${activity.location}</span>
+                                <span class="activity-participants"><i class="bi bi-people"></i> ${activity.currentParticipants}/${activity.maxParticipants}</span>
+                            </div>
+                            <div class="activity-actions">
+                                <button class="btn-view" data-id="${activity.id}">查看详情</button>
+                                ${activity.status === 0 || activity.status === 1 ? 
+                                    `<button class="btn-signup" data-id="${activity.id}">立即报名</button>` : 
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                    
+                    activityList.appendChild(card);
+                });
+                
+                // 绑定查看详情和报名按钮事件
+                document.querySelectorAll('.btn-view').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const activityId = this.dataset.id;
+                        showActivityDetail(activityId);
+                    });
+                });
+                
+                document.querySelectorAll('.btn-signup').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const activityId = this.dataset.id;
+                        signUpActivity(activityId);
+                    });
+                });
+                
+                // 点击活动卡片也可以查看详情
+                document.querySelectorAll('.activity-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const activityId = this.dataset.id;
+                        showActivityDetail(activityId);
+                    });
+                });
+            }
+            
+            // 渲染分页
+            function renderPagination(total, pages) {
+                totalPages = pages;
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+                
+                if (pages <= 1) {
+                    pagination.style.display = 'none';
+                    return;
+                }
+                
+                pagination.style.display = 'flex';
+                
+                // 上一页按钮
+                const prevBtn = document.createElement('button');
+                prevBtn.className = `page-btn prev ${currentPage === 1 ? 'disabled' : ''}`;
+                prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+                prevBtn.disabled = currentPage === 1;
+                prevBtn.addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        loadActivities();
+                    }
+                });
+                pagination.appendChild(prevBtn);
+                
+                // 页码按钮
+                const maxPageButtons = 5;
+                const halfMaxButtons = Math.floor(maxPageButtons / 2);
+                let startPage = Math.max(1, currentPage - halfMaxButtons);
+                let endPage = Math.min(pages, startPage + maxPageButtons - 1);
+                
+                if (endPage - startPage < maxPageButtons - 1) {
+                    startPage = Math.max(1, endPage - maxPageButtons + 1);
+                }
+                
+                if (startPage > 1) {
+                    // 第一页按钮
+                    const firstPage = document.createElement('button');
+                    firstPage.className = 'page-btn';
+                    firstPage.textContent = '1';
+                    firstPage.addEventListener('click', function() {
+                        currentPage = 1;
+                        loadActivities();
+                    });
+                    pagination.appendChild(firstPage);
+                    
+                    // 省略号
+                    if (startPage > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'ellipsis';
+                        ellipsis.textContent = '...';
+                        pagination.appendChild(ellipsis);
+                    }
+                }
+                
+                // 页码按钮
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                    pageBtn.textContent = i;
+                    pageBtn.addEventListener('click', function() {
+                        currentPage = i;
+                        loadActivities();
+                    });
+                    pagination.appendChild(pageBtn);
+                }
+                
+                if (endPage < pages) {
+                    // 省略号
+                    if (endPage < pages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'ellipsis';
+                        ellipsis.textContent = '...';
+                        pagination.appendChild(ellipsis);
+                    }
+                    
+                    // 最后一页按钮
+                    const lastPage = document.createElement('button');
+                    lastPage.className = 'page-btn';
+                    lastPage.textContent = pages;
+                    lastPage.addEventListener('click', function() {
+                        currentPage = pages;
+                        loadActivities();
+                    });
+                    pagination.appendChild(lastPage);
+                }
+                
+                // 下一页按钮
+                const nextBtn = document.createElement('button');
+                nextBtn.className = `page-btn next ${currentPage === pages ? 'disabled' : ''}`;
+                nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+                nextBtn.disabled = currentPage === pages;
+                nextBtn.addEventListener('click', function() {
+                    if (currentPage < pages) {
+                        currentPage++;
+                        loadActivities();
+                    }
+                });
+                pagination.appendChild(nextBtn);
+            }
+            
+            // 绑定事件
+            function bindEvents() {
+                // 标签页切换
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelector('.tab-btn.active').classList.remove('active');
+                        this.classList.add('active');
+                        currentTab = this.dataset.tab;
+                        currentPage = 1;
+                        loadActivities();
+                    });
+                });
+                
+                // 活动类型筛选
+                document.getElementById('activityTypeFilter').addEventListener('change', function() {
+                    currentActivityType = this.value;
+                    currentPage = 1;
+                    loadActivities();
+                });
+                
+                // 时间范围筛选
+                document.getElementById('timeRangeFilter').addEventListener('change', function() {
+                    currentTimeRange = this.value;
+                    currentPage = 1;
+                    loadActivities();
+                });
+                
+                // 搜索按钮
+                document.getElementById('searchBtn').addEventListener('click', function() {
+                    currentKeyword = document.getElementById('searchInput').value.trim();
+                    currentPage = 1;
+                    loadActivities();
+                });
+                
+                // 搜索框回车键
+                document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        currentKeyword = this.value.trim();
+                        currentPage = 1;
+                        loadActivities();
+                    }
+                });
+                
+                // 模态框关闭按钮
+                document.querySelector('.close-button').addEventListener('click', function() {
+                    hideActivityDetail();
+                });
+                
+                // 点击模态框外部关闭
+                const modal = document.getElementById('activityDetailModal');
+                window.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        hideActivityDetail();
+                    }
+                });
+                
+                // 报名按钮
+                document.getElementById('btnSignUp').addEventListener('click', function() {
+                    if (currentActivityId) {
+                        signUpActivity(currentActivityId);
+                    }
+                });
+                
+                // 取消报名按钮
+                document.getElementById('btnCancel').addEventListener('click', function() {
+                    if (currentActivityId) {
+                        cancelSignUp(currentActivityId);
+                    }
+                });
+                
+                // 分享按钮
+                document.getElementById('btnShare').addEventListener('click', function() {
+                    if (currentActivityId) {
+                        shareActivity(currentActivityId);
+                    }
+                });
+                
+                // 退出登录按钮
+                document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    UI.logout();
+                });
+            }
+            
+            // 显示活动详情
+            function showActivityDetail(activityId) {
+                showLoading();
+                currentActivityId = activityId;
+                
+                API.getActivityById(activityId, function(response) {
+                    hideLoading();
+                    
+                    if (response.success) {
+                        const activity = response.data;
+                        
+                        const typeMap = {
+                            0: '学术讲座',
+                            1: '文化活动',
+                            2: '体育赛事',
+                            3: '志愿服务',
+                            4: '社团活动',
+                            5: '招聘宣讲',
+                            6: '娱乐比赛',
+                            7: '公益服务',
+                            9: '其他活动'
+                        };
+                        
+                        const statusMap = {
+                            0: '未开始',
+                            1: '进行中',
+                            2: '已结束',
+                            3: '已取消'
+                        };
+                        
+                        const statusClassMap = {
+                            0: 'status-upcoming',
+                            1: 'status-ongoing',
+                            2: 'status-ended',
+                            3: 'status-canceled'
+                        };
+                        
+                        // 填充活动详情
+                        document.getElementById('modalActivityTitle').textContent = activity.title;
+                        document.getElementById('modalActivityStatus').textContent = statusMap[activity.status];
+                        document.getElementById('modalActivityStatus').className = `activity-status ${statusClassMap[activity.status]}`;
+                        document.getElementById('modalActivityType').textContent = typeMap[activity.activityType] || '未知类型';
+                        document.getElementById('modalActivityLocation').textContent = activity.location;
+                        
+                        const startTime = new Date(activity.startTime);
+                        const endTime = new Date(activity.endTime);
+                        document.getElementById('modalActivityTime').textContent = `${formatDateTime(startTime)} ~ ${formatDateTime(endTime)}`;
+                        
+                        document.getElementById('modalActivityOrganizer').textContent = activity.organizerName;
+                        document.getElementById('modalActivityContact').textContent = activity.contact;
+                        document.getElementById('modalActivityParticipants').textContent = `${activity.currentParticipants}/${activity.maxParticipants}`;
+                        document.getElementById('modalActivityContent').textContent = activity.content;
+                        
+                        // 设置海报
+                        const posterContainer = document.getElementById('modalActivityPoster');
+                        if (activity.posterUrl) {
+                            posterContainer.innerHTML = `<img src="${activity.posterUrl}" alt="${activity.title}">`;
+                            posterContainer.style.display = 'block';
+                        } else {
+                            posterContainer.style.display = 'none';
+                        }
+                        
+                        // 检查报名状态
+                        checkSignUpStatus(activityId);
+                        
+                        // 控制按钮显示
+                        const btnSignUp = document.getElementById('btnSignUp');
+                        const btnCancel = document.getElementById('btnCancel');
+                        
+                        if (activity.status === 0 || activity.status === 1) {
+                            // 活动未开始或进行中，可以报名
+                            btnSignUp.style.display = 'block';
+                            
+                            // 检查是否已满
+                            if (activity.currentParticipants >= activity.maxParticipants) {
+                                btnSignUp.textContent = '名额已满';
+                                btnSignUp.disabled = true;
+                            } else {
+                                btnSignUp.textContent = '立即报名';
+                                btnSignUp.disabled = false;
+                            }
+                        } else {
+                            // 活动已结束或已取消，不能报名
+                            btnSignUp.style.display = 'none';
+                            btnCancel.style.display = 'none';
+                        }
+                        
+                        // 显示模态框
+                        document.getElementById('activityDetailModal').style.display = 'block';
+                    } else {
+                        UI.showToast('error', '加载活动详情失败: ' + response.message);
+                    }
+                });
+            }
+            
+            // 隐藏活动详情
+            function hideActivityDetail() {
+                document.getElementById('activityDetailModal').style.display = 'none';
+                currentActivityId = null;
+            }
+            
+            // 检查报名状态
+            function checkSignUpStatus(activityId) {
+                API.checkActivitySignUpStatus(activityId, function(response) {
+                    if (response.success) {
+                        const btnSignUp = document.getElementById('btnSignUp');
+                        const btnCancel = document.getElementById('btnCancel');
+                        
+                        if (response.data.signed) {
+                            // 已报名
+                            btnSignUp.style.display = 'none';
+                            btnCancel.style.display = 'block';
+                        } else {
+                            // 未报名
+                            btnSignUp.style.display = 'block';
+                            btnCancel.style.display = 'none';
+                        }
+                    } else {
+                        UI.showToast('error', '检查报名状态失败: ' + response.message);
+                    }
+                });
+            }
+            
+            // 报名活动
+            function signUpActivity(activityId) {
+                showLoading();
+                
+                API.signUpActivity(activityId, function(response) {
+                    hideLoading();
+                    
+                    if (response.success) {
+                        UI.showToast('success', '报名成功');
+                        
+                        // 更新按钮状态
+                        document.getElementById('btnSignUp').style.display = 'none';
+                        document.getElementById('btnCancel').style.display = 'block';
+                        
+                        // 重新加载活动列表
+                        loadActivities();
+                        
+                        // 如果当前正在查看详情，则重新加载详情
+                        if (currentActivityId === activityId) {
+                            showActivityDetail(activityId);
+                        }
+                    } else {
+                        UI.showToast('error', '报名失败: ' + response.message);
+                    }
+                });
+            }
+            
+            // 取消报名
+            function cancelSignUp(activityId) {
+                showLoading();
+                
+                API.cancelActivitySignUp(activityId, function(response) {
+                    hideLoading();
+                    
+                    if (response.success) {
+                        UI.showToast('success', '取消报名成功');
+                        
+                        // 更新按钮状态
+                        document.getElementById('btnSignUp').style.display = 'block';
+                        document.getElementById('btnCancel').style.display = 'none';
+                        
+                        // 重新加载活动列表
+                        loadActivities();
+                        
+                        // 如果当前正在查看详情，则重新加载详情
+                        if (currentActivityId === activityId) {
+                            showActivityDetail(activityId);
+                        }
+                    } else {
+                        UI.showToast('error', '取消报名失败: ' + response.message);
+                    }
+                });
+            }
+            
+            // 分享活动
+            function shareActivity(activityId) {
+                // 构建分享链接
+                const shareUrl = window.location.origin + window.location.pathname + '?id=' + activityId;
+                
+                // 尝试使用剪贴板API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl)
+                        .then(() => {
+                            UI.showToast('success', '活动链接已复制到剪贴板，快去分享吧！');
+                        })
+                        .catch(err => {
+                            console.error('无法复制链接: ', err);
+                            prompt('复制以下链接分享给好友:', shareUrl);
+                        });
+                } else {
+                    // 回退方法
+                    prompt('复制以下链接分享给好友:', shareUrl);
+                }
+            }
+            
+            // 显示加载遮罩
+            function showLoading() {
+                document.getElementById('loadingMask').style.display = 'flex';
+            }
+            
+            // 隐藏加载遮罩
+            function hideLoading() {
+                document.getElementById('loadingMask').style.display = 'none';
+            }
+            
+            // 格式化日期时间
+            function formatDateTime(date) {
+                return `${date.getFullYear()}-${padZero(date.getMonth() + 1)}-${padZero(date.getDate())} ${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
+            }
+            
+            // 格式化时间（不含日期）
+            function formatTime(date) {
+                return `${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
+            }
+            
+            // 格式化日期（不含时间）
+            function formatDate(date) {
+                return `${date.getFullYear()}-${padZero(date.getMonth() + 1)}-${padZero(date.getDate())}`;
+            }
+            
+            // 补零
+            function padZero(num) {
+                return num < 10 ? '0' + num : num;
+            }
+            
+            // 检查URL参数，如果有活动ID则直接打开活动详情
+            function checkUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const activityId = urlParams.get('id');
+                
+                if (activityId) {
+                    showActivityDetail(activityId);
+                }
+            }
+            
+            // 检查URL参数
+            checkUrlParams();
+        });
+    </script>
+</body>
+</html> 

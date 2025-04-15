@@ -1,0 +1,51 @@
+2025-04-15 23:11:42.901 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-15 23:11:43.349 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:43.409 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:11:43.412 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:43.413 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:11:43.415 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-15 23:11:43.418 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-15 23:11:43.419 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:43.419 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-15 23:11:43.419 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-15 23:11:43.686 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:44.016 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:11:44.017 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:44.017 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:11:44.017 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:11:44.018 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:11:44.018 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:15:58.941 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-15 23:15:59.389 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:15:59.451 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:15:59.454 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:15:59.454 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:15:59.457 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-15 23:15:59.460 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-15 23:15:59.460 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:15:59.461 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-15 23:15:59.461 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-15 23:15:59.722 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:16:00.049 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:16:00.050 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:16:00.051 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:16:00.051 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:16:00.052 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:16:00.052 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:27:44.295 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-15 23:27:44.733 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:44.796 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:27:44.799 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:44.799 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:27:44.802 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-15 23:27:44.804 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-15 23:27:44.804 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:44.804 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-15 23:27:44.804 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-15 23:27:45.099 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:45.484 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:27:45.485 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:45.485 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-15 23:27:45.485 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-15 23:27:45.486 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-15 23:27:45.487 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.DepartmentDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Department">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="code" property="code" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
+        <result column="level" property="level" jdbcType="INTEGER"/>
+        <result column="sort" property="sort" jdbcType="INTEGER"/>
+        <result column="leader_id" property="leaderId" jdbcType="INTEGER"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="contact_email" property="contactEmail" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <association property="leader" javaType="com.campus.entity.User">
+            <id column="u_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="phone" property="phone"/>
+            <result column="email" property="email"/>
+            <result column="avatar" property="avatar"/>
+        </association>
+        <association property="parent" javaType="com.campus.entity.Department">
+            <id column="p_id" property="id"/>
+            <result column="p_name" property="name"/>
+            <result column="p_code" property="code"/>
+            <result column="p_level" property="level"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        d.id, d.name, d.code, d.parent_id, d.level,
+        d.sort, d.leader_id, d.contact_phone,
+        d.contact_email, d.description, d.status,
+        d.create_time, d.update_time,
+        u.id as u_id, u.username, u.real_name,
+        u.phone, u.email, u.avatar,
+        p.id as p_id, p.name as p_name,
+        p.code as p_code, p.level as p_level
+    </sql>
+
+    <!-- 获取所有部门 -->
+    <select id="getAllDepartments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 根据ID获取部门 -->
+    <select id="getDepartmentById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据编码获取部门 -->
+    <select id="getDepartmentByCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.code = #{code,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据父部门ID获取子部门 -->
+    <select id="getDepartmentsByParentId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.parent_id = #{parentId,jdbcType=INTEGER}
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 根据层级获取部门 -->
+    <select id="getDepartmentsByLevel" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.level = #{level,jdbcType=INTEGER}
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 根据负责人ID获取部门 -->
+    <select id="getDepartmentsByLeaderId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.leader_id = #{leaderId,jdbcType=INTEGER}
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 根据状态获取部门 -->
+    <select id="getDepartmentsByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.status = #{status,jdbcType=INTEGER}
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 搜索部门 -->
+    <select id="searchDepartments" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        WHERE d.name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR d.code LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR d.description LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.username LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.real_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 添加部门 -->
+    <insert id="addDepartment" parameterType="com.campus.entity.Department" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO department (
+            name, code, parent_id, level, sort,
+            leader_id, contact_phone, contact_email,
+            description, status, create_time, update_time
+        )
+        VALUES (
+            #{name,jdbcType=VARCHAR}, #{code,jdbcType=VARCHAR},
+            #{parentId,jdbcType=INTEGER}, #{level,jdbcType=INTEGER},
+            #{sort,jdbcType=INTEGER}, #{leaderId,jdbcType=INTEGER},
+            #{contactPhone,jdbcType=VARCHAR}, #{contactEmail,jdbcType=VARCHAR},
+            #{description,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新部门 -->
+    <update id="updateDepartment" parameterType="com.campus.entity.Department">
+        UPDATE department
+        SET name = #{name,jdbcType=VARCHAR},
+            code = #{code,jdbcType=VARCHAR},
+            parent_id = #{parentId,jdbcType=INTEGER},
+            level = #{level,jdbcType=INTEGER},
+            sort = #{sort,jdbcType=INTEGER},
+            leader_id = #{leaderId,jdbcType=INTEGER},
+            contact_phone = #{contactPhone,jdbcType=VARCHAR},
+            contact_email = #{contactEmail,jdbcType=VARCHAR},
+            description = #{description,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除部门 -->
+    <delete id="deleteDepartment" parameterType="java.lang.Integer">
+        DELETE FROM department
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 更新部门状态 -->
+    <update id="updateDepartmentStatus">
+        UPDATE department
+        SET status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查部门编码是否存在 -->
+    <select id="isDepartmentCodeExists" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM department
+        WHERE code = #{code,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取部门统计信息 -->
+    <select id="getDepartmentStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_departments,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_count,
+            COUNT(DISTINCT parent_id) as parent_count,
+            COUNT(CASE WHEN parent_id IS NULL THEN 1 END) as root_count,
+            COUNT(DISTINCT leader_id) as leader_count,
+            MAX(level) as max_level,
+            AVG(level) as average_level
+        FROM department
+    </select>
+
+    <!-- 获取部门层级统计信息 -->
+    <select id="getDepartmentLevelStats" resultType="java.util.Map">
+        SELECT
+            level,
+            COUNT(*) as department_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_count,
+            COUNT(DISTINCT leader_id) as leader_count
+        FROM department
+        GROUP BY level
+        ORDER BY level ASC
+    </select>
+
+    <!-- 获取负责人统计信息 -->
+    <select id="getLeaderStats" resultType="java.util.Map">
+        SELECT
+            u.id as leader_id,
+            u.username,
+            u.real_name,
+            COUNT(d.id) as department_count,
+            COUNT(CASE WHEN d.status = 1 THEN 1 END) as active_count,
+            COUNT(CASE WHEN d.status = 0 THEN 1 END) as inactive_count,
+            COUNT(DISTINCT d.level) as level_count,
+            MIN(d.level) as min_level,
+            MAX(d.level) as max_level
+        FROM user u
+        LEFT JOIN department d ON u.id = d.leader_id
+        GROUP BY u.id, u.username, u.real_name
+        ORDER BY department_count DESC
+    </select>
+
+    <!-- 获取部门树结构 -->
+    <select id="getDepartmentTree" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM department d
+        LEFT JOIN user u ON d.leader_id = u.id
+        LEFT JOIN department p ON d.parent_id = p.id
+        ORDER BY d.level ASC, d.sort ASC, d.create_time DESC
+    </select>
+
+    <!-- 获取部门及其所有子部门 -->
+    <select id="getDepartmentWithChildren" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        WITH RECURSIVE dept_tree AS (
+            SELECT
+            <include refid="Base_Column_List"/>
+            FROM department d
+            LEFT JOIN user u ON d.leader_id = u.id
+            LEFT JOIN department p ON d.parent_id = p.id
+            WHERE d.id = #{id,jdbcType=INTEGER}
+            
+            UNION ALL
+            
+            SELECT
+            <include refid="Base_Column_List"/>
+            FROM department d
+            LEFT JOIN user u ON d.leader_id = u.id
+            LEFT JOIN department p ON d.parent_id = p.id
+            INNER JOIN dept_tree dt ON d.parent_id = dt.id
+        )
+        SELECT * FROM dept_tree
+        ORDER BY level ASC, sort ASC, create_time DESC
+    </select>
+</mapper> 

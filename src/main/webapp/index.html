@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧校园服务系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .content {
+            flex: 1;
+            padding: 40px 0;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px 0;
+            margin-top: auto;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 8px;
+        }
+        .login-form {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .notice-card {
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .notice-card:hover {
+            transform: translateY(-5px);
+        }
+        .notice-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .notice-time {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+        .notice-author {
+            color: #3498db;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .system-title {
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+        .alert-loading {
+            text-align: center;
+            padding: 30px;
+        }
+        #noticeModalContent {
+            white-space: pre-line;
+        }
+        @media (max-width: 767.98px) {
+            .login-column {
+                margin-top: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 页头 -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="system-title mb-0">智慧校园服务系统</h1>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p class="mb-0"><i class="fa fa-calendar"></i> <span id="currentDate"></span></p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 内容区 -->
+    <section class="content">
+        <div class="container">
+            <div class="row">
+                <!-- 通知公告区域 -->
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fa fa-bullhorn mr-2"></i>通知公告</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="noticeList">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">正在加载通知公告...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 登录区域 -->
+                <div class="col-md-5 login-column">
+                    <div class="login-form">
+                        <h4 class="text-center mb-4"><i class="fa fa-user-circle-o mr-2"></i>用户登录</h4>
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label for="username"><i class="fa fa-user mr-1"></i>用户名</label>
+                                <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password"><i class="fa fa-lock mr-1"></i>密码</label>
+                                <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+                            </div>
+                            <div id="loginMessage" class="alert d-none"></div>
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-sign-in mr-1"></i>登录</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">© 2024 智慧校园服务系统. 保留所有权利.</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p class="mb-0">技术支持: 校园信息中心</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 通知详情模态框 -->
+    <div class="modal fade" id="noticeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="noticeModalTitle"></h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <span class="text-muted mr-3"><i class="fa fa-clock-o mr-1"></i><span id="noticeModalTime"></span></span>
+                        <span class="text-primary"><i class="fa fa-user mr-1"></i><span id="noticeModalAuthor"></span></span>
+                    </div>
+                    <div id="noticeModalContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 显示当前日期
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        // 格式化日期
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // 加载通知公告
+        function loadNotices() {
+            $.ajax({
+                url: '/campus/api/common/notices/recent',
+                type: 'GET',
+                success: function(response) {
+                    const noticeList = $('#noticeList');
+                    noticeList.empty();
+                    
+                    if (response.code === 200 && response.data && response.data.length > 0) {
+                        const notices = response.data;
+                        notices.forEach(function(notice) {
+                            const noticeCard = `
+                                <div class="notice-card p-3 mb-3" data-notice='${JSON.stringify(notice)}'>
+                                    <h5 class="notice-title">${notice.title}</h5>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="notice-time"><i class="fa fa-clock-o mr-1"></i>${formatDate(notice.createTime)}</span>
+                                        <span class="notice-author"><i class="fa fa-user mr-1"></i>${notice.author || '系统'}</span>
+                                    </div>
+                                </div>
+                                <hr class="my-1">
+                            `;
+                            noticeList.append(noticeCard);
+                        });
+                        
+                        // 绑定点击事件
+                        $('.notice-card').click(function() {
+                            const notice = $(this).data('notice');
+                            $('#noticeModalTitle').text(notice.title);
+                            $('#noticeModalTime').text(formatDate(notice.createTime));
+                            $('#noticeModalAuthor').text(notice.author || '系统');
+                            $('#noticeModalContent').text(notice.content);
+                            $('#noticeModal').modal('show');
+                        });
+                    } else {
+                        noticeList.html('<div class="alert alert-info">暂无公告</div>');
+                    }
+                },
+                error: function() {
+                    $('#noticeList').html('<div class="alert alert-danger">公告获取失败，请稍后再试</div>');
+                }
+            });
+        }
+        
+        // 处理登录表单提交
+        $('#loginForm').submit(function(e) {
+            e.preventDefault();
+            
+            const username = $('#username').val();
+            const password = $('#password').val();
+            
+            if (!username || !password) {
+                showLoginMessage('danger', '请填写完整的登录信息');
+                return;
+            }
+            
+            // 显示加载信息
+            showLoginMessage('info', '正在登录，请稍候...');
+            
+            $.ajax({
+                url: '/campus/api/users/login',
+                type: 'POST',
+                data: {
+                    username: username,
+                    password: password
+                },
+                success: function(response) {
+                    if (response.code === 200) {
+                        // 登录成功，保存令牌和用户信息
+                        localStorage.setItem('campus_token', response.data.token);
+                        localStorage.setItem('username', response.data.user.username);
+                        localStorage.setItem('userId', response.data.user.id);
+                        localStorage.setItem('userType', response.data.user.userType);
+                        
+                        showLoginMessage('success', '登录成功，正在跳转...');
+                        
+                        // 根据用户类型跳转到不同页面
+                        setTimeout(function() {
+                            const userType = response.data.user.userType;
+                            if (userType === 0) { // 管理员
+                                window.location.href = '/campus/admin/';
+                            } else if (userType === 1) { // 教师
+                                window.location.href = '/campus/teacher/';
+                            } else if (userType === 2) { // 学生
+                                window.location.href = '/campus/student/';
+                            } else {
+                                window.location.href = '/campus/';
+                            }
+                        }, 1000);
+                    } else {
+                        showLoginMessage('danger', response.message || '登录失败，请检查用户名和密码');
+                    }
+                },
+                error: function() {
+                    showLoginMessage('danger', '服务器错误，请稍后再试');
+                }
+            });
+        });
+        
+        // 显示登录消息
+        function showLoginMessage(type, message) {
+            const messageElement = $('#loginMessage');
+            messageElement.removeClass('d-none alert-danger alert-info alert-success')
+                .addClass(`alert-${type}`)
+                .text(message)
+                .show();
+        }
+        
+        // 页面加载完成后执行
+        $(document).ready(function() {
+            updateCurrentDate();
+            loadNotices();
+            
+            // 每分钟更新一次当前日期
+            setInterval(updateCurrentDate, 60000);
+        });
+    </script>
+</body>
+</html>

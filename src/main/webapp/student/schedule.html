@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程表 - 学生中心</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="../static/js/api.js"></script>
+    <script src="../static/js/ui.js"></script>
+    <style>
+        .schedule-page {
+            padding: 1.5rem;
+        }
+        
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-title h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .week-selector {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .week-selector button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #3498db;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .week-selector button:hover {
+            color: #2980b9;
+        }
+        
+        .current-week {
+            margin: 0 1rem;
+            font-weight: 500;
+        }
+        
+        .schedule-grid {
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .schedule-table th,
+        .schedule-table td {
+            border: 1px solid #e0e0e0;
+            padding: 0.5rem;
+            text-align: center;
+            height: 100px;
+            vertical-align: top;
+        }
+        
+        .schedule-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 500;
+            height: auto;
+            padding: 0.75rem 0.5rem;
+        }
+        
+        .time-col {
+            width: 100px;
+            background-color: #f5f5f5;
+        }
+        
+        .time-slot {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .time-range {
+            font-size: 0.75rem;
+            color: #666;
+        }
+        
+        .course-item {
+            background-color: rgba(52, 152, 219, 0.15);
+            border-radius: 4px;
+            padding: 0.5rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
+        }
+        
+        .course-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .course-info {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .course-teacher,
+        .course-location {
+            display: block;
+            margin-top: 0.25rem;
+        }
+        
+        .today {
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: #3498db;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .back-link i {
+            margin-right: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .schedule-table th,
+            .schedule-table td {
+                padding: 0.25rem;
+                height: 80px;
+                font-size: 0.9rem;
+            }
+            
+            .time-col {
+                width: 70px;
+            }
+            
+            .course-item {
+                padding: 0.25rem;
+            }
+            
+            .course-name {
+                font-size: 0.8rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .course-info {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div id="loadingMask" class="loading-mask">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 页面头部 -->
+    <header class="header">
+        <div class="logo-container">
+            <h1 class="logo">学生中心</h1>
+        </div>
+        <div class="user-menu">
+            <span id="userName" class="user-name">同学</span>
+            <i class="bi bi-person-circle"></i>
+            <div class="dropdown-menu">
+                <a href="profile.html" class="menu-item">
+                    <i class="bi bi-person"></i>
+                    <span>个人信息</span>
+                </a>
+                <a href="settings.html" class="menu-item">
+                    <i class="bi bi-gear"></i>
+                    <span>设置</span>
+                </a>
+                <a href="#" id="logoutBtn" class="menu-item">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="main-content">
+        <div class="schedule-page">
+            <a href="index.html" class="back-link">
+                <i class="bi bi-arrow-left"></i> 返回首页
+            </a>
+            
+            <div class="page-title">
+                <h2>我的课程表</h2>
+                <div class="week-selector">
+                    <button id="prevWeekBtn" title="上一周">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span id="currentWeek" class="current-week">第1周 (2023-09-04 至 2023-09-10)</span>
+                    <button id="nextWeekBtn" title="下一周">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="schedule-grid">
+                <div id="scheduleContainer">
+                    <div class="loading-placeholder">加载中，请稍候...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="copyright">
+            &copy; 智慧校园服务系统 - 版权所有
+        </div>
+    </footer>
+
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            if (!API.isLoggedIn()) {
+                // 未登录，重定向到登录页
+                window.location.href = '../index.html';
+                return;
+            }
+            
+            // 检查用户角色
+            const role = API.getUserRole();
+            if (role !== 'STUDENT') {
+                UI.showMessage('您不是学生用户，无法访问学生中心', 'error');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 2000);
+                return;
+            }
+            
+            // 显示加载动画
+            showLoading();
+            
+            // 加载用户信息
+            loadUserInfo();
+            
+            // 初始化课程表
+            initSchedule();
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 隐藏加载动画（延迟1秒）
+            hideLoading(1000);
+        });
+        
+        // 当前周
+        let currentWeekOffset = 0;
+        
+        /**
+         * 绑定事件
+         */
+        function bindEvents() {
+            // 退出登录按钮
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+            }
+            
+            // 用户菜单
+            const userMenu = document.querySelector('.user-menu');
+            if (userMenu) {
+                userMenu.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                });
+                
+                // 点击外部关闭菜单
+                document.addEventListener('click', function(e) {
+                    if (!userMenu.contains(e.target)) {
+                        userMenu.classList.remove('active');
+                    }
+                });
+            }
+            
+            // 上一周按钮
+            const prevWeekBtn = document.getElementById('prevWeekBtn');
+            if (prevWeekBtn) {
+                prevWeekBtn.addEventListener('click', function() {
+                    currentWeekOffset--;
+                    loadSchedule();
+                });
+            }
+            
+            // 下一周按钮
+            const nextWeekBtn = document.getElementById('nextWeekBtn');
+            if (nextWeekBtn) {
+                nextWeekBtn.addEventListener('click', function() {
+                    currentWeekOffset++;
+                    loadSchedule();
+                });
+            }
+        }
+        
+        /**
+         * 加载用户信息
+         */
+        function loadUserInfo() {
+            const userName = document.getElementById('userName');
+            
+            // 从本地存储获取用户信息
+            const user = JSON.parse(localStorage.getItem('user')) || {};
+            const username = user.name || user.username || '同学';
+            
+            // 设置用户名
+            if (userName) {
+                userName.textContent = username;
+            }
+            
+            // 如果本地没有完整的用户信息，则从API获取
+            if (!user.realName) {
+                API.request('/api/users/current')
+                    .then(userInfo => {
+                        if (userInfo) {
+                            // 更新本地存储
+                            localStorage.setItem('user', JSON.stringify(userInfo));
+                            
+                            // 更新界面
+                            const fullName = userInfo.realName || userInfo.username || '同学';
+                            if (userName) {
+                                userName.textContent = fullName;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取用户信息失败:', error);
+                    });
+            }
+        }
+        
+        /**
+         * 初始化课程表
+         */
+        function initSchedule() {
+            // 加载课程表
+            loadSchedule();
+        }
+        
+        /**
+         * 加载课程表
+         */
+        function loadSchedule() {
+            const container = document.getElementById('scheduleContainer');
+            if (!container) return;
+            
+            container.innerHTML = '<div class="loading-placeholder">加载课程表...</div>';
+            
+            // 计算周的日期范围
+            const dates = getWeekDates(currentWeekOffset);
+            
+            // 更新周信息显示
+            updateWeekInfo(dates);
+            
+            // 请求课程表数据
+            // API.request(`/api/schedules/week?startDate=${dates.startDate.toISOString().split('T')[0]}`)
+            API.request('/api/schedules/my')
+                .then(scheduleData => {
+                    renderSchedule(container, scheduleData, dates);
+                })
+                .catch(error => {
+                    console.error('获取课程表失败:', error);
+                    container.innerHTML = '<div class="error-state">获取课程表失败，请稍后重试</div>';
+                });
+        }
+        
+        /**
+         * 渲染课程表
+         * @param {HTMLElement} container 容器元素
+         * @param {Array} scheduleData 课程表数据
+         * @param {Object} dates 日期信息
+         */
+        function renderSchedule(container, scheduleData, dates) {
+            // 时间段
+            const timeSlots = [
+                { id: 1, name: '第1节', time: '08:00-08:45' },
+                { id: 2, name: '第2节', time: '08:55-09:40' },
+                { id: 3, name: '第3节', time: '10:00-10:45' },
+                { id: 4, name: '第4节', time: '10:55-11:40' },
+                { id: 5, name: '第5节', time: '13:30-14:15' },
+                { id: 6, name: '第6节', time: '14:25-15:10' },
+                { id: 7, name: '第7节', time: '15:30-16:15' },
+                { id: 8, name: '第8节', time: '16:25-17:10' },
+                { id: 9, name: '第9节', time: '18:30-19:15' },
+                { id: 10, name: '第10节', time: '19:25-20:10' }
+            ];
+            
+            // 格式化日期显示
+            const formatDateString = (date) => {
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${month}/${day}`;
+            };
+            
+            // 获取今天是星期几
+            const today = new Date();
+            const todayDay = today.getDay(); // 0是周日，1-6是周一到周六
+            
+            // 判断今天是否在当前显示的周内
+            const isThisWeek = currentWeekOffset === 0;
+            
+            // 生成表格HTML
+            let html = `
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th class="time-col">时间</th>
+                            <th>周一<br>${formatDateString(dates.days[0])}</th>
+                            <th>周二<br>${formatDateString(dates.days[1])}</th>
+                            <th>周三<br>${formatDateString(dates.days[2])}</th>
+                            <th>周四<br>${formatDateString(dates.days[3])}</th>
+                            <th>周五<br>${formatDateString(dates.days[4])}</th>
+                            <th>周六<br>${formatDateString(dates.days[5])}</th>
+                            <th>周日<br>${formatDateString(dates.days[6])}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // 生成空课表
+            const schedule = {};
+            for (let i = 1; i <= 7; i++) {
+                schedule[i] = {};
+                for (let j = 1; j <= 10; j++) {
+                    schedule[i][j] = null;
+                }
+            }
+            
+            // 填充课表数据
+            if (scheduleData && scheduleData.length > 0) {
+                scheduleData.forEach(item => {
+                    if (item.dayOfWeek >= 1 && item.dayOfWeek <= 7 && 
+                        item.timeSlot >= 1 && item.timeSlot <= 10) {
+                        schedule[item.dayOfWeek][item.timeSlot] = item;
+                    }
+                });
+            }
+            
+            // 生成课表行
+            timeSlots.forEach(slot => {
+                html += `
+                    <tr>
+                        <td class="time-col">
+                            <div class="time-slot">${slot.name}</div>
+                            <div class="time-range">${slot.time}</div>
+                        </td>
+                `;
+                
+                // 生成周一至周日的单元格
+                for (let day = 1; day <= 7; day++) {
+                    // 判断是否是今天
+                    const isTodayCell = isThisWeek && ((day === todayDay) || (todayDay === 0 && day === 7));
+                    
+                    const courseData = schedule[day][slot.id];
+                    
+                    if (courseData) {
+                        html += `
+                            <td class="${isTodayCell ? 'today' : ''}">
+                                <div class="course-item">
+                                    <div class="course-name">${courseData.courseName || '未知课程'}</div>
+                                    <div class="course-info">
+                                        <span class="course-teacher">${courseData.teacherName || '未知教师'}</span>
+                                        <span class="course-location">${courseData.classroom || '未知地点'}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td class="${isTodayCell ? 'today' : ''}"></td>`;
+                    }
+                }
+                
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+        }
+        
+        /**
+         * 更新周信息显示
+         * @param {Object} dates 日期信息
+         */
+        function updateWeekInfo(dates) {
+            const weekInfoElement = document.getElementById('currentWeek');
+            if (!weekInfoElement) return;
+            
+            // 计算学期第几周
+            // 这里假设学期从2023年9月1日开始
+            const semesterStart = new Date(2023, 8, 1); // 月份是从0开始的，8代表9月
+            const weekNumber = Math.floor((dates.startDate - semesterStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+            
+            // 格式化日期
+            const formatDate = (date) => {
+                return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+            };
+            
+            weekInfoElement.textContent = `第${weekNumber}周 (${formatDate(dates.startDate)} 至 ${formatDate(dates.endDate)})`;
+        }
+        
+        /**
+         * 获取指定偏移量的周的日期范围
+         * @param {number} offset 周偏移量（0表示本周，-1表示上周，1表示下周）
+         * @returns {Object} 日期信息对象
+         */
+        function getWeekDates(offset = 0) {
+            const now = new Date();
+            const currentDay = now.getDay(); // 0是周日，1-6是周一到周六
+            
+            // 计算本周一的日期
+            const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + mondayOffset);
+            
+            // 应用偏移量
+            const startDate = new Date(monday);
+            startDate.setDate(monday.getDate() + offset * 7);
+            
+            // 计算周日的日期
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            
+            // 生成周一到周日的日期
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startDate);
+                day.setDate(startDate.getDate() + i);
+                days.push(day);
+            }
+            
+            return {
+                startDate,
+                endDate,
+                days
+            };
+        }
+        
+        /**
+         * 退出登录
+         */
+        function logout() {
+            UI.confirm('确定要退出登录吗？', '', () => {
+                API.clearToken();
+                UI.showMessage('已退出登录', 'info');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 1000);
+            });
+        }
+        
+        /**
+         * 显示加载动画
+         */
+        function showLoading() {
+            const loadingMask = document.getElementById('loadingMask');
+            if (loadingMask) {
+                loadingMask.style.display = 'flex';
+            }
+        }
+        
+        /**
+         * 隐藏加载动画
+         * @param {number} delay 延迟时间（毫秒）
+         */
+        function hideLoading(delay = 0) {
+            const loadingMask = document.getElementById('loadingMask');
+            if (loadingMask) {
+                setTimeout(() => {
+                    loadingMask.style.display = 'none';
+                }, delay);
+            }
+        }
+    </script>
+</body>
+</html> 

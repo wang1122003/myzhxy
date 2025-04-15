@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.ScoreDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Score">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="student_id" property="studentId" jdbcType="INTEGER"/>
+        <result column="course_id" property="courseId" jdbcType="INTEGER"/>
+        <result column="semester" property="semester" jdbcType="VARCHAR"/>
+        <result column="score" property="score" jdbcType="DECIMAL"/>
+        <result column="grade" property="grade" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联属性 -->
+        <association property="student" javaType="com.campus.entity.Student">
+            <id column="s_id" property="id"/>
+            <result column="student_no" property="studentNo"/>
+            <result column="class_name" property="className"/>
+            <result column="major" property="major"/>
+            <result column="grade" property="grade"/>
+            <result column="enrollment_year" property="enrollmentYear"/>
+        </association>
+        <association property="course" javaType="com.campus.entity.Course">
+            <id column="c_id" property="id"/>
+            <result column="course_code" property="courseCode"/>
+            <result column="course_name" property="name"/>
+            <result column="credits" property="credits"/>
+            <result column="hours" property="hours"/>
+            <result column="course_type" property="type"/>
+            <result column="department" property="department"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        sc.id, sc.student_id, sc.course_id, sc.semester, sc.score,
+        sc.grade, sc.status, sc.create_time, sc.update_time
+    </sql>
+
+    <!-- 获取所有成绩 -->
+    <select id="getAllScores" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        ORDER BY sc.semester DESC, s.student_no, c.course_code
+    </select>
+
+    <!-- 根据ID获取成绩 -->
+    <select id="getScoreById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        WHERE sc.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据学生ID获取成绩 -->
+    <select id="getScoresByStudentId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        WHERE sc.student_id = #{studentId,jdbcType=INTEGER}
+        ORDER BY sc.semester DESC, c.course_code
+    </select>
+
+    <!-- 根据课程ID获取成绩 -->
+    <select id="getScoresByCourseId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        WHERE sc.course_id = #{courseId,jdbcType=INTEGER}
+        ORDER BY sc.semester DESC, s.student_no
+    </select>
+
+    <!-- 根据学期获取成绩 -->
+    <select id="getScoresBySemester" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        WHERE sc.semester = #{semester,jdbcType=VARCHAR}
+        ORDER BY s.student_no, c.course_code
+    </select>
+
+    <!-- 搜索成绩 -->
+    <select id="searchScores" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        s.id as s_id, s.student_no, s.class_name, s.major, s.grade as student_grade,
+        s.enrollment_year,
+        c.id as c_id, c.course_code, c.name as course_name, c.credits, c.hours,
+        c.type as course_type, c.department
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
+        WHERE s.student_no LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR s.class_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR s.major LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR c.course_code LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR c.name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR c.department LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY sc.semester DESC, s.student_no, c.course_code
+    </select>
+
+    <!-- 添加成绩 -->
+    <insert id="addScore" parameterType="com.campus.entity.Score" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO score (
+            student_id, course_id, semester, score, grade,
+            status, create_time, update_time
+        )
+        VALUES (
+            #{studentId,jdbcType=INTEGER}, #{courseId,jdbcType=INTEGER}, #{semester,jdbcType=VARCHAR},
+            #{score,jdbcType=DECIMAL}, #{grade,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量添加成绩 -->
+    <insert id="batchAddScores" parameterType="java.util.List">
+        INSERT INTO score (
+            student_id, course_id, semester, score, grade,
+            status, create_time, update_time
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.studentId,jdbcType=INTEGER}, #{item.courseId,jdbcType=INTEGER},
+                #{item.semester,jdbcType=VARCHAR}, #{item.score,jdbcType=DECIMAL},
+                #{item.grade,jdbcType=VARCHAR}, #{item.status,jdbcType=INTEGER},
+                NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 更新成绩 -->
+    <update id="updateScore" parameterType="com.campus.entity.Score">
+        UPDATE score
+        SET
+            score = #{score,jdbcType=DECIMAL},
+            grade = #{grade,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除成绩 -->
+    <delete id="deleteScore" parameterType="java.lang.Integer">
+        DELETE FROM score
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 更新成绩状态 -->
+    <update id="updateScoreStatus">
+        UPDATE score
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查成绩是否存在 -->
+    <select id="checkScoreExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM score
+        WHERE student_id = #{studentId,jdbcType=INTEGER}
+        AND course_id = #{courseId,jdbcType=INTEGER}
+        AND semester = #{semester,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取成绩统计信息 -->
+    <select id="getScoreStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_scores,
+            COUNT(DISTINCT student_id) as total_students,
+            COUNT(DISTINCT course_id) as total_courses,
+            COUNT(DISTINCT semester) as total_semesters,
+            AVG(score) as average_score,
+            MIN(score) as min_score,
+            MAX(score) as max_score
+        FROM score
+    </select>
+
+    <!-- 获取课程成绩统计信息 -->
+    <select id="getCourseScoreStats" resultType="java.util.Map">
+        SELECT
+            c.id as course_id,
+            c.course_code,
+            c.name as course_name,
+            c.credits,
+            COUNT(sc.id) as score_count,
+            AVG(sc.score) as average_score,
+            MIN(sc.score) as min_score,
+            MAX(sc.score) as max_score,
+            COUNT(CASE WHEN sc.score >= 60 THEN 1 END) as pass_count,
+            COUNT(CASE WHEN sc.score &lt; 60 THEN 1 END) as fail_count
+        FROM course c
+        LEFT JOIN score sc ON c.id = sc.course_id
+        GROUP BY c.id, c.course_code, c.name, c.credits
+        ORDER BY average_score DESC
+    </select>
+
+    <!-- 获取学生成绩统计信息 -->
+    <select id="getStudentScoreStats" resultType="java.util.Map">
+        SELECT
+            s.id as student_id,
+            s.student_no,
+            s.class_name,
+            s.major,
+            s.grade as student_grade,
+            COUNT(sc.id) as score_count,
+            AVG(sc.score) as average_score,
+            MIN(sc.score) as min_score,
+            MAX(sc.score) as max_score,
+            COUNT(CASE WHEN sc.score >= 60 THEN 1 END) as pass_count,
+            COUNT(CASE WHEN sc.score &lt; 60 THEN 1 END) as fail_count,
+            SUM(c.credits) as total_credits
+        FROM student s
+        LEFT JOIN score sc ON s.id = sc.student_id
+        LEFT JOIN course c ON sc.course_id = c.id
+        GROUP BY s.id, s.student_no, s.class_name, s.major, s.grade
+        ORDER BY average_score DESC
+    </select>
+
+    <!-- 获取学期成绩统计信息 -->
+    <select id="getSemesterScoreStats" resultType="java.util.Map">
+        SELECT
+            semester,
+            COUNT(*) as score_count,
+            COUNT(DISTINCT student_id) as student_count,
+            COUNT(DISTINCT course_id) as course_count,
+            AVG(score) as average_score,
+            MIN(score) as min_score,
+            MAX(score) as max_score,
+            COUNT(CASE WHEN score >= 60 THEN 1 END) as pass_count,
+            COUNT(CASE WHEN score &lt; 60 THEN 1 END) as fail_count
+        FROM score
+        GROUP BY semester
+        ORDER BY semester DESC
+    </select>
+</mapper> 

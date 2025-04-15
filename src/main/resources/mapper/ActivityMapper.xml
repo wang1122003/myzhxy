@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.ActivityDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Activity">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="activity_type" property="activityType" jdbcType="INTEGER"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="organizer_id" property="organizerId" jdbcType="BIGINT"/>
+        <result column="organizer_name" property="organizerName" jdbcType="VARCHAR"/>
+        <result column="contact" property="contact" jdbcType="VARCHAR"/>
+        <result column="poster_url" property="posterUrl" jdbcType="VARCHAR"/>
+        <result column="max_participants" property="maxParticipants" jdbcType="INTEGER"/>
+        <result column="current_participants" property="currentParticipants" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, title, content, activity_type, location, start_time, end_time,
+        organizer_id, organizer_name, contact, poster_url, max_participants,
+        current_participants, status, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询活动 -->
+    <select id="findById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <!-- 查询所有活动 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 根据活动类型查询活动 -->
+    <select id="findByType" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE activity_type = #{type,jdbcType=VARCHAR}
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 根据活动类型查询活动（Integer类型） -->
+    <select id="findByActivityType" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE activity_type = #{activityType,jdbcType=INTEGER}
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 根据日期范围查询活动 -->
+    <select id="findByDateRange" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE start_time &gt;= #{startDate,jdbcType=TIMESTAMP}
+        AND end_time &lt;= #{endDate,jdbcType=TIMESTAMP}
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 根据状态查询活动 -->
+    <select id="findByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE status = #{status,jdbcType=INTEGER}
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 查询正在进行中的活动 -->
+    <select id="findOngoing" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE status = 1
+        AND NOW() BETWEEN start_time AND end_time
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 查询即将开始的活动 -->
+    <select id="findUpcoming" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE start_time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL #{days,jdbcType=INTEGER} DAY)
+        ORDER BY start_time ASC
+    </select>
+
+    <!-- 添加活动 -->
+    <insert id="insert" parameterType="com.campus.entity.Activity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO activity (
+            title, content, activity_type, location, start_time, end_time,
+            organizer_id, organizer_name, contact, poster_url, max_participants,
+            current_participants, status, create_time, update_time
+        )
+        VALUES (
+            #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, #{activityType,jdbcType=INTEGER},
+            #{location,jdbcType=VARCHAR}, #{startTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP},
+            #{organizerId,jdbcType=BIGINT}, #{organizerName,jdbcType=VARCHAR}, #{contact,jdbcType=VARCHAR},
+            #{posterUrl,jdbcType=VARCHAR}, #{maxParticipants,jdbcType=INTEGER}, #{currentParticipants,jdbcType=INTEGER},
+            #{status,jdbcType=INTEGER}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <!-- 更新活动 -->
+    <update id="update" parameterType="com.campus.entity.Activity">
+        UPDATE activity
+        <set>
+            <if test="title != null">title = #{title,jdbcType=VARCHAR},</if>
+            <if test="content != null">content = #{content,jdbcType=VARCHAR},</if>
+            <if test="activityType != null">activity_type = #{activityType,jdbcType=INTEGER},</if>
+            <if test="location != null">location = #{location,jdbcType=VARCHAR},</if>
+            <if test="startTime != null">start_time = #{startTime,jdbcType=TIMESTAMP},</if>
+            <if test="endTime != null">end_time = #{endTime,jdbcType=TIMESTAMP},</if>
+            <if test="organizerId != null">organizer_id = #{organizerId,jdbcType=BIGINT},</if>
+            <if test="organizerName != null">organizer_name = #{organizerName,jdbcType=VARCHAR},</if>
+            <if test="contact != null">contact = #{contact,jdbcType=VARCHAR},</if>
+            <if test="posterUrl != null">poster_url = #{posterUrl,jdbcType=VARCHAR},</if>
+            <if test="maxParticipants != null">max_participants = #{maxParticipants,jdbcType=INTEGER},</if>
+            <if test="currentParticipants != null">current_participants = #{currentParticipants,jdbcType=INTEGER},</if>
+            <if test="status != null">status = #{status,jdbcType=INTEGER},</if>
+            update_time = #{updateTime,jdbcType=TIMESTAMP}
+        </set>
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 删除活动 -->
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM activity
+        WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <!-- 批量删除活动 -->
+    <delete id="batchDelete" parameterType="java.lang.Long">
+        DELETE FROM activity
+        WHERE id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </delete>
+
+    <!-- 更新活动状态 -->
+    <update id="updateStatus">
+        UPDATE activity
+        SET status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 搜索活动 -->
+    <select id="searchActivities" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR location LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR organizer_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 获取最近的活动 -->
+    <select id="getRecentActivities" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE start_time >= NOW()
+        ORDER BY start_time ASC
+        LIMIT #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 分页查询活动 -->
+    <select id="findByPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        ORDER BY start_time DESC
+        LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 获取活动总数 -->
+    <select id="getCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM activity
+    </select>
+
+    <!-- 获取学生参与的活动 -->
+    <select id="getStudentActivities" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT a.*
+        FROM activity a
+        JOIN activity_participant ap ON a.id = ap.activity_id
+        WHERE ap.student_id = #{studentId,jdbcType=BIGINT}
+        ORDER BY a.start_time DESC
+    </select>
+
+    <!-- 获取组织者的活动 -->
+    <select id="getOrganizerActivities" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM activity
+        WHERE organizer_id = #{organizerId,jdbcType=BIGINT}
+        ORDER BY start_time DESC
+    </select>
+
+    <!-- 获取活动类型统计 -->
+    <select id="getActivityTypeStatistics" resultType="java.util.HashMap">
+        SELECT activity_type as 'type', COUNT(*) as 'count'
+        FROM activity
+        GROUP BY activity_type
+    </select>
+
+    <!-- 获取活动状态统计 -->
+    <select id="getActivityStatusStatistics" resultType="java.util.HashMap">
+        SELECT status, COUNT(*) as 'count'
+        FROM activity
+        GROUP BY status
+    </select>
+
+    <!-- 获取活动类型活动数 -->
+    <select id="getActivityTypeCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM activity
+        WHERE activity_type = #{type,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 获取活动状态活动数 -->
+    <select id="getActivityStatusCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM activity
+        WHERE status = #{status,jdbcType=INTEGER}
+    </select>
+
+    <!-- 获取活动参与人数统计 -->
+    <select id="getActivityParticipantCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM activity_participant
+        WHERE activity_id = #{activityId,jdbcType=BIGINT}
+    </select>
+
+    <!-- 检查活动名称是否存在 -->
+    <select id="isActivityNameExists" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM activity
+        WHERE title = #{name,jdbcType=VARCHAR}
+    </select>
+</mapper> 

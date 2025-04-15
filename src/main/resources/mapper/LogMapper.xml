@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.LogDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Log">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="INTEGER"/>
+        <result column="module" property="module" jdbcType="VARCHAR"/>
+        <result column="operation" property="operation" jdbcType="VARCHAR"/>
+        <result column="method" property="method" jdbcType="VARCHAR"/>
+        <result column="params" property="params" jdbcType="LONGVARCHAR"/>
+        <result column="ip" property="ip" jdbcType="VARCHAR"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+        <result column="user_agent" property="userAgent" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="error_msg" property="errorMsg" jdbcType="LONGVARCHAR"/>
+        <result column="execute_time" property="executeTime" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <association property="user" javaType="com.campus.entity.User">
+            <id column="user_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="avatar" property="avatar"/>
+            <result column="role" property="role"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        l.id, l.user_id, l.module, l.operation, l.method,
+        l.params, l.ip, l.location, l.user_agent, l.status,
+        l.error_msg, l.execute_time, l.create_time,
+        u.username, u.real_name, u.avatar, u.role
+    </sql>
+
+    <!-- 获取所有日志 -->
+    <select id="getAllLogs" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 根据ID获取日志 -->
+    <select id="getLogById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据用户ID获取日志 -->
+    <select id="getLogsByUserId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.user_id = #{userId,jdbcType=INTEGER}
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 根据模块获取日志 -->
+    <select id="getLogsByModule" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.module = #{module,jdbcType=VARCHAR}
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 根据操作类型获取日志 -->
+    <select id="getLogsByOperation" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.operation = #{operation,jdbcType=VARCHAR}
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 根据状态获取日志 -->
+    <select id="getLogsByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.status = #{status,jdbcType=INTEGER}
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 根据时间范围获取日志 -->
+    <select id="getLogsByTimeRange" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.create_time BETWEEN #{startTime,jdbcType=TIMESTAMP} AND #{endTime,jdbcType=TIMESTAMP}
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 搜索日志 -->
+    <select id="searchLogs" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM log l
+        LEFT JOIN user u ON l.user_id = u.id
+        WHERE l.module LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.operation LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.method LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.params LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.ip LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.location LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR l.error_msg LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.username LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.real_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY l.create_time DESC
+    </select>
+
+    <!-- 添加日志 -->
+    <insert id="addLog" parameterType="com.campus.entity.Log" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO log (
+            user_id, module, operation, method, params,
+            ip, location, user_agent, status, error_msg,
+            execute_time, create_time
+        )
+        VALUES (
+            #{userId,jdbcType=INTEGER}, #{module,jdbcType=VARCHAR}, #{operation,jdbcType=VARCHAR},
+            #{method,jdbcType=VARCHAR}, #{params,jdbcType=LONGVARCHAR}, #{ip,jdbcType=VARCHAR},
+            #{location,jdbcType=VARCHAR}, #{userAgent,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER},
+            #{errorMsg,jdbcType=LONGVARCHAR}, #{executeTime,jdbcType=BIGINT}, NOW()
+        )
+    </insert>
+
+    <!-- 批量添加日志 -->
+    <insert id="batchAddLogs">
+        INSERT INTO log (
+            user_id, module, operation, method, params,
+            ip, location, user_agent, status, error_msg,
+            execute_time, create_time
+        )
+        VALUES
+        <foreach collection="logs" item="log" separator=",">
+            (
+                #{log.userId,jdbcType=INTEGER}, #{log.module,jdbcType=VARCHAR},
+                #{log.operation,jdbcType=VARCHAR}, #{log.method,jdbcType=VARCHAR},
+                #{log.params,jdbcType=LONGVARCHAR}, #{log.ip,jdbcType=VARCHAR},
+                #{log.location,jdbcType=VARCHAR}, #{log.userAgent,jdbcType=VARCHAR},
+                #{log.status,jdbcType=INTEGER}, #{log.errorMsg,jdbcType=LONGVARCHAR},
+                #{log.executeTime,jdbcType=BIGINT}, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 删除日志 -->
+    <delete id="deleteLog" parameterType="java.lang.Integer">
+        DELETE FROM log
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 批量删除日志 -->
+    <delete id="batchDeleteLogs">
+        DELETE FROM log
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=INTEGER}
+        </foreach>
+    </delete>
+
+    <!-- 清空日志 -->
+    <delete id="clearLogs">
+        DELETE FROM log
+    </delete>
+
+    <!-- 获取日志统计信息 -->
+    <select id="getLogStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_logs,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as success_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as error_count,
+            COUNT(DISTINCT user_id) as total_users,
+            COUNT(DISTINCT module) as total_modules,
+            COUNT(DISTINCT operation) as total_operations,
+            COUNT(DISTINCT ip) as total_ips,
+            AVG(execute_time) as average_execute_time
+        FROM log
+    </select>
+
+    <!-- 获取模块统计信息 -->
+    <select id="getModuleStats" resultType="java.util.Map">
+        SELECT
+            module,
+            COUNT(*) as operation_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as success_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as error_count,
+            AVG(execute_time) as average_execute_time
+        FROM log
+        GROUP BY module
+        ORDER BY operation_count DESC
+    </select>
+
+    <!-- 获取用户操作统计信息 -->
+    <select id="getUserOperationStats" resultType="java.util.Map">
+        SELECT
+            u.id as user_id,
+            u.username,
+            u.real_name,
+            u.role,
+            COUNT(l.id) as operation_count,
+            COUNT(CASE WHEN l.status = 1 THEN 1 END) as success_count,
+            COUNT(CASE WHEN l.status = 0 THEN 1 END) as error_count,
+            COUNT(DISTINCT l.module) as module_count,
+            COUNT(DISTINCT l.operation) as operation_type_count,
+            AVG(l.execute_time) as average_execute_time
+        FROM user u
+        LEFT JOIN log l ON u.id = l.user_id
+        GROUP BY u.id, u.username, u.real_name, u.role
+        ORDER BY operation_count DESC
+    </select>
+
+    <!-- 获取IP访问统计信息 -->
+    <select id="getIpStats" resultType="java.util.Map">
+        SELECT
+            ip,
+            location,
+            COUNT(*) as visit_count,
+            COUNT(DISTINCT user_id) as user_count,
+            COUNT(DISTINCT module) as module_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as error_count,
+            MAX(create_time) as last_visit_time
+        FROM log
+        GROUP BY ip, location
+        ORDER BY visit_count DESC
+    </select>
+
+    <!-- 获取时间统计信息 -->
+    <select id="getTimeStats" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m-%d %H:00:00') as hour,
+            COUNT(*) as operation_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as success_count,
+            COUNT(CASE WHEN status = 0 THEN 1 END) as error_count,
+            COUNT(DISTINCT user_id) as user_count,
+            COUNT(DISTINCT module) as module_count,
+            AVG(execute_time) as average_execute_time
+        FROM log
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d %H:00:00')
+        ORDER BY hour DESC
+    </select>
+</mapper> 

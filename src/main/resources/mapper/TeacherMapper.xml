@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.TeacherDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Teacher">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="INTEGER"/>
+        <result column="teacher_no" property="teacherNo" jdbcType="VARCHAR"/>
+        <result column="department" property="department" jdbcType="VARCHAR"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="specialty" property="specialty" jdbcType="VARCHAR"/>
+        <result column="office_location" property="officeLocation" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联属性 -->
+        <association property="user" javaType="com.campus.entity.User">
+            <id column="u_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="email" property="email"/>
+            <result column="phone" property="phone"/>
+            <result column="avatar" property="avatar"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        t.id, t.user_id, t.teacher_no, t.department, t.title,
+        t.specialty, t.office_location, t.status, t.create_time, t.update_time
+    </sql>
+
+    <!-- 获取所有教师 -->
+    <select id="getAllTeachers" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        ORDER BY t.create_time DESC
+    </select>
+
+    <!-- 根据ID获取教师 -->
+    <select id="getTeacherById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        WHERE t.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据工号获取教师 -->
+    <select id="getTeacherByNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        WHERE t.teacher_no = #{teacherNo,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据部门获取教师 -->
+    <select id="getTeachersByDepartment" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        WHERE t.department = #{department,jdbcType=VARCHAR}
+        ORDER BY t.teacher_no
+    </select>
+
+    <!-- 根据职称获取教师 -->
+    <select id="getTeachersByTitle" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        WHERE t.title = #{title,jdbcType=VARCHAR}
+        ORDER BY t.department, t.teacher_no
+    </select>
+
+    <!-- 搜索教师 -->
+    <select id="searchTeachers" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.email, u.phone, u.avatar
+        FROM teacher t
+        LEFT JOIN user u ON t.user_id = u.id
+        WHERE t.teacher_no LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR u.real_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR t.department LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR t.title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR t.specialty LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        ORDER BY t.department, t.teacher_no
+    </select>
+
+    <!-- 添加教师 -->
+    <insert id="addTeacher" parameterType="com.campus.entity.Teacher" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO teacher (
+            user_id, teacher_no, department, title, specialty,
+            office_location, status, create_time, update_time
+        )
+        VALUES (
+            #{userId,jdbcType=INTEGER}, #{teacherNo,jdbcType=VARCHAR}, #{department,jdbcType=VARCHAR},
+            #{title,jdbcType=VARCHAR}, #{specialty,jdbcType=VARCHAR}, #{officeLocation,jdbcType=VARCHAR},
+            #{status,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新教师 -->
+    <update id="updateTeacher" parameterType="com.campus.entity.Teacher">
+        UPDATE teacher
+        SET
+            teacher_no = #{teacherNo,jdbcType=VARCHAR},
+            department = #{department,jdbcType=VARCHAR},
+            title = #{title,jdbcType=VARCHAR},
+            specialty = #{specialty,jdbcType=VARCHAR},
+            office_location = #{officeLocation,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 删除教师 -->
+    <delete id="deleteTeacher" parameterType="java.lang.Integer">
+        DELETE FROM teacher
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 更新教师状态 -->
+    <update id="updateTeacherStatus">
+        UPDATE teacher
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查工号是否存在 -->
+    <select id="checkTeacherNoExists" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM teacher
+        WHERE teacher_no = #{teacherNo,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 获取教师统计信息 -->
+    <select id="getTeacherStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_teachers,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_teachers,
+            COUNT(DISTINCT department) as total_departments,
+            COUNT(DISTINCT title) as total_titles
+        FROM teacher
+    </select>
+
+    <!-- 获取部门统计信息 -->
+    <select id="getDepartmentStats" resultType="java.util.Map">
+        SELECT
+            department,
+            COUNT(*) as teacher_count,
+            COUNT(DISTINCT title) as title_count
+        FROM teacher
+        GROUP BY department
+        ORDER BY teacher_count DESC
+    </select>
+
+    <!-- 获取职称统计信息 -->
+    <select id="getTitleStats" resultType="java.util.Map">
+        SELECT
+            title,
+            COUNT(*) as teacher_count,
+            COUNT(DISTINCT department) as department_count
+        FROM teacher
+        GROUP BY title
+        ORDER BY teacher_count DESC
+    </select>
+</mapper> 

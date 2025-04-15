@@ -1,0 +1,90 @@
+2025-04-16 00:11:38.953 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-16 00:11:39.430 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:39.496 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:11:39.499 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:39.500 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:11:39.503 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-16 00:11:39.506 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-16 00:11:39.507 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:39.508 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-16 00:11:39.508 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-16 00:11:39.790 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:40.128 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:11:40.129 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:40.129 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:11:40.130 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:11:40.130 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:11:40.130 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:11:51.705 [http-nio-8080-exec-3] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-16 00:13:56.081 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-16 00:13:56.520 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:56.583 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:13:56.586 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:56.586 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:13:56.588 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-16 00:13:56.590 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-16 00:13:56.590 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:56.591 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-16 00:13:56.591 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-16 00:13:56.861 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:57.186 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:13:57.186 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:57.186 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:13:57.187 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:13:57.187 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:13:57.188 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:14:27.280 [http-nio-8080-exec-1] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-16 00:16:59.324 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-16 00:16:59.782 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:16:59.847 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:16:59.851 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:16:59.851 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:16:59.854 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-16 00:16:59.855 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-16 00:16:59.856 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:16:59.856 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-16 00:16:59.856 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-16 00:17:00.134 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:17:00.470 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:17:00.470 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:17:00.471 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:17:00.472 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:17:00.472 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:17:00.473 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:18:25.545 [http-nio-8080-exec-1] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-16 00:37:57.936 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-16 00:37:58.412 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:58.477 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:37:58.481 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:58.481 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:37:58.484 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-16 00:37:58.486 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-16 00:37:58.486 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:58.486 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-16 00:37:58.486 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-16 00:37:58.765 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:59.101 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:37:59.102 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:59.102 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:37:59.103 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:37:59.103 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:37:59.103 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:38:12.416 [http-nio-8080-exec-4] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-16 00:42:49.059 [main] ERROR c.b.m.core.MybatisConfiguration - mapper[com.campus.dao.PostDao.deletePostTag] is ignored, because it exists, maybe from xml file
+2025-04-16 00:42:49.536 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:49.600 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:42:49.603 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:49.603 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:42:49.606 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化开始...
+2025-04-16 00:42:49.610 [main] INFO  com.campus.utils.WebAppInitListener - 开始初始化文件上传目录
+2025-04-16 00:42:49.610 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:49.610 [main] INFO  com.campus.utils.WebAppInitListener - 文件上传目录初始化完成
+2025-04-16 00:42:49.610 [main] INFO  com.campus.utils.WebAppInitListener - Web应用初始化完成
+2025-04-16 00:42:49.896 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:50.244 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:42:50.244 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:50.244 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:42:50.245 [main] INFO  com.campus.config.AppInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-16 00:42:50.245 [main] INFO  com.campus.utils.FileUtils - 文件上传目录初始化完成
+2025-04-16 00:42:50.245 [main] INFO  com.campus.config.AppInitializer - 系统初始化完成
+2025-04-16 00:43:15.641 [http-nio-8080-exec-3] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited

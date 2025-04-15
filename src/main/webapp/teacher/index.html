@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师空间 - 智慧校园</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="../static/js/api.js"></script>
+    <script src="../static/js/ui.js"></script>
+</head>
+<body>
+    <!-- 加载中提示 -->
+    <div id="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div id="mainContent">
+        <div class="teacher-layout">
+            <!-- 头部导航 -->
+            <header class="header">
+                <div class="container header-container">
+                    <div class="logo">
+                        <h1>智慧校园</h1>
+                    </div>
+                    <ul class="nav-links">
+                        <li><a href="/campus/index.html">首页</a></li>
+                        <li><a href="/campus/forum.html">校园论坛</a></li>
+                        <li><a href="/campus/index.html" id="logoutBtn">退出登录</a></li>
+                    </ul>
+                </div>
+            </header>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="avatar">
+                        <img src="https://via.placeholder.com/80" alt="用户头像">
+                    </div>
+                    <div class="user-info">
+                        <h3 id="teacherName">加载中...</h3>
+                        <p id="teacherId">工号：加载中...</p>
+                    </div>
+                </div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-target="dashboard">个人中心</div>
+                    <div class="menu-item" data-target="schedule">我的课表</div>
+                    <div class="menu-item" data-target="courses">我的课程</div>
+                    <div class="menu-item" data-target="grades">成绩录入</div>
+                    <div class="menu-item" data-target="students">学生管理</div>
+                    <div class="menu-item" data-target="posts">我的帖子</div>
+                </div>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="main-panel">
+                <!-- 面包屑导航 -->
+                <div class="breadcrumb">
+                    <span id="currentModule">个人中心</span>
+                </div>
+
+                <!-- 内容区域 -->
+                <div class="content-wrapper">
+                    <!-- 个人中心模块 -->
+                    <div id="dashboard" class="module-content active">
+                        <div class="welcome-banner">
+                            <h2>欢迎回来，<span id="welcomeName">老师</span></h2>
+                            <p>今天是 <span id="currentDate"></span>，祝您工作愉快！</p>
+                        </div>
+                        
+                        <div class="info-cards">
+                            <div class="info-card">
+                                <div class="card-icon">📚</div>
+                                <div class="card-info">
+                                    <h3>我的课程</h3>
+                                    <p>本学期共 <span id="coursesCount">0</span> 门课程</p>
+                                </div>
+                                <a href="#" onclick="switchTab('courses')" class="card-link">查看详情</a>
+                            </div>
+                            
+                            <div class="info-card">
+                                <div class="card-icon">🗓️</div>
+                                <div class="card-info">
+                                    <h3>今日课程</h3>
+                                    <p>今天有 <span id="todayClassCount">0</span> 节课</p>
+                                </div>
+                                <a href="#" onclick="switchTab('schedule')" class="card-link">查看详情</a>
+                            </div>
+                            
+                            <div class="info-card">
+                                <div class="card-icon">👨‍🎓</div>
+                                <div class="card-info">
+                                    <h3>学生人数</h3>
+                                    <p>共有 <span id="studentsCount">0</span> 名学生</p>
+                                </div>
+                                <a href="#" onclick="switchTab('students')" class="card-link">查看详情</a>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-sections">
+                            <div class="dashboard-section">
+                                <h3>最近公告</h3>
+                                <div id="recentNotices" class="notice-list">
+                                    <div class="loading-placeholder">正在加载公告...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="dashboard-section">
+                                <h3>今日课程</h3>
+                                <div id="todayClasses" class="class-list">
+                                    <div class="loading-placeholder">正在加载课程...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他模块 -->
+                    <div id="schedule" class="module-content">
+                        <h2>我的课表</h2>
+                        <div class="action-bar">
+                            <select id="termSelect" class="form-control">
+                                <option value="">当前学期</option>
+                            </select>
+                            <button id="printScheduleBtn" class="btn btn-secondary"><i class="bi bi-printer"></i> 打印课表</button>
+                            <button id="exportScheduleBtn" class="btn btn-secondary"><i class="bi bi-download"></i> 导出课表</button>
+                        </div>
+                        
+                        <div class="schedule-container">
+                            <table class="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th class="time-col">时间</th>
+                                        <th>周一</th>
+                                        <th>周二</th>
+                                        <th>周三</th>
+                                        <th>周四</th>
+                                        <th>周五</th>
+                                        <th>周六</th>
+                                        <th>周日</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleTableBody">
+                                    <!-- 这里将通过JavaScript动态加载课表数据 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="courses" class="module-content">
+                        <h2>我的课程</h2>
+                        <div class="action-bar">
+                            <button id="refreshCourseBtn" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> 刷新课程</button>
+                        </div>
+                        <div id="teacherCourseList" class="course-list">
+                            <div class="loading-placeholder">正在加载课程...</div>
+                        </div>
+                    </div>
+                    
+                    <div id="grades" class="module-content">
+                        <h2>成绩录入</h2>
+                        <div class="grade-panel">
+                            <div class="grade-selector">
+                                <h3>选择课程</h3>
+                                <select id="gradesCourseSelect" class="form-control">
+                                    <option value="">--请选择课程--</option>
+                                </select>
+                            </div>
+                            <div id="courseStudentList" class="grade-student-list">
+                                <div class="empty-state">请先选择课程</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="students" class="module-content">
+                        <h2>学生管理</h2>
+                        <div class="action-bar">
+                            <select id="courseSelectForStudents" class="form-control">
+                                <option value="">选择课程</option>
+                            </select>
+                            <button id="refreshStudentsBtn" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> 刷新学生列表</button>
+                        </div>
+                        
+                        <div class="students-container">
+                            <div class="students-header">
+                                <div class="search-box">
+                                    <input type="text" id="studentSearchInput" class="form-control" placeholder="搜索学生..." />
+                                    <button id="studentSearchBtn" class="btn"><i class="bi bi-search"></i></button>
+                                </div>
+                            </div>
+                            
+                            <div class="students-table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>学号</th>
+                                            <th>姓名</th>
+                                            <th>性别</th>
+                                            <th>班级</th>
+                                            <th>专业</th>
+                                            <th>出勤率</th>
+                                            <th>成绩</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <!-- 这里将通过JavaScript动态加载学生数据 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="pagination-container" id="studentsPagination">
+                                <!-- 分页控件将通过JavaScript动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="posts" class="module-content">
+                        <h2>我的帖子</h2>
+                        <div class="action-bar">
+                            <button id="newPostBtn" class="btn btn-primary"><i class="bi bi-plus"></i> 发布新帖子</button>
+                            <button id="refreshPostsBtn" class="btn btn-secondary"><i class="bi bi-arrow-clockwise"></i> 刷新</button>
+                        </div>
+                        
+                        <div class="posts-container">
+                            <div class="posts-header">
+                                <div class="search-box">
+                                    <input type="text" id="postSearchInput" class="form-control" placeholder="搜索帖子..." />
+                                    <button id="postSearchBtn" class="btn"><i class="bi bi-search"></i></button>
+                                </div>
+                                <div class="filter-box">
+                                    <select id="postCategoryFilter" class="form-control">
+                                        <option value="">全部分类</option>
+                                        <option value="1">教学讨论</option>
+                                        <option value="2">学术交流</option>
+                                        <option value="3">校园生活</option>
+                                        <option value="4">其他</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="posts-list" id="teacherPostsList">
+                                <!-- 这里将通过JavaScript动态加载帖子数据 -->
+                            </div>
+                            
+                            <div class="pagination-container" id="postsPagination">
+                                <!-- 分页控件将通过JavaScript动态加载 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 新建帖子对话框 -->
+                        <div id="newPostDialog" class="dialog-container" style="display: none;">
+                            <div class="dialog-content">
+                                <div class="dialog-header">
+                                    <h3>发布新帖子</h3>
+                                    <button class="close-btn" id="closeNewPostBtn">&times;</button>
+                                </div>
+                                <div class="dialog-body">
+                                    <form id="newPostForm">
+                                        <div class="form-group">
+                                            <label for="postTitle">标题</label>
+                                            <input type="text" id="postTitle" class="form-control" required />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="postCategory">分类</label>
+                                            <select id="postCategory" class="form-control" required>
+                                                <option value="">请选择分类</option>
+                                                <option value="1">教学讨论</option>
+                                                <option value="2">学术交流</option>
+                                                <option value="3">校园生活</option>
+                                                <option value="4">其他</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="postContent">内容</label>
+                                            <textarea id="postContent" class="form-control" rows="8" required></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="postTags">标签 (用逗号分隔)</label>
+                                            <input type="text" id="postTags" class="form-control" placeholder="例如: 教学,讨论,分享" />
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="dialog-footer">
+                                    <button class="btn btn-secondary" id="cancelNewPostBtn">取消</button>
+                                    <button class="btn btn-primary" id="submitNewPostBtn">发布</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模块切换
+        function switchTab(tabId) {
+            // 更新活动菜单项
+            document.querySelectorAll('.sidebar .menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.sidebar .menu-item[data-target="${tabId}"]`).classList.add('active');
+            
+            // 更新活动内容
+            document.querySelectorAll('.module-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            
+            // 更新面包屑
+            const moduleTitles = {
+                'dashboard': '个人中心',
+                'schedule': '我的课表',
+                'courses': '我的课程',
+                'grades': '成绩录入',
+                'students': '学生管理',
+                'posts': '我的帖子'
+            };
+            document.getElementById('currentModule').textContent = moduleTitles[tabId];
+            
+            // 根据选择的标签加载相应内容
+            if (tabId === 'schedule') {
+                loadTeacherSchedule();
+            } else if (tabId === 'courses') {
+                loadTeacherCourses();
+            } else if (tabId === 'grades') {
+                loadGradesCourseSelect();
+            } else if (tabId === 'students') {
+                loadStudentManagement();
+            } else if (tabId === 'posts') {
+                loadTeacherPosts();
+            }
+        }
+        
+        // 检查登录状态
+        function checkLogin() {
+            if (!API.isLoggedIn()) {
+                window.location.href = '/campus/index.html';
+                return false;
+            }
+            
+            // 检查用户类型
+            const userType = parseInt(localStorage.getItem('userType'));
+            if (userType !== 1 && userType !== 0) { // 教师或管理员可以访问
+                UI.showMessage('您没有访问教师中心的权限', 'error');
+                setTimeout(() => {
+                    window.location.href = '/campus/index.html';
+                }, 1500);
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 加载教师信息
+        async function loadTeacherInfo() {
+            UI.showLoading();
+            
+            try {
+                const userId = API.getUserId();
+                if (!userId) {
+                    throw new Error('用户未登录');
+                }
+                
+                const user = await API.user.getById(userId);
+                if (user) {
+                    document.getElementById('welcomeName').textContent = user.realName || '老师';
+                    document.getElementById('teacherName').textContent = user.realName || '未设置姓名';
+                    document.getElementById('teacherId').textContent = '工号：' + (user.username || '未知');
+                }
+                
+                // 更新当前日期
+                const now = new Date();
+                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+                document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+                
+                // 加载课程统计
+                await loadDashboardData();
+            } catch (error) {
+                console.error('加载教师信息失败:', error);
+                UI.showMessage('加载个人信息失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            try {
+                // 加载课程统计
+                const courses = await API.request('/api/courses/teacher/' + API.getUserId());
+                if (courses) {
+                    document.getElementById('coursesCount').textContent = courses.length || 0;
+                    
+                    // 今日课程
+                    const today = new Date().getDay(); // 0是周日，1是周一
+                    const todayClasses = courses.filter(course => {
+                        return course.schedules && course.schedules.some(schedule => 
+                            schedule.dayOfWeek === (today === 0 ? 7 : today)
+                        );
+                    });
+                    
+                    document.getElementById('todayClassCount').textContent = todayClasses.length || 0;
+                    updateTodayClasses(todayClasses);
+                }
+                
+                // 加载学生统计
+                const studentCount = await API.request('/api/statistics/teacherStudentCount/' + API.getUserId());
+                if (studentCount !== undefined) {
+                    document.getElementById('studentsCount').textContent = studentCount;
+                }
+                
+                // 加载公告
+                const notices = await API.notice.getAll(1, 3);
+                if (notices && notices.content) {
+                    updateRecentNotices(notices.content);
+                }
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+                UI.showMessage('加载统计数据失败', 'error');
+            }
+        }
+        
+        // 更新今日课程
+        function updateTodayClasses(courses) {
+            const todayClassesContainer = document.getElementById('todayClasses');
+            
+            if (!courses || courses.length === 0) {
+                todayClassesContainer.innerHTML = '<div class="empty-state">今日没有课程安排</div>';
+                return;
+            }
+            
+            let html = '';
+            courses.forEach(course => {
+                const schedules = course.schedules || [];
+                const today = new Date().getDay(); // 0是周日，1是周一
+                const todaySchedules = schedules.filter(s => s.dayOfWeek === (today === 0 ? 7 : today));
+                
+                todaySchedules.forEach(schedule => {
+                    html += `
+                        <div class="class-item">
+                            <div class="class-time">${schedule.startTime || ''} - ${schedule.endTime || ''}</div>
+                            <div class="class-info">
+                                <div class="class-name">${course.name || '未命名课程'}</div>
+                                <div class="class-location">${schedule.classroom || '未分配教室'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+            
+            todayClassesContainer.innerHTML = html;
+        }
+        
+        // 更新最近公告
+        function updateRecentNotices(notices) {
+            const noticesContainer = document.getElementById('recentNotices');
+            
+            if (!notices || notices.length === 0) {
+                noticesContainer.innerHTML = '<div class="empty-state">暂无公告</div>';
+                return;
+            }
+            
+            let html = '';
+            notices.forEach(notice => {
+                const date = new Date(notice.createTime || Date.now());
+                const dateString = date.toLocaleDateString('zh-CN');
+                
+                html += `
+                    <div class="notice-item">
+                        <div class="notice-title">${notice.title || '未命名公告'}</div>
+                        <div class="notice-date">${dateString}</div>
+                    </div>
+                `;
+            });
+            
+            noticesContainer.innerHTML = html;
+        }
+        
+        // 加载教师课表
+        async function loadTeacherSchedule() {
+            UI.showLoading();
+            
+            try {
+                // 加载学期选项
+                const terms = await API.request('/api/terms');
+                const termSelect = document.getElementById('termSelect');
+                termSelect.innerHTML = '<option value="">当前学期</option>';
+                
+                if (terms && terms.length > 0) {
+                    terms.forEach(term => {
+                        const option = document.createElement('option');
+                        option.value = term.id;
+                        option.textContent = term.name;
+                        if (term.current) {
+                            option.selected = true;
+                        }
+                        termSelect.appendChild(option);
+                    });
+                }
+                
+                const userId = API.getUserId();
+                const termId = termSelect.value || '';
+                
+                // 加载教师课表
+                const schedules = await API.request(`/api/schedules/teacher/${userId}?termId=${termId}`);
+                renderScheduleTable(schedules);
+            } catch (error) {
+                console.error('加载课表失败:', error);
+                UI.showMessage('加载课表失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 渲染课表
+        function renderScheduleTable(schedules) {
+            const tableBody = document.getElementById('scheduleTableBody');
+            tableBody.innerHTML = '';
+            
+            // 定义时间段
+            const timeSlots = [
+                { start: '08:00', end: '09:40', name: '第一节' },
+                { start: '10:00', end: '11:40', name: '第二节' },
+                { start: '14:00', end: '15:40', name: '第三节' },
+                { start: '16:00', end: '17:40', name: '第四节' },
+                { start: '19:00', end: '20:40', name: '第五节' }
+            ];
+            
+            // 创建课表行
+            timeSlots.forEach(slot => {
+                const row = document.createElement('tr');
+                
+                // 添加时间列
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-col';
+                timeCell.innerHTML = `<div>${slot.name}</div><div>${slot.start}-${slot.end}</div>`;
+                row.appendChild(timeCell);
+                
+                // 添加每天的单元格
+                for (let day = 1; day <= 7; day++) {
+                    const cell = document.createElement('td');
+                    
+                    // 查找当前时间段和星期的课程
+                    const schedule = schedules ? schedules.find(s => 
+                        s.dayOfWeek === day && 
+                        s.startTime === slot.start && 
+                        s.endTime === slot.end
+                    ) : null;
+                    
+                    if (schedule) {
+                        cell.className = 'has-class';
+                        cell.innerHTML = `
+                            <div class="class-info">
+                                <div class="class-name">${schedule.courseName || '未知课程'}</div>
+                                <div class="class-room">${schedule.classroom || '未分配教室'}</div>
+                                <div class="class-weeks">第${schedule.weeks || '全'}周</div>
+                            </div>
+                        `;
+                    }
+                    
+                    row.appendChild(cell);
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 打印课表
+        function printSchedule() {
+            window.print();
+        }
+        
+        // 导出课表
+        function exportSchedule() {
+            UI.showMessage('正在准备导出课表...', 'info');
+            setTimeout(() => {
+                UI.showMessage('导出功能开发中，敬请期待', 'info');
+            }, 1500);
+        }
+        
+        // 加载学生管理
+        async function loadStudentManagement() {
+            UI.showLoading();
+            
+            try {
+                // 加载教师课程下拉框
+                const userId = API.getUserId();
+                const courses = await API.request(`/api/courses/teacher/${userId}`);
+                
+                const courseSelect = document.getElementById('courseSelectForStudents');
+                courseSelect.innerHTML = '<option value="">选择课程</option>';
+                
+                if (courses && courses.length > 0) {
+                    courses.forEach(course => {
+                        const option = document.createElement('option');
+                        option.value = course.id;
+                        option.textContent = course.name;
+                        courseSelect.appendChild(option);
+                    });
+                }
+                
+                // 如果有课程，加载第一个课程的学生
+                if (courses && courses.length > 0) {
+                    courseSelect.value = courses[0].id;
+                    await loadCourseStudents(courses[0].id);
+                } else {
+                    document.getElementById('studentsTableBody').innerHTML = '<tr><td colspan="8" class="empty-state">暂无课程信息</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载学生管理失败:', error);
+                UI.showMessage('加载学生信息失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 加载课程学生
+        async function loadCourseStudents(courseId, page = 1, size = 10, keyword = '') {
+            if (!courseId) {
+                document.getElementById('studentsTableBody').innerHTML = '<tr><td colspan="8" class="empty-state">请选择课程</td></tr>';
+                return;
+            }
+            
+            UI.showLoading();
+            
+            try {
+                const result = await API.request(`/api/courses/${courseId}/students?page=${page-1}&size=${size}&keyword=${keyword}`);
+                
+                const tableBody = document.getElementById('studentsTableBody');
+                
+                if (!result || !result.content || result.content.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="empty-state">该课程暂无学生</td></tr>';
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                result.content.forEach(student => {
+                    const tr = document.createElement('tr');
+                    
+                    tr.innerHTML = `
+                        <td>${student.studentNo || ''}</td>
+                        <td>${student.realName || ''}</td>
+                        <td>${student.gender === 1 ? '男' : student.gender === 2 ? '女' : '未知'}</td>
+                        <td>${student.className || ''}</td>
+                        <td>${student.majorName || ''}</td>
+                        <td>${student.attendance || '0'}%</td>
+                        <td>${student.score !== undefined ? student.score : '未评分'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary view-student-btn" data-id="${student.id}">查看</button>
+                            <button class="btn btn-sm btn-secondary grade-student-btn" data-id="${student.id}">评分</button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(tr);
+                });
+                
+                // 设置分页
+                const paginationContainer = document.getElementById('studentsPagination');
+                paginationContainer.innerHTML = '';
+                
+                if (result.totalPages > 1) {
+                    const pagination = document.createElement('div');
+                    pagination.className = 'pagination';
+                    
+                    // 上一页
+                    const prevBtn = document.createElement('button');
+                    prevBtn.className = 'page-btn' + (page === 1 ? ' disabled' : '');
+                    prevBtn.innerHTML = '&lt;';
+                    prevBtn.onclick = () => {
+                        if (page > 1) loadCourseStudents(courseId, page - 1, size, keyword);
+                    };
+                    pagination.appendChild(prevBtn);
+                    
+                    // 页码
+                    const startPage = Math.max(1, page - 2);
+                    const endPage = Math.min(result.totalPages, startPage + 4);
+                    
+                    for (let i = startPage; i <= endPage; i++) {
+                        const pageBtn = document.createElement('button');
+                        pageBtn.className = 'page-btn' + (i === page ? ' active' : '');
+                        pageBtn.textContent = i;
+                        pageBtn.onclick = () => loadCourseStudents(courseId, i, size, keyword);
+                        pagination.appendChild(pageBtn);
+                    }
+                    
+                    // 下一页
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'page-btn' + (page === result.totalPages ? ' disabled' : '');
+                    nextBtn.innerHTML = '&gt;';
+                    nextBtn.onclick = () => {
+                        if (page < result.totalPages) loadCourseStudents(courseId, page + 1, size, keyword);
+                    };
+                    pagination.appendChild(nextBtn);
+                    
+                    paginationContainer.appendChild(pagination);
+                }
+            } catch (error) {
+                console.error('加载课程学生失败:', error);
+                UI.showMessage('加载学生列表失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 加载教师帖子
+        async function loadTeacherPosts(page = 1, size = 10, category = '', keyword = '') {
+            UI.showLoading();
+            
+            try {
+                const userId = API.getUserId();
+                const result = await API.request(`/api/posts/user/${userId}?page=${page-1}&size=${size}&category=${category}&keyword=${keyword}`);
+                
+                const postsContainer = document.getElementById('teacherPostsList');
+                
+                if (!result || !result.content || result.content.length === 0) {
+                    postsContainer.innerHTML = '<div class="empty-state">暂无帖子</div>';
+                    return;
+                }
+                
+                postsContainer.innerHTML = '';
+                
+                result.content.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'post-card';
+                    
+                    // 格式化日期
+                    const createTime = post.createTime ? new Date(post.createTime) : new Date();
+                    const dateStr = createTime.toLocaleDateString('zh-CN');
+                    
+                    // 帖子分类
+                    const categories = {
+                        1: '教学讨论',
+                        2: '学术交流',
+                        3: '校园生活',
+                        4: '其他'
+                    };
+                    
+                    postCard.innerHTML = `
+                        <div class="post-header">
+                            <h3 class="post-title">${post.title || '无标题'}</h3>
+                            <div class="post-meta">
+                                <span class="post-date">${dateStr}</span>
+                                <span class="post-category">${categories[post.category] || '未分类'}</span>
+                                <span class="post-views">浏览 ${post.views || 0}</span>
+                                <span class="post-comments">评论 ${post.commentCount || 0}</span>
+                            </div>
+                        </div>
+                        <div class="post-content">${post.content ? post.content.substring(0, 150) + '...' : '无内容'}</div>
+                        <div class="post-footer">
+                            <div class="post-tags">
+                                ${post.tags ? post.tags.map(tag => `<span class="post-tag">${tag.name}</span>`).join('') : ''}
+                            </div>
+                            <div class="post-actions">
+                                <button class="btn btn-sm btn-secondary edit-post-btn" data-id="${post.id}">编辑</button>
+                                <button class="btn btn-sm btn-danger delete-post-btn" data-id="${post.id}">删除</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    postsContainer.appendChild(postCard);
+                });
+                
+                // 设置分页
+                const paginationContainer = document.getElementById('postsPagination');
+                paginationContainer.innerHTML = '';
+                
+                if (result.totalPages > 1) {
+                    const pagination = document.createElement('div');
+                    pagination.className = 'pagination';
+                    
+                    // 上一页
+                    const prevBtn = document.createElement('button');
+                    prevBtn.className = 'page-btn' + (page === 1 ? ' disabled' : '');
+                    prevBtn.innerHTML = '&lt;';
+                    prevBtn.onclick = () => {
+                        if (page > 1) loadTeacherPosts(page - 1, size, category, keyword);
+                    };
+                    pagination.appendChild(prevBtn);
+                    
+                    // 页码
+                    const startPage = Math.max(1, page - 2);
+                    const endPage = Math.min(result.totalPages, startPage + 4);
+                    
+                    for (let i = startPage; i <= endPage; i++) {
+                        const pageBtn = document.createElement('button');
+                        pageBtn.className = 'page-btn' + (i === page ? ' active' : '');
+                        pageBtn.textContent = i;
+                        pageBtn.onclick = () => loadTeacherPosts(i, size, category, keyword);
+                        pagination.appendChild(pageBtn);
+                    }
+                    
+                    // 下一页
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'page-btn' + (page === result.totalPages ? ' disabled' : '');
+                    nextBtn.innerHTML = '&gt;';
+                    nextBtn.onclick = () => {
+                        if (page < result.totalPages) loadTeacherPosts(page + 1, size, category, keyword);
+                    };
+                    pagination.appendChild(nextBtn);
+                    
+                    paginationContainer.appendChild(pagination);
+                }
+            } catch (error) {
+                console.error('加载教师帖子失败:', error);
+                UI.showMessage('加载帖子列表失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 显示新建帖子对话框
+        function showNewPostDialog() {
+            document.getElementById('newPostDialog').style.display = 'flex';
+            document.getElementById('postTitle').focus();
+        }
+        
+        // 隐藏新建帖子对话框
+        function hideNewPostDialog() {
+            document.getElementById('newPostDialog').style.display = 'none';
+            document.getElementById('newPostForm').reset();
+        }
+        
+        // 提交新帖子
+        async function submitNewPost() {
+            const title = document.getElementById('postTitle').value.trim();
+            const category = document.getElementById('postCategory').value;
+            const content = document.getElementById('postContent').value.trim();
+            const tagsStr = document.getElementById('postTags').value.trim();
+            
+            if (!title || !category || !content) {
+                UI.showMessage('请填写完整帖子信息', 'warning');
+                return;
+            }
+            
+            UI.showLoading();
+            
+            try {
+                const tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+                
+                const postData = {
+                    title,
+                    category: parseInt(category),
+                    content,
+                    tags,
+                    userId: API.getUserId()
+                };
+                
+                const result = await API.request('/api/posts', 'POST', postData);
+                
+                if (result) {
+                    UI.showMessage('帖子发布成功', 'success');
+                    hideNewPostDialog();
+                    loadTeacherPosts();
+                } else {
+                    throw new Error('发布失败');
+                }
+            } catch (error) {
+                console.error('发布帖子失败:', error);
+                UI.showMessage('帖子发布失败', 'error');
+            } finally {
+                UI.hideLoading();
+            }
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            if (checkLogin()) {
+                // 加载教师信息
+                loadTeacherInfo();
+                
+                // 绑定事件
+                document.querySelectorAll('.sidebar .menu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const tabId = this.getAttribute('data-target');
+                        switchTab(tabId);
+                    });
+                });
+                
+                // 退出登录
+                document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    API.logout();
+                    window.location.href = '/campus/index.html';
+                });
+                
+                // 课表相关事件
+                document.getElementById('termSelect').addEventListener('change', loadTeacherSchedule);
+                document.getElementById('printScheduleBtn').addEventListener('click', printSchedule);
+                document.getElementById('exportScheduleBtn').addEventListener('click', exportSchedule);
+                
+                // 学生管理相关事件
+                document.getElementById('courseSelectForStudents').addEventListener('change', function() {
+                    loadCourseStudents(this.value);
+                });
+                document.getElementById('refreshStudentsBtn').addEventListener('click', function() {
+                    const courseId = document.getElementById('courseSelectForStudents').value;
+                    loadCourseStudents(courseId);
+                });
+                document.getElementById('studentSearchBtn').addEventListener('click', function() {
+                    const courseId = document.getElementById('courseSelectForStudents').value;
+                    const keyword = document.getElementById('studentSearchInput').value.trim();
+                    loadCourseStudents(courseId, 1, 10, keyword);
+                });
+                document.getElementById('studentSearchInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const courseId = document.getElementById('courseSelectForStudents').value;
+                        const keyword = this.value.trim();
+                        loadCourseStudents(courseId, 1, 10, keyword);
+                    }
+                });
+                
+                // 帖子相关事件
+                document.getElementById('newPostBtn').addEventListener('click', showNewPostDialog);
+                document.getElementById('closeNewPostBtn').addEventListener('click', hideNewPostDialog);
+                document.getElementById('cancelNewPostBtn').addEventListener('click', hideNewPostDialog);
+                document.getElementById('submitNewPostBtn').addEventListener('click', submitNewPost);
+                document.getElementById('refreshPostsBtn').addEventListener('click', function() {
+                    loadTeacherPosts();
+                });
+                document.getElementById('postSearchBtn').addEventListener('click', function() {
+                    const category = document.getElementById('postCategoryFilter').value;
+                    const keyword = document.getElementById('postSearchInput').value.trim();
+                    loadTeacherPosts(1, 10, category, keyword);
+                });
+                document.getElementById('postCategoryFilter').addEventListener('change', function() {
+                    const category = this.value;
+                    const keyword = document.getElementById('postSearchInput').value.trim();
+                    loadTeacherPosts(1, 10, category, keyword);
+                });
+                document.getElementById('postSearchInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const category = document.getElementById('postCategoryFilter').value;
+                        const keyword = this.value.trim();
+                        loadTeacherPosts(1, 10, category, keyword);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

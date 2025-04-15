@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.ScheduleDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Schedule">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="course_id" property="courseId" jdbcType="INTEGER"/>
+        <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
+        <result column="teacher_id" property="teacherId" jdbcType="INTEGER"/>
+        <result column="teacher_name" property="teacherName" jdbcType="VARCHAR"/>
+        <result column="classroom_id" property="classroomId" jdbcType="INTEGER"/>
+        <result column="classroom_name" property="classroomName" jdbcType="VARCHAR"/>
+        <result column="week_day" property="weekDay" jdbcType="INTEGER"/>
+        <result column="start_time" property="startTime" jdbcType="TIME"/>
+        <result column="end_time" property="endTime" jdbcType="TIME"/>
+        <result column="start_week" property="startWeek" jdbcType="INTEGER"/>
+        <result column="end_week" property="endWeek" jdbcType="INTEGER"/>
+        <result column="term_id" property="termId" jdbcType="BIGINT"/>
+        <result column="term_name" property="termName" jdbcType="VARCHAR"/>
+        <result column="class_id" property="classId" jdbcType="BIGINT"/>
+        <result column="class_name" property="className" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        s.id, s.course_id, s.course_name, s.teacher_id, s.teacher_name,
+        s.classroom_id, s.classroom_name, s.week_day, s.start_time, s.end_time,
+        s.start_week, s.end_week, s.term_id, s.term_name, s.class_id, s.class_name,
+        s.status, s.create_time, s.update_time
+    </sql>
+
+    <!-- 分页查询课程表 -->
+    <select id="findByPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM schedule s
+        ORDER BY s.term_id DESC, s.week_day, s.start_time
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 获取课程表总数 -->
+    <select id="getCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+    </select>
+
+    <!-- 根据时间段查询课程表 -->
+    <select id="findByTimeSlot" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM schedule s
+        WHERE s.week_day = #{weekDay}
+        AND s.start_time = #{timeSlot}
+        ORDER BY s.term_id DESC
+    </select>
+
+    <!-- 检查教师时间冲突 -->
+    <select id="checkTeacherTimeConflict" resultType="java.lang.Boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM schedule
+            WHERE teacher_id = #{teacherId}
+            AND week_day = #{weekDay}
+            AND (
+                (start_time &lt;= #{startTime} AND end_time &gt;= #{startTime})
+                OR (start_time &lt;= #{endTime} AND end_time &gt;= #{endTime})
+                OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+            )
+        )
+    </select>
+
+    <!-- 检查班级时间冲突 -->
+    <select id="checkClassTimeConflict" resultType="java.lang.Boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM schedule
+            WHERE class_id = #{classId}
+            AND week_day = #{weekDay}
+            AND (
+                (start_time &lt;= #{startTime} AND end_time &gt;= #{startTime})
+                OR (start_time &lt;= #{endTime} AND end_time &gt;= #{endTime})
+                OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+            )
+        )
+    </select>
+
+    <!-- 获取教师课程数统计 -->
+    <select id="getTeacherScheduleCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+        WHERE teacher_id = #{teacherId}
+    </select>
+
+    <!-- 获取班级课程数统计 -->
+    <select id="getClassScheduleCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+        WHERE class_id = #{classId}
+    </select>
+
+    <!-- 获取教室课程数统计 -->
+    <select id="getClassroomScheduleCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+        WHERE classroom_id = #{classroomId}
+    </select>
+
+    <!-- 获取课程课程数统计 -->
+    <select id="getCourseScheduleCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+        WHERE course_id = #{courseId}
+    </select>
+
+    <!-- 获取学期课程数统计 -->
+    <select id="getTermScheduleCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM schedule
+        WHERE term_id = #{termId}
+    </select>
+
+    <!-- 获取教师课程时间分布统计 -->
+    <select id="getTeacherScheduleTimeDistribution" resultType="java.util.Map">
+        SELECT 
+            week_day,
+            COUNT(*) as schedule_count,
+            GROUP_CONCAT(DISTINCT course_name) as courses
+        FROM schedule
+        WHERE teacher_id = #{teacherId}
+        GROUP BY week_day
+        ORDER BY week_day
+    </select>
+
+    <!-- 获取班级课程时间分布统计 -->
+    <select id="getClassScheduleTimeDistribution" resultType="java.util.Map">
+        SELECT 
+            week_day,
+            COUNT(*) as schedule_count,
+            GROUP_CONCAT(DISTINCT course_name) as courses
+        FROM schedule
+        WHERE class_id = #{classId}
+        GROUP BY week_day
+        ORDER BY week_day
+    </select>
+
+    <!-- 获取教室课程时间分布统计 -->
+    <select id="getClassroomScheduleTimeDistribution" resultType="java.util.Map">
+        SELECT 
+            week_day,
+            COUNT(*) as schedule_count,
+            GROUP_CONCAT(DISTINCT course_name) as courses
+        FROM schedule
+        WHERE classroom_id = #{classroomId}
+        GROUP BY week_day
+        ORDER BY week_day
+    </select>
+
+    <!-- 更新课程表状态 -->
+    <update id="updateStatus">
+        UPDATE schedule
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+</mapper> 

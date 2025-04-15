@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.UserDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.User">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="real_name" property="realName" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="avatar" property="avatar" jdbcType="VARCHAR"/>
+        <result column="role" property="role" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="last_login_time" property="lastLoginTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <collection property="roles" javaType="java.util.List" ofType="com.campus.entity.Role">
+            <id column="role_id" property="id"/>
+            <result column="role_name" property="name"/>
+            <result column="role_code" property="code"/>
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        u.id, u.username, u.password, u.real_name, u.email, u.phone, u.avatar,
+        u.role, u.status, u.last_login_time, u.create_time, u.update_time
+    </sql>
+
+    <!-- 获取所有用户（分页） -->
+    <select id="getAllUsers" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        <where>
+            <if test="status != null">
+                AND u.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="role != null and role != ''">
+                AND u.role = #{role,jdbcType=VARCHAR}
+            </if>
+        </where>
+        ORDER BY u.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取用户总数 -->
+    <select id="getUserCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user u
+        <where>
+            <if test="status != null">
+                AND u.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="role != null and role != ''">
+                AND u.role = #{role,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID获取用户（包含角色信息） -->
+    <select id="getUserById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据用户名获取用户（包含角色信息） -->
+    <select id="getUserByUsername" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.username = #{username,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据角色获取用户（分页） -->
+    <select id="getUsersByRole" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.role = #{role,jdbcType=VARCHAR}
+        ORDER BY u.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 根据状态获取用户（分页） -->
+    <select id="getUsersByStatus" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.status = #{status,jdbcType=INTEGER}
+        ORDER BY u.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 用户登录 -->
+    <select id="login" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.username = #{username,jdbcType=VARCHAR}
+        AND u.password = #{password,jdbcType=VARCHAR}
+        AND u.status = 1
+    </select>
+
+    <!-- 搜索用户（分页） -->
+    <select id="searchUsers" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        r.id as role_id,
+        r.name as role_name,
+        r.code as role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    u.username LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                    OR u.real_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                    OR u.email LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                    OR u.phone LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                )
+            </if>
+            <if test="status != null">
+                AND u.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="role != null and role != ''">
+                AND u.role = #{role,jdbcType=VARCHAR}
+            </if>
+        </where>
+        ORDER BY u.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 添加用户 -->
+    <insert id="addUser" parameterType="com.campus.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (
+            username, password, real_name, email, phone, avatar,
+            role, status, create_time, update_time
+        )
+        VALUES (
+            #{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{realName,jdbcType=VARCHAR},
+            #{email,jdbcType=VARCHAR}, #{phone,jdbcType=VARCHAR}, #{avatar,jdbcType=VARCHAR},
+            #{role,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量添加用户 -->
+    <insert id="batchAddUsers" parameterType="java.util.List">
+        INSERT INTO user (
+            username, password, real_name, email, phone, avatar,
+            role, status, create_time, update_time
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.username,jdbcType=VARCHAR}, #{item.password,jdbcType=VARCHAR}, #{item.realName,jdbcType=VARCHAR},
+                #{item.email,jdbcType=VARCHAR}, #{item.phone,jdbcType=VARCHAR}, #{item.avatar,jdbcType=VARCHAR},
+                #{item.role,jdbcType=VARCHAR}, #{item.status,jdbcType=INTEGER}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 更新用户 -->
+    <update id="updateUser" parameterType="com.campus.entity.User">
+        UPDATE user
+        SET
+            username = #{username,jdbcType=VARCHAR},
+            real_name = #{realName,jdbcType=VARCHAR},
+            email = #{email,jdbcType=VARCHAR},
+            phone = #{phone,jdbcType=VARCHAR},
+            avatar = #{avatar,jdbcType=VARCHAR},
+            role = #{role,jdbcType=VARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 批量更新用户状态 -->
+    <update id="batchUpdateUserStatus">
+        UPDATE user
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId,jdbcType=INTEGER}
+        </foreach>
+    </update>
+
+    <!-- 删除用户 -->
+    <delete id="deleteUser" parameterType="java.lang.Integer">
+        DELETE FROM user
+        WHERE id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 批量删除用户 -->
+    <delete id="batchDeleteUsers">
+        DELETE FROM user
+        WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId,jdbcType=INTEGER}
+        </foreach>
+    </delete>
+
+    <!-- 更新用户状态 -->
+    <update id="updateUserStatus">
+        UPDATE user
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 更新密码 -->
+    <update id="updatePassword">
+        UPDATE user
+        SET
+            password = #{password,jdbcType=VARCHAR},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 更新最后登录时间 -->
+    <update id="updateLastLoginTime" parameterType="java.lang.Integer">
+        UPDATE user
+        SET
+            last_login_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 检查用户名是否存在 -->
+    <select id="checkUsernameExists" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE username = #{username,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 检查邮箱是否存在 -->
+    <select id="checkEmailExists" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE email = #{email,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 检查手机号是否存在 -->
+    <select id="checkPhoneExists" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE phone = #{phone,jdbcType=VARCHAR}
+        <if test="id != null">
+            AND id != #{id,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取用户统计信息 -->
+    <select id="getUserStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_users,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_users,
+            SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) as student_count,
+            SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END) as teacher_count,
+            SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admin_count,
+            COUNT(CASE WHEN last_login_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as active_last_7_days,
+            COUNT(CASE WHEN last_login_time >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as active_last_30_days
+        FROM user
+    </select>
+
+    <!-- 获取用户注册趋势 -->
+    <select id="getUserRegisterTrend" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
+            COUNT(*) as count
+        FROM user
+        WHERE create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+</mapper> 

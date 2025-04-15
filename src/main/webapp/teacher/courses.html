@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程管理 - 教师中心</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .course-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .course-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .course-body {
+            padding: 15px;
+        }
+        .course-footer {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .course-code {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .course-capacity {
+            margin-top: 10px;
+        }
+        .progress {
+            height: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-mask">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">加载中...</span>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <img src="../static/img/logo.png" alt="校园系统">
+            <span>校园系统</span>
+        </div>
+        <div class="user-menu">
+            <div class="user-info">
+                <img src="../static/img/avatar.png" alt="用户头像" class="user-avatar">
+                <span class="user-name">加载中...</span>
+            </div>
+            <div class="dropdown-menu">
+                <a href="profile.html">个人资料</a>
+                <a href="javascript:void(0)" onclick="logout()">退出登录</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">
+                                <i class="fa fa-home"></i> 首页
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="courses.html">
+                                <i class="fa fa-book"></i> 我的课程
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="schedule.html">
+                                <i class="fa fa-calendar"></i> 我的课表
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../forum.html">
+                                <i class="fa fa-comments"></i> 校园论坛
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="profile.html">
+                                <i class="fa fa-user"></i> 个人资料
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-10 ml-sm-auto px-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">我的课程</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button id="createCourseBtn" class="btn btn-primary">
+                            <i class="fa fa-plus"></i> 创建课程
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row" id="courseContainer">
+                    <!-- 课程卡片将通过JS动态生成 -->
+                    <div class="col-12 text-center py-5" id="loadingCourses">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载课程中...</p>
+                    </div>
+                    <div class="col-12 text-center py-5 d-none" id="noCoursesMessage">
+                        <i class="fa fa-book fa-3x text-muted mb-3"></i>
+                        <h4>暂无课程</h4>
+                        <p>点击"创建课程"按钮开始创建您的第一门课程</p>
+                    </div>
+                </div>
+
+                <!-- 分页控件 -->
+                <nav>
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- 分页按钮将通过JS动态生成 -->
+                    </ul>
+                </nav>
+            </main>
+        </div>
+    </div>
+
+    <!-- 课程模态框 -->
+    <div class="modal fade" id="courseModal" tabindex="-1" role="dialog" aria-labelledby="courseModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="courseModalTitle">创建新课程</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="courseForm">
+                        <div class="form-group">
+                            <label for="courseName">课程名称</label>
+                            <input type="text" class="form-control" id="courseName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="courseCode">课程代码</label>
+                            <input type="text" class="form-control" id="courseCode" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="courseCredit">学分</label>
+                                    <input type="number" class="form-control" id="courseCredit" min="0" step="0.5" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="courseCapacity">容量</label>
+                                    <input type="number" class="form-control" id="courseCapacity" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="courseDescription">课程描述</label>
+                            <textarea class="form-control" id="courseDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveCourseBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 课程详情模态框 -->
+    <div class="modal fade" id="courseDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">课程详情</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 id="courseDetailName" class="mb-0">课程名称</h5>
+                            <small id="courseDetailCode" class="text-muted">课程代码</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>学分:</strong> <span id="courseDetailCredit"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>人数:</strong> <span id="courseDetailCapacity"></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <strong>课程描述:</strong>
+                                <p id="courseDetailDescription" class="mt-2"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-info" id="viewStudentsBtn">查看学生</button>
+                    <button type="button" class="btn btn-primary" id="editCourseBtn">编辑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 学生列表模态框 -->
+    <div class="modal fade" id="studentListModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentListTitle">课程学生列表</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>学号</th>
+                                    <th>姓名</th>
+                                    <th>院系</th>
+                                    <th>成绩</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentList">
+                                <!-- 学生列表将通过JS动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 录入成绩模态框 -->
+    <div class="modal fade" id="enterScoreModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">录入学生成绩</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>学生:</strong> <span id="scoreStudentName"></span> (<span id="scoreStudentId"></span>)</p>
+                    <div class="form-group">
+                        <label for="scoreInput">成绩(0-100)</label>
+                        <input type="number" class="form-control" id="scoreInput" min="0" max="100" step="0.5" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveScoreBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考勤模态框 -->
+    <div class="modal fade" id="attendanceModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">课程考勤</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="attendanceCourseId">
+                    <div class="form-group">
+                        <label for="attendanceDate">考勤日期</label>
+                        <input type="date" class="form-control" id="attendanceDate" required>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>学号</th>
+                                    <th>姓名</th>
+                                    <th>考勤状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceList">
+                                <!-- 考勤列表将通过JS动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveAttendanceBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/api.js"></script>
+    <script src="../static/js/teacherUI.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 初始化用户信息
+            var userInfo = JSON.parse(localStorage.getItem('userInfo')) || {};
+            $('.user-name').text(userInfo.name || '教师');
+            
+            // 用户菜单交互
+            $('.user-info').click(function(e) {
+                e.stopPropagation();
+                $('.dropdown-menu').toggleClass('show');
+            });
+            
+            $(document).click(function() {
+                $('.dropdown-menu').removeClass('show');
+            });
+
+            // 初始化课程列表
+            loadCourses(1);
+
+            // 绑定创建课程按钮事件
+            $('#createCourseBtn').on('click', function() {
+                TeacherUI.showCreateCourseModal();
+            });
+        });
+
+        // 加载课程列表
+        function loadCourses(page) {
+            const pageSize = 6; // 每页显示6个课程
+            
+            $('#loadingCourses').removeClass('d-none');
+            $('#noCoursesMessage').addClass('d-none');
+            $('#courseContainer').find('.course-card-col').remove();
+            
+            API.teacher.getCourses(page, pageSize, function(success, data) {
+                $('#loadingCourses').addClass('d-none');
+                
+                if (success) {
+                    var courses = data.list || [];
+                    var total = data.total || 0;
+                    
+                    if (courses.length === 0) {
+                        $('#noCoursesMessage').removeClass('d-none');
+                        return;
+                    }
+                    
+                    // 渲染课程卡片
+                    renderCourseCards(courses);
+                    
+                    // 更新分页
+                    TeacherUI.updatePagination(page, Math.ceil(total / pageSize), function(newPage) {
+                        loadCourses(newPage);
+                    });
+                } else {
+                    UI.showMessage(data, 'error');
+                }
+            });
+        }
+
+        // 渲染课程卡片
+        function renderCourseCards(courses) {
+            courses.forEach(function(course) {
+                var occupancyRate = course.studentCount / course.capacity * 100;
+                var statusClass = occupancyRate >= 90 ? 'danger' : 
+                                 occupancyRate >= 70 ? 'warning' : 'success';
+                
+                var cardCol = $('<div class="col-md-4 course-card-col"></div>');
+                var card = $('<div class="card course-card"></div>');
+                
+                var cardHeader = $('<div class="course-header"></div>');
+                cardHeader.append('<h5>' + course.name + '</h5>');
+                cardHeader.append('<div class="course-code">' + course.code + '</div>');
+                
+                var cardBody = $('<div class="course-body"></div>');
+                cardBody.append('<div><strong>学分:</strong> ' + course.credit + '</div>');
+                cardBody.append('<div class="course-capacity mt-2"><strong>班级人数:</strong> ' + 
+                               course.studentCount + '/' + course.capacity + '</div>');
+                cardBody.append('<div class="progress mt-1">' +
+                               '<div class="progress-bar bg-' + statusClass + '" role="progressbar" ' +
+                               'style="width: ' + occupancyRate + '%"></div></div>');
+                
+                var cardFooter = $('<div class="course-footer"></div>');
+                
+                var viewBtn = $('<button class="btn btn-sm btn-info">详情</button>');
+                viewBtn.on('click', function() {
+                    TeacherUI.viewCourseDetail(course.id);
+                });
+                
+                var scoreBtn = $('<button class="btn btn-sm btn-primary">成绩</button>');
+                scoreBtn.on('click', function() {
+                    TeacherUI.manageStudentScores(course.id);
+                });
+                
+                var attendanceBtn = $('<button class="btn btn-sm btn-warning">考勤</button>');
+                attendanceBtn.on('click', function() {
+                    TeacherUI.manageAttendance(course.id);
+                });
+                
+                cardFooter.append(viewBtn).append(scoreBtn).append(attendanceBtn);
+                
+                card.append(cardHeader).append(cardBody).append(cardFooter);
+                cardCol.append(card);
+                
+                $('#courseContainer').append(cardCol);
+            });
+        }
+
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('userInfo');
+                window.location.href = '../index.html';
+            }
+        }
+    </script>
+</body>
+</html> 

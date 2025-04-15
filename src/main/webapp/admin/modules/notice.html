@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知管理 - 智慧校园服务系统</title>
+    <link rel="stylesheet" href="../../../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../../static/css/admin.css">
+    <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div id="loading-mask">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏将通过JavaScript加载 -->
+            <div id="sidebar-container"></div>
+
+            <!-- 主内容区 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">通知管理</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button type="button" class="btn btn-sm btn-primary" id="btn-add-notice">
+                            <i class="bi bi-plus-circle"></i> 发布通知
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 搜索栏 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search-input" placeholder="搜索通知标题、内容...">
+                            <button class="btn btn-outline-secondary" type="button" id="btn-search">
+                                <i class="bi bi-search"></i> 搜索
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group float-end" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" id="btn-filter-all">全部</button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-filter-published">已发布</button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-filter-draft">草稿</button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-filter-expired">已过期</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通知列表 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">通知列表</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">标题</th>
+                                        <th scope="col">类型</th>
+                                        <th scope="col">发布者</th>
+                                        <th scope="col">发布时间</th>
+                                        <th scope="col">过期时间</th>
+                                        <th scope="col">状态</th>
+                                        <th scope="col">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notice-list">
+                                    <!-- 通知数据将通过JavaScript动态加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- 分页按钮将通过JavaScript动态加载 -->
+                    </ul>
+                </nav>
+            </main>
+        </div>
+    </div>
+
+    <!-- 添加/编辑通知模态框 -->
+    <div class="modal fade" id="noticeModal" tabindex="-1" aria-labelledby="noticeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="noticeModalLabel">发布通知</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="notice-form">
+                        <input type="hidden" id="notice-id">
+                        <div class="mb-3">
+                            <label for="notice-title" class="form-label">标题</label>
+                            <input type="text" class="form-control" id="notice-title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notice-type" class="form-label">类型</label>
+                            <select class="form-select" id="notice-type" required>
+                                <option value="1">普通通知</option>
+                                <option value="2">重要通知</option>
+                                <option value="3">紧急通知</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notice-content" class="form-label">内容</label>
+                            <textarea class="form-control" id="notice-content" rows="10" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="notice-publish-time" class="form-label">发布时间</label>
+                                    <input type="datetime-local" class="form-control" id="notice-publish-time" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="notice-expire-time" class="form-label">过期时间</label>
+                                    <input type="datetime-local" class="form-control" id="notice-expire-time">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notice-status" class="form-label">状态</label>
+                            <select class="form-select" id="notice-status" required>
+                                <option value="1">已发布</option>
+                                <option value="0">草稿</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notice-target" class="form-label">接收对象</label>
+                            <select class="form-select" id="notice-target" multiple>
+                                <option value="all">全部用户</option>
+                                <option value="student">学生</option>
+                                <option value="teacher">教师</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                            <div class="form-text">按住Ctrl键可以选择多个选项</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-notice">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看通知模态框 -->
+    <div class="modal fade" id="viewNoticeModal" tabindex="-1" aria-labelledby="viewNoticeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewNoticeModalLabel">通知详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h4 id="view-notice-title"></h4>
+                        <div class="text-muted">
+                            <small>
+                                发布者：<span id="view-notice-publisher"></span> | 
+                                发布时间：<span id="view-notice-publish-time"></span> | 
+                                过期时间：<span id="view-notice-expire-time"></span> | 
+                                状态：<span id="view-notice-status"></span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h5>通知内容：</h5>
+                        <div id="view-notice-content" class="border p-3 bg-light"></div>
+                    </div>
+                    <div class="mb-3">
+                        <h5>接收对象：</h5>
+                        <div id="view-notice-target" class="border p-3 bg-light"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认删除模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除此通知吗？此操作不可恢复。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirm-delete">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <script src="../../../static/js/jquery.min.js"></script>
+    <script src="../../../static/js/bootstrap.bundle.min.js"></script>
+    <script src="../../../static/js/api.js"></script>
+    <script src="../../../static/js/ui.js"></script>
+    <script>
+        // 当前页码和每页显示数量
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalPages = 1;
+        let currentFilter = 'all';
+        let currentKeyword = '';
+        let itemToDelete = null; // 当前待删除的项目ID
+
+        // 页面加载完成后执行
+        $(document).ready(function() {
+            // 加载侧边栏
+            $('#sidebar-container').load('../../sidebar.html', function() {
+                // 设置当前页面的导航项为激活状态
+                $('.nav-link[href*="modules/notice/index.html"]').addClass('active');
+            });
+            
+            // 检查登录状态
+            checkLogin();
+            
+            // 加载通知列表
+            loadNoticeList();
+            
+            // 绑定事件处理器
+            bindEventHandlers();
+            
+            // 设置默认发布时间为当前时间
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            $('#notice-publish-time').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+        });
+        
+        // 检查用户是否已登录
+        function checkLogin() {
+            API.checkToken(function(success) {
+                if (!success) {
+                    // 未登录，跳转到登录页
+                    window.location.href = '../../../index.html';
+                } else {
+                    // 检查权限
+                    API.checkPermission('notice_manage', function(hasPermission) {
+                        if (!hasPermission) {
+                            alert('您没有通知管理权限');
+                            window.location.href = '../../index.html';
+                        } else {
+                            // 已登录且有权限，显示内容
+                            $('#loading-mask').hide();
+                        }
+                    });
+                }
+            });
+        }
+        
+        // 绑定各种事件处理器
+        function bindEventHandlers() {
+            // 添加通知按钮
+            $('#btn-add-notice').on('click', function() {
+                openNoticeModal();
+            });
+            
+            // 保存通知按钮
+            $('#btn-save-notice').on('click', function() {
+                saveNotice();
+            });
+            
+            // 搜索按钮
+            $('#btn-search').on('click', function() {
+                currentKeyword = $('#search-input').val().trim();
+                currentPage = 1;
+                loadNoticeList();
+            });
+            
+            // 回车键搜索
+            $('#search-input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#btn-search').click();
+                }
+            });
+            
+            // 筛选按钮
+            $('#btn-filter-all').on('click', function() {
+                currentFilter = 'all';
+                updateFilterButtons();
+                currentPage = 1;
+                loadNoticeList();
+            });
+            
+            $('#btn-filter-published').on('click', function() {
+                currentFilter = 'published';
+                updateFilterButtons();
+                currentPage = 1;
+                loadNoticeList();
+            });
+            
+            $('#btn-filter-draft').on('click', function() {
+                currentFilter = 'draft';
+                updateFilterButtons();
+                currentPage = 1;
+                loadNoticeList();
+            });
+            
+            $('#btn-filter-expired').on('click', function() {
+                currentFilter = 'expired';
+                updateFilterButtons();
+                currentPage = 1;
+                loadNoticeList();
+            });
+            
+            // 确认删除按钮
+            $('#btn-confirm-delete').on('click', function() {
+                if (itemToDelete) {
+                    deleteNotice(itemToDelete);
+                }
+            });
+        }
+        
+        // 更新筛选按钮状态
+        function updateFilterButtons() {
+            $('.btn-group .btn').removeClass('active');
+            switch (currentFilter) {
+                case 'published':
+                    $('#btn-filter-published').addClass('active');
+                    break;
+                case 'draft':
+                    $('#btn-filter-draft').addClass('active');
+                    break;
+                case 'expired':
+                    $('#btn-filter-expired').addClass('active');
+                    break;
+                default:
+                    $('#btn-filter-all').addClass('active');
+                    break;
+            }
+        }
+        
+        // 加载通知列表
+        function loadNoticeList() {
+            $('#loading-mask').show();
+            
+            // 根据筛选条件设置参数
+            let params = {
+                page: currentPage,
+                pageSize: pageSize,
+                keyword: currentKeyword
+            };
+            
+            if (currentFilter === 'published') {
+                params.status = 1;
+            } else if (currentFilter === 'draft') {
+                params.status = 0;
+            } else if (currentFilter === 'expired') {
+                params.expired = true;
+            }
+            
+            API.getNotices(params, function(result) {
+                $('#loading-mask').hide();
+                
+                if (result.success) {
+                    renderNoticeList(result.data.notices);
+                    
+                    // 更新分页
+                    totalPages = Math.ceil(result.data.total / pageSize);
+                    renderPagination();
+                } else {
+                    UI.showError('加载通知列表失败：' + result.message);
+                }
+            });
+        }
+        
+        // 渲染通知列表
+        function renderNoticeList(notices) {
+            const $noticeList = $('#notice-list');
+            $noticeList.empty();
+            
+            if (notices.length === 0) {
+                $noticeList.append('<tr><td colspan="8" class="text-center">没有找到匹配的通知</td></tr>');
+                return;
+            }
+            
+            notices.forEach(function(notice, index) {
+                const typeText = getNoticeTypeText(notice.type);
+                const statusText = getNoticeStatusText(notice.status);
+                
+                const row = `
+                    <tr>
+                        <td>${(currentPage - 1) * pageSize + index + 1}</td>
+                        <td>${notice.title}</td>
+                        <td>${typeText}</td>
+                        <td>${notice.publisherName}</td>
+                        <td>${formatDateTime(notice.publishTime)}</td>
+                        <td>${notice.expireTime ? formatDateTime(notice.expireTime) : '-'}</td>
+                        <td>${statusText}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info btn-view-notice" data-id="${notice.id}">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary btn-edit-notice" data-id="${notice.id}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-notice" data-id="${notice.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                
+                $noticeList.append(row);
+            });
+            
+            // 查看通知按钮点击事件
+            $('.btn-view-notice').on('click', function() {
+                const noticeId = $(this).data('id');
+                openViewNoticeModal(noticeId);
+            });
+            
+            // 编辑通知按钮点击事件
+            $('.btn-edit-notice').on('click', function() {
+                const noticeId = $(this).data('id');
+                openNoticeModal(noticeId);
+            });
+            
+            // 删除通知按钮点击事件
+            $('.btn-delete-notice').on('click', function() {
+                const noticeId = $(this).data('id');
+                itemToDelete = noticeId;
+                $('#deleteModal').modal('show');
+            });
+        }
+        
+        // 渲染分页
+        function renderPagination() {
+            const $pagination = $('#pagination');
+            $pagination.empty();
+            
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // 上一页
+            $pagination.append(`
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            `);
+            
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    $pagination.append(`
+                        <li class="page-item active"><a class="page-link" href="#" data-page="${i}">${i}</a></li>
+                    `);
+                } else {
+                    // 只显示当前页附近的页码
+                    if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                        $pagination.append(`
+                            <li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>
+                        `);
+                    } else if (i === currentPage - 3 || i === currentPage + 3) {
+                        $pagination.append(`
+                            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                        `);
+                    }
+                }
+            }
+            
+            // 下一页
+            $pagination.append(`
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            `);
+            
+            // 页码点击事件
+            $('.page-link').on('click', function(e) {
+                e.preventDefault();
+                const page = $(this).data('page');
+                if (page && page !== currentPage && page > 0 && page <= totalPages) {
+                    currentPage = page;
+                    loadNoticeList();
+                }
+            });
+        }
+        
+        // 打开通知模态框
+        function openNoticeModal(noticeId) {
+            // 重置表单
+            $('#notice-form')[0].reset();
+            $('#notice-id').val('');
+            
+            if (noticeId) {
+                // 编辑通知
+                $('#noticeModalLabel').text('编辑通知');
+                
+                // 加载通知信息
+                $('#loading-mask').show();
+                API.getNoticeById(noticeId, function(result) {
+                    $('#loading-mask').hide();
+                    
+                    if (result.success) {
+                        const notice = result.data;
+                        $('#notice-id').val(notice.id);
+                        $('#notice-title').val(notice.title);
+                        $('#notice-type').val(notice.type);
+                        $('#notice-content').val(notice.content);
+                        $('#notice-publish-time').val(formatDateTimeForInput(notice.publishTime));
+                        $('#notice-expire-time').val(notice.expireTime ? formatDateTimeForInput(notice.expireTime) : '');
+                        $('#notice-status').val(notice.status);
+                        
+                        // 设置接收对象
+                        const $targetSelect = $('#notice-target');
+                        $targetSelect.val([]);
+                        if (notice.targets && notice.targets.length > 0) {
+                            $targetSelect.val(notice.targets);
+                        }
+                        
+                        $('#noticeModal').modal('show');
+                    } else {
+                        UI.showError('加载通知信息失败：' + result.message);
+                    }
+                });
+            } else {
+                // 添加通知
+                $('#noticeModalLabel').text('发布通知');
+                
+                // 设置默认发布时间为当前时间
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                $('#notice-publish-time').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+                
+                $('#noticeModal').modal('show');
+            }
+        }
+        
+        // 打开查看通知模态框
+        function openViewNoticeModal(noticeId) {
+            // 加载通知信息
+            $('#loading-mask').show();
+            API.getNoticeById(noticeId, function(result) {
+                $('#loading-mask').hide();
+                
+                if (result.success) {
+                    const notice = result.data;
+                    $('#view-notice-title').text(notice.title);
+                    $('#view-notice-publisher').text(notice.publisherName);
+                    $('#view-notice-publish-time').text(formatDateTime(notice.publishTime));
+                    $('#view-notice-expire-time').text(notice.expireTime ? formatDateTime(notice.expireTime) : '-');
+                    $('#view-notice-status').html(getNoticeStatusText(notice.status));
+                    $('#view-notice-content').text(notice.content);
+                    
+                    // 设置接收对象
+                    let targetText = '全部用户';
+                    if (notice.targets && notice.targets.length > 0) {
+                        const targetNames = [];
+                        notice.targets.forEach(function(target) {
+                            switch (target) {
+                                case 'student': targetNames.push('学生'); break;
+                                case 'teacher': targetNames.push('教师'); break;
+                                case 'admin': targetNames.push('管理员'); break;
+                            }
+                        });
+                        if (targetNames.length > 0) {
+                            targetText = targetNames.join('、');
+                        }
+                    }
+                    $('#view-notice-target').text(targetText);
+                    
+                    $('#viewNoticeModal').modal('show');
+                } else {
+                    UI.showError('加载通知信息失败：' + result.message);
+                }
+            });
+        }
+        
+        // 保存通知
+        function saveNotice() {
+            const noticeId = $('#notice-id').val();
+            const title = $('#notice-title').val();
+            const type = $('#notice-type').val();
+            const content = $('#notice-content').val();
+            const publishTime = $('#notice-publish-time').val();
+            const expireTime = $('#notice-expire-time').val();
+            const status = $('#notice-status').val();
+            const targets = $('#notice-target').val();
+            
+            // 表单验证
+            if (!title || !type || !content || !publishTime) {
+                UI.showError('请填写必填字段');
+                return;
+            }
+            
+            const noticeData = {
+                title: title,
+                type: parseInt(type),
+                content: content,
+                publishTime: publishTime,
+                expireTime: expireTime || null,
+                status: parseInt(status),
+                targets: targets || ['all']
+            };
+            
+            $('#loading-mask').show();
+            
+            if (noticeId) {
+                // 编辑通知
+                noticeData.id = parseInt(noticeId);
+                API.updateNotice(noticeData, function(result) {
+                    $('#loading-mask').hide();
+                    
+                    if (result.success) {
+                        $('#noticeModal').modal('hide');
+                        UI.showSuccess('通知更新成功');
+                        loadNoticeList();
+                    } else {
+                        UI.showError('通知更新失败：' + result.message);
+                    }
+                });
+            } else {
+                // 添加通知
+                API.addNotice(noticeData, function(result) {
+                    $('#loading-mask').hide();
+                    
+                    if (result.success) {
+                        $('#noticeModal').modal('hide');
+                        UI.showSuccess('通知发布成功');
+                        loadNoticeList();
+                    } else {
+                        UI.showError('通知发布失败：' + result.message);
+                    }
+                });
+            }
+        }
+        
+        // 删除通知
+        function deleteNotice(noticeId) {
+            $('#loading-mask').show();
+            
+            API.deleteNotice(noticeId, function(result) {
+                $('#loading-mask').hide();
+                $('#deleteModal').modal('hide');
+                
+                if (result.success) {
+                    UI.showSuccess('通知删除成功');
+                    loadNoticeList();
+                } else {
+                    UI.showError('通知删除失败：' + result.message);
+                }
+            });
+            
+            itemToDelete = null;
+        }
+        
+        // 获取通知类型文本
+        function getNoticeTypeText(type) {
+            switch (parseInt(type)) {
+                case 1: return '<span class="badge bg-info">普通通知</span>';
+                case 2: return '<span class="badge bg-warning">重要通知</span>';
+                case 3: return '<span class="badge bg-danger">紧急通知</span>';
+                default: return '<span class="badge bg-secondary">未知</span>';
+            }
+        }
+        
+        // 获取通知状态文本
+        function getNoticeStatusText(status) {
+            switch (parseInt(status)) {
+                case 1: return '<span class="badge bg-success">已发布</span>';
+                case 0: return '<span class="badge bg-secondary">草稿</span>';
+                default: return '<span class="badge bg-secondary">未知</span>';
+            }
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 格式化日期时间为input标签格式
+        function formatDateTimeForInput(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            const date = new Date(dateTimeStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.CommentDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Comment">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="post_id" property="postId" jdbcType="INTEGER"/>
+        <result column="author_id" property="authorId" jdbcType="INTEGER"/>
+        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联属性 -->
+        <association property="author" javaType="com.campus.entity.User">
+            <id column="u_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+            <result column="avatar" property="avatar"/>
+        </association>
+        <association property="post" javaType="com.campus.entity.Post">
+            <id column="p_id" property="id"/>
+            <result column="title" property="title"/>
+        </association>
+        <!-- 回复集合 -->
+        <collection property="replies" javaType="java.util.List" ofType="com.campus.entity.Comment">
+            <id column="r_id" property="id"/>
+            <result column="r_content" property="content"/>
+            <result column="r_like_count" property="likeCount"/>
+            <result column="r_status" property="status"/>
+            <result column="r_create_time" property="createTime"/>
+            <association property="author" javaType="com.campus.entity.User">
+                <id column="r_u_id" property="id"/>
+                <result column="r_username" property="username"/>
+                <result column="r_real_name" property="realName"/>
+                <result column="r_avatar" property="avatar"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        c.id, c.post_id, c.author_id, c.content, c.parent_id,
+        c.like_count, c.status, c.create_time, c.update_time
+    </sql>
+
+    <!-- 获取所有评论（分页） -->
+    <select id="getAllComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        <where>
+            <if test="status != null">
+                AND c.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="postId != null">
+                AND c.post_id = #{postId,jdbcType=INTEGER}
+            </if>
+            <if test="authorId != null">
+                AND c.author_id = #{authorId,jdbcType=INTEGER}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取评论总数 -->
+    <select id="getCommentCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM comment c
+        <where>
+            <if test="status != null">
+                AND c.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="postId != null">
+                AND c.post_id = #{postId,jdbcType=INTEGER}
+            </if>
+            <if test="authorId != null">
+                AND c.author_id = #{authorId,jdbcType=INTEGER}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID获取评论（包含回复） -->
+    <select id="getCommentById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title,
+        r.id as r_id, r.content as r_content, r.like_count as r_like_count,
+        r.status as r_status, r.create_time as r_create_time,
+        ru.id as r_u_id, ru.username as r_username,
+        ru.real_name as r_real_name, ru.avatar as r_avatar
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        LEFT JOIN comment r ON c.id = r.parent_id
+        LEFT JOIN user ru ON r.author_id = ru.id
+        WHERE c.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据帖子ID获取评论（分页，包含回复） -->
+    <select id="getCommentsByPostId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title,
+        r.id as r_id, r.content as r_content, r.like_count as r_like_count,
+        r.status as r_status, r.create_time as r_create_time,
+        ru.id as r_u_id, ru.username as r_username,
+        ru.real_name as r_real_name, ru.avatar as r_avatar
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        LEFT JOIN comment r ON c.id = r.parent_id
+        LEFT JOIN user ru ON r.author_id = ru.id
+        WHERE c.post_id = #{postId,jdbcType=INTEGER}
+        AND c.parent_id IS NULL
+        <if test="status != null">
+            AND c.status = #{status,jdbcType=INTEGER}
+        </if>
+        ORDER BY c.create_time ASC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 根据作者ID获取评论（分页） -->
+    <select id="getCommentsByAuthorId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        WHERE c.author_id = #{authorId,jdbcType=INTEGER}
+        <if test="status != null">
+            AND c.status = #{status,jdbcType=INTEGER}
+        </if>
+        ORDER BY c.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取评论的回复（分页） -->
+    <select id="getRepliesByCommentId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        WHERE c.parent_id = #{commentId,jdbcType=INTEGER}
+        <if test="status != null">
+            AND c.status = #{status,jdbcType=INTEGER}
+        </if>
+        ORDER BY c.create_time ASC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取评论树结构 -->
+    <select id="getCommentTree" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        WITH RECURSIVE comment_tree AS (
+            -- 获取根评论
+            SELECT
+                c.id, c.post_id, c.author_id, c.content, c.parent_id,
+                c.like_count, c.status, c.create_time, c.update_time,
+                u.id as u_id, u.username, u.real_name, u.avatar,
+                p.id as p_id, p.title,
+                0 as level
+            FROM comment c
+            LEFT JOIN user u ON c.author_id = u.id
+            LEFT JOIN post p ON c.post_id = p.id
+            WHERE c.post_id = #{postId,jdbcType=INTEGER}
+            AND c.parent_id IS NULL
+            AND c.status = 1
+
+            UNION ALL
+
+            -- 获取子评论
+            SELECT
+                c.id, c.post_id, c.author_id, c.content, c.parent_id,
+                c.like_count, c.status, c.create_time, c.update_time,
+                u.id as u_id, u.username, u.real_name, u.avatar,
+                p.id as p_id, p.title,
+                ct.level + 1 as level
+            FROM comment c
+            LEFT JOIN user u ON c.author_id = u.id
+            LEFT JOIN post p ON c.post_id = p.id
+            INNER JOIN comment_tree ct ON c.parent_id = ct.id
+            WHERE c.status = 1
+        )
+        SELECT *
+        FROM comment_tree
+        ORDER BY level ASC, create_time ASC
+    </select>
+
+    <!-- 搜索评论（分页） -->
+    <select id="searchComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="postId != null">
+                AND c.post_id = #{postId,jdbcType=INTEGER}
+            </if>
+            <if test="authorId != null">
+                AND c.author_id = #{authorId,jdbcType=INTEGER}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 添加评论 -->
+    <insert id="addComment" parameterType="com.campus.entity.Comment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comment (
+            post_id, author_id, content, parent_id, like_count,
+            status, create_time, update_time
+        )
+        VALUES (
+            #{postId,jdbcType=INTEGER}, #{authorId,jdbcType=INTEGER}, #{content,jdbcType=LONGVARCHAR},
+            #{parentId,jdbcType=INTEGER}, 0, #{status,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量添加评论 -->
+    <insert id="batchAddComments" parameterType="java.util.List">
+        INSERT INTO comment (
+            post_id, author_id, content, parent_id, like_count,
+            status, create_time, update_time
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.postId,jdbcType=INTEGER}, #{item.authorId,jdbcType=INTEGER}, #{item.content,jdbcType=LONGVARCHAR},
+                #{item.parentId,jdbcType=INTEGER}, 0, #{item.status,jdbcType=INTEGER}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 更新评论 -->
+    <update id="updateComment" parameterType="com.campus.entity.Comment">
+        UPDATE comment
+        SET
+            content = #{content,jdbcType=LONGVARCHAR},
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 批量更新评论状态 -->
+    <update id="batchUpdateCommentStatus">
+        UPDATE comment
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
+            #{commentId,jdbcType=INTEGER}
+        </foreach>
+    </update>
+
+    <!-- 删除评论 -->
+    <delete id="deleteComment" parameterType="java.lang.Integer">
+        DELETE FROM comment
+        WHERE id = #{id,jdbcType=INTEGER}
+        OR parent_id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 批量删除评论 -->
+    <delete id="batchDeleteComments">
+        DELETE FROM comment
+        WHERE id IN
+        <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
+            #{commentId,jdbcType=INTEGER}
+        </foreach>
+        OR parent_id IN
+        <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
+            #{commentId,jdbcType=INTEGER}
+        </foreach>
+    </delete>
+
+    <!-- 更新评论状态 -->
+    <update id="updateCommentStatus">
+        UPDATE comment
+        SET
+            status = #{status,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="incrementLikeCount" parameterType="java.lang.Integer">
+        UPDATE comment
+        SET
+            like_count = like_count + 1,
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <!-- 减少点赞数 -->
+    <update id="decrementLikeCount" parameterType="java.lang.Integer">
+        UPDATE comment
+        SET
+            like_count = like_count - 1,
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=INTEGER}
+        AND like_count > 0
+    </update>
+
+    <!-- 获取评论统计信息 -->
+    <select id="getCommentStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_comments,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_comments,
+            SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) as root_comments,
+            SUM(CASE WHEN parent_id IS NOT NULL THEN 1 ELSE 0 END) as reply_comments,
+            SUM(like_count) as total_likes,
+            COUNT(DISTINCT author_id) as total_authors,
+            COUNT(DISTINCT post_id) as total_posts,
+            AVG(like_count) as avg_likes,
+            MAX(like_count) as max_likes
+        FROM comment
+    </select>
+
+    <!-- 获取帖子的评论统计信息 -->
+    <select id="getPostCommentStats" parameterType="java.lang.Integer" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_comments,
+            SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) as root_comments,
+            SUM(CASE WHEN parent_id IS NOT NULL THEN 1 ELSE 0 END) as reply_comments,
+            SUM(like_count) as total_likes,
+            COUNT(DISTINCT author_id) as total_authors,
+            AVG(like_count) as avg_likes,
+            MAX(like_count) as max_likes
+        FROM comment
+        WHERE post_id = #{postId,jdbcType=INTEGER}
+    </select>
+
+    <!-- 获取作者评论统计信息 -->
+    <select id="getAuthorCommentStats" parameterType="java.lang.Integer" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_comments,
+            SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) as root_comments,
+            SUM(CASE WHEN parent_id IS NOT NULL THEN 1 ELSE 0 END) as reply_comments,
+            SUM(like_count) as total_likes,
+            COUNT(DISTINCT post_id) as total_posts,
+            AVG(like_count) as avg_likes,
+            MAX(like_count) as max_likes
+        FROM comment
+        WHERE author_id = #{authorId,jdbcType=INTEGER}
+    </select>
+
+    <!-- 获取评论发布趋势 -->
+    <select id="getCommentPublishTrend" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
+            COUNT(*) as comment_count,
+            SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) as root_count,
+            SUM(CASE WHEN parent_id IS NOT NULL THEN 1 ELSE 0 END) as reply_count,
+            SUM(like_count) as like_count
+        FROM comment
+        WHERE create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <!-- 获取热门评论 -->
+    <select id="getHotComments" resultType="java.util.Map">
+        SELECT
+            c.id as comment_id,
+            c.content,
+            c.like_count,
+            c.create_time,
+            u.id as author_id,
+            u.username,
+            u.real_name,
+            u.avatar,
+            p.id as post_id,
+            p.title as post_title
+        FROM comment c
+        LEFT JOIN user u ON c.author_id = u.id
+        LEFT JOIN post p ON c.post_id = p.id
+        WHERE c.status = 1
+        <if test="postId != null">
+            AND c.post_id = #{postId,jdbcType=INTEGER}
+        </if>
+        ORDER BY c.like_count DESC
+        LIMIT #{limit,jdbcType=INTEGER}
+    </select>
+</mapper> 

@@ -196,6 +196,26 @@
             <artifactId>commons-io</artifactId>
             <version>2.14.0</version>
         </dependency>
+
+        <!-- 以下三个验证Jakarta Bean Validation API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version> <!-- 确保 API 版本兼容 -->
+        </dependency>
+        <!-- Hibernate Validator Implementation -->
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>8.0.1.Final</version> <!-- 使用与 Jakarta EE 9+ 兼容的版本 -->
+        </dependency>
+        <!-- Expression Language (EL) Implementation - Required by Hibernate Validator -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
+            <version>4.0.2</version> <!-- 确保 EL 版本兼容 -->
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -207,7 +227,6 @@
                 <version>3.11.0</version>
                 <configuration>
                     <release>21</release>
-                    <encoding>${project.build.sourceEncoding}</encoding>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -226,6 +245,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.1</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.cargo</groupId>
@@ -235,11 +257,19 @@
                     <container>
                         <containerId>tomcat11x</containerId>
                         <type>embedded</type>
+                        <dependencies>
+                            <dependency>
+                                <groupId>ch.qos.logback</groupId>
+                                <artifactId>logback-classic</artifactId>
+                                <classpath>shared</classpath>
+                            </dependency>
+                        </dependencies>
                     </container>
                     <configuration>
                         <properties>
                             <cargo.servlet.port>8080</cargo.servlet.port>
                             <cargo.logging>high</cargo.logging>
+                            <cargo.tomcat.uriencoding>UTF-8</cargo.tomcat.uriencoding>
                         </properties>
                     </configuration>
                     <deployables>

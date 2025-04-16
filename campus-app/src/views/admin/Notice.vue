@@ -1,295 +1,329 @@
 <template>
-  <div class="notice-container">
+  <div class="notice-management-container">
     <div class="page-header">
-      <h2>公告管理</h2>
-      <el-button type="primary" @click="handleAdd">添加公告</el-button>
+      <h2>通知管理</h2>
+      <el-button type="primary" @click="handleAddNotice">
+        <el-icon>
+          <Plus/>
+        </el-icon>
+        发布通知
+      </el-button>
     </div>
 
-    <el-card class="notice-card">
-      <el-table :data="notices" border style="width: 100%">
-        <el-table-column label="公告标题" prop="title"/>
-        <el-table-column label="公告类型" prop="type">
+    <!-- 搜索和筛选 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="searchParams" @submit.prevent="handleSearch">
+        <el-form-item label="关键词">
+          <el-input v-model="searchParams.keyword" clearable placeholder="通知标题" style="width: 250px;"/>
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="searchParams.type" :loading="loadingNoticeTypes" clearable placeholder="选择类型"
+                     style="width: 150px;">
+            <el-option v-for="type in noticeTypes" :key="type.typeCode" :label="type.typeName" :value="type.typeCode"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchParams.status" clearable placeholder="选择状态" style="width: 120px;">
+            <el-option :value="1" label="已发布"/>
+            <el-option :value="0" label="草稿"/>
+            <el-option :value="2" label="已撤回"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 通知列表 -->
+    <el-card class="notice-list-card">
+      <el-table v-loading="loading" :data="noticeList" style="width: 100%">
+        <el-table-column label="标题" min-width="300" prop="title" show-overflow-tooltip/>
+        <el-table-column label="类型" prop="type" width="120">
           <template #default="scope">
-            <el-tag :type="getTypeTag(scope.row.type)">
-              {{ getTypeName(scope.row.type) }}
+            <el-tag :type="noticeTypeMapComputed[scope.row.type]?.tag || 'info'">
+              {{ noticeTypeMapComputed[scope.row.type]?.name || '其他' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="发布人" prop="publisher"/>
-        <el-table-column label="发布时间" prop="publishTime"/>
-        <el-table-column label="状态" prop="status">
+        <el-table-column label="发布人" prop="publisher" width="120"/>
+        <el-table-column label="发布时间" prop="publishTime" width="180">
+          <template #default="scope">{{ formatTime(scope.row.publishTime) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? '已发布' : '草稿' }}
-            </el-tag>
+            <el-tag :type="getStatusTagType(scope.row.status)">{{ formatStatus(scope.row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250">
+        <el-table-column label="创建时间" prop="createTime" width="180">
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button
-                :type="scope.row.status === 1 ? 'warning' : 'success'"
-                size="small"
-                @click="handleToggleStatus(scope.row)"
-            >
+            {{ formatTime(scope.row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="200">
+          <template #default="scope">
+            <el-button v-if="scope.row.status === 0 || scope.row.status === 1" size="small" type="warning"
+                       @click="togglePublishStatus(scope.row)">
               {{ scope.row.status === 1 ? '撤回' : '发布' }}
             </el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button size="small" type="primary" @click="handleEditNotice(scope.row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="handleDeleteNotice(scope.row)">删除</el-button>
+            <!-- 可以添加置顶等操作 -->
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-container">
+      <!-- 分页 -->
+      <div v-if="total > 0" class="pagination-container">
         <el-pagination
-            :current-page="currentPage"
-            :page-size="pageSize"
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
             :total="total"
-            background
-            layout="prev, pager, next"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
 
-    <!-- 添加/编辑公告对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        :title="dialogTitle"
-        width="700px"
-    >
-      <el-form ref="noticeFormRef" :model="noticeForm" :rules="rules" label-width="100px">
-        <el-form-item label="公告标题" prop="title">
-          <el-input v-model="noticeForm.title"/>
-        </el-form-item>
-        <el-form-item label="公告类型" prop="type">
-          <el-select v-model="noticeForm.type" style="width: 100%">
-            <el-option label="通知公告" value="notice"/>
-            <el-option label="教务通知" value="academic"/>
-            <el-option label="活动通知" value="activity"/>
-            <el-option label="紧急通知" value="urgent"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="公告内容" prop="content">
-          <el-input
-              v-model="noticeForm.content"
-              :rows="10"
-              placeholder="请输入公告内容"
-              type="textarea"
-          />
-        </el-form-item>
-        <el-form-item label="附件" prop="attachments">
-          <el-upload
-              :file-list="noticeForm.attachments"
-              :on-remove="handleUploadRemove"
-              :on-success="handleUploadSuccess"
-              action="/api/upload"
-              class="upload-demo"
-              multiple
-          >
-            <el-button type="primary">点击上传</el-button>
-            <template #tip>
-              <div class="el-upload__tip">
-                支持任意格式文件，单个文件不超过10MB
-              </div>
-            </template>
-          </el-upload>
-        </el-form-item>
-      </el-form>
+    <!-- 添加/编辑通知对话框 (占位符) -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" top="5vh" width="80%">
+      <p>添加/编辑通知表单待实现...</p>
+      <!-- 表单需要包含：标题、类型、内容(富文本)、附件上传等 -->
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="saveDraft">存为草稿</el-button>
+          <el-button type="primary" @click="submitNoticeForm">发布</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
-<script>
-import {onMounted, reactive, ref} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {addNotice, deleteNotice, getNoticeList, updateNotice} from '@/api/notice'
+<script setup>
+import {computed, onMounted, reactive, ref} from 'vue';
+import {
+  ElButton,
+  ElCard,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElIcon,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+  ElOption,
+  ElPagination,
+  ElSelect,
+  ElTable,
+  ElTableColumn,
+  ElTag
+} from 'element-plus';
+import {Plus} from '@element-plus/icons-vue';
+import {deleteNotice, getNoticeList, updateNoticeStatus} from '@/api/notice'; // 移除 addNotice, updateNotice
+import {getNoticeTypes} from '@/api/common';
 
-export default {
-  name: 'AdminNotice',
-  setup() {
-    const notices = ref([])
-    const total = ref(0)
-    const pageSize = ref(10)
-    const currentPage = ref(1)
-    const dialogVisible = ref(false)
-    const dialogTitle = ref('')
-    const noticeFormRef = ref(null)
-    const noticeForm = reactive({
-      id: '',
-      title: '',
-      type: '',
-      content: '',
-      attachments: [],
-      status: 0
-    })
+// 修改组件名称为多词组合
+defineOptions({
+  name: 'NoticeManagement'
+})
 
-    const rules = {
-      title: [{required: true, message: '请输入公告标题', trigger: 'blur'}],
-      type: [{required: true, message: '请选择公告类型', trigger: 'change'}],
-      content: [{required: true, message: '请输入公告内容', trigger: 'blur'}]
-    }
+const loading = ref(false);
+const loadingNoticeTypes = ref(false);
+const noticeList = ref([]);
+const noticeTypes = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const searchParams = reactive({
+  keyword: '',
+  type: '',
+  status: null
+});
 
-    const fetchNotices = () => {
-      getNoticeList({
-        page: currentPage.value - 1,
-        size: pageSize.value
-      }).then(response => {
-        notices.value = response.data.content
-        total.value = response.data.totalElements
-      }).catch((error) => {
-        console.error('获取公告列表失败', error)
-        ElMessage.error('获取公告列表失败')
-      })
-    }
+const dialogVisible = ref(false);
+const dialogTitle = ref('发布通知');
 
-    const getTypeTag = (type) => {
-      const tags = {
-        notice: 'info',
-        academic: 'primary',
-        activity: 'success',
-        urgent: 'danger'
-      }
-      return tags[type] || 'info'
-    }
-
-    const getTypeName = (type) => {
-      const names = {
-        notice: '通知公告',
-        academic: '教务通知',
-        activity: '活动通知',
-        urgent: '紧急通知'
-      }
-      return names[type] || type
-    }
-
-    const handleAdd = () => {
-      dialogTitle.value = '添加公告'
-      dialogVisible.value = true
-      Object.keys(noticeForm).forEach(key => {
-        noticeForm[key] = ''
-      })
-      noticeForm.attachments = []
-      noticeForm.status = 0
-    }
-
-    const handleEdit = (row) => {
-      dialogTitle.value = '编辑公告'
-      dialogVisible.value = true
-      Object.keys(noticeForm).forEach(key => {
-        noticeForm[key] = row[key]
-      })
-    }
-
-    const handleToggleStatus = (row) => {
-      const newStatus = row.status === 1 ? 0 : 1
-      updateNotice(row.id, {...row, status: newStatus}).then(() => {
-        ElMessage.success(newStatus === 1 ? '发布成功' : '已撤回')
-        fetchNotices()
-      }).catch((error) => {
-        console.error('更新公告状态失败', error)
-        ElMessage.error('操作失败')
-      })
-    }
-
-    const handleDelete = (row) => {
-      ElMessageBox.confirm('确定要删除该公告吗？', '提示', {
-        type: 'warning'
-      }).then(() => {
-        deleteNotice(row.id).then(() => {
-          ElMessage.success('删除成功')
-          fetchNotices()
-        }).catch((error) => {
-          console.error('删除公告失败', error)
-          ElMessage.error('删除失败')
-        })
-      })
-    }
-
-    const handleUploadSuccess = (response, file, fileList) => {
-      noticeForm.attachments = fileList.map(file => ({
-        name: file.name,
-        url: file.response?.data || file.url
-      }))
-    }
-
-    const handleUploadRemove = (file, fileList) => {
-      noticeForm.attachments = fileList.map(file => ({
-        name: file.name,
-        url: file.response?.data || file.url
-      }))
-    }
-
-    const handleSubmit = () => {
-      noticeFormRef.value.validate((valid) => {
-        if (valid) {
-          if (noticeForm.id) {
-            updateNotice(noticeForm.id, noticeForm).then(() => {
-              ElMessage.success('更新成功')
-              dialogVisible.value = false
-              fetchNotices()
-            }).catch((error) => {
-              console.error('更新公告失败', error)
-              ElMessage.error('更新失败')
-            })
-          } else {
-            addNotice(noticeForm).then(() => {
-              ElMessage.success('添加成功')
-              dialogVisible.value = false
-              fetchNotices()
-            }).catch((error) => {
-              console.error('添加公告失败', error)
-              ElMessage.error('添加失败')
-            })
-          }
-        }
-      })
-    }
-
-    const handleCurrentChange = (page) => {
-      currentPage.value = page
-      fetchNotices()
-    }
-
-    onMounted(() => {
-      fetchNotices()
-    })
-
-    return {
-      notices,
-      total,
-      pageSize,
-      currentPage,
-      dialogVisible,
-      dialogTitle,
-      noticeFormRef,
-      noticeForm,
-      rules,
-      getTypeTag,
-      getTypeName,
-      handleAdd,
-      handleEdit,
-      handleToggleStatus,
-      handleDelete,
-      handleUploadSuccess,
-      handleUploadRemove,
-      handleSubmit,
-      handleCurrentChange
-    }
+// 获取通知列表
+const fetchNotices = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: searchParams.keyword || null,
+      type: searchParams.type || null,
+      status: searchParams.status
+    };
+    const res = await getNoticeList(params);
+    noticeList.value = res.data.list || [];
+    total.value = res.data.total || 0;
+  } catch (error) {
+    console.error("获取通知列表失败", error);
+    ElMessage.error("获取通知列表失败");
+  } finally {
+    loading.value = false;
   }
+};
+
+// 获取通知类型
+const fetchNoticeTypes = async () => {
+  loadingNoticeTypes.value = true;
+  try {
+    const res = await getNoticeTypes();
+    noticeTypes.value = res.data || [];
+  } catch (error) {
+    console.error("获取通知类型失败", error);
+    // 此处不提示错误
+  } finally {
+    loadingNoticeTypes.value = false;
+  }
+};
+
+// 计算通知类型映射
+const noticeTypeMapComputed = computed(() => {
+  const map = {};
+  noticeTypes.value.forEach(type => {
+    map[type.typeCode] = {name: type.typeName, tag: type.tagType || 'info'};
+  });
+  return map;
+});
+
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1;
+  fetchNotices();
+};
+
+// 分页大小改变
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+  currentPage.value = 1;
+  fetchNotices();
+};
+
+// 当前页改变
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  fetchNotices();
+};
+
+// 添加通知（打开对话框）
+const handleAddNotice = () => {
+  dialogTitle.value = '发布通知';
+  // 清空表单逻辑待添加
+  dialogVisible.value = true;
+  ElMessage.info('发布通知功能待实现');
+};
+
+// 编辑通知（打开对话框）
+const handleEditNotice = (row) => {
+  dialogTitle.value = '编辑通知';
+  // 填充表单逻辑待添加
+  dialogVisible.value = true;
+  ElMessage.info(`编辑通知 ${row.title} 功能待实现`);
+};
+
+// 删除通知
+const handleDeleteNotice = (row) => {
+  ElMessageBox.confirm(`确定要删除通知 "${row.title}" 吗?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteNotice(row.id);
+      ElMessage.success('删除成功');
+      fetchNotices(); // 刷新列表
+    } catch (error) {
+      console.error("删除通知失败", error);
+      ElMessage.error("删除通知失败");
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除');
+  });
+};
+
+// 切换发布状态 (发布/撤回)
+const togglePublishStatus = async (row) => {
+  const targetStatus = row.status === 1 ? 2 : 1; // 假设 1=已发布, 0=草稿, 2=已撤回
+  const actionText = targetStatus === 1 ? '发布' : '撤回';
+  ElMessageBox.confirm(`确定要${actionText}通知 "${row.title}" 吗?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+        type: 'warning'
+  }).then(async () => {
+    try {
+      await updateNoticeStatus(row.id, targetStatus);
+      ElMessage.success(`${actionText}成功`);
+      fetchNotices();
+    } catch (error) {
+      console.error(`${actionText}通知失败`, error);
+      ElMessage.error(`${actionText}通知失败`);
+    }
+  }).catch(() => {
+    ElMessage.info('已取消操作');
+  });
+};
+
+// 保存草稿 (待实现)
+const saveDraft = () => {
+  dialogVisible.value = false;
+  ElMessage.info('保存草稿功能待实现');
 }
+
+// 提交通知表单 (添加/编辑并发布)
+const submitNoticeForm = () => {
+  // 表单验证和提交逻辑待实现 (addNotice/updateNotice，并设置 status=1)
+  dialogVisible.value = false;
+  ElMessage.info('提交通知表单功能待实现');
+};
+
+// 格式化状态
+const formatStatus = (status) => {
+  const statusMap = {
+    1: '已发布',
+    0: '草稿',
+    2: '已撤回'
+  };
+  return statusMap[status] !== undefined ? statusMap[status] : '未知';
+};
+
+// 获取状态标签类型
+const getStatusTagType = (status) => {
+  const typeMap = {
+    1: 'success',
+    0: 'info',
+    2: 'warning'
+  };
+  return typeMap[status] || 'info';
+};
+
+// 格式化时间
+const formatTime = (timeStr) => {
+  if (!timeStr) return '-';
+  try {
+    const date = new Date(timeStr);
+    return date.toLocaleString('zh-CN', {hour12: false});
+  } catch (e) {
+    return timeStr;
+  }
+};
+
+// 组件挂载后加载数据
+onMounted(() => {
+  fetchNotices();
+  fetchNoticeTypes(); // 同时获取类型用于筛选
+});
+
 </script>
 
 <style scoped>
-.notice-container {
+.notice-management-container {
   padding: 20px;
 }
-
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -297,13 +331,20 @@ export default {
   margin-bottom: 20px;
 }
 
-.notice-card {
+.filter-card {
   margin-bottom: 20px;
 }
 
+.notice-list-card {
+  /* 样式 */
+}
 .pagination-container {
+  margin-top: 20px;
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style> 

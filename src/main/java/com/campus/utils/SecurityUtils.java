@@ -37,31 +37,36 @@ public class SecurityUtils {
     
         // 公开API，不需要认证
         private static final List<String> PUBLIC_APIS = Arrays.asList(
-                "/api/users/login",
-                "/api/users/register",
-                "/api/users/check-session",
-                "/api/users/create-admin",
-                "/api/common/",
-                "/api/file/upload/",
-                "/api/file/download/",
-                "/static/",
+                "/campus/api/users/login",
+                "/campus/api/users/register",
+                "/campus/api/users/check-session",
+                "/campus/api/users/create-admin",
+                "/campus/api/common/notice-types",
+                "/campus/api/common/terms",
+                "/campus/api/common/time-slots",
+                "/campus/api/common/weekdays",
+                "/campus/api/file/upload/",
+                "/campus/api/file/download/",
+                "/campus/api/notices/recent",
+                "/campus/api/notices/",
+                "/campus/static/",
                 "/favicon.ico"
         );
         
         // 管理员API，需要管理员权限
         private static final List<String> ADMIN_APIS = Arrays.asList(
-                "/api/admin/",
-                "/api/classroom/"
+                "/campus/api/admin/",
+                "/campus/api/classroom/"
         );
         
         // 教师API，需要教师权限
         private static final List<String> TEACHER_APIS = List.of(
-                "/api/teacher/"
+                "/campus/api/teacher/"
         );
         
         // 学生API，需要学生权限
         private static final List<String> STUDENT_APIS = List.of(
-                "/api/student/"
+                "/campus/api/student/"
         );
     
         /**
@@ -74,6 +79,13 @@ public class SecurityUtils {
                 public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
                     HttpServletRequest request = (HttpServletRequest) servletRequest;
                     HttpServletResponse response = (HttpServletResponse) servletResponse;
+
+                    // 放行 OPTIONS 请求 (用于 CORS 预检)
+                    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                     
                     try {
                         // 获取请求路径

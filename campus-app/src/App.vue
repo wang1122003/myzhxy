@@ -6,7 +6,7 @@
     </el-main>
     <el-footer class="app-footer">
       <div class="footer-content">
-        <p>版权所有 © 2023 校园管理系统</p>
+        <p>智慧校园管理系统</p>
       </div>
     </el-footer>
   </el-container>

@@ -102,7 +102,9 @@
                 clearable
                 placeholder="选择课程"
                 style="width: 220px"
-                @change="fetchCourseResources"
+                :loading="loadingCourses"
+                filterable
+                @change="handleCourseFilterChange"
             >
               <el-option
                   v-for="course in courses"
@@ -174,304 +176,294 @@
   </div>
 </template>
 
-<script>
-import {computed, onMounted, ref} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {Document, Files, Picture, Upload} from '@element-plus/icons-vue'
-import {deleteFile, downloadFile, getFileList, getResourceList} from '@/api/file'
-import {getSelectedCourses} from '@/api/course'
+<script setup>
+import {computed, onMounted, ref} from 'vue';
+import {
+  ElButton,
+  ElEmpty,
+  ElIcon,
+  ElMessage,
+  ElMessageBox,
+  ElOption,
+  ElPagination,
+  ElSelect,
+  ElTable,
+  ElTableColumn,
+  ElTabPane,
+  ElTabs,
+  ElUpload
+} from 'element-plus';
+import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
+import {deleteFile, downloadFile, getFileList, getResourceList} from '@/api/file';
+import {getStudentCourses} from '@/api/course';
 
-export default {
-  name: 'FilesManager',
-  components: {
-    Document,
-    Picture,
-    Upload,
-    Files
-  },
-  setup() {
-    // 上传URL和请求头
-    const uploadUrl = '/api/file/upload'
-    const headers = computed(() => {
-      return {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
+// 修改组件名称为多词组合
+defineOptions({
+  name: 'FileManagement'
+})
+
+const loading = ref(false);
+
+// 上传URL和请求头
+const uploadUrl = '/api/file/upload'
+const headers = computed(() => {
+  return {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
+  }
+})
+
+// 文件相关状态
+const files = ref([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const downloadLoading = ref(null)
+const deleteLoading = ref(null)
+const activeTab = ref('personal')
+
+// 课程资源相关状态
+const resources = ref([])
+const resourceLoading = ref(false)
+const resourceTotal = ref(0)
+const resourceCurrentPage = ref(1)
+const resourcePageSize = ref(10)
+const courses = ref([])
+const courseFilter = ref(null)
+const loadingCourses = ref(false)
+
+// 获取文件列表
+const fetchFiles = async () => {
+  loading.value = true
+  try {
+    const res = await getFileList({
+      page: currentPage.value,
+      size: pageSize.value,
+      type: 'personal'
     })
+    files.value = res.data.list || []
+    total.value = res.data.total || 0
+  } catch (error) {
+    console.error('获取文件列表失败', error)
+    ElMessage.error('获取文件列表失败')
+  } finally {
+    loading.value = false
+  }
+}
 
-    // 文件相关状态
-    const files = ref([])
-    const loading = ref(false)
-    const total = ref(0)
-    const currentPage = ref(1)
-    const pageSize = ref(10)
-    const downloadLoading = ref(null)
-    const deleteLoading = ref(null)
-    const activeTab = ref('personal')
+// 获取课程资源列表
+const fetchCourseResources = async () => {
+  resourceLoading.value = true
+  try {
+    const res = await getResourceList({
+      page: resourceCurrentPage.value,
+      size: resourcePageSize.value,
+      courseId: courseFilter.value
+    })
+    resources.value = res.data.list || []
+    resourceTotal.value = res.data.total || 0
+  } catch (error) {
+    console.error('获取课程资源失败', error)
+    ElMessage.error('获取课程资源失败')
+  } finally {
+    resourceLoading.value = false
+  }
+}
 
-    // 课程资源相关状态
-    const resources = ref([])
-    const resourceLoading = ref(false)
-    const resourceTotal = ref(0)
-    const resourceCurrentPage = ref(1)
-    const resourcePageSize = ref(10)
-    const courses = ref([])
-    const courseFilter = ref(null)
+// 获取已选课程列表
+const fetchCourses = async () => {
+  loadingCourses.value = true
+  try {
+    const res = await getStudentCourses()
+    courses.value = res.data || []
+  } catch (error) {
+    console.error('获取课程列表失败', error)
+  } finally {
+    loadingCourses.value = false
+  }
+}
 
-    // 获取文件列表
-    const fetchFiles = async () => {
-      loading.value = true
-      try {
-        const res = await getFileList({
-          page: currentPage.value,
-          size: pageSize.value,
-          type: 'personal'
-        })
-        files.value = res.data.list || []
-        total.value = res.data.total || 0
-      } catch (error) {
-        console.error('获取文件列表失败', error)
-        ElMessage.error('获取文件列表失败')
-      } finally {
-        loading.value = false
-      }
-    }
+// 文件上传成功处理
+const handleUploadSuccess = (response) => {
+  if (response.code === 200) {
+    ElMessage.success('上传成功')
+    fetchFiles()
+  } else {
+    ElMessage.error(response.message || '上传失败')
+  }
+}
 
-    // 获取课程资源列表
-    const fetchCourseResources = async () => {
-      resourceLoading.value = true
-      try {
-        const res = await getResourceList({
-          page: resourceCurrentPage.value,
-          size: resourcePageSize.value,
-          courseId: courseFilter.value
-        })
-        resources.value = res.data.list || []
-        resourceTotal.value = res.data.total || 0
-      } catch (error) {
-        console.error('获取课程资源失败', error)
-        ElMessage.error('获取课程资源失败')
-      } finally {
-        resourceLoading.value = false
-      }
-    }
+// 文件上传失败处理
+const handleUploadError = (error) => {
+  console.error('上传失败', error)
+  ElMessage.error('上传失败，请检查网络或文件大小')
+}
 
-    // 获取已选课程列表
-    const fetchCourses = async () => {
-      try {
-        const res = await getSelectedCourses()
-        courses.value = res.data || []
-      } catch (error) {
-        console.error('获取课程列表失败', error)
-        ElMessage.error('获取课程列表失败')
-      }
-    }
+// 文件上传前检查
+const beforeUpload = (file) => {
+  const isLt20M = file.size / 1024 / 1024 < 20
+  if (!isLt20M) {
+    ElMessage.error('文件大小不能超过20MB!')
+    return false
+  }
+  return true
+}
 
-    // 文件上传成功处理
-    const handleUploadSuccess = () => {
-      ElMessage.success('文件上传成功')
+// 文件下载处理
+const handleDownload = async (file) => {
+  downloadLoading.value = file.id
+  try {
+    await downloadFile(file.id)
+    ElMessage.success('文件下载成功')
+  } catch (error) {
+    console.error('文件下载失败', error)
+    ElMessage.error('文件下载失败')
+  } finally {
+    downloadLoading.value = null
+  }
+}
+
+// 文件删除处理
+const handleDelete = (file) => {
+  ElMessageBox.confirm('确定要删除该文件吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    deleteLoading.value = file.id
+    try {
+      await deleteFile(file.id)
+      ElMessage.success('文件删除成功')
       fetchFiles()
+    } catch (error) {
+      console.error('文件删除失败', error)
+      ElMessage.error('文件删除失败')
+    } finally {
+      deleteLoading.value = null
     }
+  }).catch(() => {
+  })
+}
 
-    // 文件上传失败处理
-    const handleUploadError = (error) => {
-      console.error('文件上传失败', error)
-      ElMessage.error('文件上传失败')
+// 分页大小变化
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  currentPage.value = 1
+  fetchFiles()
+}
+
+// 分页页码变化
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  fetchFiles()
+}
+
+// 课程资源分页大小变化
+const handleResourceSizeChange = (size) => {
+  resourcePageSize.value = size
+  resourceCurrentPage.value = 1
+  fetchCourseResources()
+}
+
+// 课程资源分页页码变化
+const handleResourceCurrentChange = (page) => {
+  resourceCurrentPage.value = page
+  fetchCourseResources()
+}
+
+// 课程筛选处理
+const handleCourseFilterChange = () => {
+  resourceCurrentPage.value = 1
+  fetchCourseResources()
+}
+
+// 标签页切换
+const handleTabChange = (tab) => {
+  if (tab.props.name === 'course') {
+    if (courses.value.length === 0) {
+      fetchCourses()
     }
-
-    // 文件上传前检查
-    const beforeUpload = (file) => {
-      const isLt20M = file.size / 1024 / 1024 < 20
-      if (!isLt20M) {
-        ElMessage.error('文件大小不能超过20MB!')
-        return false
-      }
-      return true
-    }
-
-    // 文件下载处理
-    const handleDownload = async (file) => {
-      downloadLoading.value = file.id
-      try {
-        await downloadFile(file.id)
-        ElMessage.success('文件下载成功')
-      } catch (error) {
-        console.error('文件下载失败', error)
-        ElMessage.error('文件下载失败')
-      } finally {
-        downloadLoading.value = null
-      }
-    }
-
-    // 文件删除处理
-    const handleDelete = (file) => {
-      ElMessageBox.confirm('确定要删除该文件吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(async () => {
-        deleteLoading.value = file.id
-        try {
-          await deleteFile(file.id)
-          ElMessage.success('文件删除成功')
-          fetchFiles()
-        } catch (error) {
-          console.error('文件删除失败', error)
-          ElMessage.error('文件删除失败')
-        } finally {
-          deleteLoading.value = null
-        }
-      }).catch(() => {
-      })
-    }
-
-    // 分页大小变化
-    const handleSizeChange = (size) => {
-      pageSize.value = size
-      fetchFiles()
-    }
-
-    // 分页页码变化
-    const handleCurrentChange = (page) => {
-      currentPage.value = page
-      fetchFiles()
-    }
-
-    // 课程资源分页大小变化
-    const handleResourceSizeChange = (size) => {
-      resourcePageSize.value = size
+    if (resources.value.length === 0) {
       fetchCourseResources()
     }
-
-    // 课程资源分页页码变化
-    const handleResourceCurrentChange = (page) => {
-      resourceCurrentPage.value = page
-      fetchCourseResources()
-    }
-
-    // 标签页切换
-    const handleTabChange = (tab) => {
-      if (tab.props.name === 'course' && courses.value.length === 0) {
-        fetchCourses()
-      }
-      if (tab.props.name === 'personal' && files.value.length === 0) {
-        fetchFiles()
-      }
-    }
-
-    // 格式化文件大小
-    const formatFileSize = (size) => {
-      if (size < 1024) {
-        return size + 'B'
-      } else if (size < 1024 * 1024) {
-        return (size / 1024).toFixed(2) + 'KB'
-      } else if (size < 1024 * 1024 * 1024) {
-        return (size / (1024 * 1024)).toFixed(2) + 'MB'
-      } else {
-        return (size / (1024 * 1024 * 1024)).toFixed(2) + 'GB'
-      }
-    }
-
-    // 格式化日期
-    const formatDate = (dateStr) => {
-      if (!dateStr) return ''
-      const date = new Date(dateStr)
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-    }
-
-    // 判断文件是否为文档
-    const isDocument = (filename) => {
-      const extensions = ['.doc', '.docx', '.pdf', '.xls', '.xlsx', '.ppt', '.pptx', '.txt']
-      return extensions.some(ext => filename.toLowerCase().endsWith(ext))
-    }
-
-    // 判断文件是否为图片
-    const isImage = (filename) => {
-      const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-      return extensions.some(ext => filename.toLowerCase().endsWith(ext))
-    }
-
-    // 获取文件类型
-    const getFileType = (filename) => {
-      if (!filename) return '未知'
-      const ext = filename.split('.').pop().toLowerCase()
-      const typeMap = {
-        'doc': '文档',
-        'docx': '文档',
-        'pdf': 'PDF',
-        'xls': '表格',
-        'xlsx': '表格',
-        'ppt': '演示文稿',
-        'pptx': '演示文稿',
-        'txt': '文本',
-        'jpg': '图片',
-        'jpeg': '图片',
-        'png': '图片',
-        'gif': '图片',
-        'bmp': '图片',
-        'webp': '图片',
-        'mp4': '视频',
-        'avi': '视频',
-        'mov': '视频',
-        'mp3': '音频',
-        'wav': '音频',
-        'zip': '压缩包',
-        'rar': '压缩包',
-        '7z': '压缩包'
-      }
-      return typeMap[ext] || ext.toUpperCase()
-    }
-
-    // 初始加载
-    onMounted(() => {
+  } else if (tab.props.name === 'personal') {
+    if (files.value.length === 0) {
       fetchFiles()
-    })
-
-    return {
-      // 文件相关
-      files,
-      loading,
-      total,
-      currentPage,
-      pageSize,
-      downloadLoading,
-      deleteLoading,
-      activeTab,
-
-      // 课程资源相关
-      resources,
-      resourceLoading,
-      resourceTotal,
-      resourceCurrentPage,
-      resourcePageSize,
-      courses,
-      courseFilter,
-
-      // 上传相关
-      uploadUrl,
-      headers,
-
-      // 方法
-      fetchFiles,
-      fetchCourseResources,
-      fetchCourses,
-      handleUploadSuccess,
-      handleUploadError,
-      beforeUpload,
-      handleDownload,
-      handleDelete,
-      handleSizeChange,
-      handleCurrentChange,
-      handleResourceSizeChange,
-      handleResourceCurrentChange,
-      handleTabChange,
-      formatFileSize,
-      formatDate,
-      isDocument,
-      isImage,
-      getFileType
     }
   }
 }
+
+// 格式化文件大小
+const formatFileSize = (size) => {
+  if (size < 1024) {
+    return size + 'B'
+  } else if (size < 1024 * 1024) {
+    return (size / 1024).toFixed(2) + 'KB'
+  } else if (size < 1024 * 1024 * 1024) {
+    return (size / (1024 * 1024)).toFixed(2) + 'MB'
+  } else {
+    return (size / (1024 * 1024 * 1024)).toFixed(2) + 'GB'
+  }
+}
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 判断文件是否为文档
+const isDocument = (filename) => {
+  const extensions = ['.doc', '.docx', '.pdf', '.xls', '.xlsx', '.ppt', '.pptx', '.txt']
+  return extensions.some(ext => filename.toLowerCase().endsWith(ext))
+}
+
+// 判断文件是否为图片
+const isImage = (filename) => {
+  const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+  return extensions.some(ext => filename.toLowerCase().endsWith(ext))
+}
+
+// 获取文件类型
+const getFileType = (filename) => {
+  if (!filename) return '未知'
+  const ext = filename.split('.').pop().toLowerCase()
+  const typeMap = {
+    'doc': '文档',
+    'docx': '文档',
+    'pdf': 'PDF',
+    'xls': '表格',
+    'xlsx': '表格',
+    'ppt': '演示文稿',
+    'pptx': '演示文稿',
+    'txt': '文本',
+    'jpg': '图片',
+    'jpeg': '图片',
+    'png': '图片',
+    'gif': '图片',
+    'bmp': '图片',
+    'webp': '图片',
+    'mp4': '视频',
+    'avi': '视频',
+    'mov': '视频',
+    'mp3': '音频',
+    'wav': '音频',
+    'zip': '压缩包',
+    'rar': '压缩包',
+    '7z': '压缩包'
+  }
+  return typeMap[ext] || ext.toUpperCase()
+}
+
+// 初始加载
+onMounted(() => {
+  if (activeTab.value === 'personal') {
+    fetchFiles()
+  } else if (activeTab.value === 'course') {
+    fetchCourses()
+    fetchCourseResources()
+  }
+})
 </script>
 
 <style scoped>

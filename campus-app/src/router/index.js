@@ -8,14 +8,15 @@ const routes = [
         component: () => import('../views/Home.vue')
     },
     {
-        path: '/login',
-        name: 'Login',
-        component: () => import('../views/Login.vue')
-    },
-    {
         path: '/error',
         name: 'Error',
         component: () => import('../views/Error.vue')
+    },
+    // 论坛页面路由 (公共访问)
+    {
+        path: '/forum',
+        name: 'Forum',
+        component: () => import('../views/Forum.vue')
     },
     // 学生页面路由
     {
@@ -88,6 +89,11 @@ const routes = [
         meta: {requiresAuth: true, role: 'admin'},
         children: [
             {
+                path: 'profile',
+                name: 'AdminProfile',
+                component: () => import('../views/admin/Profile.vue')
+            },
+            {
                 path: 'user',
                 name: 'AdminUser',
                 component: () => import('../views/admin/User.vue')
@@ -128,6 +134,18 @@ const routes = [
                 component: () => import('../views/admin/File.vue')
             }
         ]
+    },
+    {
+        path: '/:pathMatch(.*)*', // 捕获所有未匹配的路由
+        name: 'NotFound',
+        component: () => import('../views/NotFound.vue') // 指向 404 页面
+    },
+    // 添加通知列表公共页面路由
+    {
+        path: '/notices',
+        name: 'NoticeList',
+        component: () => import('../views/NoticeList.vue'), // 新建的通知列表组件
+        meta: {title: '通知公告'} // 可选的路由元信息
     }
 ]
 
@@ -142,8 +160,10 @@ router.beforeEach((to, from, next) => {
     const userRole = localStorage.getItem('role')
 
     if (to.meta.requiresAuth && !token) {
-        next('/login')
+        // 未登录访问受保护页面，重定向到首页 /
+        next({path: '/', query: {redirect: to.fullPath}}) // 可以带上原目标路径
     } else if (to.meta.role && to.meta.role !== userRole) {
+        // 角色不匹配，重定向到错误页
         next('/error')
     } else {
         next()

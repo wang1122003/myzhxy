@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <!-- 
+        优化 Tomcat JAR 扫描配置，减少不必要的扫描，以尝试消除 TLD 扫描警告。
+        scanClassPath="false": 禁止扫描 WEB-INF/classes 中的 TLD (通常不需要)
+        scanAllDirectories="false": 禁止扫描 WEB-INF/lib 下的子目录 (通常不需要)
+        scanAllFiles="false": 禁止扫描 WEB-INF/lib 下非 .jar 文件 (通常不需要)
+        JarScanFilter defaultTldScan="true": 仍然允许扫描标准位置的 TLDs，以防应用需要。
+                                            如果警告仍然存在且想完全消除，可以将 defaultTldScan 设为 "false"，
+                                            并用 tldScan="..." 精确指定包含 TLD 的 JAR (如 spring-webmvc, jstl 等)。
+    -->
+    <JarScanner scanClassPath="false" scanAllDirectories="false" scanAllFiles="false">
+        <JarScanFilter defaultTldScan="true"/>
+    </JarScanner>
+</Context> 

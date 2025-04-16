@@ -6,7 +6,7 @@ export function login(data) {
     return request({
         url: USER_API.LOGIN,
         method: 'post',
-        data
+        data: data
     })
 }
 
@@ -19,15 +19,69 @@ export function register(data) {
     })
 }
 
-// 获取当前用户信息
+// 获取当前用户信息 (通用)
 export function getCurrentUser() {
     return request({
-        url: USER_API.GET_CURRENT_USER,
+        url: USER_API.GET_CURRENT_USER, // 假设为 '/user/current'
         method: 'get'
     })
 }
 
-// 更新用户信息
+// 获取学生个人信息
+export function getStudentProfile() {
+    return request({
+        url: USER_API.GET_STUDENT_PROFILE, // 假设为 '/user/profile/student'
+        method: 'get'
+    })
+}
+
+// 更新学生个人信息
+export function updateStudentProfile(data) {
+    return request({
+        url: USER_API.UPDATE_STUDENT_PROFILE, // 假设为 '/user/profile/student'
+        method: 'put',
+        data
+    })
+}
+
+// 获取教师个人信息
+export function getTeacherProfile() {
+    return request({
+        url: USER_API.GET_TEACHER_PROFILE, // 假设为 '/user/profile/teacher'
+        method: 'get'
+    })
+}
+
+// 更新教师个人信息
+export function updateTeacherProfile(data) {
+    return request({
+        url: USER_API.UPDATE_TEACHER_PROFILE, // 假设为 '/user/profile/teacher'
+        method: 'put',
+        data
+    })
+}
+
+// 获取管理员个人信息
+export function getAdminProfile() {
+    return request({
+        url: USER_API.GET_ADMIN_PROFILE, // 假设为 '/user/profile/admin'
+        method: 'get'
+    })
+}
+
+// 更新管理员个人信息
+export function updateAdminProfile(data) {
+    return request({
+        url: USER_API.UPDATE_ADMIN_PROFILE, // 假设为 '/user/profile/admin'
+        method: 'put',
+        data
+    })
+}
+
+
+// --- 管理员操作 --- 
+
+// 更新用户信息 (管理员用)
 export function updateUser(id, data) {
     return request({
         url: USER_API.UPDATE_USER.replace(':id', id),
@@ -36,7 +90,7 @@ export function updateUser(id, data) {
     })
 }
 
-// 修改密码
+// 修改密码 (个人用)
 export function changePassword(data) {
     return request({
         url: USER_API.CHANGE_PASSWORD,
@@ -45,7 +99,7 @@ export function changePassword(data) {
     })
 }
 
-// 获取用户列表
+// 获取用户列表 (管理员用)
 export function getUserList(params) {
     return request({
         url: USER_API.GET_USER_LIST,
@@ -54,7 +108,7 @@ export function getUserList(params) {
     })
 }
 
-// 添加用户
+// 添加用户 (管理员用)
 export function addUser(data) {
     return request({
         url: USER_API.ADD_USER,
@@ -63,7 +117,7 @@ export function addUser(data) {
     })
 }
 
-// 删除用户
+// 删除用户 (管理员用)
 export function deleteUser(id) {
     return request({
         url: USER_API.DELETE_USER.replace(':id', id),
@@ -71,7 +125,17 @@ export function deleteUser(id) {
     })
 }
 
-// 检查权限
+// 重置用户密码 (管理员用)
+export function resetPassword(id) {
+    return request({
+        url: USER_API.RESET_PASSWORD.replace(':id', id),
+        method: 'put'
+    })
+}
+
+// --- 权限和登出 --- 
+
+// 检查权限 (可能已废弃，使用后端 Filter)
 export function checkPermission(permission) {
     return request({
         url: USER_API.CHECK_PERMISSION,
@@ -80,7 +144,7 @@ export function checkPermission(permission) {
     })
 }
 
-// 获取权限列表
+// 获取权限列表 (可能已废弃)
 export function getPermissions() {
     return request({
         url: USER_API.GET_PERMISSIONS,
@@ -93,5 +157,22 @@ export function logout() {
     return request({
         url: USER_API.LOGOUT,
         method: 'post'
+    })
+}
+
+// 获取用户个人信息 (通用 profile 接口)
+export function getUserProfile() {
+    return request({
+        url: USER_API.GET_USER_PROFILE, // 假设为 '/user/profile'
+        method: 'get'
+    })
+}
+
+// 更新用户个人信息 (通用 profile 接口)
+export function updateUserProfile(data) {
+    return request({
+        url: USER_API.UPDATE_USER_PROFILE, // 假设为 '/user/profile'
+        method: 'put',
+        data
     })
 } 

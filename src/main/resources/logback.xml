@@ -31,6 +31,11 @@
 
     <!-- Spring日志配置 -->
     <logger name="org.springframework" level="INFO"/>
+    <!-- 提高 web 相关日志级别以观察 Handler Mappings -->
+    <logger name="org.springframework.web" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
 
     <!-- Druid日志配置 -->
     <logger name="com.alibaba.druid" level="INFO"/>

@@ -200,10 +200,17 @@ export default {
       gradeType: ''
     })
 
-    // 监听窗口大小变化，重绘图表
+    // 用于防抖动的定时器
+    let resizeTimer = null
+
+    // 监听窗口大小变化，重绘图表（带防抖功能）
     const handleResize = () => {
-      if (pieChart) pieChart.resize()
-      if (barChart) barChart.resize()
+      if (resizeTimer) clearTimeout(resizeTimer)
+
+      resizeTimer = setTimeout(() => {
+        if (pieChart) pieChart.resize()
+        if (barChart) barChart.resize()
+      }, 100)
     }
 
     // 监听选项卡切换
@@ -406,6 +413,7 @@ export default {
       window.removeEventListener('resize', handleResize)
       if (pieChart) pieChart.dispose()
       if (barChart) barChart.dispose()
+      if (resizeTimer) clearTimeout(resizeTimer)
     })
 
     return {

@@ -25,3 +25,1060 @@
 2025-04-17 01:09:46.956 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
 2025-04-17 01:09:46.959 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
 2025-04-17 01:09:46.959 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 03:22:23.338 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 03:22:24.352 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 寮�濮嬬郴缁熷垵濮嬪寲...
+2025-04-17 03:22:24.352 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 鍒濆鍖栨枃浠朵笂浼犵洰褰�: /d:/Workspace/campus/uploads
+2025-04-17 03:22:24.357 [main] INFO  c.campus.utils.InitializationUtils - 鏂囦欢涓婁紶鐩綍鍒濆鍖栧畬鎴�: /d:/Workspace/campus/uploads
+2025-04-17 03:22:24.357 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 绯荤粺鍒濆鍖栧畬鎴�
+2025-04-17 03:22:24.359 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web搴旂敤鍒濆鍖栧紑濮�...
+2025-04-17 03:22:24.360 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 寮�濮嬪垵濮嬪寲鏂囦欢涓婁紶鐩綍
+2025-04-17 03:22:24.361 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 鏂囦欢涓婁紶鐩綍鍒濆鍖栧畬鎴�
+2025-04-17 03:22:24.361 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web搴旂敤鍒濆鍖栧畬鎴�
+2025-04-17 03:23:42.905 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 03:23:43.911 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 03:23:43.911 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 03:23:43.911 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 03:23:43.911 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 03:23:43.911 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 03:23:43.911 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 03:23:43.922 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 03:23:43.922 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:07:05.332 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:07:06.376 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:07:06.376 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:07:06.380 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:07:06.380 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:07:06.382 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:07:06.382 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:07:06.384 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:07:06.384 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:16:23.927 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:16:24.981 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:16:24.981 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:16:24.987 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:16:24.987 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:16:24.989 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:16:24.989 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:16:24.989 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:16:24.989 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:31:31.607 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:31:32.676 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:31:32.676 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:31:32.678 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:31:32.679 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:31:32.681 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:31:32.681 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:31:32.684 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:31:32.684 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:33:56.435 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:33:57.575 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:33:57.575 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:33:57.579 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:33:57.579 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:33:57.581 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:33:57.581 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:33:57.583 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:33:57.583 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:42:10.895 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:42:11.874 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:42:11.874 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:42:11.877 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:42:11.878 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:42:11.880 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:42:11.880 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:42:11.882 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:42:11.883 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:48:57.576 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:48:58.600 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:48:58.600 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:48:58.603 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:48:58.603 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:48:58.607 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:48:58.607 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:48:58.609 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:48:58.609 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:53:00.403 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:53:01.414 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:53:01.414 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:53:01.418 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:53:01.419 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:53:01.421 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:53:01.421 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:53:01.423 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:53:01.424 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:56:06.551 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:56:07.559 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:56:07.562 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:56:07.565 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:56:07.566 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:56:07.569 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:56:07.571 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:56:07.573 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:56:07.573 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 04:57:53.568 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 04:57:54.615 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 04:57:54.616 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 04:57:54.619 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 04:57:54.619 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 04:57:54.621 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 04:57:54.621 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 04:57:54.623 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 04:57:54.623 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:00:06.093 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:00:07.079 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:00:07.079 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:00:07.083 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:00:07.084 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:00:07.087 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:00:07.087 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:00:07.090 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:00:07.090 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:06:56.122 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:06:57.141 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:06:57.141 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:06:57.144 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:06:57.144 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:06:57.148 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:06:57.148 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:06:57.150 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:06:57.150 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:11:13.131 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:11:13.220 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:11:14.654 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:11:15.650 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:11:15.651 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:11:15.654 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:11:15.655 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:11:15.655 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2523 ms
+2025-04-17 05:11:15.655 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:11:15.656 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:11:15.658 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:11:15.658 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:11:15.671 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:11:15.687 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:11:15.689 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:11:16.104 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:11:16.167 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:11:16.220 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:11:16.228 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:11:16.236 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:11:16.243 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:11:16.245 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:11:16.256 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:11:16.257 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:11:16.257 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:11:16.257 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:11:16.258 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@3be6f8dd
+2025-04-17 05:11:16.258 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@59bb71a0
+2025-04-17 05:11:16.262 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:11:16.262 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 575 ms
+2025-04-17 05:11:39.823 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/", parameters={}
+2025-04-17 05:11:39.933 [http-nio-8080-exec-2] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.campus.controller.HomeController#home()
+2025-04-17 05:11:40.054 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.view.RedirectView - View name [redirect:], model {}
+2025-04-17 05:11:40.056 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 302 FOUND
+2025-04-17 05:11:40.068 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 05:11:40.083 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@55c8f54b
+2025-04-17 05:11:40.101 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 05:16:15.745 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 05:11:15 CST 2025, parent: Root WebApplicationContext
+2025-04-17 05:16:33.567 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:16:33.658 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:16:35.101 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:16:36.145 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:16:36.146 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:16:36.150 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:16:36.150 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:16:36.150 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2581 ms
+2025-04-17 05:16:36.151 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:16:36.151 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:16:36.154 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:16:36.155 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:16:36.171 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:16:36.189 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:16:36.191 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:16:36.651 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:16:36.723 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:16:36.775 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:16:36.784 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:16:36.796 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:16:36.804 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:16:36.806 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:16:36.817 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:16:36.818 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:16:36.818 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:16:36.818 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:16:36.818 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@2c54d96
+2025-04-17 05:16:36.818 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@5a97b9fa
+2025-04-17 05:16:36.824 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:16:36.824 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 635 ms
+2025-04-17 05:19:24.244 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 05:16:36 CST 2025, parent: Root WebApplicationContext
+2025-04-17 05:20:12.013 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:20:12.105 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:20:13.588 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:20:14.630 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:20:14.630 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:20:14.635 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:20:14.635 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:20:14.635 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2619 ms
+2025-04-17 05:20:14.635 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:20:14.636 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:20:14.637 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:20:14.638 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:20:14.650 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:20:14.664 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:20:14.667 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:20:15.061 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:20:15.125 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:20:15.175 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:20:15.185 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:20:15.196 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:20:15.203 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:20:15.205 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:20:15.217 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:20:15.218 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:20:15.218 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:20:15.218 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:20:15.220 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@cf03212
+2025-04-17 05:20:15.220 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@6942440e
+2025-04-17 05:20:15.226 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:20:15.227 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 562 ms
+2025-04-17 05:20:39.143 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/api", parameters={}
+2025-04-17 05:20:39.183 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@157542bc
+2025-04-17 05:20:39.285 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-04-17 05:20:39.288 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Unresolved failure from "ERROR" dispatch: java.lang.IllegalArgumentException: java.nio.charset.UnmappableCharacterException: Input length = 1
+2025-04-17 05:20:41.695 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/", parameters={}
+2025-04-17 05:20:41.702 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.campus.controller.HomeController#home()
+2025-04-17 05:20:41.792 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.view.RedirectView - View name [redirect:], model {}
+2025-04-17 05:20:41.794 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 302 FOUND
+2025-04-17 05:20:41.799 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 05:20:41.801 [http-nio-8080-exec-4] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@157542bc
+2025-04-17 05:20:41.810 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 05:20:56.596 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - POST "/campus/api/users/login", parameters={}
+2025-04-17 05:20:56.597 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.campus.controller.UserController#login(User, HttpServletResponse)
+2025-04-17 05:20:56.738 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/json" to [User(id=null, username=admin, password=123456, realName=null, gender=null, phone=null, email=null, a (truncated)...]
+2025-04-17 05:20:57.036 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-04-17 05:20:57.037 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Writing [com.campus.utils.Result@6bc963f4]
+2025-04-17 05:20:57.046 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 05:27:51.374 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 05:20:14 CST 2025, parent: Root WebApplicationContext
+2025-04-17 05:28:12.472 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:28:12.553 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:28:14.022 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:28:15.033 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:28:15.034 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:28:15.038 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:28:15.038 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:28:15.038 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2564 ms
+2025-04-17 05:28:15.039 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:28:15.039 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:28:15.042 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:28:15.042 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:28:15.056 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:31:26.212 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:31:26.296 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:31:27.831 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:31:28.972 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:31:28.973 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:31:28.975 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:31:28.976 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:31:28.976 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2762 ms
+2025-04-17 05:31:28.976 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:31:28.976 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:31:28.977 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:31:28.978 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:31:28.993 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:31:28.995 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 05:31:29.008 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:31:29.010 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:31:30.287 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:31:30.387 [main] INFO  o.s.v.b.OptionalValidatorFactoryBean - Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Bean Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-04-17 05:31:30.756 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:31:30.950 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:31:31.003 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:31:31.026 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:31:31.052 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:31:31.058 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:31:31.095 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:31:31.170 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:31:31.171 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:31:31.172 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:31:31.173 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@4776fe23
+2025-04-17 05:31:31.174 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@7c50e666
+2025-04-17 05:31:31.185 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:31:31.186 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2178 ms
+2025-04-17 05:31:35.230 [http-nio-8080-exec-1] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 05:32:00.492 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/swagger-ui.html", parameters={}
+2025-04-17 05:32:00.500 [http-nio-8080-exec-4] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@426cd439
+2025-04-17 05:32:00.523 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-04-17 05:32:00.526 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Unresolved failure from "ERROR" dispatch: java.lang.IllegalArgumentException: java.nio.charset.UnmappableCharacterException: Input length = 1
+2025-04-17 05:32:02.232 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/v3/api-docs", parameters={}
+2025-04-17 05:32:02.234 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@426cd439
+2025-04-17 05:32:02.235 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-04-17 05:32:02.235 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Unresolved failure from "ERROR" dispatch: java.lang.IllegalArgumentException: java.nio.charset.UnmappableCharacterException: Input length = 1
+2025-04-17 05:34:05.851 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 05:31:29 CST 2025, parent: Root WebApplicationContext
+2025-04-17 05:34:25.460 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:34:25.714 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:34:30.353 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:34:33.784 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:34:33.785 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:34:33.796 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:34:33.797 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:34:33.799 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 8332 ms
+2025-04-17 05:34:33.799 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:34:33.800 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:34:33.805 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:34:33.807 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:34:33.841 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:34:33.846 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 05:34:33.854 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 05:34:33.891 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:34:33.900 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:34:35.278 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:34:35.365 [main] INFO  o.s.v.b.OptionalValidatorFactoryBean - Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Bean Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-04-17 05:34:35.719 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:34:35.908 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:34:35.930 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:34:35.954 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:34:35.977 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/swagger-ui/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:34:35.982 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:34:35.988 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#3'
+2025-04-17 05:34:36.023 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:34:36.099 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:34:36.099 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:34:36.100 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:34:36.102 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@7f53d396
+2025-04-17 05:34:36.103 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@368003f6
+2025-04-17 05:34:36.114 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:34:36.115 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2224 ms
+2025-04-17 05:35:27.115 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/swagger-ui.html", parameters={}
+2025-04-17 05:35:27.137 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@43a9a8e0
+2025-04-17 05:35:27.193 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-04-17 05:35:27.197 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - "ERROR" dispatch for GET "/campus/error.html?code=404&title=页面未找到&message=您请求的页面不存在", parameters={masked}
+2025-04-17 05:35:27.199 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@43a9a8e0
+2025-04-17 05:35:27.203 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Exiting from "ERROR" dispatch, status 404
+2025-04-17 05:35:29.369 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/v3/api-docs", parameters={}
+2025-04-17 05:35:29.370 [http-nio-8080-exec-2] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@43a9a8e0
+2025-04-17 05:35:29.371 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-04-17 05:35:29.372 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - "ERROR" dispatch for GET "/campus/error.html?code=404&title=页面未找到&message=您请求的页面不存在", parameters={masked}
+2025-04-17 05:35:29.373 [http-nio-8080-exec-2] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@43a9a8e0
+2025-04-17 05:35:29.373 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Exiting from "ERROR" dispatch, status 404
+2025-04-17 05:35:33.373 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 05:35:33.374 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@43a9a8e0
+2025-04-17 05:35:33.381 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 05:35:35.991 [http-nio-8080-exec-4] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 05:38:38.753 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 05:34:33 CST 2025, parent: Root WebApplicationContext
+2025-04-17 05:39:27.966 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:39:28.047 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:39:29.464 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:39:30.515 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:39:30.516 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:39:30.519 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:39:30.519 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:39:30.520 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2551 ms
+2025-04-17 05:39:30.520 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:39:30.520 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:39:30.521 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:39:30.522 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:39:30.538 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:39:30.540 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 05:39:30.544 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 05:39:30.557 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:39:30.559 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:39:30.998 [main] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:39:31.000 [main] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:691)
+	at org.apache.catalina.core.StandardContext.loadOnStartup(StandardContext.java:4194)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4478)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:566)
+	at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:653)
+	at org.apache.catalina.startup.Tomcat.addWebapp(Tomcat.java:721)
+	at org.apache.catalina.startup.Tomcat.addWebapp(Tomcat.java:677)
+	at org.apache.catalina.startup.Tomcat.addWebapp(Tomcat.java:217)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.cargo.container.tomcat.internal.TomcatEmbedded$Wrapper.invoke(TomcatEmbedded.java:461)
+	at org.codehaus.cargo.container.tomcat.internal.TomcatEmbedded$Wrapper.invoke(TomcatEmbedded.java:420)
+	at org.codehaus.cargo.container.tomcat.internal.TomcatEmbedded$Embedded.createContext(TomcatEmbedded.java:719)
+	at org.codehaus.cargo.container.tomcat.TomcatEmbeddedLocalDeployer.deploy(TomcatEmbeddedLocalDeployer.java:91)
+	at org.codehaus.cargo.container.tomcat.TomcatEmbeddedLocalDeployer.redeploy(TomcatEmbeddedLocalDeployer.java:149)
+	at org.codehaus.cargo.container.tomcat.internal.AbstractCatalinaEmbeddedLocalContainer.doStart(AbstractCatalinaEmbeddedLocalContainer.java:218)
+	at org.codehaus.cargo.container.spi.AbstractEmbeddedLocalContainer.startInternal(AbstractEmbeddedLocalContainer.java:78)
+	at org.codehaus.cargo.container.spi.AbstractLocalContainer.start(AbstractLocalContainer.java:231)
+	at org.codehaus.cargo.maven3.ContainerStartMojo.executeLocalContainerAction(ContainerStartMojo.java:83)
+	at org.codehaus.cargo.maven3.ContainerRunMojo.doExecute(ContainerRunMojo.java:126)
+	at org.codehaus.cargo.maven3.AbstractCargoMojo.execute(AbstractCargoMojo.java:466)
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:126)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2(MojoExecutor.java:328)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute(MojoExecutor.java:316)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:212)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:174)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.access$000(MojoExecutor.java:75)
+	at org.apache.maven.lifecycle.internal.MojoExecutor$1.run(MojoExecutor.java:162)
+	at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute(DefaultMojosExecutionStrategy.java:39)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:159)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:105)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:73)
+	at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build(SingleThreadedBuilder.java:53)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:118)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:261)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:173)
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:101)
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:906)
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:283)
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:206)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:255)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:201)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:361)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:314)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 70 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 80 common frames omitted
+2025-04-17 05:39:55.882 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:39:55.882 [http-nio-8080-exec-1] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:39:56.001 [http-nio-8080-exec-1] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:39:56.001 [http-nio-8080-exec-1] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:115)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:79)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 40 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 50 common frames omitted
+2025-04-17 05:39:56.013 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:39:56.014 [http-nio-8080-exec-1] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:39:56.106 [http-nio-8080-exec-1] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:39:56.106 [http-nio-8080-exec-1] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:518)
+	at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:355)
+	at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:275)
+	at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:381)
+	at org.apache.catalina.core.StandardHostValve.throwable(StandardHostValve.java:264)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:149)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 42 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 52 common frames omitted
+2025-04-17 05:39:57.669 [http-nio-8080-exec-5] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:39:57.670 [http-nio-8080-exec-5] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:39:57.754 [http-nio-8080-exec-5] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:39:57.754 [http-nio-8080-exec-5] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:115)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:79)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 40 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 50 common frames omitted
+2025-04-17 05:39:57.758 [http-nio-8080-exec-5] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:39:57.759 [http-nio-8080-exec-5] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:39:57.842 [http-nio-8080-exec-5] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:39:57.842 [http-nio-8080-exec-5] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:518)
+	at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:355)
+	at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:275)
+	at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:381)
+	at org.apache.catalina.core.StandardHostValve.throwable(StandardHostValve.java:264)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:149)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 42 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 52 common frames omitted
+2025-04-17 05:56:51.279 [http-nio-8080-exec-4] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:56:51.281 [http-nio-8080-exec-4] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:56:51.621 [http-nio-8080-exec-4] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:56:51.622 [http-nio-8080-exec-4] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:115)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:79)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 40 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 50 common frames omitted
+2025-04-17 05:56:51.632 [http-nio-8080-exec-4] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:56:51.634 [http-nio-8080-exec-4] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:56:51.878 [http-nio-8080-exec-4] WARN  o.s.w.c.s.XmlWebApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+2025-04-17 05:56:51.878 [http-nio-8080-exec-4] ERROR o.s.web.servlet.DispatcherServlet - Context initialization failed
+org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'activityController': Unsatisfied dependency expressed through field 'activityService': Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:788)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:768)
+	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:145)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.postProcessProperties(AutowiredAnnotationBeanPostProcessor.java:509)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1439)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:971)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:625)
+	at org.springframework.web.servlet.FrameworkServlet.configureAndRefreshWebApplicationContext(FrameworkServlet.java:706)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:672)
+	at org.springframework.web.servlet.FrameworkServlet.createWebApplicationContext(FrameworkServlet.java:720)
+	at org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext(FrameworkServlet.java:595)
+	at org.springframework.web.servlet.FrameworkServlet.initServletBean(FrameworkServlet.java:537)
+	at org.springframework.web.servlet.HttpServletBean.init(HttpServletBean.java:169)
+	at jakarta.servlet.GenericServlet.init(GenericServlet.java:143)
+	at jakarta.servlet.http.HttpServlet.init(HttpServlet.java:122)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:817)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:787)
+	at org.apache.catalina.core.StandardWrapper.allocate(StandardWrapper.java:568)
+	at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:518)
+	at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:355)
+	at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:275)
+	at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:381)
+	at org.apache.catalina.core.StandardHostValve.throwable(StandardHostValve.java:264)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:149)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:395)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1748)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:636)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.beans.factory.CannotLoadBeanClassException: Cannot find class [org.springdoc.webmvc.ui.SwaggerUiConfiguration] for bean with name 'org.springdoc.webmvc.ui.SwaggerUiConfiguration#0' defined in class path resource [spring-mvc.xml]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1556)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineTargetType(AbstractAutowireCapableBeanFactory.java:685)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.predictBeanType(AbstractAutowireCapableBeanFactory.java:653)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.isFactoryBean(AbstractBeanFactory.java:1687)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doGetBeanNamesForType(DefaultListableBeanFactory.java:562)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBeanNamesForType(DefaultListableBeanFactory.java:542)
+	at org.springframework.beans.factory.BeanFactoryUtils.beanNamesForTypeIncludingAncestors(BeanFactoryUtils.java:260)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.findAutowireCandidates(DefaultListableBeanFactory.java:1642)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1402)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1358)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.resolveFieldValue(AutowiredAnnotationBeanPostProcessor.java:785)
+	... 42 common frames omitted
+Caused by: java.lang.ClassNotFoundException: org.springdoc.webmvc.ui.SwaggerUiConfiguration
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1226)
+	at org.apache.catalina.loader.WebappClassLoaderBase.loadClass(WebappClassLoaderBase.java:1057)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.util.ClassUtils.forName(ClassUtils.java:304)
+	at org.springframework.beans.factory.support.AbstractBeanDefinition.resolveBeanClass(AbstractBeanDefinition.java:489)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doResolveBeanClass(AbstractBeanFactory.java:1624)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.resolveBeanClass(AbstractBeanFactory.java:1549)
+	... 52 common frames omitted
+2025-04-17 05:57:22.412 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 05:57:22.525 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 05:57:23.964 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 05:57:25.022 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 05:57:25.023 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 05:57:25.025 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 05:57:25.025 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 05:57:25.027 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2613 ms
+2025-04-17 05:57:25.027 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 05:57:25.027 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 05:57:25.028 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 05:57:25.029 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 05:57:25.040 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 05:57:25.042 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 05:57:25.044 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 05:57:25.064 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 05:57:25.067 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 05:57:25.490 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 05:57:25.551 [main] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2025-04-17 05:57:25.945 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:57:26.008 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 05:57:26.017 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 05:57:26.025 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 05:57:26.033 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 05:57:26.036 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 05:57:26.047 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/, /campus/login, /campus/error, /campus/student/**, /campus/teacher/**, /campus/admin/**] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 05:57:26.048 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 05:57:26.048 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 05:57:26.048 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 05:57:26.048 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@65ca456b
+2025-04-17 05:57:26.048 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@5b199425
+2025-04-17 05:57:26.053 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 05:57:26.053 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 989 ms
+2025-04-17 06:19:47.269 [http-nio-8080-exec-3] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 06:19:47.269 [http-nio-8080-exec-1] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 06:19:55.729 [http-nio-8080-exec-2] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 06:20:39.231 [http-nio-8080-exec-4] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 06:20:42.856 [http-nio-8080-exec-6] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 06:20:42.856 [http-nio-8080-exec-5] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 06:20:56.076 [http-nio-8080-exec-7] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 06:33:56.789 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 06:33:56.818 [http-nio-8080-exec-10] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@717859ee
+2025-04-17 06:33:56.889 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 06:56:30.134 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 06:56:30.221 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 06:56:31.639 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 06:56:32.735 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 06:56:32.735 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 06:56:32.738 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 06:56:32.738 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 06:56:32.738 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2601 ms
+2025-04-17 06:56:32.739 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 06:56:32.740 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 06:56:32.740 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 06:56:32.740 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 06:56:32.753 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 06:56:32.755 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 06:56:32.759 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 06:56:32.771 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 06:56:32.774 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 06:56:33.234 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 06:56:33.312 [main] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2025-04-17 06:56:33.728 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 06:56:33.795 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 06:56:33.804 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 06:56:33.813 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 06:56:33.821 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 06:56:33.823 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 06:56:33.836 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/, /campus/login, /campus/error, /campus/student/**, /campus/teacher/**, /campus/admin/**] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 06:56:33.837 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 06:56:33.837 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 06:56:33.837 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 06:56:33.838 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@427940a5
+2025-04-17 06:56:33.838 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@559f3943
+2025-04-17 06:56:33.843 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 06:56:33.843 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1071 ms
+2025-04-17 07:08:45.974 [http-nio-8080-exec-3] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 07:08:45.974 [http-nio-8080-exec-1] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'GET' is not allowed
+2025-04-17 07:08:53.275 [http-nio-8080-exec-2] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:22:07.883 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 06:56:32 CST 2025, parent: Root WebApplicationContext
+2025-04-17 07:27:18.612 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 07:27:18.704 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 07:27:20.242 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 07:27:21.302 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 07:27:21.303 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 07:27:21.306 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 07:27:21.307 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 07:27:21.310 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2696 ms
+2025-04-17 07:27:21.310 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 07:27:21.310 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 07:27:21.312 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 07:27:21.312 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 07:27:21.324 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 07:27:21.326 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 07:27:21.328 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 07:27:21.339 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 07:27:21.342 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 07:27:21.719 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 07:27:21.771 [main] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2025-04-17 07:27:22.136 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 07:27:22.187 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 07:27:22.193 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 07:27:22.203 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 07:27:22.211 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 07:27:22.214 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 07:27:22.228 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/, /campus/login, /campus/error, /campus/student/**, /campus/teacher/**, /campus/admin/**] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 07:27:22.229 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 07:27:22.229 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 07:27:22.229 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 07:27:22.230 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@35a4bac6
+2025-04-17 07:27:22.230 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@704e3b36
+2025-04-17 07:27:22.230 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 07:27:22.230 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 891 ms
+2025-04-17 07:28:14.930 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:28:14.935 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@753c3b47
+2025-04-17 07:28:14.970 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 07:28:15.653 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:28:15.653 [http-nio-8080-exec-2] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@753c3b47
+2025-04-17 07:28:15.655 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 304 NOT_MODIFIED
+2025-04-17 07:28:16.201 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:28:16.202 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@753c3b47
+2025-04-17 07:28:16.203 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 304 NOT_MODIFIED
+2025-04-17 07:28:16.683 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:28:16.683 [http-nio-8080-exec-5] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@753c3b47
+2025-04-17 07:28:16.684 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 304 NOT_MODIFIED
+2025-04-17 07:28:17.463 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:28:17.465 [http-nio-8080-exec-6] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@753c3b47
+2025-04-17 07:28:17.466 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 304 NOT_MODIFIED
+2025-04-17 07:28:20.150 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/", parameters={}
+2025-04-17 07:28:20.183 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.campus.controller.HomeController#home()
+2025-04-17 07:28:20.254 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.view.RedirectView - View name 'redirect:', model {}
+2025-04-17 07:28:20.254 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 302 FOUND
+2025-04-17 07:28:22.648 [http-nio-8080-exec-7] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:29:59.464 [Thread-3] DEBUG o.s.w.c.s.XmlWebApplicationContext - Closing WebApplicationContext for namespace 'springMVC-servlet', started on Thu Apr 17 07:27:21 CST 2025, parent: Root WebApplicationContext
+2025-04-17 07:30:56.764 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext: initialization started
+2025-04-17 07:30:56.861 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing Root WebApplicationContext
+2025-04-17 07:30:58.380 [main] INFO  c.alibaba.druid.pool.DruidDataSource - {dataSource-1} inited
+2025-04-17 07:30:59.478 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 开始系统初始化...
+2025-04-17 07:30:59.478 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 初始化文件上传目录: /d:/Workspace/campus/uploads
+2025-04-17 07:30:59.482 [main] INFO  c.campus.utils.InitializationUtils - 文件上传目录初始化完成: /d:/Workspace/campus/uploads
+2025-04-17 07:30:59.482 [main] INFO  c.c.u.InitializationUtils$SystemInitializer - 系统初始化完成
+2025-04-17 07:30:59.485 [main] INFO  o.s.web.context.ContextLoader - Root WebApplicationContext initialized in 2718 ms
+2025-04-17 07:30:59.485 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化开始...
+2025-04-17 07:30:59.485 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 开始初始化文件上传目录
+2025-04-17 07:30:59.486 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - 文件上传目录初始化完成
+2025-04-17 07:30:59.487 [main] INFO  c.c.u.InitializationUtils$WebContextInitializer - Web应用初始化完成
+2025-04-17 07:30:59.500 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'authorizationFilter' configured for use
+2025-04-17 07:30:59.503 [main] DEBUG o.s.web.filter.DelegatingFilterProxy - Filter 'corsFilter' configured for use
+2025-04-17 07:30:59.503 [main] DEBUG o.s.w.filter.CharacterEncodingFilter - Filter 'characterEncodingFilter' configured for use
+2025-04-17 07:30:59.516 [main] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'springMVC'
+2025-04-17 07:30:59.520 [main] DEBUG o.s.w.c.s.XmlWebApplicationContext - Refreshing WebApplicationContext for namespace 'springMVC-servlet'
+2025-04-17 07:30:59.917 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 166 mappings in 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping'
+2025-04-17 07:30:59.971 [main] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2025-04-17 07:31:00.361 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 07:31:00.417 [main] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-04-17 07:31:00.424 [main] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-04-17 07:31:00.435 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#0'
+2025-04-17 07:31:00.446 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/static/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#1'
+2025-04-17 07:31:00.448 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/uploads/**] in 'org.springframework.web.servlet.handler.SimpleUrlHandlerMapping#2'
+2025-04-17 07:31:00.466 [main] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/, /campus, /campus/, /campus/login, /campus/error, /campus/student/**, /campus/teacher/**, /campus/admin/**] in 'org.springframework.web.servlet.config.viewControllerHandlerMapping'
+2025-04-17 07:31:00.468 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-04-17 07:31:00.468 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-04-17 07:31:00.468 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-04-17 07:31:00.468 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@63c45d8e
+2025-04-17 07:31:00.469 [main] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@228b45c8
+2025-04-17 07:31:00.469 [main] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-04-17 07:31:00.469 [main] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 951 ms
+2025-04-17 07:31:04.224 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/campus/index.html", parameters={}
+2025-04-17 07:31:04.232 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to org.springframework.web.servlet.resource.DefaultServletHttpRequestHandler@259c7340
+2025-04-17 07:31:04.254 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-04-17 07:31:07.149 [http-nio-8080-exec-3] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:31:09.442 [http-nio-8080-exec-2] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:31:10.467 [http-nio-8080-exec-8] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:31:11.428 [http-nio-8080-exec-6] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:31:12.336 [http-nio-8080-exec-5] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed
+2025-04-17 07:31:13.467 [http-nio-8080-exec-7] DEBUG o.s.web.cors.DefaultCorsProcessor - Reject: HTTP 'POST' is not allowed

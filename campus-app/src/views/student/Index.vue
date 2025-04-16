@@ -77,7 +77,7 @@ import {onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {Bell, Calendar, Document, Files, HomeFilled, User} from '@element-plus/icons-vue'
-import {getUserInfo} from '@/api/user'
+import {getCurrentUser} from '@/api/user'
 
 export default {
   name: 'StudentIndex',
@@ -98,7 +98,7 @@ export default {
     })
 
     const fetchUserInfo = () => {
-      getUserInfo().then(response => {
+      getCurrentUser().then(response => {
         userInfo.value = response.data
       }).catch(() => {
         // 如果获取用户信息失败，可能是token无效，跳转到登录页

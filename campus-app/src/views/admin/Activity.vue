@@ -1,294 +1,298 @@
 <template>
-  <div class="activity-container">
+  <div class="activity-management-container">
     <div class="page-header">
       <h2>活动管理</h2>
-      <el-button type="primary" @click="handleAdd">添加活动</el-button>
+      <el-button type="primary" @click="handleAddActivity">
+        <el-icon>
+          <Plus/>
+        </el-icon>
+        发布活动
+      </el-button>
     </div>
 
-    <el-card class="activity-card">
-      <el-table :data="activities" border style="width: 100%">
-        <el-table-column label="活动标题" prop="title"/>
-        <el-table-column label="活动类型" prop="type">
+    <!-- 搜索和筛选 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="searchParams" @submit.prevent="handleSearch">
+        <el-form-item label="关键词">
+          <el-input v-model="searchParams.keyword" clearable placeholder="活动标题/地点" style="width: 250px;"/>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchParams.status" clearable placeholder="选择状态" style="width: 120px;">
+            <el-option :value="1" label="报名中"/>
+            <el-option :value="2" label="进行中"/>
+            <el-option :value="3" label="已结束"/>
+            <el-option :value="0" label="已取消"/>
+          </el-select>
+        </el-form-item>
+        <!-- 可以添加按时间范围筛选 -->
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 活动列表 -->
+    <el-card class="activity-list-card">
+      <el-table v-loading="loading" :data="activityList" style="width: 100%">
+        <el-table-column label="活动标题" min-width="200" prop="title" show-overflow-tooltip/>
+        <el-table-column label="活动地点" prop="location" width="150"/>
+        <el-table-column label="开始时间" prop="startTime" width="180">
+          <template #default="scope">{{ formatTime(scope.row.startTime) }}</template>
+        </el-table-column>
+        <el-table-column label="结束时间" prop="endTime" width="180">
+          <template #default="scope">{{ formatTime(scope.row.endTime) }}</template>
+        </el-table-column>
+        <el-table-column label="报名人数" prop="enrollmentCount" width="100"/>
+        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-tag :type="getTypeTag(scope.row.type)">
-              {{ getTypeName(scope.row.type) }}
-            </el-tag>
+            <el-tag :type="getStatusTagType(scope.row.status)">{{ formatStatus(scope.row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="开始时间" prop="startTime"/>
-        <el-table-column label="结束时间" prop="endTime"/>
-        <el-table-column label="活动地点" prop="location"/>
-        <el-table-column label="主办方" prop="organizer"/>
-        <el-table-column label="状态" prop="status">
+        <el-table-column label="发布时间" prop="publishTime" width="180">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? '进行中' : '已结束' }}
-            </el-tag>
+            {{ formatTime(scope.row.publishTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250">
+        <el-table-column fixed="right" label="操作" width="220">
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button
-                :type="scope.row.status === 1 ? 'warning' : 'success'"
-                size="small"
-                @click="handleToggleStatus(scope.row)"
-            >
-              {{ scope.row.status === 1 ? '结束' : '开始' }}
-            </el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button size="small" type="success" @click="viewEnrollments(scope.row)">报名情况</el-button>
+            <el-button size="small" type="primary" @click="handleEditActivity(scope.row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="handleDeleteActivity(scope.row)">删除</el-button>
+            <!-- 可以添加取消活动等操作 -->
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-container">
+      <!-- 分页 -->
+      <div v-if="total > 0" class="pagination-container">
         <el-pagination
-            :current-page="currentPage"
-            :page-size="pageSize"
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
             :total="total"
-            background
-            layout="prev, pager, next"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
 
-    <!-- 添加/编辑活动对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        :title="dialogTitle"
-        width="500px"
-    >
-      <el-form ref="activityFormRef" :model="activityForm" :rules="rules" label-width="100px">
-        <el-form-item label="活动标题" prop="title">
-          <el-input v-model="activityForm.title"/>
-        </el-form-item>
-        <el-form-item label="活动类型" prop="type">
-          <el-select v-model="activityForm.type" style="width: 100%">
-            <el-option label="学术讲座" value="lecture"/>
-            <el-option label="文艺演出" value="performance"/>
-            <el-option label="体育比赛" value="sports"/>
-            <el-option label="社团活动" value="club"/>
-            <el-option label="志愿服务" value="volunteer"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="开始时间" prop="startTime">
-          <el-date-picker
-              v-model="activityForm.startTime"
-              placeholder="选择日期时间"
-              type="datetime"
-              value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-        <el-form-item label="结束时间" prop="endTime">
-          <el-date-picker
-              v-model="activityForm.endTime"
-              placeholder="选择日期时间"
-              type="datetime"
-              value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-        <el-form-item label="活动地点" prop="location">
-          <el-input v-model="activityForm.location"/>
-        </el-form-item>
-        <el-form-item label="主办方" prop="organizer">
-          <el-input v-model="activityForm.organizer"/>
-        </el-form-item>
-        <el-form-item label="活动简介" prop="description">
-          <el-input
-              v-model="activityForm.description"
-              :rows="4"
-              placeholder="请输入活动简介"
-              type="textarea"
-          />
-        </el-form-item>
-      </el-form>
+    <!-- 添加/编辑活动对话框 (占位符) -->
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" top="5vh" width="70%">
+      <p>添加/编辑活动表单待实现...</p>
+      <!-- 表单通常包含：标题、描述(富文本)、地点、开始时间、结束时间、封面图上传等 -->
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button type="primary" @click="submitActivityForm">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 查看报名情况对话框 (占位符) -->
+    <el-dialog v-model="enrollmentDialogVisible" title="活动报名情况" width="60%">
+      <p>报名列表待实现...</p>
+      <!-- 显示报名学生列表 -->
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="enrollmentDialogVisible = false">关闭</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
-<script>
-import {onMounted, reactive, ref} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {addActivity, deleteActivity, getActivityList, updateActivity} from '@/api/activity'
+<script setup>
+import {onMounted, reactive, ref} from 'vue';
+import {
+  ElButton,
+  ElCard,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElIcon,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+  ElOption,
+  ElPagination,
+  ElSelect,
+  ElTable,
+  ElTableColumn,
+  ElTag
+} from 'element-plus';
+import {Plus} from '@element-plus/icons-vue';
+import {deleteActivity, getActivityList} from '@/api/activity';
 
-export default {
-  name: 'AdminActivity',
-  setup() {
-    const activities = ref([])
-    const total = ref(0)
-    const pageSize = ref(10)
-    const currentPage = ref(1)
-    const dialogVisible = ref(false)
-    const dialogTitle = ref('')
-    const activityFormRef = ref(null)
-    const activityForm = reactive({
-      id: '',
-      title: '',
-      type: '',
-      startTime: '',
-      endTime: '',
-      location: '',
-      organizer: '',
-      description: '',
-      status: 1
-    })
+// 修改组件名称为多词组合
+defineOptions({
+  name: 'ActivityManagement'
+})
 
-    const rules = {
-      title: [{required: true, message: '请输入活动标题', trigger: 'blur'}],
-      type: [{required: true, message: '请选择活动类型', trigger: 'change'}],
-      startTime: [{required: true, message: '请选择开始时间', trigger: 'change'}],
-      endTime: [{required: true, message: '请选择结束时间', trigger: 'change'}],
-      location: [{required: true, message: '请输入活动地点', trigger: 'blur'}],
-      organizer: [{required: true, message: '请输入主办方', trigger: 'blur'}]
-    }
+const loading = ref(false);
+const activityList = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const searchParams = reactive({
+  keyword: '',
+  status: null
+});
 
-    const fetchActivities = () => {
-      getActivityList({
-        page: currentPage.value - 1,
-        size: pageSize.value
-      }).then(response => {
-        activities.value = response.data.content
-        total.value = response.data.totalElements
-      }).catch((error) => {
-        console.error('获取活动列表失败', error)
-        ElMessage.error('获取活动列表失败')
-      })
-    }
+const dialogVisible = ref(false);
+const dialogTitle = ref('发布活动');
+const enrollmentDialogVisible = ref(false);
 
-    const getTypeTag = (type) => {
-      const tags = {
-        lecture: 'primary',
-        performance: 'success',
-        sports: 'warning',
-        club: 'info',
-        volunteer: 'danger'
-      }
-      return tags[type] || 'info'
-    }
-
-    const getTypeName = (type) => {
-      const names = {
-        lecture: '学术讲座',
-        performance: '文艺演出',
-        sports: '体育比赛',
-        club: '社团活动',
-        volunteer: '志愿服务'
-      }
-      return names[type] || type
-    }
-
-    const handleAdd = () => {
-      dialogTitle.value = '添加活动'
-      dialogVisible.value = true
-      Object.keys(activityForm).forEach(key => {
-        activityForm[key] = ''
-      })
-      activityForm.status = 1
-    }
-
-    const handleEdit = (row) => {
-      dialogTitle.value = '编辑活动'
-      dialogVisible.value = true
-      Object.keys(activityForm).forEach(key => {
-        activityForm[key] = row[key]
-      })
-    }
-
-    const handleToggleStatus = (row) => {
-      const newStatus = row.status === 1 ? 0 : 1
-      updateActivity(row.id, {...row, status: newStatus}).then(() => {
-        ElMessage.success(newStatus === 1 ? '活动已开始' : '活动已结束')
-        fetchActivities()
-      }).catch((error) => {
-        console.error('更新活动状态失败', error)
-        ElMessage.error('操作失败')
-      })
-    }
-
-    const handleDelete = (row) => {
-      ElMessageBox.confirm('确定要删除该活动吗？', '提示', {
-        type: 'warning'
-      }).then(() => {
-        deleteActivity(row.id).then(() => {
-          ElMessage.success('删除成功')
-          fetchActivities()
-        }).catch((error) => {
-          console.error('删除活动失败', error)
-          ElMessage.error('删除失败')
-        })
-      })
-    }
-
-    const handleSubmit = () => {
-      activityFormRef.value.validate((valid) => {
-        if (valid) {
-          if (activityForm.id) {
-            updateActivity(activityForm.id, activityForm).then(() => {
-              ElMessage.success('更新成功')
-              dialogVisible.value = false
-              fetchActivities()
-            }).catch((error) => {
-              console.error('更新活动失败', error)
-              ElMessage.error('更新失败')
-            })
-          } else {
-            addActivity(activityForm).then(() => {
-              ElMessage.success('添加成功')
-              dialogVisible.value = false
-              fetchActivities()
-            }).catch((error) => {
-              console.error('添加活动失败', error)
-              ElMessage.error('添加失败')
-            })
-          }
-        }
-      })
-    }
-
-    const handleCurrentChange = (page) => {
-      currentPage.value = page
-      fetchActivities()
-    }
-
-    onMounted(() => {
-      fetchActivities()
-    })
-
-    return {
-      activities,
-      total,
-      pageSize,
-      currentPage,
-      dialogVisible,
-      dialogTitle,
-      activityFormRef,
-      activityForm,
-      rules,
-      getTypeTag,
-      getTypeName,
-      handleAdd,
-      handleEdit,
-      handleToggleStatus,
-      handleDelete,
-      handleSubmit,
-      handleCurrentChange
-    }
+// 获取活动列表
+const fetchActivities = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: searchParams.keyword || null,
+      status: searchParams.status
+    };
+    const res = await getActivityList(params);
+    activityList.value = res.data.list || [];
+    total.value = res.data.total || 0;
+  } catch (error) {
+    console.error("获取活动列表失败", error);
+    ElMessage.error("获取活动列表失败");
+  } finally {
+    loading.value = false;
   }
-}
+};
+
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1;
+  fetchActivities();
+};
+
+// 分页大小改变
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+  currentPage.value = 1;
+  fetchActivities();
+};
+
+// 当前页改变
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  fetchActivities();
+};
+
+// 添加活动（打开对话框）
+const handleAddActivity = () => {
+  dialogTitle.value = '发布活动';
+  // 清空表单逻辑待添加
+  dialogVisible.value = true;
+  ElMessage.info('发布活动功能待实现');
+};
+
+// 编辑活动（打开对话框）
+const handleEditActivity = (row) => {
+  dialogTitle.value = '编辑活动';
+  // 填充表单逻辑待添加
+  dialogVisible.value = true;
+  ElMessage.info(`编辑活动 ${row.title} 功能待实现`);
+};
+
+// 删除活动
+const handleDeleteActivity = (row) => {
+  ElMessageBox.confirm(`确定要删除活动 ${row.title} 吗?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteActivity(row.id);
+      ElMessage.success('删除成功');
+      fetchActivities(); // 刷新列表
+    } catch (error) {
+      console.error("删除活动失败", error);
+      ElMessage.error("删除活动失败");
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除');
+  });
+};
+
+// 查看报名情况
+const viewEnrollments = async (row) => {
+  enrollmentDialogVisible.value = true;
+  ElMessage.info(`查看活动 ${row.title} 报名情况功能待实现`);
+  // try {
+  //     loadingEnrollments.value = true;
+  //     const res = await getActivityEnrollments(row.id);
+  //     enrollments.value = res.data || [];
+  // } catch (error) {
+  //     ElMessage.error('获取报名列表失败');
+  // } finally {
+  //     loadingEnrollments.value = false;
+  // }
+};
+
+// 提交活动表单 (添加/编辑)
+const submitActivityForm = () => {
+  // 表单验证和提交逻辑待实现
+  dialogVisible.value = false;
+  ElMessage.info('提交活动表单功能待实现');
+};
+
+// 格式化状态
+const formatStatus = (status) => {
+  const statusMap = {
+    1: '报名中',
+    2: '进行中',
+    3: '已结束',
+    0: '已取消' // 假设 0 为取消状态
+  };
+  return statusMap[status] !== undefined ? statusMap[status] : '未知';
+};
+
+// 获取状态标签类型
+const getStatusTagType = (status) => {
+  const typeMap = {
+    1: 'success', // 报名中
+    2: 'warning', // 进行中
+    3: 'info',    // 已结束
+    0: 'danger'   // 已取消
+  };
+  return typeMap[status] || 'info';
+};
+
+// 格式化时间
+const formatTime = (timeStr) => {
+  if (!timeStr) return '-';
+  try {
+    const date = new Date(timeStr);
+    // 使用更完整的格式
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (e) {
+    return timeStr;
+  }
+};
+
+// 组件挂载后加载数据
+onMounted(() => {
+  fetchActivities();
+});
+
 </script>
 
 <style scoped>
-.activity-container {
+.activity-management-container {
   padding: 20px;
 }
-
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -296,13 +300,20 @@ export default {
   margin-bottom: 20px;
 }
 
-.activity-card {
+.filter-card {
   margin-bottom: 20px;
 }
 
+.activity-list-card {
+  /* 样式 */
+}
 .pagination-container {
+  margin-top: 20px;
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style> 

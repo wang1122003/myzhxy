@@ -1,146 +1,164 @@
 <template>
-  <div class="grades-page">
-    <h1>成绩查询</h1>
-    <div class="term-selector">
-      <el-select v-model="selectedTerm" placeholder="请选择学期">
-        <el-option
-            v-for="item in terms"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-        </el-option>
-      </el-select>
-      <el-button type="primary" @click="queryGrades">查询</el-button>
+  <div class="grades-container">
+    <div class="page-header">
+      <h2>我的成绩</h2>
+      <div class="filter-container">
+        <el-select
+            v-model="semesterFilter"
+            :loading="loadingSemesters"
+            clearable
+            filterable
+            placeholder="选择学期"
+            style="width: 200px;"
+            @change="fetchGrades"
+        >
+          <el-option
+              v-for="item in semesters"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+          />
+        </el-select>
+      </div>
     </div>
 
-    <div v-loading="loading" class="grades-table">
-      <el-table :data="gradesList" style="width: 100%">
-        <el-table-column label="课程编号" prop="courseNo" width="120"></el-table-column>
-        <el-table-column label="课程名称" prop="courseName" width="180"></el-table-column>
-        <el-table-column label="学分" prop="credit" width="80"></el-table-column>
-        <el-table-column label="成绩" prop="score"></el-table-column>
-        <el-table-column label="绩点" prop="gradePoint"></el-table-column>
-        <el-table-column label="考试时间" prop="examTime"></el-table-column>
+    <el-card v-loading="loadingGrades" class="grades-card">
+      <el-table :data="grades" border style="width: 100%">
+        <el-table-column label="课程代码" prop="courseCode" width="150"/>
+        <el-table-column label="课程名称" min-width="200" prop="courseName"/>
+        <el-table-column label="学分" prop="credit" width="80"/>
+        <el-table-column label="成绩类型" prop="gradeType" width="120">
+          <template #default="scope">
+            {{ scope.row.gradeType === 'score' ? '百分制' : '等级制' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="成绩" prop="gradeValue" width="100">
+          <template #default="scope">
+            <el-tag :type="getTagType(scope.row.gradeValue, scope.row.gradeType)">
+              {{ formatGrade(scope.row.gradeValue, scope.row.gradeType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="绩点" prop="gpa" width="80"/>
+        <el-table-column label="所属学期" prop="semester" width="180"/>
       </el-table>
+      <el-empty v-if="grades.length === 0 && !loadingGrades" description="暂无成绩记录"/>
 
-      <div v-if="gradesList.length > 0" class="grades-summary">
-        <p>本学期平均绩点：<span class="gpa">{{ averageGPA }}</span></p>
-        <p>获得学分：<span class="credit">{{ totalCredit }}</span></p>
+      <!-- 可以在这里添加总学分、平均绩点等统计信息 -->
+      <div v-if="grades.length > 0" class="summary-info">
+        <!-- 待添加 -->
       </div>
-
-      <div v-if="!loading && gradesList.length === 0" class="empty-data">
-        <p>暂无成绩数据</p>
-      </div>
-    </div>
+    </el-card>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'StudentGrades',
-  data() {
-    return {
-      loading: false,
-      selectedTerm: '',
-      terms: [
-        {value: '2023-2024-1', label: '2023-2024学年第一学期'},
-        {value: '2023-2024-2', label: '2023-2024学年第二学期'},
-        {value: '2022-2023-1', label: '2022-2023学年第一学期'},
-        {value: '2022-2023-2', label: '2022-2023学年第二学期'}
-      ],
-      gradesList: [],
-      averageGPA: 0,
-      totalCredit: 0
-    }
-  },
-  created() {
-    // 获取学期列表
-  },
-  methods: {
-    queryGrades() {
-      if (!this.selectedTerm) {
-        this.$message.warning('请选择学期');
-        return;
-      }
+<script setup>
+import {onMounted, ref} from 'vue';
+import {ElCard, ElEmpty, ElMessage, ElOption, ElSelect, ElTable, ElTableColumn, ElTag} from 'element-plus';
+import {getStudentGrades} from '@/api/grade'; // 假设 API 在这里
+import {getTerms} from '@/api/common'; // 复用获取学期的 API
 
-      this.loading = true;
-      // 模拟API请求
-      setTimeout(() => {
-        this.mockGradeData();
-        this.loading = false;
-        this.calculateStats();
-      }, 800);
-    },
-    mockGradeData() {
-      // 模拟成绩数据
-      this.gradesList = [
-        {courseNo: 'CS101', courseName: '计算机导论', credit: 2, score: 92, gradePoint: 4.0, examTime: '2023-12-25'},
-        {courseNo: 'MA102', courseName: '高等数学', credit: 4, score: 85, gradePoint: 3.7, examTime: '2023-12-28'},
-        {courseNo: 'EN103', courseName: '大学英语', credit: 3, score: 88, gradePoint: 3.7, examTime: '2023-12-30'},
-        {courseNo: 'PH104', courseName: '大学物理', credit: 4, score: 78, gradePoint: 3.0, examTime: '2024-01-05'}
-      ];
-    },
-    calculateStats() {
-      if (this.gradesList.length === 0) {
-        this.averageGPA = 0;
-        this.totalCredit = 0;
-        return;
-      }
+// 修改组件名称为多词组合
+defineOptions({
+  name: 'GradeManagement'
+})
 
-      let totalWeightedGP = 0;
-      let totalCredits = 0;
+const loadingGrades = ref(false);
+const loadingSemesters = ref(false);
+const grades = ref([]);
+const semesters = ref([]);
+const semesterFilter = ref(null);
 
-      this.gradesList.forEach(grade => {
-        totalWeightedGP += grade.gradePoint * grade.credit;
-        totalCredits += grade.credit;
-      });
+// 获取学期列表
+const fetchSemesters = async () => {
+  loadingSemesters.value = true;
+  try {
+    const res = await getTerms();
+    semesters.value = res.data || [];
+    // 默认选择最新的学期 (如果列表有序)
+    // if (semesters.value.length > 0) {
+    //   semesterFilter.value = semesters.value[0].value;
+    // }
+  } catch (error) {
+    console.error("获取学期列表失败", error);
+    // 不阻塞主流程，允许用户手动选择
+  } finally {
+    loadingSemesters.value = false;
+  }
+};
 
-      this.averageGPA = (totalWeightedGP / totalCredits).toFixed(2);
-      this.totalCredit = totalCredits;
-    }
+// 获取成绩
+const fetchGrades = async () => {
+  loadingGrades.value = true;
+  try {
+    const params = {
+      semester: semesterFilter.value // 根据选择的学期筛选
+    };
+    const res = await getStudentGrades(params);
+    grades.value = res.data || [];
+  } catch (error) {
+    console.error("获取成绩失败", error);
+    ElMessage.error("获取成绩失败");
+    grades.value = []; // 清空列表
+  } finally {
+    loadingGrades.value = false;
+  }
+};
+
+// 格式化成绩显示
+const formatGrade = (value, type) => {
+  if (value === null || value === undefined) return '-';
+  if (type === 'level') return value; // 等级制直接显示
+  return value.toFixed(1); // 百分制保留一位小数
+}
+
+// 根据成绩获取 Tag 类型
+const getTagType = (value, type) => {
+  if (value === null || value === undefined) return 'info';
+  if (type === 'level') {
+    const level = value.toUpperCase();
+    if (['A', 'A+', 'A-'].includes(level)) return 'success';
+    if (['B', 'B+', 'B-'].includes(level)) return 'primary';
+    if (['C', 'C+', 'C-'].includes(level)) return 'warning';
+    return 'danger'; // D, F 等
+  } else {
+    if (value >= 90) return 'success';
+    if (value >= 80) return 'primary';
+    if (value >= 70) return 'warning';
+    if (value >= 60) return 'info';
+    return 'danger';
   }
 }
+
+// 组件挂载后加载数据
+onMounted(async () => {
+  await fetchSemesters();
+  // 初始加载所有成绩或最新学期成绩（取决于产品设计）
+  await fetchGrades();
+});
 </script>
 
 <style scoped>
-.grades-page {
+.grades-container {
   padding: 20px;
 }
 
-.term-selector {
-  margin: 20px 0;
+.page-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
-.term-selector .el-select {
-  width: 280px;
-  margin-right: 15px;
+.grades-card {
+  min-height: 300px; /* 防止加载时内容塌陷 */
 }
 
-.grades-table {
-  margin-top: 20px;
-}
-
-.grades-summary {
+.summary-info {
   margin-top: 20px;
   padding: 15px;
-  background-color: #f8f8f8;
+  background-color: #f5f7fa;
   border-radius: 4px;
-}
-
-.grades-summary p {
-  margin: 5px 0;
-}
-
-.grades-summary .gpa, .grades-summary .credit {
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.empty-data {
-  text-align: center;
-  padding: 30px;
-  color: #999;
+  /* 添加更多样式展示总学分、绩点等 */
 }
 </style> 

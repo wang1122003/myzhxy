@@ -33,26 +33,26 @@ public class UserController {
 
     /**
      * 用户登录
-     * @param username 用户名
-     * @param password 密码
+     * @param loginUser 用户登录信息
+     * @param response HTTP响应
      * @return 登录结果
      */
     @PostMapping("/login")
     public Result login(
-            @RequestParam String username,
-            @RequestParam String password,
+            @RequestBody User loginUser,
             HttpServletResponse response) {
-        User user = userService.login(username, password);
+        User user = userService.login(loginUser.getUsername(), loginUser.getPassword());
         if (user != null) {
             // 生成token
             String token = authService.generateToken(user);
             
             // 设置token到Cookie
-            authService.setTokenToCookie(response, token);
+            // authService.setTokenToCookie(response, token);
             
             // 返回结果
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
+            user.setPassword(null); // 清除密码
             data.put("user", user);
             
             return Result.success("登录成功", data);

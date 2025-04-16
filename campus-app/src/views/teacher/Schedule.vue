@@ -8,9 +8,11 @@
             placeholder="选择学期"
             style="margin-right: 10px;"
             @change="fetchSchedule"
+            :loading="loadingSemesters"
+            filterable
         >
           <el-option
-              v-for="item in semesters"
+              v-for="item in semestersRef"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -23,33 +25,34 @@
       </div>
     </div>
 
-    <el-card class="schedule-card">
+    <el-card v-loading="loadingSchedule || loadingTimeSlots || loadingWeekdays" class="schedule-card">
       <!-- 周视图 -->
       <div v-if="viewType === 'week'" class="week-view">
         <div class="time-column">
           <div class="header-cell">时间</div>
-          <div v-for="time in timeSlots" :key="time.slot" class="time-cell">
+          <div v-for="time in timeSlotsRef" :key="time.slot" class="time-cell">
             {{ time.label }}
-            <div class="time-range">{{ time.range }}</div>
+            <div class="time-range">{{ time.startTime }} - {{ time.endTime }}</div>
           </div>
         </div>
-        <div v-for="day in weekdays" :key="day.value" class="day-column">
+        <div v-for="day in weekdaysRef" :key="day.value" class="day-column">
           <div class="header-cell">{{ day.label }}</div>
           <div
-              v-for="time in timeSlots"
+              v-for="time in timeSlotsRef"
               :key="`${day.value}-${time.slot}`"
-              :class="{ 'has-course': hasCourse(day.value, time.slot) }"
+              :class="{ 'has-course': findCourseForCell(day.value, time) }"
               class="schedule-cell"
           >
             <div
-                v-if="getCourse(day.value, time.slot)"
-                :style="{ backgroundColor: getCourseColor(getCourse(day.value, time.slot).courseId) }"
+                v-if="findCourseForCell(day.value, time)"
+                :style="{ backgroundColor: getCourseColor(findCourseForCell(day.value, time).courseId) }"
                 class="course-item"
-                @click="showCourseDetail(getCourse(day.value, time.slot))"
+                @click="showCourseDetail(findCourseForCell(day.value, time))"
             >
-              <div class="course-name">{{ getCourse(day.value, time.slot).courseName }}</div>
-              <div class="course-location">{{ getCourse(day.value, time.slot).classroom }}</div>
-              <div class="course-class">{{ getCourse(day.value, time.slot).className || '' }}</div>
+              <div class="course-name">{{ findCourseForCell(day.value, time).courseName }}</div>
+              <div class="course-location">{{ findCourseForCell(day.value, time).classroom }}</div>
+              <!-- 可以考虑显示班级 -->
+              <!-- <div class="course-class">{{ findCourseForCell(day.value, time).className }}</div> -->
             </div>
           </div>
         </div>
@@ -58,17 +61,18 @@
       <!-- 列表视图 -->
       <div v-else class="list-view">
         <el-table :data="scheduleList" border style="width: 100%">
-          <el-table-column label="课程名称" min-width="150" prop="courseName"/>
-          <el-table-column label="班级" prop="className" width="120"/>
-          <el-table-column label="星期" prop="weekday" width="100">
+          <el-table-column label="课程名称" prop="courseName"/>
+          <!-- <el-table-column label="授课教师" prop="teacherName"/> --> <!-- 教师课表可能不需要显示自己名字 -->
+          <el-table-column label="星期" prop="weekday">
             <template #default="scope">
-              {{ getWeekdayName(scope.row.weekday) }}
+              {{ formatWeekday(scope.row.weekday) }}
             </template>
           </el-table-column>
-          <el-table-column label="开始时间" prop="startTime" width="100"/>
-          <el-table-column label="结束时间" prop="endTime" width="100"/>
-          <el-table-column label="教室" prop="classroom" width="120"/>
-          <el-table-column fixed="right" label="操作" width="120">
+          <el-table-column label="开始时间" prop="startTime"/>
+          <el-table-column label="结束时间" prop="endTime"/>
+          <el-table-column label="教室" prop="classroom"/>
+          <el-table-column label="班级" prop="className"/> <!-- 教师课表显示班级 -->
+          <el-table-column label="操作" width="100">
             <template #default="scope">
               <el-button
                   size="small"
@@ -91,27 +95,19 @@
       <template v-if="currentCourse">
         <el-descriptions :column="1" border title="">
           <el-descriptions-item label="课程名称">{{ currentCourse.courseName }}</el-descriptions-item>
-          <el-descriptions-item label="课程代码">{{ currentCourse.courseCode }}</el-descriptions-item>
-          <el-descriptions-item label="班级">{{ currentCourse.className }}</el-descriptions-item>
-          <el-descriptions-item label="学生人数">{{ currentCourse.studentCount || 0 }}人</el-descriptions-item>
+          <!-- <el-descriptions-item label="授课教师">{{ currentCourse.teacherName }}</el-descriptions-item> -->
           <el-descriptions-item label="上课时间">
-            {{ getWeekdayName(currentCourse.weekday) }} {{ currentCourse.startTime }} - {{ currentCourse.endTime }}
+            {{ formatWeekday(currentCourse.weekday) }} {{ currentCourse.startTime }} - {{ currentCourse.endTime }}
           </el-descriptions-item>
           <el-descriptions-item label="上课地点">{{ currentCourse.classroom }}</el-descriptions-item>
           <el-descriptions-item label="学分">{{ currentCourse.credit }}</el-descriptions-item>
-          <el-descriptions-item label="学期">{{ currentCourse.semester }}</el-descriptions-item>
-          <el-descriptions-item v-if="currentCourse.description" label="课程描述">
-            {{ currentCourse.description }}
-          </el-descriptions-item>
+          <el-descriptions-item label="授课班级">{{ currentCourse.className }}</el-descriptions-item> <!-- 显示班级 -->
+          <!-- 未来可添加学生列表等 -->
         </el-descriptions>
       </template>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">关闭</el-button>
-          <el-button
-              type="primary"
-              @click="goToCourseManage(currentCourse)"
-          >管理课程</el-button>
         </span>
       </template>
     </el-dialog>
@@ -119,272 +115,291 @@
 </template>
 
 <script>
-import {onMounted, ref} from 'vue'
-import {useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {getTeacherSchedule} from '@/api/schedule'
+import {computed, onMounted, ref} from 'vue';
+import {
+  ElButton,
+  ElCard,
+  ElDescriptions,
+  ElDescriptionsItem,
+  ElDialog,
+  ElMessage,
+  ElOption,
+  ElRadioButton,
+  ElRadioGroup,
+  ElSelect,
+  ElTable,
+  ElTableColumn
+} from 'element-plus';
+import {getTeacherSchedule} from '@/api/schedule'; // 引入教师课表 API
+import {getTerms, getTimeSlots, getWeekdays} from '@/api/common';
 
 export default {
-  name: 'TeacherScheduleView',
+  name: 'TeacherScheduleView', // 修改组件名
+  components: {
+    // 注册 Element Plus 组件
+    ElCard,
+    ElTable,
+    ElTableColumn,
+    ElSelect,
+    ElOption,
+    ElRadioGroup,
+    ElRadioButton,
+    ElButton,
+    ElDialog,
+    ElDescriptions,
+    ElDescriptionsItem
+  },
   setup() {
-    const router = useRouter()
-    const scheduleList = ref([])
-    const viewType = ref('week')
-    const semester = ref('2023-2024-1')
-    const dialogVisible = ref(false)
-    const currentCourse = ref(null)
+    const loadingSchedule = ref(false);
+    const loadingSemesters = ref(false);
+    const loadingTimeSlots = ref(false);
+    const loadingWeekdays = ref(false);
 
-    const semesters = [
-      {label: '2023-2024学年第一学期', value: '2023-2024-1'},
-      {label: '2023-2024学年第二学期', value: '2023-2024-2'},
-      {label: '2024-2025学年第一学期', value: '2024-2025-1'}
-    ]
+    const scheduleList = ref([]);
+    const viewType = ref('week');
+    const semester = ref(null);
+    const dialogVisible = ref(false);
+    const currentCourse = ref(null);
 
-    const weekdays = [
-      {label: '星期一', value: 1},
-      {label: '星期二', value: 2},
-      {label: '星期三', value: 3},
-      {label: '星期四', value: 4},
-      {label: '星期五', value: 5},
-      {label: '星期六', value: 6},
-      {label: '星期日', value: 7}
-    ]
+    const semestersRef = ref([]);
+    const timeSlotsRef = ref([]);
+    const weekdaysRef = ref([]);
 
-    const timeSlots = [
-      {slot: 1, label: '第一节', range: '08:00-08:45'},
-      {slot: 2, label: '第二节', range: '08:55-09:40'},
-      {slot: 3, label: '第三节', range: '10:00-10:45'},
-      {slot: 4, label: '第四节', range: '10:55-11:40'},
-      {slot: 5, label: '第五节', range: '13:30-14:15'},
-      {slot: 6, label: '第六节', range: '14:25-15:10'},
-      {slot: 7, label: '第七节', range: '15:30-16:15'},
-      {slot: 8, label: '第八节', range: '16:25-17:10'},
-      {slot: 9, label: '第九节', range: '18:30-19:15'},
-      {slot: 10, label: '第十节', range: '19:25-20:10'}
-    ]
+    const fetchInitialData = async () => {
+      loadingSemesters.value = true;
+      loadingTimeSlots.value = true;
+      loadingWeekdays.value = true;
+      try {
+        const [termsRes, timeSlotsRes, weekdaysRes] = await Promise.all([
+          getTerms(),
+          getTimeSlots(),
+          getWeekdays()
+        ]);
 
-    // 课程颜色映射
-    const courseColors = {}
+        semestersRef.value = termsRes.data;
+        timeSlotsRef.value = timeSlotsRes.data;
+        weekdaysRef.value = weekdaysRes.data;
+
+        if (semestersRef.value.length > 0) {
+          semester.value = semestersRef.value[0].value;
+          await fetchSchedule();
+        }
+      } catch (error) {
+        console.error('获取初始数据失败', error);
+        ElMessage.error('获取学期/时间段/星期数据失败');
+      } finally {
+        loadingSemesters.value = false;
+        loadingTimeSlots.value = false;
+        loadingWeekdays.value = false;
+      }
+    };
+
+    const courseColors = {};
     const colorPalette = [
       '#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399',
       '#3ECBBC', '#EA7C69', '#AA68CA', '#68C0CA', '#CA6897'
-    ]
+    ];
 
-    // 获取教师课表
     const fetchSchedule = async () => {
+      if (!semester.value) return;
+      loadingSchedule.value = true;
       try {
-        const response = await getTeacherSchedule({semester: semester.value})
-        scheduleList.value = response.data || []
+        const response = await getTeacherSchedule({semester: semester.value}); // 调用教师课表 API
+        scheduleList.value = response.data || [];
 
-        // 为课程分配颜色
+        // 重置并分配颜色
+        Object.keys(courseColors).forEach(key => delete courseColors[key]);
         scheduleList.value.forEach(schedule => {
-          if (!courseColors[schedule.courseId]) {
-            const colorIndex = Object.keys(courseColors).length % colorPalette.length
-            courseColors[schedule.courseId] = colorPalette[colorIndex]
+          if (schedule.courseId && !courseColors[schedule.courseId]) {
+            const colorIndex = Object.keys(courseColors).length % colorPalette.length;
+            courseColors[schedule.courseId] = colorPalette[colorIndex];
           }
-        })
+        });
       } catch (error) {
-        console.error('获取课表失败', error)
-        ElMessage.error('获取课表失败')
+        console.error('获取课表失败', error);
+        ElMessage.error('获取课表失败');
+        scheduleList.value = [];
+      } finally {
+        loadingSchedule.value = false;
       }
-    }
+    };
 
-    // 判断指定时间和日期是否有课程
-    const hasCourse = (day, timeSlot) => {
-      return scheduleList.value.some(schedule => {
-        return schedule.weekday === day && getTimeSlot(schedule.startTime) === timeSlot
-      })
-    }
+    const weekdayMap = computed(() => {
+      const map = {};
+      weekdaysRef.value.forEach(day => {
+        map[day.value] = day.label;
+      });
+      return map;
+    });
+    const formatWeekday = (weekdayValue) => {
+      return weekdayMap.value[weekdayValue] || '';
+    };
 
-    // 获取指定时间和日期的课程
-    const getCourse = (day, timeSlot) => {
+    const timeToMinutes = (timeStr) => {
+      if (!timeStr || !timeStr.includes(':')) return 0;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const findCourseForCell = (dayValue, timeSlot) => {
+      if (!timeSlot || !timeSlot.startTime || !timeSlot.endTime) return null;
+
+      const slotStartMinutes = timeToMinutes(timeSlot.startTime);
+
       return scheduleList.value.find(schedule => {
-        return schedule.weekday === day && getTimeSlot(schedule.startTime) === timeSlot
-      })
-    }
+        if (schedule.weekday !== dayValue) {
+          return false;
+        }
+        const courseStartMinutes = timeToMinutes(schedule.startTime);
+        // 教师课表可能一个时间段有多个班级，这里简化为只找第一个匹配的
+        // 如果需要显示合并单元格，逻辑会更复杂
+        return courseStartMinutes === slotStartMinutes;
+      });
+    };
 
-    // 根据时间获取对应的时间槽
-    const getTimeSlot = (time) => {
-      // 根据时间（如 "08:00"）获取对应的时间槽
-      const timeSlotMap = {
-        '08:00': 1,
-        '08:55': 2,
-        '10:00': 3,
-        '10:55': 4,
-        '13:30': 5,
-        '14:25': 6,
-        '15:30': 7,
-        '16:25': 8,
-        '18:30': 9,
-        '19:25': 10
-      }
-      return timeSlotMap[time] || 0
-    }
-
-    // 获取课程颜色
     const getCourseColor = (courseId) => {
-      return courseColors[courseId] || '#409EFF'
-    }
+      return courseColors[courseId] || '#409EFF';
+    };
 
-    // 获取星期名称
-    const getWeekdayName = (weekday) => {
-      const weekdayMap = {
-        1: '星期一',
-        2: '星期二',
-        3: '星期三',
-        4: '星期四',
-        5: '星期五',
-        6: '星期六',
-        7: '星期日'
-      }
-      return weekdayMap[weekday] || '未知'
-    }
-
-    // 显示课程详情
     const showCourseDetail = (course) => {
-      currentCourse.value = course
-      dialogVisible.value = true
-    }
+      currentCourse.value = course;
+      dialogVisible.value = true;
+    };
 
-    // 跳转到课程管理页面
-    const goToCourseManage = (course) => {
-      if (course && course.courseId) {
-        dialogVisible.value = false
-        router.push({
-          path: '/teacher/courses',
-          query: {courseId: course.courseId}
-        })
-      }
-    }
-
-    // 页面初始化时加载数据
     onMounted(() => {
-      fetchSchedule()
-    })
+      fetchInitialData();
+    });
 
     return {
+      loadingSchedule,
+      loadingSemesters,
+      loadingTimeSlots,
+      loadingWeekdays,
       scheduleList,
       viewType,
       semester,
+      semestersRef,
+      timeSlotsRef,
+      weekdaysRef,
       dialogVisible,
       currentCourse,
-      semesters,
-      weekdays,
-      timeSlots,
-      courseColors,
-      colorPalette,
       fetchSchedule,
-      hasCourse,
-      getCourse,
-      getTimeSlot,
+      formatWeekday,
+      findCourseForCell,
       getCourseColor,
-      getWeekdayName,
-      showCourseDetail,
-      goToCourseManage
-    }
+      showCourseDetail
+    };
   }
-}
+};
 </script>
 
 <style scoped>
+/* 样式与 student/Schedule.vue 基本相同 */
 .schedule-container {
   padding: 20px;
 }
-
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
-
 .filter-container {
   display: flex;
   align-items: center;
 }
-
 .schedule-card {
-  margin-bottom: 20px;
+  min-height: 400px;
 }
-
 .week-view {
   display: flex;
-  min-height: 700px;
+  border-left: 1px solid #ebeef5;
+  border-top: 1px solid #ebeef5;
 }
 
-.time-column, .day-column {
+.time-column,
+.day-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-column {
+  flex: 0 0 100px;
+}
+
+.day-column {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #EBEEF5;
 }
 
-.header-cell {
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  background-color: #F5F7FA;
-  border-bottom: 1px solid #EBEEF5;
-}
-
-.time-cell {
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #EBEEF5;
-  font-size: 0.9em;
-}
-
-.time-range {
-  font-size: 0.8em;
-  color: #909399;
-  margin-top: 5px;
-}
-
+.header-cell,
+.time-cell,
 .schedule-cell {
-  height: 100px;
-  border-bottom: 1px solid #EBEEF5;
+  border-right: 1px solid #ebeef5;
+  border-bottom: 1px solid #ebeef5;
+  text-align: center;
   position: relative;
 }
-
-.course-item {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.header-cell {
+  background-color: #fafafa;
+  font-weight: bold;
+  padding: 10px 5px;
+  height: 50px;
+  box-sizing: border-box;
+}
+.time-cell {
+  height: 80px;
   padding: 5px;
+  font-size: 12px;
+  color: #909399;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s;
+  box-sizing: border-box;
 }
-
+.time-range {
+  font-size: 10px;
+  margin-top: 4px;
+}
+.schedule-cell {
+  height: 80px;
+  box-sizing: border-box;
+}
+.course-item {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border-radius: 4px;
+  padding: 5px;
+  font-size: 12px;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
 .course-item:hover {
   transform: scale(1.05);
   z-index: 10;
 }
-
 .course-name {
   font-weight: bold;
-  font-size: 0.9em;
-  margin-bottom: 5px;
-  text-align: center;
+  margin-bottom: 4px;
 }
 
-.course-location, .course-class {
-  font-size: 0.8em;
-  margin-bottom: 2px;
+.course-location {
+  font-size: 10px;
 }
-
 .list-view {
   width: 100%;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style> 

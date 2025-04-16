@@ -3,7 +3,7 @@ import {ElMessage} from 'element-plus'
 
 // 创建axios实例
 const request = axios.create({
-    baseURL: '/api', // 设置API前缀
+    baseURL: 'http://localhost:8080/campus/api', // 添加 /campus 上下文路径
     timeout: 10000 // 请求超时时间
 })
 
@@ -15,9 +15,14 @@ request.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
+        // 添加请求日志
+        console.log('发送请求:', config.url)
+        console.log('请求方法:', config.method)
+        console.log('请求参数:', config.params || config.data)
         return config
     },
     error => {
+        console.error('请求错误:', error)
         return Promise.reject(error)
     }
 )
@@ -26,6 +31,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
     response => {
         const res = response.data
+        console.log('响应数据:', res)
 
         // 如果响应成功，直接返回数据
         if (res.code === 0 || res.code === 200 || !res.code) {
@@ -37,6 +43,12 @@ request.interceptors.response.use(
         return Promise.reject(new Error(res.message || '请求失败'))
     },
     error => {
+        console.error('请求失败:', error.message)
+        if (error.response) {
+            console.error('状态码:', error.response.status)
+            console.error('响应数据:', error.response.data)
+        }
+        
         if (error.response && error.response.status === 401) {
             // 未授权，清除token，返回登录页
             localStorage.removeItem('token')

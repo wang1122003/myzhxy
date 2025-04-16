@@ -18,7 +18,7 @@
         <param-value>classpath:applicationContext.xml</param-value>
     </context-param>
 
-    <!-- 编码过滤器 -->
+
     <filter>
         <filter-name>characterEncodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
@@ -51,7 +51,7 @@
     </filter>
     <filter-mapping>
         <filter-name>authorizationFilter</filter-name>
-        <url-pattern>/api/*</url-pattern>
+        <url-pattern>/campus/api/*</url-pattern>
     </filter-mapping>
 
     <!-- Spring监听器 -->
@@ -189,8 +189,8 @@
         <extension>svg</extension>
         <mime-type>image/svg+xml</mime-type>
     </mime-mapping>
-    <!-- 注释掉HTTPS的安全约束，本地开发环境不需要 -->
-    <!--
+
+    <!-- 
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>Secured</web-resource-name>
@@ -201,5 +201,6 @@
         </user-data-constraint>
     </security-constraint>
     -->
+
 
 </web-app>

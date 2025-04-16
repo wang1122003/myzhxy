@@ -95,7 +95,7 @@ import {onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {Bell, Calendar, ChatDotRound, Document, Files, HomeFilled, Message, School, User} from '@element-plus/icons-vue'
-import {getUserInfo} from '@/api/user'
+import {getCurrentUser} from '@/api/user'
 
 export default {
   name: 'AdminIndex',
@@ -119,7 +119,7 @@ export default {
     })
 
     const fetchUserInfo = () => {
-      getUserInfo().then(response => {
+      getCurrentUser().then(response => {
         userInfo.value = response.data
       }).catch(() => {
         logout()

@@ -3,13 +3,14 @@ package com.campus.controller;
 import com.campus.entity.User;
 import com.campus.service.AuthService;
 import com.campus.service.UserService;
-import com.campus.utils.JwtUtil;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -391,23 +392,75 @@ public class UserController {
      */
     @GetMapping("/stats")
     public Result getUserStats() {
-        Map<String, Object> stats = new HashMap<>();
-        
-        long total = userService.getUserCount();
-        long studentCount = userService.getUserCountByType(1);
-        long teacherCount = userService.getUserCountByType(2);
-        long adminCount = userService.getUserCountByType(0);
-        long activeCount = userService.getUserCountByStatus(1);
-        long inactiveCount = userService.getUserCountByStatus(0);
-        
-        stats.put("total", total);
-        stats.put("studentCount", studentCount);
-        stats.put("teacherCount", teacherCount);
-        stats.put("adminCount", adminCount);
-        stats.put("activeCount", activeCount);
-        stats.put("inactiveCount", inactiveCount);
-        
+        Map<String, Object> stats = userService.getUserStats();
         return Result.success("获取成功", stats);
+    }
+
+    /**
+     * 批量导入用户
+     *
+     * @param file     Excel文件
+     * @param userType 用户类型 (1-学生, 2-教师)
+     * @return 导入结果
+     */
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result importUsers(@RequestParam("file") MultipartFile file,
+                              @RequestParam("userType") Integer userType) {
+        try {
+            if (file.isEmpty()) {
+                return Result.error("请选择要上传的文件");
+            }
+
+            // 校验文件类型
+            String fileName = file.getOriginalFilename();
+            if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+                return Result.error("文件格式不正确，请上传Excel文件");
+            }
+
+            // 调用服务层处理导入
+            Map<String, Object> result = userService.importUsers(file, userType);
+
+            return Result.success("导入成功", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("导入失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量导入用户数据
+     *
+     * @param users 用户列表
+     * @return 导入结果
+     */
+    @PostMapping("/batch-import")
+    public Result batchImportUsers(@RequestBody List<User> users) {
+        try {
+            Map<String, Object> result = userService.batchImportUsers(users);
+            return Result.success("批量导入成功", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("批量导入失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 下载用户导入模板
+     *
+     * @return 导入模板
+     */
+    @GetMapping("/import-template")
+    public Result downloadImportTemplate() {
+        try {
+            // 生成并返回模板数据
+            String templateUrl = userService.generateImportTemplate();
+            Map<String, Object> data = new HashMap<>();
+            data.put("templateUrl", templateUrl);
+            return Result.success("模板生成成功", data);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("模板生成失败：" + e.getMessage());
+        }
     }
     
     /**

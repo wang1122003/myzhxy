@@ -4,8 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 /**
@@ -13,45 +18,28 @@ import java.util.UUID;
  */
 public class FileUtils {
     private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-    
-    // 文件上传基础路径
-    private static final String BASE_UPLOAD_DIR = "uploads";
-    
+
     // 图片上传路径
-    public static final String IMAGE_UPLOAD_DIR = BASE_UPLOAD_DIR + "/images";
-    
+    public static final String IMAGE_UPLOAD_DIR = getBaseUploadDir() + "/images";
     // 文档上传路径
-    public static final String DOCUMENT_UPLOAD_DIR = BASE_UPLOAD_DIR + "/documents";
-    
+    public static final String DOCUMENT_UPLOAD_DIR = getBaseUploadDir() + "/documents";
     // 用户头像上传路径
-    public static final String AVATAR_UPLOAD_DIR = BASE_UPLOAD_DIR + "/avatars";
-    
+    public static final String AVATAR_UPLOAD_DIR = getBaseUploadDir() + "/avatars";
     // 活动海报上传路径
-    public static final String POSTER_UPLOAD_DIR = BASE_UPLOAD_DIR + "/posters";
-    
+    public static final String POSTER_UPLOAD_DIR = getBaseUploadDir() + "/posters";
     // 课程材料上传路径
-    public static final String COURSE_MATERIAL_DIR = BASE_UPLOAD_DIR + "/courses";
-    
+    public static final String COURSE_MATERIAL_DIR = getBaseUploadDir() + "/courses";
     // 帖子图片上传路径
-    public static final String POST_IMAGE_DIR = BASE_UPLOAD_DIR + "/posts";
-    
+    public static final String POST_IMAGE_DIR = getBaseUploadDir() + "/posts";
     // 临时文件路径
-    public static final String TEMP_DIR = BASE_UPLOAD_DIR + "/temp";
+    public static final String TEMP_DIR = getBaseUploadDir() + "/temp";
     
     /**
-     * 初始化文件上传目录
+     * 获取基础上传目录，通过配置系统获取
+     * 注意：此方法不应直接用于文件操作，应该使用路径常量
      */
-    public static void initUploadDirs() {
-        createDirectoryIfNotExists(BASE_UPLOAD_DIR);
-        createDirectoryIfNotExists(IMAGE_UPLOAD_DIR);
-        createDirectoryIfNotExists(DOCUMENT_UPLOAD_DIR);
-        createDirectoryIfNotExists(AVATAR_UPLOAD_DIR);
-        createDirectoryIfNotExists(POSTER_UPLOAD_DIR);
-        createDirectoryIfNotExists(COURSE_MATERIAL_DIR);
-        createDirectoryIfNotExists(POST_IMAGE_DIR);
-        createDirectoryIfNotExists(TEMP_DIR);
-        
-        logger.info("文件上传目录初始化完成");
+    public static String getBaseUploadDir() {
+        return "uploads"; // 默认值，应与配置文件和InitializationUtils保持一致
     }
     
     /**
@@ -120,7 +108,7 @@ public class FileUtils {
         
         int lastDotIndex = originalFilename.lastIndexOf(".");
         String extension = lastDotIndex != -1 ? originalFilename.substring(lastDotIndex) : "";
-        return UUID.randomUUID().toString() + extension;
+        return UUID.randomUUID() + extension;
     }
     
     /**

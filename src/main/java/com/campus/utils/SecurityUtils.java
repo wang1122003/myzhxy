@@ -2,7 +2,6 @@ package com.campus.utils;
 
 import com.campus.entity.User;
 import com.campus.service.AuthService;
-import com.campus.service.FileService;
 import com.campus.utils.ExceptionUtils.AuthenticationException;
 import com.campus.utils.ExceptionUtils.PermissionDeniedException;
 import jakarta.servlet.*;
@@ -11,62 +10,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * 系统安全和初始化工具类
- * 提供系统安全配置和初始化功能
+ * 系统安全工具类
+ * 提供系统安全配置和权限验证功能
  */
 public class SecurityUtils {
     
     private static final Logger logger = LoggerFactory.getLogger(SecurityUtils.class);
-    
-    /**
-     * 应用初始化组件
-     * 在应用启动时执行必要的初始化操作
-     */
-    @Component
-    public static class AppInitializer implements ApplicationListener<ContextRefreshedEvent> {
-        
-        private static final Logger logger = LoggerFactory.getLogger(AppInitializer.class);
-        
-        @Autowired
-        private FileService fileService;
-        
-        @Value("${file.upload.path:uploads}")
-        private String uploadPath;
-        
-        // 添加静态标志防止重复初始化
-        private static boolean initialized = false;
-        
-        @Override
-        public void onApplicationEvent(ContextRefreshedEvent event) {
-            // 使用双重检查锁定模式确保只初始化一次
-            if (!initialized) {
-                synchronized (AppInitializer.class) {
-                    if (!initialized) {
-                        // 初始化文件上传目录
-                        logger.info("初始化文件上传目录: {}", uploadPath);
-                        fileService.init();
-                        
-                        // 其他系统初始化操作可以在这里添加
-                        
-                        logger.info("系统初始化完成");
-                        initialized = true;
-                    }
-                }
-            }
-        }
-    }
     
     /**
      * Web安全配置
@@ -81,7 +38,14 @@ public class SecurityUtils {
         // 公开API，不需要认证
         private static final List<String> PUBLIC_APIS = Arrays.asList(
                 "/api/users/login",
-                "/api/common/"
+                "/api/users/register",
+                "/api/users/check-session",
+                "/api/users/create-admin",
+                "/api/common/",
+                "/api/file/upload/",
+                "/api/file/download/",
+                "/static/",
+                "/favicon.ico"
         );
         
         // 管理员API，需要管理员权限
@@ -91,12 +55,12 @@ public class SecurityUtils {
         );
         
         // 教师API，需要教师权限
-        private static final List<String> TEACHER_APIS = Arrays.asList(
+        private static final List<String> TEACHER_APIS = List.of(
                 "/api/teacher/"
         );
         
         // 学生API，需要学生权限
-        private static final List<String> STUDENT_APIS = Arrays.asList(
+        private static final List<String> STUDENT_APIS = List.of(
                 "/api/student/"
         );
     
@@ -131,6 +95,11 @@ public class SecurityUtils {
                         if (currentUser == null) {
                             throw new AuthenticationException("无法获取用户信息");
                         }
+
+                        // 将用户信息添加到请求属性中，方便后续使用
+                        request.setAttribute("userId", currentUser.getId());
+                        request.setAttribute("username", currentUser.getUsername());
+                        request.setAttribute("userType", currentUser.getUserType());
                         
                         // 检查请求权限
                         if (isAdminApi(path) && !authService.isAdmin(request)) {

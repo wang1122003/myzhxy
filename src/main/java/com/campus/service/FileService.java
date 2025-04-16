@@ -92,10 +92,4 @@ public interface FileService {
      * @return 临时访问URL
      */
     String generateTempUrl(String filePath, long expireTime);
-    
-    /**
-     * 初始化存储目录
-     * 在应用启动时自动创建必要的文件目录
-     */
-    void init();
 } 

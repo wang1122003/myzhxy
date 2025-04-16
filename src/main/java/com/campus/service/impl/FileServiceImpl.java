@@ -175,8 +175,6 @@ public class FileServiceImpl implements FileService {
     
     /**
      * 验证图片文件
-     *
-     * @param file 文件
      */
     private void validateImageFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -186,14 +184,5 @@ public class FileServiceImpl implements FileService {
         if (!FileUtils.isImage(file.getOriginalFilename())) {
             throw new IllegalArgumentException("请上传合法的图片文件");
         }
-    }
-    
-    /**
-     * 初始化存储目录
-     * 在应用启动时自动创建必要的文件目录
-     */
-    @Override
-    public void init() {
-        FileUtils.initUploadDirs();
     }
 } 

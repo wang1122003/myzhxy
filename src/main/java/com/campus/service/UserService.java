@@ -1,13 +1,17 @@
 package com.campus.service;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.User;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 用户服务接口
+ * 定义用户相关的业务逻辑操作
  */
-public interface UserService {
+public interface UserService extends IService<User> {
     
     /**
      * 根据ID查询用户
@@ -118,9 +122,71 @@ public interface UserService {
     long getUserCountByType(int userType);
     
     /**
-     * 根据用户状态获取用户数量
-     * @param status 用户状态
+     * 根据状态获取用户数量
+     * @param status 状态
      * @return 用户数量
      */
     long getUserCountByStatus(int status);
+
+    /**
+     * 获取所有学生用户
+     *
+     * @return 学生用户列表
+     */
+    List<User> getAllStudents();
+
+    /**
+     * 获取所有教师用户
+     *
+     * @return 教师用户列表
+     */
+    List<User> getAllTeachers();
+
+    /**
+     * 获取用户统计信息
+     *
+     * @return 用户统计数据
+     */
+    Map<String, Object> getUserStats();
+
+    /**
+     * 更新用户个人资料
+     *
+     * @param user 用户对象
+     * @return 是否成功
+     */
+    boolean updateProfile(User user);
+
+    /**
+     * 上传用户头像
+     *
+     * @param id        用户ID
+     * @param avatarUrl 头像URL
+     * @return 是否成功
+     */
+    boolean uploadAvatar(Long id, String avatarUrl);
+
+    /**
+     * 批量导入用户
+     *
+     * @param file     Excel文件
+     * @param userType 用户类型
+     * @return 导入结果
+     */
+    Map<String, Object> importUsers(MultipartFile file, Integer userType);
+
+    /**
+     * 批量导入用户
+     *
+     * @param users 用户列表
+     * @return 导入结果
+     */
+    Map<String, Object> batchImportUsers(List<User> users);
+
+    /**
+     * 生成用户导入模板
+     *
+     * @return 模板文件URL
+     */
+    String generateImportTemplate();
 }

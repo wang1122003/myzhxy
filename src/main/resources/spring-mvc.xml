@@ -19,7 +19,6 @@
 
     <!-- 扫描utils包中的Web相关组件 -->
     <context:component-scan base-package="com.campus.utils" use-default-filters="false">
-        <context:include-filter type="assignable" expression="com.campus.utils.JwtInterceptor"/>
         <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$GlobalExceptionHandler"/>
         <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$BusinessExceptionHandler"/>
     </context:component-scan>
@@ -80,12 +79,11 @@
                       max-age="3600" />
     </mvc:cors>
 
-    <!-- JWT拦截器配置 -->
+    <!-- 注释掉JWT拦截器配置，已使用Filter替代 -->
+    <!--
     <mvc:interceptors>
         <mvc:interceptor>
-            <!-- 需要拦截的请求 -->
             <mvc:mapping path="/api/**"/>
-            <!-- 不需要拦截的请求 -->
             <mvc:exclude-mapping path="/api/users/login"/>
             <mvc:exclude-mapping path="/api/users/register"/>
             <mvc:exclude-mapping path="/api/users/check-session"/>
@@ -98,4 +96,5 @@
             <bean class="com.campus.utils.JwtInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>
+    -->
 </beans>

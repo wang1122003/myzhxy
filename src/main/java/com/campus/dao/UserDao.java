@@ -2,16 +2,15 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.User;
-
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
  * 用户数据访问接口
  */
-@Repository
+@Mapper
 public interface UserDao extends BaseMapper<User> {
     /**
      * 根据用户名查询用户
@@ -90,4 +89,12 @@ public interface UserDao extends BaseMapper<User> {
      * @return 是否存在
      */
     boolean isPhoneExists(String phone);
+
+    /**
+     * 批量删除用户
+     *
+     * @param ids 用户ID列表
+     * @return 删除数量
+     */
+    int deleteBatchIds(@Param("ids") List<Long> ids);
 }

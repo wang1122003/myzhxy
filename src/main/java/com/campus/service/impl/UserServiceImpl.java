@@ -9,11 +9,10 @@ import com.campus.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 用户服务实现类
@@ -278,5 +277,108 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getStatus, status);
         return count(queryWrapper);
+    }
+
+    @Override
+    public List<User> getAllStudents() {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserType, 1); // 1表示学生
+        return list(queryWrapper);
+    }
+
+    @Override
+    public List<User> getAllTeachers() {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserType, 2); // 2表示教师
+        return list(queryWrapper);
+    }
+
+    @Override
+    public Map<String, Object> getUserStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", getUserCount());
+        stats.put("totalStudents", getUserCountByType(1));
+        stats.put("totalTeachers", getUserCountByType(2));
+        stats.put("activeUsers", getUserCountByStatus(1));
+        stats.put("inactiveUsers", getUserCountByStatus(0));
+        return stats;
+    }
+
+    @Override
+    public boolean updateProfile(User user) {
+        if (user == null || user.getId() == null) {
+            return false;
+        }
+
+        // 只更新个人资料相关字段
+        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(User::getId, user.getId())
+                .set(User::getRealName, user.getRealName())
+                .set(User::getGender, user.getGender())
+                .set(User::getPhone, user.getPhone())
+                .set(User::getEmail, user.getEmail())
+                .set(User::getUpdateTime, new Date());
+
+        return update(updateWrapper);
+    }
+
+    @Override
+    public boolean uploadAvatar(Long id, String avatarUrl) {
+        if (id == null || avatarUrl == null) {
+            return false;
+        }
+
+        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(User::getId, id)
+                .set(User::getAvatar, avatarUrl)
+                .set(User::getUpdateTime, new Date());
+
+        return update(updateWrapper);
+    }
+
+    @Override
+    public Map<String, Object> importUsers(MultipartFile file, Integer userType) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("message", "Excel导入功能暂未实现");
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> batchImportUsers(List<User> users) {
+        Map<String, Object> result = new HashMap<>();
+        if (users == null || users.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "用户列表为空");
+            return result;
+        }
+
+        try {
+            // 设置创建时间和更新时间
+            Date now = new Date();
+            for (User user : users) {
+                user.setCreateTime(now);
+                user.setUpdateTime(now);
+                // 加密密码
+                if (user.getPassword() != null) {
+                    user.setPassword(encryptPassword(user.getPassword()));
+                }
+            }
+
+            boolean success = saveBatch(users);
+            result.put("success", success);
+            result.put("count", users.size());
+            result.put("message", success ? "导入成功" : "导入失败");
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "导入失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    @Override
+    public String generateImportTemplate() {
+        return "/templates/user_import_template.xlsx";
     }
 }

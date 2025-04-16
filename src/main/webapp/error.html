@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>出错了 - 校园管理系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-container {
+            max-width: 600px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 20px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .error-header {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .error-code {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .error-title {
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+        
+        .error-body {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .error-message {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+        
+        .error-detail {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            color: #666;
+            text-align: left;
+            font-size: 14px;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .error-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-return {
+            background-color: #e91e63;
+            border-color: #e91e63;
+            color: white;
+        }
+        
+        .btn-return:hover {
+            background-color: #d81b60;
+            border-color: #d81b60;
+            color: white;
+        }
+        
+        .animation-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+            40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .error-code {
+                font-size: 28px;
+            }
+            
+            .error-title {
+                font-size: 20px;
+            }
+            
+            .error-message {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-container">
+            <div class="error-header">
+                <div class="error-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="error-code" id="error-code">500</div>
+                <h1 class="error-title" id="error-title">服务器内部错误</h1>
+            </div>
+            
+            <div class="error-body">
+                <div class="error-message" id="error-message">
+                    服务器在处理您的请求时遇到了问题。
+                </div>
+                
+                <div class="error-detail" id="error-detail" style="display: none;">
+                    <!-- 错误详情将在这里显示 -->
+                </div>
+                
+                <div class="error-actions">
+                    <button class="btn btn-return btn-lg" onclick="goHome()">
+                        <i class="bi bi-house-door"></i> 返回首页
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg" onclick="goBack()">
+                        <i class="bi bi-arrow-left"></i> 返回上一页
+                    </button>
+                    <button class="btn btn-outline-primary btn-lg" onclick="refreshPage()">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新页面
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 解析URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code') || '500';
+            const title = urlParams.get('title') || '服务器内部错误';
+            const message = urlParams.get('message') || '服务器在处理您的请求时遇到了问题。';
+            const detail = urlParams.get('detail') || '';
+            
+            // 更新页面元素
+            document.getElementById('error-code').textContent = code;
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            
+            // 如果有详细信息，则显示
+            if (detail && detail.trim() !== '') {
+                document.getElementById('error-detail').textContent = detail;
+                document.getElementById('error-detail').style.display = 'block';
+            }
+            
+            // 根据错误代码设置不同的图标和颜色
+            const iconElement = document.querySelector('.error-icon i');
+            const headerElement = document.querySelector('.error-header');
+            
+            if (code.startsWith('4')) {
+                // 4xx 客户端错误
+                iconElement.className = 'bi bi-question-circle';
+                headerElement.style.background = 'linear-gradient(135deg, #ff9800 0%, #ff5722 100%)';
+                document.querySelector('.btn-return').className = 'btn btn-warning btn-lg';
+            } else if (code.startsWith('5')) {
+                // 5xx 服务器错误
+                iconElement.className = 'bi bi-exclamation-triangle';
+                headerElement.style.background = 'linear-gradient(135deg, #f44336 0%, #e91e63 100%)';
+            } else {
+                // 其他错误
+                iconElement.className = 'bi bi-emoji-frown';
+                headerElement.style.background = 'linear-gradient(135deg, #3f51b5 0%, #2196f3 100%)';
+            }
+            
+            // 添加动画效果
+            setTimeout(function() {
+                document.querySelector('.error-icon').classList.add('animation-shake');
+            }, 500);
+        });
+        
+        // 返回首页
+        function goHome() {
+            window.location.href = '/campus/index.html';
+        }
+        
+        // 返回上一页
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                goHome();
+            }
+        }
+        
+        // 刷新页面
+        function refreshPage() {
+            window.location.reload();
+        }
+    </script>
+</body>
+</html> 

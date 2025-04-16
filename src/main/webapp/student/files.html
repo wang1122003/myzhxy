@@ -316,7 +316,7 @@
             
             <div class="toolbar">
                 <div class="toolbar-left">
-                    <div class="search-box">
+                <div class="search-box">
                         <input type="text" id="searchInput" placeholder="搜索文件..." />
                         <button id="searchBtn"><i class="bi bi-search"></i></button>
                     </div>
@@ -364,7 +364,7 @@
             &copy; 智慧校园服务系统 - 版权所有
         </div>
     </footer>
-
+    
     <script>
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
@@ -572,7 +572,7 @@
                 prevBtn.addEventListener('click', function() {
                     if (state.page > 1) {
                         state.page--;
-                        loadFiles();
+                loadFiles();
                     }
                 });
                 
@@ -580,7 +580,7 @@
                     const totalPages = parseInt(document.getElementById('totalPages').textContent);
                     if (state.page < totalPages) {
                         state.page++;
-                        loadFiles();
+                    loadFiles();
                     }
                 });
             }

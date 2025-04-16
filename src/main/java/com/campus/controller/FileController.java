@@ -33,7 +33,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/image")
-    public Result uploadImage(@RequestParam("file") MultipartFile file) {
+    public Result<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             String filePath = fileService.uploadImage(file);
             return Result.success("图片上传成功", filePath);
@@ -51,7 +51,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/image/{type}")
-    public Result uploadImageByType(@RequestParam("file") MultipartFile file, @PathVariable("type") String type) {
+    public Result<String> uploadImageByType(@RequestParam("file") MultipartFile file, @PathVariable("type") String type) {
         try {
             String filePath = fileService.uploadImage(file, type);
             return Result.success("图片上传成功", filePath);
@@ -68,7 +68,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/activity/poster")
-    public Result uploadActivityPoster(@RequestParam("file") MultipartFile file) {
+    public Result<String> uploadActivityPoster(@RequestParam("file") MultipartFile file) {
         try {
             String filePath = fileService.uploadActivityPoster(file);
             return Result.success("活动海报上传成功", filePath);
@@ -86,7 +86,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/avatar/{userId}")
-    public Result uploadUserAvatar(@RequestParam("file") MultipartFile file, @PathVariable("userId") Long userId) {
+    public Result<String> uploadUserAvatar(@RequestParam("file") MultipartFile file, @PathVariable("userId") Long userId) {
         try {
             String filePath = fileService.uploadUserAvatar(file, userId);
             return Result.success("用户头像上传成功", filePath);
@@ -103,7 +103,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/post/image")
-    public Result uploadPostImage(@RequestParam("file") MultipartFile file) {
+    public Result<String> uploadPostImage(@RequestParam("file") MultipartFile file) {
         try {
             String filePath = fileService.uploadPostImage(file);
             return Result.success("帖子图片上传成功", filePath);
@@ -120,7 +120,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/document")
-    public Result uploadDocument(@RequestParam("file") MultipartFile file) {
+    public Result<String> uploadDocument(@RequestParam("file") MultipartFile file) {
         try {
             String filePath = fileService.uploadDocument(file);
             return Result.success("文档上传成功", filePath);
@@ -138,7 +138,7 @@ public class FileController {
      * @return 上传结果
      */
     @PostMapping("/upload/course/material/{courseId}")
-    public Result uploadCourseMaterial(@RequestParam("file") MultipartFile file, @PathVariable("courseId") Long courseId) {
+    public Result<String> uploadCourseMaterial(@RequestParam("file") MultipartFile file, @PathVariable("courseId") Long courseId) {
         try {
             String filePath = fileService.uploadCourseMaterial(file, courseId);
             return Result.success("课程材料上传成功", filePath);
@@ -155,11 +155,11 @@ public class FileController {
      * @return 删除结果
      */
     @DeleteMapping("/delete")
-    public Result deleteFile(@RequestParam("filePath") String filePath) {
+    public Result<Boolean> deleteFile(@RequestParam("filePath") String filePath) {
         try {
             boolean success = fileService.deleteFile(filePath);
             if (success) {
-                return Result.success("文件删除成功");
+                return Result.success("文件删除成功", true);
             } else {
                 return Result.error("文件删除失败");
             }
@@ -176,7 +176,7 @@ public class FileController {
      * @return 文件信息
      */
     @GetMapping("/info")
-    public Result getFileInfo(@RequestParam("filePath") String filePath) {
+    public Result<String> getFileInfo(@RequestParam("filePath") String filePath) {
         try {
             String fileInfo = fileService.getFileInfo(filePath);
             return Result.success("获取文件信息成功", fileInfo);
@@ -233,7 +233,7 @@ public class FileController {
      * @return 临时URL
      */
     @GetMapping("/temp-url")
-    public Result generateTempUrl(@RequestParam("filePath") String filePath, 
+    public Result<String> generateTempUrl(@RequestParam("filePath") String filePath, 
                                  @RequestParam(value = "expireTime", defaultValue = "3600000") long expireTime) {
         try {
             String tempUrl = fileService.generateTempUrl(filePath, expireTime);

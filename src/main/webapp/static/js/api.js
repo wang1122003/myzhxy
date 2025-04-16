@@ -6,153 +6,6 @@ const API = {
     // 基础URL
     baseUrl: '/campus/api',
     
-    // Token保存的键名
-    tokenKey: 'campus_token',
-    
-    // 初始化
-    init() {
-        // 检查保存的token
-        const savedToken = localStorage.getItem(this.tokenKey);
-        if (savedToken) {
-            this.token = savedToken;
-        }
-    },
-    
-    // 设置token
-    setToken(token) {
-        this.token = token;
-        localStorage.setItem(this.tokenKey, token);
-    },
-    
-    // 清除token
-    clearToken() {
-        this.token = null;
-        localStorage.removeItem(this.tokenKey);
-        localStorage.removeItem('username');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('user');
-    },
-    
-    // 检查是否已登录
-    isLoggedIn() {
-        return !!this.token;
-    },
-    
-    // 获取当前用户名
-    getUsername() {
-        return localStorage.getItem('username');
-    },
-    
-    // 获取当前用户ID
-    getUserId() {
-        return localStorage.getItem('userId');
-    },
-    
-    // 获取当前用户角色
-    getUserRole() {
-        return localStorage.getItem('role');
-    },
-    
-    // 检查token是否有效
-    async checkToken() {
-        try {
-            // 从本地存储获取token
-            const token = localStorage.getItem(this.tokenKey);
-            if (!token) {
-                return false;
-            }
-
-            // 解析token中的用户信息
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const decodedToken = JSON.parse(window.atob(base64));
-            
-            // 检查token是否过期
-            const currentTime = Date.now() / 1000;
-            if (decodedToken.exp && decodedToken.exp < currentTime) {
-                // token已过期，清除
-                this.clearToken();
-                return false;
-            }
-            
-            // token有效
-            return true;
-        } catch (error) {
-            console.error('检查token失败:', error);
-            this.clearToken();
-            return false;
-        }
-    },
-    
-    // 检查权限
-    async checkPermission(permission) {
-        const success = await this.checkToken();
-        if (!success) {
-            return false;
-        }
-        
-        // 从localStorage获取userType
-        const userType = parseInt(localStorage.getItem('userType'));
-        
-        // 管理员拥有所有权限
-        if (userType === 0) {
-            return true;
-        }
-        
-        // 教师权限
-        if (userType === 1) {
-            const teacherPermissions = ['course_manage', 'classroom_manage', 'schedule_manage', 'teacher'];
-            if (permission === 'admin') {
-                return false;
-            }
-            return teacherPermissions.includes(permission);
-        }
-        
-        // 学生权限
-        if (userType === 2) {
-            const studentPermissions = ['activity_manage', 'student'];
-            if (permission === 'admin' || permission === 'teacher') {
-                return false;
-            }
-            return studentPermissions.includes(permission);
-        }
-        
-        return false;
-    },
-    
-    // 根据角色重定向到对应页面
-    redirectToRolePage() {
-        const role = this.getUserRole();
-        let url = '/campus/index.html';
-        
-        if (role === 'STUDENT') {
-            url = '/campus/student/';
-        } else if (role === 'TEACHER') {
-            url = '/campus/teacher/';
-        } else if (role === 'ADMIN') {
-            url = '/campus/admin/';
-        }
-        
-        window.location.href = url;
-    },
-    
-    // 获取用户个人空间URL
-    getUserSpaceUrl() {
-        const role = this.getUserRole();
-        
-        if (role === 'STUDENT') {
-            return '/campus/student/';
-        } else if (role === 'TEACHER') {
-            return '/campus/teacher/';
-        } else if (role === 'ADMIN') {
-            return '/campus/admin/';
-        }
-        
-        return '/campus/index.html';
-    },
-    
     // 发送请求
     async request(endpoint, method = 'GET', data = null, isFormData = false) {
         try {
@@ -163,8 +16,8 @@ const API = {
             };
             
             // 添加认证头
-            if (this.token) {
-                options.headers['Authorization'] = 'Bearer ' + this.token;
+            if (Auth.isLoggedIn()) {
+                options.headers['Authorization'] = 'Bearer ' + Auth.getToken();
             }
             
             // 添加请求体
@@ -174,7 +27,7 @@ const API = {
                     const params = new URLSearchParams();
                     Object.keys(data).forEach(key => {
                         if (data[key] !== null && data[key] !== undefined) {
-                            params.append(key, data[key]);
+                        params.append(key, data[key]);
                         }
                     });
                     const queryString = params.toString();
@@ -197,7 +50,7 @@ const API = {
             // 检查认证错误
             if (response.status === 401) {
                 // 认证失败，清除token
-                this.clearToken();
+                Auth.clearUserData();
                 throw new Error('认证失败，请重新登录');
             }
             
@@ -235,45 +88,78 @@ const API = {
     
     // 登录
     async login(username, password) {
-        const data = { username, password };
-        try {
-            const result = await this.request('/users/login', 'POST', data);
-            
-            if (result && result.success) {
-                // 登录成功，存储token和用户信息
-                this.setToken(result.data.token);
-                localStorage.setItem('username', result.data.user.username);
-                localStorage.setItem('userId', result.data.user.id);
-                localStorage.setItem('userType', result.data.user.userType);
-                
-                // 存储完整用户对象
-                localStorage.setItem('user', JSON.stringify(result.data.user));
-                
-                return result;
-            } else {
-                throw new Error(result.message || '登录失败');
-            }
-        } catch (error) {
-            console.error('登录失败:', error);
-            throw error;
-        }
+        return Auth.login(username, password);
     },
     
-    // 退出登录
+    // 登出
     async logout() {
-        try {
-            // 可选：发送退出请求到服务器
-            // await this.request('/users/logout', 'POST');
-            
-            // 清除本地存储
-            this.clearToken();
-            return { success: true };
-        } catch (error) {
-            console.error('退出登录失败:', error);
-            // 即使失败也清除本地存储
-            this.clearToken();
-            throw error;
+        return Auth.logout();
+    },
+    
+    // 检查权限
+    async checkPermission(permission) {
+        const userType = Auth.getUserType();
+        
+        // 未登录
+        if (userType === null) {
+            return false;
         }
+        
+        // 管理员拥有所有权限
+        if (userType === 0) {
+            return true;
+        }
+        
+        // 教师权限
+        if (userType === 2) {
+            const teacherPermissions = ['course_manage', 'classroom_manage', 'schedule_manage', 'teacher'];
+            if (permission === 'admin') {
+                return false;
+            }
+            return teacherPermissions.includes(permission);
+        }
+        
+        // 学生权限
+        if (userType === 1) {
+            const studentPermissions = ['activity_manage', 'student'];
+            if (permission === 'admin' || permission === 'teacher') {
+                return false;
+            }
+            return studentPermissions.includes(permission);
+        }
+        
+        return false;
+    },
+    
+    // 根据角色重定向到对应页面
+    redirectToRolePage() {
+        const role = Auth.getUserRole();
+        let url = '/campus/index.html';
+        
+        if (role === 'STUDENT') {
+            url = '/campus/student/';
+        } else if (role === 'TEACHER') {
+            url = '/campus/teacher/';
+        } else if (role === 'ADMIN') {
+            url = '/campus/admin/';
+        }
+        
+        window.location.href = url;
+    },
+    
+    // 获取用户个人空间URL
+    getUserSpaceUrl() {
+        const role = Auth.getUserRole();
+        
+        if (role === 'STUDENT') {
+            return '/campus/student/';
+        } else if (role === 'TEACHER') {
+            return '/campus/teacher/';
+        } else if (role === 'ADMIN') {
+            return '/campus/admin/';
+        }
+        
+        return '/campus/index.html';
     },
     
     // 学生模块API接口
@@ -450,69 +336,195 @@ const API = {
         
         markNoticeAsRead: async function(noticeId) {
             return API.request('/notices/' + noticeId + '/read', 'POST');
+        }
+    },
+    
+    // 活动API模块
+    activity: {
+        // 获取活动列表
+        getAll: async function(params) {
+            return API.request('/activities', 'GET', params);
         },
         
-        // 论坛
-        getForumCategories: async function() {
+        // 获取正在进行中的活动
+        getOngoing: async function(params) {
+            return API.request('/activities/ongoing', 'GET', params);
+        },
+        
+        // 获取即将开始的活动
+        getUpcoming: async function(params) {
+            return API.request('/activities/upcoming', 'GET', params);
+        },
+        
+        // 获取我参与的活动
+        getMy: async function(params) {
+            return API.request('/activities/my', 'GET', params);
+        },
+        
+        // 获取活动详情
+        getById: async function(activityId) {
+            return API.request('/activities/' + activityId);
+        },
+        
+        // 报名活动
+        signUp: async function(activityId) {
+            return API.request('/activities/' + activityId + '/signup', 'POST');
+        },
+        
+        // 取消报名
+        cancelSignUp: async function(activityId) {
+            return API.request('/activities/' + activityId + '/signup', 'DELETE');
+        },
+        
+        // 检查报名状态
+        checkSignUpStatus: async function(activityId) {
+            return API.request('/activities/' + activityId + '/signup/status');
+        },
+        
+        // 获取活动参与者
+        getParticipants: async function(activityId, params) {
+            return API.request('/activities/' + activityId + '/participants', 'GET', params);
+        },
+        
+        // 搜索活动
+        search: async function(keyword, params = {}) {
+            params.keyword = keyword;
+            return API.request('/activities/search', 'GET', params);
+        }
+    },
+    
+    // 论坛API模块
+    forum: {
+        // 获取论坛分类
+        getCategories: async function() {
             return API.request('/forum/categories');
         },
         
-        getForumTopics: async function(params) {
+        // 获取话题列表
+        getTopics: async function(params = {}) {
             return API.request('/forum/topics', 'GET', params);
         },
         
+        // 获取话题详情
         getTopicById: async function(topicId) {
             return API.request('/forum/topics/' + topicId);
         },
         
+        // 创建新话题
         createTopic: async function(data) {
+            if (!data || !data.title || !data.content) {
+                throw new Error('标题和内容不能为空');
+            }
             return API.request('/forum/topics', 'POST', data);
         },
         
+        // 更新话题
         updateTopic: async function(topicId, data) {
+            if (!topicId) {
+                throw new Error('话题ID不能为空');
+            }
             return API.request('/forum/topics/' + topicId, 'PUT', data);
         },
         
+        // 删除话题
         deleteTopic: async function(topicId) {
+            if (!topicId) {
+                throw new Error('话题ID不能为空');
+            }
             return API.request('/forum/topics/' + topicId, 'DELETE');
         },
         
-        getTopicComments: async function(topicId, params) {
+        // 获取话题评论
+        getComments: async function(topicId, params = {}) {
+            if (!topicId) {
+                throw new Error('话题ID不能为空');
+            }
             return API.request('/forum/topics/' + topicId + '/comments', 'GET', params);
         },
         
+        // 添加评论
         addComment: async function(topicId, content) {
+            if (!topicId || !content) {
+                throw new Error('话题ID和评论内容不能为空');
+            }
             return API.request('/forum/topics/' + topicId + '/comments', 'POST', { content });
         },
         
+        // 删除评论
         deleteComment: async function(commentId) {
+            if (!commentId) {
+                throw new Error('评论ID不能为空');
+            }
             return API.request('/forum/comments/' + commentId, 'DELETE');
         },
         
-        likeContent: async function(type, contentId) {
-            return API.request('/forum/' + type + '/' + contentId + '/like', 'POST');
+        // 点赞/取消点赞
+        toggleLike: async function(type, contentId, isLike = true) {
+            if (!type || !contentId) {
+                throw new Error('类型和内容ID不能为空');
+            }
+            if (isLike) {
+                return API.request('/forum/' + type + '/' + contentId + '/like', 'POST');
+            } else {
+                return API.request('/forum/' + type + '/' + contentId + '/like', 'DELETE');
+            }
         },
         
-        unlikeContent: async function(type, contentId) {
-            return API.request('/forum/' + type + '/' + contentId + '/like', 'DELETE');
-        },
-        
-        searchForum: async function(keyword, params) {
-            params = params || {};
-            params.keyword = keyword;
-            return API.request('/forum/search', 'GET', params);
-        },
-        
-        getHotTopics: async function(limit) {
+        // 获取热门话题
+        getHotTopics: async function(limit = 5) {
             return API.request('/forum/topics/hot', 'GET', { limit });
         },
         
-        getMyTopics: async function(params) {
+        // 获取我的话题
+        getMyTopics: async function(params = {}) {
             return API.request('/forum/topics/my', 'GET', params);
         },
         
-        getMyComments: async function(params) {
+        // 获取我的评论
+        getMyComments: async function(params = {}) {
             return API.request('/forum/comments/my', 'GET', params);
+        },
+        
+        // 搜索论坛
+        search: async function(keyword, params = {}) {
+            if (!keyword) {
+                throw new Error('搜索关键词不能为空');
+            }
+            params.keyword = keyword;
+            return API.request('/forum/search', 'GET', params);
+        }
+    },
+    
+    // 通用用户API
+    user: {
+        // 获取用户信息
+        getById: async function(userId) {
+            return API.request('/users/' + userId);
+        },
+        
+        // 通过用户名获取用户
+        getByUsername: async function(username) {
+            return API.request('/users/username/' + username);
+        }
+    },
+    
+    // 通知API
+    notice: {
+        // 获取所有通知
+        getAll: async function(page = 1, size = 10, type = null) {
+            let params = { page: page-1, size: size };
+            if (type) params.type = type;
+            return API.request('/notices', 'GET', params);
+        },
+        
+        // 获取通知详情
+        getById: async function(noticeId) {
+            return API.request('/notices/' + noticeId);
+        },
+        
+        // 获取最近通知
+        getRecent: async function(limit = 5) {
+            return API.request('/notices/recent', 'GET', { limit });
         }
     },
     
@@ -871,5 +883,7 @@ API.init();
 // 初始化路由
 API.router.init();
 
-// 活动API的简写方式 - 为了兼容旧代码
-API.activity = API.student; 
+// 为了兼容旧代码，保留简写方式
+// 但推荐使用新的命名空间化的API调用
+// API.activity = API.student; 
+// 上面这行被替换为更清晰的API结构 

@@ -3,269 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 - 智慧校园</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../static/js/api.js"></script>
-    <script src="../static/js/ui.js"></script>
-    <script src="modules/user.js"></script>
+    <title>管理员中心 - 智慧校园服务系统</title>
+    <link rel="stylesheet" href="http://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .admin-header {
+            background-color: #343a40;
+            color: white;
+            padding: 15px 0;
+        }
+        .admin-content {
+            padding: 30px 0;
+            min-height: calc(100vh - 130px);
+        }
+        .admin-footer {
+            background-color: #343a40;
+            color: #adb5bd;
+            padding: 15px 0;
+            font-size: 14px;
+        }
+        .admin-card {
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .admin-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+    </style>
 </head>
 <body>
-    <!-- 加载中提示 -->
-    <div id="loading" class="loading-container">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">加载中...</div>
-    </div>
-    
-    <!-- 主界面 -->
-    <div id="mainPage" class="container-fluid">
-        <div class="row">
-            <!-- 侧边栏 -->
-            <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar">
-                <div class="position-sticky pt-3">
-                    <div class="sidebar-header text-center mb-4">
-                        <h5 class="text-white">智慧校园管理系统</h5>
+    <!-- 管理员头部 -->
+    <header class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="h3 mb-0">智慧校园管理系统</h1>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-dark dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-user-circle mr-1"></i>
+                            <span id="currentUsername">管理员</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="#"><i class="fa fa-user mr-2"></i>个人信息</a>
+                            <a class="dropdown-item" href="#"><i class="fa fa-cog mr-2"></i>系统设置</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" id="logoutBtn"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                        </div>
                     </div>
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="dashboard">
-                                <i class="bi bi-speedometer2 me-2"></i>控制台
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="user">
-                                <i class="bi bi-people me-2"></i>用户管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="course">
-                                <i class="bi bi-book me-2"></i>课程管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="classroom">
-                                <i class="bi bi-building me-2"></i>教室管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="schedule">
-                                <i class="bi bi-calendar-check me-2"></i>课表管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="activity">
-                                <i class="bi bi-flag me-2"></i>活动管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="forum">
-                                <i class="bi bi-chat-dots me-2"></i>论坛管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="tag">
-                                <i class="bi bi-tags me-2"></i>标签管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="notice">
-                                <i class="bi bi-bell me-2"></i>通知管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="file">
-                                <i class="bi bi-folder me-2"></i>文件管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-module="backup">
-                                <i class="bi bi-database me-2"></i>数据库备份
-                            </a>
-                        </li>
-                    </ul>
                 </div>
             </div>
-
-            <!-- 主内容区 -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <!-- 顶部导航栏 -->
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2" id="pageTitle">控制台</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <span id="currentUser" class="me-2"></span>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="logout()">退出登录</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 内容区域 -->
-                <div id="content">
-                    <!-- 控制台 -->
-                    <div id="dashboard" class="module-content">
-                        <div class="row">
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">用户总数</h5>
-                                        <p class="card-text display-4">128</p>
-                                        <p class="text-success">较昨日 +3</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">课程数量</h5>
-                                        <p class="card-text display-4">56</p>
-                                        <p class="text-success">较昨日 +2</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">教室数量</h5>
-                                        <p class="card-text display-4">42</p>
-                                        <p>较昨日 +0</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">活动数量</h5>
-                                        <p class="card-text display-4">18</p>
-                                        <p class="text-success">较昨日 +1</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">论坛帖子</h5>
-                                        <p class="card-text display-4">235</p>
-                                        <p class="text-success">较昨日 +12</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">系统状态</h5>
-                                        <p class="card-text display-4 text-success">正常</p>
-                                        <p>最后检查: 刚刚</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 其他模块内容将通过JavaScript动态加载 -->
-                    <div id="moduleContent" class="module-content" style="display: none;"></div>
-                </div>
-            </main>
         </div>
-    </div>
+    </header>
 
+    <!-- 管理员内容 -->
+    <main class="admin-content">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="h4">管理控制台</h2>
+                    <p class="text-muted">欢迎使用智慧校园管理系统，您可以在这里管理所有校园资源。</p>
+                </div>
+            </div>
+            
+            <!-- 数据统计区域 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card admin-card p-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">数据统计</h5>
+                            <div id="statsPanel"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- 用户管理 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-users"></i>
+                            </div>
+                            <h5 class="card-title">用户管理</h5>
+                            <p class="card-text">管理系统用户，包括学生、教师和管理员账号。</p>
+                            <a href="modules/users/" class="btn btn-primary">进入管理</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 课程管理 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-book"></i>
+                            </div>
+                            <h5 class="card-title">课程管理</h5>
+                            <p class="card-text">管理课程信息，安排课程表和教学计划。</p>
+                            <a href="modules/courses/" class="btn btn-primary">进入管理</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 通知管理 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-bullhorn"></i>
+                            </div>
+                            <h5 class="card-title">通知管理</h5>
+                            <p class="card-text">发布和管理校园通知和公告信息。</p>
+                            <a href="modules/notices/" class="btn btn-primary">进入管理</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 论坛管理 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-comments"></i>
+                            </div>
+                            <h5 class="card-title">论坛管理</h5>
+                            <p class="card-text">管理校园论坛内容和用户发帖。</p>
+                            <a href="modules/forum/" class="btn btn-primary">进入管理</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 活动管理 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-calendar"></i>
+                            </div>
+                            <h5 class="card-title">活动管理</h5>
+                            <p class="card-text">管理校园活动和事件安排。</p>
+                            <a href="modules/activities/" class="btn btn-primary">进入管理</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 系统设置 -->
+                <div class="col-md-4">
+                    <div class="card admin-card text-center p-4">
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <i class="fa fa-cogs"></i>
+                            </div>
+                            <h5 class="card-title">系统设置</h5>
+                            <p class="card-text">管理系统基本设置和参数配置。</p>
+                            <a href="modules/settings/" class="btn btn-primary">进入设置</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 管理员页脚 -->
+    <footer class="admin-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">© 2024 智慧校园服务系统. 保留所有权利.</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p class="mb-0">管理员控制台 v1.0</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="http://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="http://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/js/auth.js"></script>
+    <script src="../static/js/ui.js"></script>
+    <script src="../static/js/ui-stats.js"></script>
     <script>
         // 页面加载完成后执行
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
+            // 从localStorage获取用户名显示在页面上
+            const username = localStorage.getItem('username') || '管理员';
+            $('#currentUsername').text(username);
+            
             // 检查登录状态
-            API.checkToken(function(success) {
-                if (!success) {
-                    window.location.href = '../index.html';
-                    return;
-                }
-                
-                // 检查权限
-                const userType = parseInt(localStorage.getItem('userType'));
-                if (userType !== 0) {
-                    alert('您没有管理员权限');
-                    window.location.href = '../index.html';
-                    return;
-                }
-                
-                // 显示当前用户
-                document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
-                
-                // 绑定导航点击事件
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const module = this.getAttribute('data-module');
-                        if (module) {
-                            loadModule(module);
-                        }
-                    });
+            const token = localStorage.getItem('campus_token');
+            const userType = localStorage.getItem('userType');
+            
+            // 如果未登录或不是管理员，跳转回登录页
+            if (!token || userType !== '0') {
+                alert('您无权访问此页面或登录已过期，将跳转至登录页');
+                window.location.href = '../index.html';
+            }
+            
+            // 初始化统计面板
+            if (UI && UI.Stats) {
+                UI.Stats.initStatsPanel(document.getElementById('statsPanel'), {
+                    refreshInterval: 60000, // 1分钟刷新一次
+                    showFilters: true,
+                    chartType: 'bar',
+                    dateRange: 'week'
                 });
-
-                // 默认加载控制台
-                loadModule('dashboard');
+            }
+            
+            // 退出登录按钮点击事件
+            $('#logoutBtn').click(function(e) {
+                e.preventDefault();
                 
-                // 隐藏加载提示
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('mainPage').style.display = 'block';
+                // 使用Auth模块登出
+                if (typeof Auth !== 'undefined' && Auth.logout) {
+                    Auth.logout();
+                } else {
+                    // 兼容原有代码
+                    localStorage.removeItem('campus_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('userType');
+                    localStorage.removeItem('user');
+                    
+                    // 跳转到登录页
+                    window.location.href = '../index.html';
+                }
             });
         });
-
-        // 加载模块内容
-        function loadModule(moduleId) {
-            // 更新导航激活状态
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.querySelector(`.nav-link[data-module="${moduleId}"]`).classList.add('active');
-
-            // 更新页面标题
-            const moduleTitles = {
-                'dashboard': '控制台',
-                'user': '用户管理',
-                'course': '课程管理',
-                'classroom': '教室管理',
-                'schedule': '课表管理',
-                'activity': '活动管理',
-                'forum': '论坛管理',
-                'tag': '标签管理',
-                'notice': '通知管理',
-                'file': '文件管理',
-                'backup': '数据库备份'
-            };
-            document.getElementById('pageTitle').textContent = moduleTitles[moduleId] || '未知模块';
-
-            // 显示/隐藏相应内容
-            if (moduleId === 'dashboard') {
-                document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('moduleContent').style.display = 'none';
-            } else {
-                document.getElementById('dashboard').style.display = 'none';
-                document.getElementById('moduleContent').style.display = 'block';
-                
-                // 加载模块内容
-                fetch(`modules/${moduleId}.html`)
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('moduleContent').innerHTML = html;
-                        // 初始化模块特定的JavaScript
-                        if (typeof window[`init${moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}Module`] === 'function') {
-                            window[`init${moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}Module`]();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('加载模块失败:', error);
-                        document.getElementById('moduleContent').innerHTML = '<div class="alert alert-danger">加载模块失败，请稍后重试</div>';
-                    });
-            }
-        }
-
-        // 退出登录
-        function logout() {
-            API.clearToken();
-            localStorage.removeItem('user');
-            window.location.href = '../index.html';
-        }
     </script>
 </body>
 </html> 

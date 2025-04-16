@@ -30,15 +30,28 @@
             <param-name>forceEncoding</param-name>
             <param-value>true</param-value>
         </init-param>
+        <init-param>
+            <param-name>forceRequestEncoding</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>forceResponseEncoding</param-name>
+            <param-value>true</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>characterEncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-
+    
     <!-- Spring监听器 -->
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    
+    <!-- Web应用初始化监听器(已废弃，仅保留兼容性) -->
+    <listener>
+        <listener-class>com.campus.utils.WebAppInitListener</listener-class>
     </listener>
     
     <!-- Spring MVC配置 -->
@@ -72,12 +85,111 @@
 
     <!-- 错误页面 -->
     <error-page>
+        <error-code>400</error-code>
+        <location>/error.html?code=400&amp;title=错误请求&amp;message=您的请求包含无效的语法或参数</location>
+    </error-page>
+    <error-page>
+        <error-code>401</error-code>
+        <location>/error.html?code=401&amp;title=未授权访问&amp;message=您需要登录才能访问此资源</location>
+    </error-page>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error.html?code=403&amp;title=访问被拒绝&amp;message=您没有权限访问此资源</location>
+    </error-page>
+    <error-page>
         <error-code>404</error-code>
-        <location>/WEB-INF/views/error/404.jsp</location>
+        <location>/error.html?code=404&amp;title=页面未找到&amp;message=您请求的页面不存在</location>
+    </error-page>
+    <error-page>
+        <error-code>405</error-code>
+        <location>/error.html?code=405&amp;title=方法不允许&amp;message=不支持请求中指定的方法</location>
     </error-page>
     <error-page>
         <error-code>500</error-code>
-        <location>/WEB-INF/views/error/500.jsp</location>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时遇到了问题</location>
     </error-page>
+    <error-page>
+        <error-code>502</error-code>
+        <location>/error.html?code=502&amp;title=网关错误&amp;message=服务器作为网关或代理，从上游服务器收到无效响应</location>
+    </error-page>
+    <error-page>
+        <error-code>503</error-code>
+        <location>/error.html?code=503&amp;title=服务不可用&amp;message=服务器暂时无法处理请求，可能正在维护或超载</location>
+    </error-page>
+    <error-page>
+        <error-code>504</error-code>
+        <location>/error.html?code=504&amp;title=网关超时&amp;message=服务器作为网关或代理，但未及时从上游服务器接收请求</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时发生异常</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时发生异常</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.lang.RuntimeException</exception-type>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时发生运行时异常</location>
+    </error-page>
+    <error-page>
+        <exception-type>javax.servlet.ServletException</exception-type>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时发生Servlet异常</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.io.IOException</exception-type>
+        <location>/error.html?code=500&amp;title=服务器内部错误&amp;message=服务器在处理您的请求时发生IO异常</location>
+    </error-page>
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+    <mime-mapping>
+        <extension>html</extension>
+        <mime-type>text/html</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>css</extension>
+        <mime-type>text/css</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>js</extension>
+        <mime-type>application/javascript</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>json</extension>
+        <mime-type>application/json</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>png</extension>
+        <mime-type>image/png</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>jpg</extension>
+        <mime-type>image/jpeg</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>jpeg</extension>
+        <mime-type>image/jpeg</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>svg</extension>
+        <mime-type>image/svg+xml</mime-type>
+    </mime-mapping>
+    <!-- 注释掉HTTPS的安全约束，本地开发环境不需要 -->
+    <!--
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Secured</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+    -->
 
 </web-app>

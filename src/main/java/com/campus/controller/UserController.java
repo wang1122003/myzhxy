@@ -1,10 +1,12 @@
 package com.campus.controller;
 
 import com.campus.entity.User;
+import com.campus.service.AuthService;
 import com.campus.service.UserService;
 import com.campus.utils.JwtUtil;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +27,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private AuthService authService;
+
     /**
      * 用户登录
      * @param username 用户名
@@ -34,11 +39,15 @@ public class UserController {
     @PostMapping("/login")
     public Result login(
             @RequestParam String username,
-            @RequestParam String password) {
+            @RequestParam String password,
+            HttpServletResponse response) {
         User user = userService.login(username, password);
         if (user != null) {
             // 生成token
-            String token = JwtUtil.generateToken(user);
+            String token = authService.generateToken(user);
+            
+            // 设置token到Cookie
+            authService.setTokenToCookie(response, token);
             
             // 返回结果
             Map<String, Object> data = new HashMap<>();
@@ -58,23 +67,16 @@ public class UserController {
      */
     @GetMapping("/check-session")
     public Result checkSession(HttpServletRequest request) {
-        // 从请求属性中获取用户ID
-        Long userId = (Long) request.getAttribute("userId");
+        User user = authService.getCurrentUser(request);
         
-        if (userId != null) {
-            User user = userService.getUserById(userId);
+        if (user != null) {
+            Map<String, Object> data = new HashMap<>();
+            data.put("userId", user.getId());
+            data.put("username", user.getUsername());
+            data.put("userType", user.getUserType());
+            data.put("role", user.getUserType() == 0 ? "ADMIN" : (user.getUserType() == 1 ? "STUDENT" : "TEACHER"));
             
-            if (user != null) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("userId", user.getId());
-                data.put("username", user.getUsername());
-                data.put("userType", user.getUserType());
-                data.put("role", user.getUserType() == 0 ? "ADMIN" : (user.getUserType() == 1 ? "STUDENT" : "TEACHER"));
-                
-                return Result.success("会话有效", data);
-            } else {
-                return Result.error("用户不存在");
-            }
+            return Result.success("会话有效", data);
         } else {
             return Result.error("无效的会话");
         }
@@ -448,5 +450,18 @@ public class UserController {
         } else {
             return Result.error("管理员账号创建失败");
         }
+    }
+    
+    /**
+     * 登出
+     * @param request HTTP请求
+     * @param response HTTP响应
+     * @return 登出结果
+     */
+    @PostMapping("/logout")
+    public Result logout(HttpServletRequest request, HttpServletResponse response) {
+        // 清除Cookie中的token
+        authService.clearTokenCookie(response);
+        return Result.success("登出成功");
     }
 }

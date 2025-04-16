@@ -584,10 +584,4 @@
             (#{postId}, #{tagId}, NOW())
         </foreach>
     </insert>
-
-    <!-- 删除帖子标签 -->
-    <delete id="deletePostTag">
-        DELETE FROM post_tag
-        WHERE post_id = #{postId} AND tag_id = #{tagId}
-    </delete>
 </mapper>

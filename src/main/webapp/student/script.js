@@ -26,7 +26,7 @@ function checkLoginStatus() {
     
     // 检查用户类型
     const userType = parseInt(localStorage.getItem('userType'));
-    if (userType !== 2 && userType !== 0) { // 学生或管理员可以访问
+    if (userType !== 1 && userType !== 0) { // 学生或管理员可以访问
         UI.showMessage('您没有访问学生中心的权限', 'error');
         setTimeout(() => {
             window.location.href = '../index.html';

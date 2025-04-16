@@ -10,11 +10,19 @@
        http://www.springframework.org/schema/mvc
        http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-    <!-- 扫描controller包下所有使用注解的类型 -->
-    <context:component-scan base-package="com.campus.controller" />
+    <!-- 只扫描controller包和Web相关组件 -->
+    <context:component-scan base-package="com.campus.controller">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
+        <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
 
-    <!-- 扫描配置类 -->
-    <context:component-scan base-package="com.campus.config" />
+    <!-- 扫描utils包中的Web相关组件 -->
+    <context:component-scan base-package="com.campus.utils" use-default-filters="false">
+        <context:include-filter type="assignable" expression="com.campus.utils.JwtInterceptor"/>
+        <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$GlobalExceptionHandler"/>
+        <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$BusinessExceptionHandler"/>
+    </context:component-scan>
 
     <!-- 加载属性文件 -->
     <context:property-placeholder location="classpath:application.properties" ignore-unresolvable="true" />
@@ -48,8 +56,8 @@
     <mvc:default-servlet-handler />
 
     <!-- 静态资源 -->
-    <mvc:resources mapping="/static/**" location="/static/" />
-    <mvc:resources mapping="/uploads/**" location="file:${file.upload.path}/" />
+    <mvc:resources mapping="/static/**" location="/static/" cache-period="3600" />
+    <mvc:resources mapping="/uploads/**" location="file:${file.upload.path}/" cache-period="3600" />
     <mvc:resources mapping="/**" location="/" />
 
     <!-- 视图解析器 -->
@@ -58,7 +66,21 @@
         <property name="suffix" value=".jsp" />
     </bean>
 
-    <!-- 注册JWT拦截器 -->
+    <!-- 视图控制器配置 -->
+    <mvc:view-controller path="/" view-name="forward:/index.html" />
+    <mvc:view-controller path="/campus" view-name="forward:/index.html" />
+    <mvc:view-controller path="/campus/" view-name="forward:/index.html" />
+
+    <!-- 跨域请求配置 -->
+    <mvc:cors>
+        <mvc:mapping path="/api/**"
+                      allowed-origins="*"
+                      allowed-methods="GET, POST, PUT, DELETE, OPTIONS"
+                      allowed-headers="*"
+                      max-age="3600" />
+    </mvc:cors>
+
+    <!-- JWT拦截器配置 -->
     <mvc:interceptors>
         <mvc:interceptor>
             <!-- 需要拦截的请求 -->
@@ -66,10 +88,13 @@
             <!-- 不需要拦截的请求 -->
             <mvc:exclude-mapping path="/api/users/login"/>
             <mvc:exclude-mapping path="/api/users/register"/>
+            <mvc:exclude-mapping path="/api/users/check-session"/>
             <mvc:exclude-mapping path="/api/users/create-admin"/>
             <mvc:exclude-mapping path="/api/common/**"/>
             <mvc:exclude-mapping path="/api/file/upload/**"/>
             <mvc:exclude-mapping path="/api/file/download/**"/>
+            <mvc:exclude-mapping path="/static/**"/>
+            <mvc:exclude-mapping path="/favicon.ico"/>
             <bean class="com.campus.utils.JwtInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>

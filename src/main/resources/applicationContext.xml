@@ -16,8 +16,13 @@
     <!-- 扫描service包下所有使用注解的类型 -->
     <context:component-scan base-package="com.campus.service" />
     
-    <!-- 扫描配置类 -->
-    <context:component-scan base-package="com.campus.config" />
+    <!-- 扫描utils包，但排除Controller和Web相关组件 -->
+    <context:component-scan base-package="com.campus.utils">
+        <!-- 排除所有控制器和Web相关组件 -->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
 
     <!-- 配置数据库和应用属性 -->
     <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties" />
@@ -38,6 +43,17 @@
         <property name="timeBetweenEvictionRunsMillis" value="60000" />
     </bean>
 
+    <!-- 配置MyBatis-Plus插件 -->
+    <bean id="mybatisPlusInterceptor" class="com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor">
+        <property name="interceptors">
+            <list>
+                <bean class="com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor">
+                    <constructor-arg name="dbType" value="MYSQL" />
+                </bean>
+            </list>
+        </property>
+    </bean>
+
     <!-- 配置SqlSessionFactory对象 -->
     <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
         <!-- 注入数据库连接池 -->
@@ -48,6 +64,12 @@
         <property name="mapperLocations" value="classpath:mapper/*.xml" />
         <!-- 配置MyBatis全局配置文件 -->
         <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <!-- 配置MyBatis-Plus插件 -->
+        <property name="plugins">
+            <array>
+                <ref bean="mybatisPlusInterceptor" />
+            </array>
+        </property>
         <!-- MyBatis-Plus全局配置 -->
         <property name="globalConfig">
             <bean class="com.baomidou.mybatisplus.core.config.GlobalConfig">
@@ -77,4 +99,7 @@
 
     <!-- 配置基于注解的声明式事务 -->
     <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!-- 确保JwtUtil可被注入 -->
+    <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
 </beans>

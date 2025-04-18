@@ -60,6 +60,12 @@ const routes = [
                 path: 'files',
                 name: 'StudentFiles',
                 component: () => import('../views/student/Files.vue')
+            },
+            {
+                path: 'notices',
+                name: 'StudentNotices',
+                component: () => import('../views/student/Notices.vue'),
+                meta: {title: '通知公告'}
             }
         ]
     },
@@ -96,6 +102,12 @@ const routes = [
                 name: 'TeacherCourseGrades',
                 component: () => import('../views/teacher/CourseGrades.vue'),
                 meta: {title: '课程成绩管理'}
+            },
+            {
+                path: 'notices',
+                name: 'TeacherNotices',
+                component: () => import('../views/NoticeList.vue'),
+                meta: {title: '通知公告'}
             }
         ]
     },
@@ -179,9 +191,9 @@ router.beforeEach((to, from, next) => {
 
     // 设置页面标题
     if (to.meta.title) {
-        document.title = to.meta.title + ' - 校园管理系统'
+        document.title = to.meta.title + ' - 智慧化校园服务系统'
     } else {
-        document.title = '校园管理系统'
+        document.title = '智慧化校园服务系统'
     }
 
     // 存储前一个页面的路径（用于实现"返回"功能）

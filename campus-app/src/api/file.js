@@ -4,7 +4,7 @@ import {FILE_API} from './api-endpoints'
 // 获取文件列表
 export function getFileList(params) {
     return request({
-        url: '/file/list',
+        url: FILE_API.LIST_DIRECTORY,
         method: 'get',
         params
     })
@@ -13,7 +13,7 @@ export function getFileList(params) {
 // 上传文件
 export function uploadFile(data) {
     return request({
-        url: '/file/upload',
+        url: FILE_API.UPLOAD_FILE || '/file/upload',
         method: 'post',
         headers: {
             'Content-Type': 'multipart/form-data'
@@ -24,18 +24,22 @@ export function uploadFile(data) {
 
 // 下载文件
 export function downloadFile(id) {
+    const filePath = id;
     return request({
-        url: `/file/download/${id}`,
+        url: FILE_API.DOWNLOAD_FILE || `/file/download/${id}`,
         method: 'get',
+        params: {filePath},
         responseType: 'blob'
     })
 }
 
 // 删除文件
 export function deleteFile(id) {
+    const filePath = id;
     return request({
-        url: `/file/${id}`,
-        method: 'delete'
+        url: FILE_API.DELETE_FILE || `/file/${id}`,
+        method: 'delete',
+        params: {filePath}
     })
 }
 

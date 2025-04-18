@@ -194,7 +194,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/assets/styles/variables.scss';
+
 .nav-menu-container {
   width: var(--sidebar-width, 240px);
   transition: width 0.3s;

@@ -47,7 +47,7 @@ export function deleteActivity(id) {
 // 获取活动列表（分页）
 export function getActivityList(params) {
     return request({
-        url: ACTIVITY_API.GET_LIST,
+        url: ACTIVITY_API.GET_ALL,
         method: 'get',
         params
     })
@@ -92,7 +92,7 @@ export function uploadActivityPoster(data) {
 // 学生报名活动
 export function joinActivity(id) {
     return request({
-        url: `/activity/join/${id}`,
+        url: ACTIVITY_API.JOIN_ACTIVITY.replace(':id', id),
         method: 'post'
     })
 }
@@ -100,7 +100,7 @@ export function joinActivity(id) {
 // 学生取消报名
 export function cancelJoinActivity(id) {
     return request({
-        url: `/activity/cancel/${id}`,
+        url: ACTIVITY_API.CANCEL_JOIN.replace(':id', id),
         method: 'post'
     })
 }
@@ -108,7 +108,7 @@ export function cancelJoinActivity(id) {
 // 学生评价活动
 export function rateActivity(id, data) {
     return request({
-        url: `/activity/rate/${id}`,
+        url: ACTIVITY_API.RATE_ACTIVITY.replace(':id', id),
         method: 'post',
         data
     })
@@ -117,7 +117,7 @@ export function rateActivity(id, data) {
 // 获取学生已报名活动
 export function getStudentActivities() {
     return request({
-        url: '/student/activities',
+        url: ACTIVITY_API.GET_STUDENT_ACTIVITIES,
         method: 'get'
     })
 }
@@ -125,7 +125,7 @@ export function getStudentActivities() {
 // 管理员获取活动报名情况
 export function getActivityEnrollments(id) {
     return request({
-        url: `/admin/activity/enrollments/${id}`,
+        url: ACTIVITY_API.GET_ENROLLMENTS.replace(':id', id),
         method: 'get'
     })
 } 

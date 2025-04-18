@@ -1,100 +1,36 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px">
-      <div class="logo">
-        智慧校园
+    <el-aside :class="{'is-collapse': isCollapsed}" :width="isCollapsed ? '64px' : '200px'" class="sidebar-container">
+      <div class="sidebar-header">
+        <el-icon class="collapse-icon" @click="toggleCollapse">
+          <Expand v-if="isCollapsed"/>
+          <Fold v-else/>
+        </el-icon>
       </div>
-      <el-menu
-          :default-active="$route.path"
-          active-text-color="#409EFF"
-          background-color="#304156"
-          class="el-menu-vertical"
-          router
-          text-color="#bfcbd9"
-      >
-        <el-menu-item index="/admin">
-          <el-icon>
-            <HomeFilled/>
-          </el-icon>
-          <span>首页</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/user">
-          <el-icon>
-            <User/>
-          </el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/course">
-          <el-icon>
-            <Document/>
-          </el-icon>
-          <span>课程管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/classroom">
-          <el-icon>
-            <School/>
-          </el-icon>
-          <span>教室管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/schedule">
-          <el-icon>
-            <Calendar/>
-          </el-icon>
-          <span>课表管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/activity">
-          <el-icon>
-            <Bell/>
-          </el-icon>
-          <span>活动管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/notice">
-          <el-icon>
-            <Message/>
-          </el-icon>
-          <span>公告管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/forum">
-          <el-icon>
-            <ChatDotRound/>
-          </el-icon>
-          <span>论坛管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/file">
-          <el-icon>
-            <Files/>
-          </el-icon>
-          <span>文件管理</span>
-        </el-menu-item>
-      </el-menu>
+      <el-scrollbar wrap-class="scrollbar-wrapper">
+        <el-menu
+            :collapse="isCollapsed"
+            :collapse-transition="false"
+            :default-active="$route.path"
+            active-text-color="#409EFF"
+            background-color="#304156"
+            class="el-menu-vertical"
+            router
+            text-color="#bfcbd9"
+            @select="handleMenuSelect"
+        >
+          <template v-for="item in menuItems" :key="item.index">
+            <el-menu-item :index="item.index">
+              <el-icon>
+                <component :is="item.icon"/>
+              </el-icon>
+              <template #title>{{ item.title }}</template>
+            </el-menu-item>
+          </template>
+        </el-menu>
+      </el-scrollbar>
     </el-aside>
     <el-container>
-      <el-header>
-        <div class="header-right">
-          <el-dropdown trigger="click">
-            <div class="avatar-wrapper">
-              <el-avatar
-                  :size="30"
-                  src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"
-              />
-              <span class="username">{{ userInfo.name || '管理员' }}</span>
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">
-                  个人资料
-                </el-dropdown-item>
-                <el-dropdown-item
-                    divided
-                    @click="logout"
-                >
-                  退出登录
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </el-header>
       <el-main>
         <router-view/>
       </el-main>
@@ -102,62 +38,99 @@
   </el-container>
 </template>
 
-<script>
-import {onMounted, ref} from 'vue'
-import {useRouter} from 'vue-router'
+<script setup>
+import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {Bell, Calendar, ChatDotRound, Document, Files, HomeFilled, Message, School, User} from '@element-plus/icons-vue'
+import {
+  Bell,
+  Calendar,
+  ChatDotRound,
+  Document,
+  Expand,
+  Files,
+  Fold,
+  HomeFilled,
+  Message,
+  School,
+  User
+} from '@element-plus/icons-vue'
 import {getCurrentUser} from '@/api/user'
 
-export default {
-  name: 'AdminIndex',
-  components: {
-    HomeFilled,
-    User,
-    Document,
-    School,
-    Calendar,
-    Bell,
-    Message,
-    ChatDotRound,
-    Files
-  },
-  setup() {
-    const router = useRouter()
-    const userInfo = ref({})
+const router = useRouter()
+const route = useRoute()
+const userInfo = ref({})
+const isCollapsed = ref(false)
+const isMobile = ref(false)
 
-    onMounted(() => {
-      fetchUserInfo()
-    })
+// 定义菜单项
+const menuItems = shallowRef([
+  {index: '/admin', icon: HomeFilled, title: '首页'},
+  {index: '/admin/user', icon: User, title: '用户管理'},
+  {index: '/admin/course', icon: Document, title: '课程管理'},
+  {index: '/admin/classroom', icon: School, title: '教室管理'},
+  {index: '/admin/schedule', icon: Calendar, title: '课表管理'},
+  {index: '/admin/activity', icon: Bell, title: '活动管理'},
+  {index: '/admin/notice', icon: Message, title: '公告管理'},
+  {index: '/admin/forum', icon: ChatDotRound, title: '论坛管理'},
+  {index: '/admin/file', icon: Files, title: '文件管理'},
+]);
 
-    const fetchUserInfo = () => {
-      getCurrentUser().then(response => {
-        userInfo.value = response.data
-      }).catch(() => {
-        logout()
-      })
-    }
+// 新增：计算当前页面标题
+const currentPageTitle = computed(() => {
+  const currentPath = route.path;
+  const menuItem = menuItems.value.find(item => {
+    // 完全匹配或作为子路由前缀匹配
+    return item.index === currentPath || currentPath.startsWith(item.index + '/');
+  });
+  return menuItem ? menuItem.title : '管理后台'; // 如果找不到匹配项，显示默认标题
+});
 
-    const goToProfile = () => {
-      router.push('/admin/profile')
-    }
+onMounted(() => {
+  fetchUserInfo()
+  checkScreenWidth();
+  window.addEventListener('resize', checkScreenWidth);
+})
 
-    const logout = () => {
-      localStorage.removeItem('token')
-      localStorage.removeItem('role')
-      router.push('/login')
-      ElMessage({
-        message: '退出登录成功',
-        type: 'success'
-      })
-    }
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScreenWidth);
+});
 
-    return {
-      userInfo,
-      goToProfile,
-      logout
-    }
+const checkScreenWidth = () => {
+  isMobile.value = window.innerWidth < 768;
+  isCollapsed.value = isMobile.value;
+}
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+}
+
+const handleMenuSelect = () => {
+  if (isMobile.value) {
+    isCollapsed.value = true;
   }
+}
+
+const fetchUserInfo = () => {
+  getCurrentUser().then(response => {
+    userInfo.value = response.data
+  }).catch(() => {
+    logout()
+  })
+}
+
+const goToProfile = () => {
+  router.push('/admin/profile')
+}
+
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  router.push('/login')
+  ElMessage({
+    message: '退出登录成功',
+    type: 'success'
+  })
 }
 </script>
 
@@ -166,45 +139,35 @@ export default {
   height: 100vh;
 }
 
-.el-aside {
+.sidebar-container {
   background-color: #304156;
   color: #fff;
-}
-
-.el-header {
-  background-color: #fff;
-  color: #333;
-  line-height: 60px;
+  transition: width 0.28s;
+  overflow-x: hidden;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  flex-direction: column;
 }
 
-.logo {
-  height: 60px;
-  line-height: 60px;
-  text-align: center;
+.sidebar-header {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.collapse-icon {
   font-size: 20px;
-  font-weight: bold;
-  color: #fff;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.avatar-wrapper {
-  display: flex;
-  align-items: center;
   cursor: pointer;
+  color: #bfcbd9;
 }
 
-.username {
-  margin-left: 8px;
-  font-size: 14px;
-  color: #606266;
+.el-menu-vertical:not(.el-menu--collapse) {
+  width: 200px;
+}
+
+.el-menu--collapse {
+  width: 64px;
 }
 
 .el-menu-vertical {

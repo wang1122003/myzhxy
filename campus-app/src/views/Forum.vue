@@ -182,9 +182,7 @@ import {computed, onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ChatDotRound, Collection, EditPen, Hot, InfoFilled, Search, Star, View} from '@element-plus/icons-vue'
-import {getAllPosts, getHotPosts} from '@/api/forum'
-import {GET_POST_CATEGORIES, incrementViewCount} from '@/api/api-endpoints'
-import request from '@/api/request'
+import {getAllPosts, getForumCategories, getForumTags, getHotPosts, viewPost} from '@/api/forum'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
 import CreatePost from '@/components/forum/CreatePost.vue'
@@ -229,11 +227,11 @@ export default {
     // 获取分类列表
     const fetchCategories = async () => {
       try {
-        const res = await request.get(GET_POST_CATEGORIES)
+        const res = await getForumCategories(); 
         if (res.data) {
           categories.value = res.data.map(cat => ({
-            value: cat.value,
-            label: cat.label
+            value: cat.id,
+            label: cat.name
           }))
         }
       } catch (error) {
@@ -292,9 +290,16 @@ export default {
     const fetchPopularTags = async () => {
       loadingTags.value = true
       try {
-        // 假设API已实现
-        const res = await request.get('/forum/tags/popular')
-        popularTags.value = res.data
+        // 使用导入的 getForumTags 函数，可能需要加参数获取热门的
+        const res = await getForumTags({limit: 15, sortBy: 'count'}); // 假设后端支持参数
+        // popularTags.value = res.data; // 假设返回 { data: [{id: 1, name: 'tag1', count: 10}, ...] }
+        // 如果后端不支持参数，可能需要获取所有标签后前端处理
+        if (Array.isArray(res.data)) { // 确保 res.data 是数组
+          // 如果没有 count 字段，需要后端添加或前端模拟
+          popularTags.value = res.data.slice(0, 15).map(tag => ({...tag, count: tag.count || 0})); // 取前15个
+        } else {
+          popularTags.value = [];
+        }
       } catch (error) {
         console.error('获取热门标签失败:', error)
       } finally {
@@ -336,13 +341,11 @@ export default {
     // 跳转到帖子详情
     const goToPostDetail = async (postId) => {
       try {
-        await incrementViewCount(postId)
-        router.push(`/forum/post/${postId}`)
+        await viewPost(postId); 
       } catch (error) {
-        console.error('增加浏览量失败:', error)
-        // 仍然跳转到详情页
-        router.push(`/forum/post/${postId}`)
+        console.error("增加浏览量失败:", error);
       }
+      router.push(`/forum/post/${postId}`);
     }
 
     // 获取分类标签名称

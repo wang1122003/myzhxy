@@ -39,48 +39,50 @@
       <!-- 周视图 -->
       <div
           v-if="viewType === 'week'"
-          class="week-view"
+          class="week-view-wrapper"
       >
-        <div class="time-column">
-          <div class="header-cell">
-            时间
-          </div>
-          <div
-              v-for="time in timeSlotsRef"
-              :key="time.slot"
-              class="time-cell"
-          >
-            {{ time.label }}
-            <div class="time-range">
-              {{ time.startTime }} - {{ time.endTime }}
+        <div class="week-view">
+          <div class="time-column">
+            <div class="header-cell">
+              时间
+            </div>
+            <div
+                v-for="time in timeSlotsRef"
+                :key="time.slot"
+                class="time-cell"
+            >
+              {{ time.label }}
+              <div class="time-range">
+                {{ time.startTime }} - {{ time.endTime }}
+              </div>
             </div>
           </div>
-        </div>
-        <div
-            v-for="day in weekdaysRef"
-            :key="day.value"
-            class="day-column"
-        >
-          <div class="header-cell">
-            {{ day.label }}
-          </div>
           <div
-              v-for="time in timeSlotsRef"
-              :key="`${day.value}-${time.slot}`"
-              :class="{ 'has-course': findCourseForCell(day.value, time) }"
-              class="schedule-cell"
+              v-for="day in weekdaysRef"
+              :key="day.value"
+              class="day-column"
           >
+            <div class="header-cell">
+              {{ day.label }}
+            </div>
             <div
-                v-if="findCourseForCell(day.value, time)"
-                :style="{ backgroundColor: getCourseColor(findCourseForCell(day.value, time).courseId) }"
-                class="course-item"
-                @click="showCourseDetail(findCourseForCell(day.value, time))"
+                v-for="time in timeSlotsRef"
+                :key="`${day.value}-${time.slot}`"
+                :class="{ 'has-course': findCourseForCell(day.value, time) }"
+                class="schedule-cell"
             >
-              <div class="course-name">
-                {{ findCourseForCell(day.value, time).courseName }}
-              </div>
-              <div class="course-location">
-                {{ findCourseForCell(day.value, time).classroom }}
+              <div
+                  v-if="findCourseForCell(day.value, time)"
+                  :style="{ backgroundColor: getCourseColor(findCourseForCell(day.value, time).courseId) }"
+                  class="course-item"
+                  @click="showCourseDetail(findCourseForCell(day.value, time))"
+              >
+                <div class="course-name">
+                  {{ findCourseForCell(day.value, time).courseName }}
+                </div>
+                <div class="course-location">
+                  {{ findCourseForCell(day.value, time).classroom }}
+                </div>
               </div>
             </div>
           </div>
@@ -100,14 +102,18 @@
           <el-table-column
               label="课程名称"
               prop="courseName"
+              min-width="120"
           />
           <el-table-column
               label="授课教师"
               prop="teacherName"
+              v-if="!isMobile"
+              min-width="100"
           />
           <el-table-column
               label="星期"
               prop="weekday"
+              width="80"
           >
             <template #default="scope">
               {{ formatWeekday(scope.row.weekday) }}
@@ -124,10 +130,12 @@
           <el-table-column
               label="教室"
               prop="classroom"
+              min-width="100"
           />
           <el-table-column
               label="操作"
-              width="100"
+              fixed="right"
+              width="80"
           >
             <template #default="scope">
               <el-button
@@ -182,7 +190,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref} from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {ElMessage} from 'element-plus'
 import {getStudentSchedule} from '@/api/schedule'
 import {getTerms, getTimeSlots, getWeekdays} from '@/api/common'
@@ -204,6 +212,8 @@ export default {
     const semestersRef = ref([])
     const timeSlotsRef = ref([])
     const weekdaysRef = ref([])
+
+    const isMobile = ref(false)
 
     const fetchInitialData = async () => {
       loadingSemesters.value = true
@@ -304,8 +314,18 @@ export default {
       dialogVisible.value = true
     }
 
+    const checkMobile = () => {
+      isMobile.value = window.innerWidth < 768
+    }
+
     onMounted(() => {
       fetchInitialData()
+      checkMobile()
+      window.addEventListener('resize', checkMobile)
+    })
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', checkMobile)
     })
 
     return {
@@ -325,7 +345,8 @@ export default {
       formatWeekday,
       findCourseForCell,
       getCourseColor,
-      showCourseDetail
+      showCourseDetail,
+      isMobile
     }
   }
 }
@@ -341,21 +362,35 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.page-header h2 {
+  margin: 0;
 }
 
 .filter-container {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .schedule-card {
   min-height: 400px;
 }
 
+.week-view-wrapper {
+  overflow-x: auto;
+}
+
 .week-view {
   display: flex;
-  border-left: 1px solid #ebeef5;
-  border-top: 1px solid #ebeef5;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 800px;
 }
 
 .time-column,
@@ -366,49 +401,52 @@ export default {
 
 .time-column {
   flex: 0 0 100px;
+  border-right: 1px solid #ebeef5;
 }
 
 .day-column {
   flex: 1;
+  border-right: 1px solid #ebeef5;
 }
 
-.header-cell,
-.time-cell,
-.schedule-cell {
-  border-right: 1px solid #ebeef5;
-  border-bottom: 1px solid #ebeef5;
-  text-align: center;
-  position: relative;
+.day-column:last-child {
+  border-right: none;
 }
 
 .header-cell {
   background-color: #fafafa;
-  font-weight: bold;
   padding: 10px 5px;
-  height: 50px;
-  box-sizing: border-box;
+  text-align: center;
+  font-weight: bold;
+  border-bottom: 1px solid #ebeef5;
+  font-size: 13px;
+}
+
+.time-cell,
+.schedule-cell {
+  height: 80px;
+  border-bottom: 1px solid #ebeef5;
+  position: relative;
+  font-size: 12px;
+  padding: 4px;
+}
+
+.time-column .time-cell:last-child,
+.day-column .schedule-cell:last-child {
+  border-bottom: none;
 }
 
 .time-cell {
-  height: 80px;
-  padding: 5px;
-  font-size: 12px;
-  color: #909399;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-sizing: border-box;
+  text-align: center;
 }
 
 .time-range {
-  font-size: 10px;
-  margin-top: 4px;
-}
-
-.schedule-cell {
-  height: 80px;
-  box-sizing: border-box;
+  font-size: 11px;
+  color: #909399;
 }
 
 .course-item {
@@ -417,38 +455,75 @@ export default {
   left: 2px;
   right: 2px;
   bottom: 2px;
-  border-radius: 4px;
   padding: 5px;
-  font-size: 12px;
+  border-radius: 4px;
   color: #fff;
   cursor: pointer;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.course-item:hover {
-  transform: scale(1.05);
-  z-index: 10;
+  align-items: center;
+  text-align: center;
 }
 
 .course-name {
   font-weight: bold;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .course-location {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .list-view {
   width: 100%;
 }
 
+.list-view .el-table {
+  font-size: 14px;
+}
+
 .dialog-footer {
   text-align: right;
 }
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-container .el-select,
+  .filter-container .el-radio-group {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .header-cell {
+    padding: 8px 3px;
+    font-size: 12px;
+  }
+
+  .time-cell,
+  .schedule-cell {
+    height: 70px;
+    font-size: 11px;
+  }
+
+  .time-range {
+    font-size: 10px;
+  }
+
+  .course-item {
+    padding: 3px;
+  }
+
+  .course-location {
+    font-size: 10px;
 </style> 

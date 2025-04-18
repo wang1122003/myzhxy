@@ -1,6 +1,6 @@
 import request from './request'
 // 假设在 api-endpoints.js 中定义了 GRADE_API
-// import { GRADE_API } from './api-endpoints'
+import {GRADE_API} from './api-endpoints'
 
 /**
  * 获取学生成绩列表
@@ -8,8 +8,7 @@ import request from './request'
  */
 export function getStudentGrades(params) {
     return request({
-        // url: GRADE_API.GET_STUDENT_GRADES, // 替换为实际的 API 端点
-        url: '/grades/student', // 临时占位符 URL
+        url: GRADE_API.GET_STUDENT_GRADES,
         method: 'get',
         params
     })
@@ -18,7 +17,7 @@ export function getStudentGrades(params) {
 // 获取课程学生成绩列表
 export function getCourseStudents(params) {
     return request({
-        url: '/grades/course-students',
+        url: GRADE_API.GET_COURSE_STUDENTS,
         method: 'get',
         params
     })
@@ -27,7 +26,7 @@ export function getCourseStudents(params) {
 // 保存学生成绩
 export function saveStudentGrades(data) {
     return request({
-        url: '/grades/save-batch',
+        url: GRADE_API.SAVE_BATCH,
         method: 'post',
         data
     })
@@ -36,7 +35,7 @@ export function saveStudentGrades(data) {
 // 导出成绩
 export function exportGrades(courseId) {
     return request({
-        url: `/grades/export/${courseId}`,
+        url: GRADE_API.EXPORT.replace(':courseId', courseId),
         method: 'get',
         responseType: 'blob'
     })
@@ -45,7 +44,7 @@ export function exportGrades(courseId) {
 // 导入成绩
 export function importGrades(formData) {
     return request({
-        url: '/grades/import',
+        url: GRADE_API.IMPORT,
         method: 'post',
         data: formData,
         headers: {

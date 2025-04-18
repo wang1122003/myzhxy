@@ -344,7 +344,7 @@ import {
   ElTag
 } from 'element-plus'
 import {ChatDotRound, Menu, Plus} from '@element-plus/icons-vue'
-import {addPost, deletePost, getForumList, searchPosts, updatePost} from '@/api/forum'
+import {createPost, deletePost, getForumList, searchPosts, updatePost} from '@/api/forum'
 import {getToken} from '@/utils/auth'
 import '@wangeditor/editor/dist/css/style.css'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
@@ -623,7 +623,7 @@ const submitPostForm = async () => {
           await updatePost(currentPostId.value, postData);
           ElMessage.success('帖子更新成功');
         } else {
-          await addPost(postData);
+          await createPost(postData);
           ElMessage.success('帖子发布成功');
         }
         dialogVisible.value = false;

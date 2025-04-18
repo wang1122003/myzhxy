@@ -101,7 +101,7 @@ html, body {
 
 .app-main {
   flex: 1;
-  padding: 0;
+  padding: 16px;
   background-color: #f5f7fa;
 }
 
@@ -112,11 +112,18 @@ html, body {
   justify-content: center;
   background-color: #fff;
   border-top: 1px solid #dcdfe6;
+  @media (max-width: 768px) {
+    height: 50px;
+    padding: 0 16px;
+  }
 }
 
 .footer-content {
   font-size: 14px;
   color: #606266;
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
 }
 
 /* 页面过渡动画 */
@@ -179,6 +186,33 @@ html, body {
   .el-dialog {
     width: 90% !important;
     margin-top: 10vh !important;
+  }
+
+  .app-main {
+    padding: 12px;
+  }
+
+  html, body {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-main {
+    padding: 8px;
+  }
+
+  html, body {
+    font-size: 12px;
+  }
+
+  .app-footer {
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .footer-content {
+    font-size: 11px;
   }
 }
 </style>

@@ -51,7 +51,7 @@
     <el-card v-if="showStats" class="stats-card">
       <template #header>
         <span>文件统计</span>
-        <el-button style="float: right; padding: 3px 0" type="text" @click="showStats = false">
+        <el-button style="float: right; padding: 3px 0" type="link" @click="showStats = false">
           隐藏
         </el-button>
       </template>
@@ -66,7 +66,7 @@
         </div>
         <div v-if="fileStats.typeStats && fileStats.typeStats.length > 0" class="stats-types">
           <h4>文件类型分布:</h4>
-          <el-table :data="fileStats.typeStats.slice(0, 5)" border size="mini" stripe>
+          <el-table :data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
             <el-table-column label="类型" prop="type" width="100"></el-table-column>
             <el-table-column label="数量" prop="count" width="80"></el-table-column>
             <el-table-column label="大小" prop="size">
@@ -133,14 +133,14 @@
           <template #default="scope">
             <el-button
                 v-if="!scope.row.isDirectory"
-                size="mini"
+                size="small"
                 type="primary"
                 @click="downloadFile(scope.row)"
             >
               下载
             </el-button>
             <el-button
-                size="mini"
+                size="small"
                 type="danger"
                 @click="confirmDeleteFile(scope.row)"
             >
@@ -188,14 +188,28 @@ export default {
     }
   },
   methods: {
+    // 辅助函数：清理路径，移除类似 /d: 的前缀
+    cleanPathPrefix(path) {
+      if (typeof path !== 'string') return path;
+      // 匹配 /<盘符>: 格式，例如 /d: /c:
+      const prefixRegex = /^\/[a-zA-Z]:/;
+      if (prefixRegex.test(path)) {
+        return path.replace(prefixRegex, '');
+      }
+      return path;
+    },
+
     // 加载文件列表
     loadFileList() {
       this.loading = true;
-      listDirectory(this.currentPath)
+      // 在发送请求前也清理一次 currentPath
+      const cleanedPathToSend = this.cleanPathPrefix(this.currentPath);
+      listDirectory(cleanedPathToSend)
           .then(response => {
             if (response.code === 200 && response.data) {
               this.fileList = response.data.files || [];
-              this.currentPath = response.data.currentPath;
+              // 在更新前清理后端返回的路径
+              this.currentPath = this.cleanPathPrefix(response.data.currentPath);
             } else {
               this.$message.error(response.message || '获取文件列表失败');
             }
@@ -318,13 +332,15 @@ export default {
       const newPath = this.currentPath
           ? `${this.currentPath}/${dirName}`
           : dirName;
-      this.currentPath = newPath;
+      // 清理 newPath
+      this.currentPath = this.cleanPathPrefix(newPath);
       this.loadFileList();
     },
 
     // 导航到指定路径
     navigateToPath(path) {
-      this.currentPath = path;
+      // 清理 path
+      this.currentPath = this.cleanPathPrefix(path);
       this.loadFileList();
     },
 

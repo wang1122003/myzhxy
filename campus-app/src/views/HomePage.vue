@@ -2,10 +2,10 @@
   <div class="home-container">
     <el-row :gutter="20">
       <!-- 通知公告 -->
-      <el-col :span="16">
+      <el-col :md="16" :sm="24" :xs="24" class="notice-col">
         <el-card
             v-loading="loadingNotices || loadingNoticeTypes"
-            class="notice-card"
+            class="notice-card home-card"
         >
           <template #header>
             <div class="card-header">
@@ -22,7 +22,7 @@
           </template>
           <el-table
               :data="notices"
-              height="400px"
+              :height="tableHeight"
               style="width: 100%"
           >
             <!-- 固定高度以便滚动 -->
@@ -74,9 +74,9 @@
       </el-col>
 
       <!-- 登录表单 -->
-      <el-col :span="8">
-        <el-card class="login-card">
-          <div class="login-header">
+      <el-col :md="8" :sm="24" :xs="24" class="login-col">
+        <el-card class="login-card home-card">
+          <div class="login-header card-header">
             <h2>用户登录</h2>
           </div>
           <el-form
@@ -192,7 +192,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElLink, ElMessage} from 'element-plus'
 import {getNoticeById, getRecentNotices} from '@/api/notice'
@@ -215,6 +215,7 @@ const noticeDialogVisible = ref(false)
 const loadingNoticeDetail = ref(false)
 const downloadingAttachment = reactive({})
 const noticeTypes = ref([])
+const tableHeight = ref('400px')
 
 const currentNotice = reactive({
   id: null,
@@ -248,6 +249,12 @@ onMounted(async () => {
     fetchNotices(),
     fetchNoticeTypes()
   ])
+
+  // 初始化并监听窗口大小变化来调整表格高度
+  nextTick(() => {
+    calculateTableHeight();
+  });
+  window.addEventListener('resize', calculateTableHeight);
 })
 
 const fetchNotices = async () => {
@@ -416,6 +423,20 @@ const downloadAttachment = async (file) => {
     downloadingAttachment[file.id] = false
   }
 }
+
+// 计算表格高度的函数
+const calculateTableHeight = () => {
+  const windowHeight = window.innerHeight;
+  // 根据窗口高度或其他因素动态计算，例如减去 Header 和 Footer 的高度以及一些边距
+  // 这里的计算方式是一个示例，需要根据实际布局调整
+  const calculatedHeight = windowHeight - 300; // 假设减去 300px 的其他元素高度
+  tableHeight.value = calculatedHeight > 200 ? `${calculatedHeight}px` : '200px'; // 最小高度 200px
+};
+
+onBeforeUnmount(() => {
+  // 组件卸载前移除监听器
+  window.removeEventListener('resize', calculateTableHeight);
+});
 </script>
 
 <script>
@@ -426,78 +447,98 @@ export default {
 
 <style scoped>
 .home-container {
-  padding: 30px;
-  background-color: #f5f7fa; /* 添加背景色 */
-  min-height: calc(100vh - 60px); /* 减去可能的 Header 高度 */
+  padding: 20px;
+}
+
+.home-card {
+  margin-bottom: 20px;
+  height: 100%; /* 让卡片尝试填充其列的高度 */
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 18px; /* 统一标题字体大小 */
+  font-weight: 600;
 }
 
-.notice-card .el-table {
-  margin-top: -10px; /* 微调表格与头部的间距 */
+.login-header h2 {
+  margin: 0; /* 移除 h2 的默认 margin */
+  font-size: inherit; /* 继承 .card-header 的字体大小 */
+  font-weight: inherit; /* 继承 .card-header 的字重 */
 }
 
-.login-card {
-  /* 登录卡片样式 */
+.el-table {
+  font-size: 14px; /* 调整表格字体大小 */
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 20px;
-  font-weight: bold;
+.el-table .el-button {
+  font-size: 13px; /* 调整表格内按钮字体大小 */
 }
 
-/* 通知详情样式 */
+.el-form-item {
+  margin-bottom: 18px; /* 调整表单项间距 */
+}
+
+.el-input,
+.el-checkbox {
+  font-size: 14px; /* 统一输入框和复选框字体 */
+}
+
+.el-button {
+  font-size: 14px; /* 统一按钮字体大小 */
+}
+
 .notice-content {
-  max-height: 60vh; /* 限制最大高度 */
-  overflow-y: auto; /* 超出滚动 */
-  padding-right: 15px; /* 留出滚动条空间 */
+  line-height: 1.8;
 }
 
 .notice-info {
-  display: flex;
-  justify-content: space-between;
+  font-size: 13px;
   color: #909399;
-  font-size: 14px;
   margin-bottom: 10px;
+}
+
+.notice-info span + span {
+  margin-left: 20px;
 }
 
 .notice-text {
-  line-height: 1.8;
-  margin-top: 15px;
-  /* 考虑使用 white-space: pre-wrap; 保留换行和空格 */
-  white-space: pre-wrap;
-}
-
-.notice-attachments {
-  margin-top: 20px;
+  font-size: 15px;
+  color: #303133;
 }
 
 .notice-attachments h4 {
+  margin-top: 15px;
   margin-bottom: 10px;
+  font-size: 14px;
 }
-
 .notice-attachments ul {
   list-style: none;
   padding-left: 0;
 }
-
 .notice-attachments li {
   margin-bottom: 5px;
 }
 
-.dialog-footer {
-  text-align: right;
+.notice-attachments .el-link {
+  font-size: 14px;
 }
 
-/* 为下载链接添加加载/禁用样式 */
-.el-link.is-loading {
-  cursor: not-allowed;
-  opacity: 0.6;
+/* 响应式调整 - 确保在小屏幕上堆叠 */
+@media (max-width: 991px) {
+  /* Element Plus 的 md 断点 */
+  .notice-col,
+  .login-col {
+    width: 100%; /* 宽度占满 */
+  }
+
+  .login-col {
+    margin-top: 20px; /* 在登录框上方增加间距 */
+  }
+
+  /* 可以考虑在小屏幕上减小表格高度 */
+  /* tableHeight ref 的计算逻辑已包含窗口大小变化 */
 }
 </style> 

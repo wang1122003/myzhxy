@@ -3,11 +3,13 @@ export const USER_API = {
     LOGIN: '/users/login',
     REGISTER: '/users/register',
     GET_CURRENT_USER: '/users/current',
+    UPDATE_CURRENT_USER: '/users/profile',
     CHANGE_PASSWORD: '/users/change-password',
     GET_USER_LIST: '/users/list',
     ADD_USER: '/users',
     UPDATE_USER: '/users/:id',
     DELETE_USER: '/users/:id',
+    RESET_PASSWORD: '/users/:id/reset-password',
     CHECK_PERMISSION: '/users/check-permission',
     GET_PERMISSIONS: '/users/permissions',
     LOGOUT: '/users/logout'
@@ -71,7 +73,13 @@ export const ACTIVITY_API = {
     DELETE: '/activities/:id',
     BATCH_DELETE: '/activities/batch',
     UPDATE_STATUS: '/activities/:id/status/:status',
-    UPLOAD_POSTER: '/activities/poster/upload'
+    UPLOAD_POSTER: '/activities/poster/upload',
+    GET_BY_PUBLISHER: '/activities/publisher/:publisherId',
+    GET_STUDENT_ACTIVITIES: '/activities/student/my',
+    JOIN_ACTIVITY: '/activities/join/:id',
+    CANCEL_JOIN: '/activities/cancel/:id',
+    RATE_ACTIVITY: '/activities/rate/:id',
+    GET_ENROLLMENTS: '/admin/activities/enrollments/:id'
 }
 
 // 通知相关接口
@@ -183,5 +191,21 @@ export const COMMON_API = {
     GET_NOTICE_TYPES: '/common/notice-types',
     GET_POST_CATEGORIES: '/common/post-categories'
 }
+
+// --- 新增或调整的接口 ---
+// (根据需要添加，例如 Grades API)
+export const GRADE_API = {
+    GET_STUDENT_GRADES: '/scores/student/my',
+    GET_COURSE_STUDENTS: '/scores/course-students',
+    SAVE_BATCH: '/scores/save-batch',
+    EXPORT: '/scores/export/:courseId',
+    IMPORT: '/scores/import'
+}
+
+// (根据需要添加其他 API 定义，例如 Student Activities)
+// export const ACTIVITY_API = {
+//   ... (保留 ACTIVITY_API 已有内容)
+//   GET_STUDENT_ACTIVITIES: '/activities/student/my' // 示例
+// }
 
 // --- 以下内容已移除并合并或移动到 forum.js ---

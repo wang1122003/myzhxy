@@ -22,57 +22,57 @@ export function register(data) {
 // 获取当前用户信息 (通用)
 export function getCurrentUser() {
     return request({
-        url: USER_API.GET_CURRENT_USER, // 假设为 '/user/current'
+        url: USER_API.GET_CURRENT_USER, // 使用已定义的 '/users/current'
         method: 'get'
     })
 }
 
-// 获取学生个人信息
+// 获取学生个人信息 (使用通用接口)
 export function getStudentProfile() {
     return request({
-        url: USER_API.GET_STUDENT_PROFILE, // 假设为 '/user/profile/student'
+        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
         method: 'get'
     })
 }
 
-// 更新学生个人信息
+// 更新学生个人信息 (使用通用接口)
 export function updateStudentProfile(data) {
     return request({
-        url: USER_API.UPDATE_STUDENT_PROFILE, // 假设为 '/user/profile/student'
+        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
 }
 
-// 获取教师个人信息
+// 获取教师个人信息 (使用通用接口)
 export function getTeacherProfile() {
     return request({
-        url: USER_API.GET_TEACHER_PROFILE, // 假设为 '/user/profile/teacher'
+        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
         method: 'get'
     })
 }
 
-// 更新教师个人信息
+// 更新教师个人信息 (使用通用接口)
 export function updateTeacherProfile(data) {
     return request({
-        url: USER_API.UPDATE_TEACHER_PROFILE, // 假设为 '/user/profile/teacher'
+        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
 }
 
-// 获取管理员个人信息
+// 获取管理员个人信息 (使用通用接口)
 export function getAdminProfile() {
     return request({
-        url: USER_API.GET_ADMIN_PROFILE, // 假设为 '/user/profile/admin'
+        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
         method: 'get'
     })
 }
 
-// 更新管理员个人信息
+// 更新管理员个人信息 (使用通用接口)
 export function updateAdminProfile(data) {
     return request({
-        url: USER_API.UPDATE_ADMIN_PROFILE, // 假设为 '/user/profile/admin'
+        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -139,7 +139,7 @@ export function deleteUser(id) {
 // 重置用户密码 (管理员用)
 export function resetPassword(id) {
     return request({
-        url: USER_API.RESET_PASSWORD.replace(':id', id),
+        url: USER_API.RESET_PASSWORD.replace(':id', id), // 使用刚添加的 RESET_PASSWORD
         method: 'put'
     })
 }
@@ -171,18 +171,19 @@ export function logout() {
     })
 }
 
-// 获取用户个人信息 (通用 profile 接口)
+// 获取用户个人信息 (通用 profile 接口) - 改用 getCurrentUser
 export function getUserProfile() {
-    return request({
-        url: USER_API.GET_USER_PROFILE, // 假设为 '/user/profile'
-        method: 'get'
-    })
+    // return request({
+    //     url: USER_API.GET_USER_PROFILE, // 移除，使用 GET_CURRENT_USER
+    //     method: 'get'
+    // })
+    return getCurrentUser();
 }
 
-// 更新用户个人信息 (通用 profile 接口)
-export function updateUserProfile(data) {
+// 更新用户个人信息 (通用 profile 接口) - 改用 updateCurrentUser
+export function updateCurrentUserProfile(data) { // 重命名以避免与通用更新混淆，或直接调用通用更新
     return request({
-        url: USER_API.UPDATE_USER_PROFILE, // 假设为 '/user/profile'
+        url: USER_API.UPDATE_CURRENT_USER, // 使用通用更新接口
         method: 'put',
         data
     })
@@ -197,7 +198,7 @@ export function updateUserStatus(id, status) {
     })
 }
 
-// 添加getUserInfo函数
+// 添加getUserInfo函数 (这个看起来是 mock 数据，暂时保留，但建议后续移除或整合)
 export function getUserInfo() {
     return Promise.resolve({
         data: {

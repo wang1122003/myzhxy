@@ -243,7 +243,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {
   ElButton,
   ElEmpty,
@@ -260,8 +260,12 @@ import {
   ElUpload
 } from 'element-plus';
 import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
+import {FILE_API} from '@/api/api-endpoints';
 import {deleteFile, downloadFile, getFileList, getResourceList} from '@/api/file';
 import {getStudentCourses} from '@/api/course';
+import {useRouter} from 'vue-router';
+
+const router = useRouter();
 
 // General loading state for personal files tab
 const loading = ref(false);
@@ -284,6 +288,15 @@ const resourcePageSize = ref(10)
 const courses = ref([])
 const courseFilter = ref(null)
 const loadingCourses = ref(false)
+
+// 从 request.js 或环境变量获取 baseURL
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/campus/api';
+// 在 baseURL 基础上拼接上传路径
+const uploadUrl = `${baseURL}${FILE_API.UPLOAD_FILE || '/file/upload'}`;
+
+const headers = computed(() => ({
+  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+}));
 
 // 获取文件列表
 const fetchFiles = async () => {

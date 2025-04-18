@@ -1,21 +1,12 @@
 <template>
   <el-header class="app-header">
     <div class="header-logo">
-      <img alt="校园系统" class="logo-image" src="@/assets/logo.png"/>
-      <h1>智慧校园管理系统</h1>
-    </div>
-    <div class="header-nav">
-      <el-button class="nav-button" link @click="goToForum">
-        <el-icon>
-          <ChatDotRound/>
-        </el-icon>
-        校园论坛
-      </el-button>
+      <h1>智慧化校园服务系统</h1>
     </div>
     <div class="header-user">
       <template v-if="isLoggedIn">
         <div class="user-greeting">
-          <span class="welcome-message">{{ userRoleName }} ({{ userName }}), 欢迎您!</span>
+          <span class="welcome-message">{{ userName }} ({{ userRoleName }}), 欢迎您!</span>
         </div>
         <el-dropdown trigger="click" @command="handleCommand">
           <div class="user-avatar">
@@ -26,17 +17,23 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="profile">
-                <el-icon>
-                  <User/>
-                </el-icon>
-                <span>个人中心</span>
-              </el-dropdown-item>
               <el-dropdown-item command="dashboard">
                 <el-icon>
                   <HomeFilled/>
                 </el-icon>
                 <span>工作台</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="forum">
+                <el-icon>
+                  <ChatDotRound/>
+                </el-icon>
+                <span>校园论坛</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="profile">
+                <el-icon>
+                  <User/>
+                </el-icon>
+                <span>个人资料</span>
               </el-dropdown-item>
               <el-dropdown-item command="logout" divided>
                 <el-icon>
@@ -49,17 +46,11 @@
         </el-dropdown>
       </template>
       <template v-else>
-        <el-button class="nav-button-mobile" link @click="goToForum">
+        <el-button type="primary" @click="goToForum">
           <el-icon>
             <ChatDotRound/>
           </el-icon>
-          论坛
-        </el-button>
-        <el-button type="primary" @click="goToHome">
-          <el-icon>
-            <Right/>
-          </el-icon>
-          登录
+          校园论坛
         </el-button>
       </template>
     </div>
@@ -161,6 +152,8 @@ export default {
         } else {
           router.push('/')
         }
+      } else if (command === 'forum') {
+        goToForum()
       }
     }
 
@@ -184,7 +177,7 @@ export default {
   justify-content: space-between;
   background-color: #fff;
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.05);
-  padding: 0 24px;
+  padding: 0 16px;
   height: 60px;
   position: sticky;
   top: 0;
@@ -194,48 +187,40 @@ export default {
 .header-logo {
   display: flex;
   align-items: center;
-}
-
-.logo-image {
-  height: 32px;
-  margin-right: 8px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .header-logo h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   color: #303133;
   font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: linear-gradient(to right, #3a7bd5, #00d2ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.nav-button {
-  font-size: 16px;
-  font-weight: 500;
-  color: #409EFF;
-}
-
-.nav-button:hover {
-  color: #66b1ff;
+  @media (max-width: 768px) {
+    font-size: 18px;
+  }
 }
 
 .header-user {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  margin-left: 16px;
 }
 
 .user-greeting {
   margin-right: 16px;
+  @media (max-width: 992px) {
+    display: none;
+  }
 }
 
 .welcome-message {
@@ -263,41 +248,9 @@ export default {
   margin-left: 4px;
 }
 
-.nav-button-mobile {
-  display: none;
-}
-
-/* 响应式样式 */
 @media (max-width: 768px) {
   .app-header {
-    padding: 0 16px;
-  }
-
-  .header-logo h1 {
-    font-size: 16px;
-  }
-
-  .welcome-message {
-    display: none;
-  }
-
-  .header-nav {
-    display: none;
-  }
-
-  .nav-button-mobile {
-    display: inline-flex;
-    margin-right: 10px;
-  }
-}
-
-@media (max-width: 576px) {
-  .app-header {
     padding: 0 12px;
-  }
-
-  .header-logo h1 {
-    font-size: 14px;
   }
 }
 </style> 

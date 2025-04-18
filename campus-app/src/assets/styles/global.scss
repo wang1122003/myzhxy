@@ -1,0 +1,288 @@
+@import 'variables.scss';
+
+// 全局基础样式重置
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: $font-size-base;
+  color: $text-primary;
+  line-height: 1.5;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $border-color-lighter;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $text-secondary;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: $text-regular;
+}
+
+// 页面过渡动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity $transition-duration $transition-function;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all $transition-duration $transition-function;
+}
+
+.slide-fade-leave-active {
+  transition: all $transition-duration cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+// 常用布局类
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.space-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// 间距类
+.mt-1 {
+  margin-top: $spacing-extra-small;
+}
+
+.mr-1 {
+  margin-right: $spacing-extra-small;
+}
+
+.mb-1 {
+  margin-bottom: $spacing-extra-small;
+}
+
+.ml-1 {
+  margin-left: $spacing-extra-small;
+}
+
+.mt-2 {
+  margin-top: $spacing-small;
+}
+
+.mr-2 {
+  margin-right: $spacing-small;
+}
+
+.mb-2 {
+  margin-bottom: $spacing-small;
+}
+
+.ml-2 {
+  margin-left: $spacing-small;
+}
+
+.mt-3 {
+  margin-top: $spacing-base;
+}
+
+.mr-3 {
+  margin-right: $spacing-base;
+}
+
+.mb-3 {
+  margin-bottom: $spacing-base;
+}
+
+.ml-3 {
+  margin-left: $spacing-base;
+}
+
+.mt-4 {
+  margin-top: $spacing-large;
+}
+
+.mr-4 {
+  margin-right: $spacing-large;
+}
+
+.mb-4 {
+  margin-bottom: $spacing-large;
+}
+
+.ml-4 {
+  margin-left: $spacing-large;
+}
+
+.mt-5 {
+  margin-top: $spacing-extra-large;
+}
+
+.mr-5 {
+  margin-right: $spacing-extra-large;
+}
+
+.mb-5 {
+  margin-bottom: $spacing-extra-large;
+}
+
+.ml-5 {
+  margin-left: $spacing-extra-large;
+}
+
+// 通用卡片样式
+.app-card {
+  background-color: $component-background;
+  border-radius: $border-radius-base;
+  box-shadow: $box-shadow-light;
+  margin-bottom: $spacing-base;
+  transition: transform $transition-duration, box-shadow $transition-duration;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: $box-shadow-base;
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-base;
+  border-bottom: 1px solid $border-color-lighter;
+
+  .title {
+    font-size: $font-size-medium;
+    font-weight: bold;
+    color: $text-primary;
+  }
+
+  .more {
+    color: $text-secondary;
+    cursor: pointer;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+}
+
+.card-body {
+  padding: $spacing-base;
+}
+
+// 响应式断点
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == "small" {
+    @media (max-width: 576px) {
+      @content;
+    }
+  } @else if $breakpoint == "medium" {
+    @media (max-width: 768px) {
+      @content;
+    }
+  } @else if $breakpoint == "large" {
+    @media (max-width: 992px) {
+      @content;
+    }
+  } @else if $breakpoint == "xlarge" {
+    @media (max-width: 1200px) {
+      @content;
+    }
+  }
+}
+
+// Element Plus 主题覆盖
+:root {
+  --el-color-primary: #{$primary-color};
+  --el-color-success: #{$success-color};
+  --el-color-warning: #{$warning-color};
+  --el-color-danger: #{$danger-color};
+  --el-color-info: #{$info-color};
+  --el-border-radius-base: #{$border-radius-base};
+  --el-box-shadow-light: #{$box-shadow-light};
+  --el-transition-duration: #{$transition-duration};
+  --el-transition-function: #{$transition-function};
+}
+
+// 为所有主要卡片添加渐变边框效果
+.gradient-border-card {
+  position: relative;
+  border: none !important;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: $primary-gradient;
+  }
+}
+
+// 按钮悬浮反馈增强
+.el-button {
+  transition: transform $transition-duration, box-shadow $transition-duration, background-color $transition-duration !important;
+
+  &:not(.is-disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// 表格增强
+.el-table {
+  border-radius: $border-radius-base;
+  overflow: hidden;
+  box-shadow: $box-shadow-light;
+
+  th.el-table__cell {
+    background-color: rgba($primary-color, 0.05);
+    font-weight: bold;
+  }
+
+  .el-table__row:hover > td.el-table__cell {
+    background-color: rgba($primary-color, 0.05);
+  }
+} 

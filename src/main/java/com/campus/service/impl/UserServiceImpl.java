@@ -231,19 +231,21 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     /**
      * 重置用户密码
      * @param id 用户ID
-     * @param newPassword 新密码
+     * @param newPassword 加密后的新密码 (通常由 Controller 生成)
      * @return 是否成功
      */
     @Override
     public boolean resetPassword(Long id, String newPassword) {
+        // 验证用户是否存在
         User user = getById(id);
         if (user == null) {
+            // log.warn("Attempted to reset password for non-existent user ID: {}", id);
             return false;
         }
-        
-        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, id).set(User::getPassword, newPassword);
-        return update(updateWrapper);
+
+        // 直接调用 DAO 更新密码
+        int updatedRows = userDao.updatePassword(id, newPassword);
+        return updatedRows > 0;
     }
     
     /**

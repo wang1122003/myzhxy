@@ -166,4 +166,15 @@ public class Result<T> implements Serializable {
     public void setData(T data) {
         this.data = data;
     }
+
+    /**
+     * 设置状态码（链式调用）
+     *
+     * @param code 状态码
+     * @return 当前 Result 实例
+     */
+    public Result<T> code(Integer code) {
+        this.code = code;
+        return this;
+    }
 } 

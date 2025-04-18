@@ -5,7 +5,7 @@ const routes = [
     {
         path: '/',
         name: 'Home',
-        component: () => import('../views/Home.vue')
+        component: () => import('../views/HomePage.vue')
     },
     {
         path: '/error',
@@ -17,6 +17,12 @@ const routes = [
         path: '/forum',
         name: 'Forum',
         component: () => import('../views/Forum.vue')
+    },
+    {
+        path: '/forum/post/:id',
+        name: 'PostDetail',
+        component: () => import('../views/PostDetail.vue'),
+        meta: {title: '帖子详情'}
     },
     // 学生页面路由
     {
@@ -78,6 +84,18 @@ const routes = [
                 path: 'courses',
                 name: 'TeacherCourses',
                 component: () => import('../views/teacher/Courses.vue')
+            },
+            {
+                path: 'courses/:courseId/resources',
+                name: 'TeacherCourseResources',
+                component: () => import('../views/teacher/CourseResources.vue'),
+                meta: {title: '课程资源管理'}
+            },
+            {
+                path: 'courses/:courseId/grades',
+                name: 'TeacherCourseGrades',
+                component: () => import('../views/teacher/CourseGrades.vue'),
+                meta: {title: '课程成绩管理'}
             }
         ]
     },
@@ -159,15 +177,38 @@ router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')
     const userRole = localStorage.getItem('role')
 
+    // 设置页面标题
+    if (to.meta.title) {
+        document.title = to.meta.title + ' - 校园管理系统'
+    } else {
+        document.title = '校园管理系统'
+    }
+
+    // 存储前一个页面的路径（用于实现"返回"功能）
+    localStorage.setItem('prevPath', from.path)
+
+    // 访问权限控制
     if (to.meta.requiresAuth && !token) {
         // 未登录访问受保护页面，重定向到首页 /
-        next({path: '/', query: {redirect: to.fullPath}}) // 可以带上原目标路径
+        next({path: '/', query: {redirect: to.fullPath}}) // 带上原目标路径
     } else if (to.meta.role && to.meta.role !== userRole) {
         // 角色不匹配，重定向到错误页
         next('/error')
     } else {
+        // 控制台输出路由跳转信息（仅在开发环境）
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`路由跳转：${from.path} -> ${to.path}`)
+        }
+        
         next()
     }
+})
+
+// 路由后置钩子
+// eslint-disable-next-line no-unused-vars
+router.afterEach((_to, _from) => {
+    // 页面跳转后滚动到顶部
+    window.scrollTo(0, 0)
 })
 
 export default router 

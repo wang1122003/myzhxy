@@ -73,19 +73,10 @@ public class AuthService {
     }
     
     /**
-     * 验证当前用户是否已认证
+     * 获取当前认证用户 (从请求中解析Token)
+     * 注意：此方法仍被 JwtAuthenticationFilter 使用，但后续可优化为直接从 SecurityContext 获取
      * @param request HTTP请求
-     * @return 是否已认证
-     */
-    public boolean isAuthenticated(HttpServletRequest request) {
-        String token = getTokenFromRequest(request);
-        return token != null && jwtUtil.validateToken(token);
-    }
-    
-    /**
-     * 获取当前认证用户
-     * @param request HTTP请求
-     * @return 用户对象，如果未认证则返回null
+     * @return 用户对象，如果未认证或Token无效则返回null
      */
     public User getCurrentUser(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
@@ -101,50 +92,12 @@ public class AuthService {
                 user.setUserType(userType);
                 return user;
             } catch (Exception e) {
+                // 可以记录日志
+                // logger.error("从Token解析用户信息时出错: {}", e.getMessage());
                 return null;
             }
         }
         return null;
-    }
-    
-    /**
-     * 检查用户是否有指定角色
-     * @param request HTTP请求
-     * @param userType 用户类型(0:管理员, 1:学生, 2:教师)
-     * @return 是否有指定角色
-     */
-    public boolean hasRole(HttpServletRequest request, Integer userType) {
-        User currentUser = getCurrentUser(request);
-        return currentUser != null && (currentUser.getUserType().equals(userType) || currentUser.getUserType() == 0); 
-        // 管理员拥有所有权限
-    }
-    
-    /**
-     * 检查是否有管理员权限
-     * @param request HTTP请求
-     * @return 是否有管理员权限
-     */
-    public boolean isAdmin(HttpServletRequest request) {
-        User currentUser = getCurrentUser(request);
-        return currentUser != null && currentUser.getUserType() == 0;
-    }
-    
-    /**
-     * 检查是否有教师权限
-     * @param request HTTP请求
-     * @return 是否有教师权限
-     */
-    public boolean isTeacher(HttpServletRequest request) {
-        return hasRole(request, 2);
-    }
-    
-    /**
-     * 检查是否有学生权限
-     * @param request HTTP请求
-     * @return 是否有学生权限
-     */
-    public boolean isStudent(HttpServletRequest request) {
-        return hasRole(request, 1);
     }
     
     /**

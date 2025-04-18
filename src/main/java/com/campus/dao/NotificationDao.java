@@ -2,11 +2,9 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Notification;
-
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,7 +24,7 @@ public interface NotificationDao extends BaseMapper<Notification> {
      * @param id 通知ID
      * @return 通知对象
      */
-    Notification getNotificationById(Integer id);
+    Notification getNotificationById(Long id);
     
     /**
      * 根据类型获取通知
@@ -47,7 +45,7 @@ public interface NotificationDao extends BaseMapper<Notification> {
      * @param senderId 发送者ID
      * @return 通知列表
      */
-    List<Notification> getNotificationsBySenderId(Integer senderId);
+    List<Notification> getNotificationsBySenderId(Long senderId);
     
     /**
      * 根据目标类型和ID获取通知
@@ -55,7 +53,7 @@ public interface NotificationDao extends BaseMapper<Notification> {
      * @param targetId 目标ID
      * @return 通知列表
      */
-    List<Notification> getNotificationsByTarget(@Param("targetType") String targetType, @Param("targetId") Integer targetId);
+    List<Notification> getNotificationsByTarget(@Param("targetType") String targetType, @Param("targetId") Long targetId);
     
     /**
      * 获取有效通知

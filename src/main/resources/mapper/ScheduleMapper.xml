@@ -38,7 +38,7 @@
         <include refid="Base_Column_List"/>
         FROM schedule s
         ORDER BY s.term_id DESC, s.week_day, s.start_time
-        LIMIT #{offset}, #{limit}
+        limit #{offset}, #{limit}
     </select>
 
     <!-- 获取课程表总数 -->
@@ -157,4 +157,36 @@
             update_time = NOW()
         WHERE id = #{id}
     </update>
+
+    <!-- 根据教室ID统计课表数量 -->
+    <select id="countByClassroomId" resultType="long">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE classroom_id = #{classroomId}
+    </select>
+
+    <!-- 根据教师ID和学期查询课表 -->
+    <select id="findByTeacherIdAndTerm" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM schedule s
+        WHERE teacher_id = #{teacherId} AND term_id = #{termId}
+    </select>
+
+    <!-- 根据课程ID统计课表数量 -->
+    <select id="countByCourseId" resultType="long">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE course_id = #{courseId}
+    </select>
+
+    <!-- 查找给定课程ID列表中已被排课的课程ID -->
+    <select id="findScheduledCourseIdsInList" resultType="long">
+        SELECT DISTINCT course_id
+        FROM schedule
+        WHERE course_id IN
+        <foreach item="item" collection="courseIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
 </mapper> 

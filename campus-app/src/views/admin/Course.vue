@@ -2,7 +2,10 @@
   <div class="course-management-container">
     <div class="page-header">
       <h2>课程管理</h2>
-      <el-button type="primary" @click="handleAddCourse">
+      <el-button
+          type="primary"
+          @click="handleAddCourse"
+      >
         <el-icon>
           <Plus/>
         </el-icon>
@@ -12,31 +15,80 @@
 
     <!-- 搜索和筛选 -->
     <el-card class="filter-card">
-      <el-form :inline="true" :model="searchParams" @submit.prevent="handleSearch">
+      <el-form
+          :inline="true"
+          :model="searchParams"
+          @submit.prevent="handleSearch"
+      >
         <el-form-item label="关键词">
-          <el-input v-model="searchParams.keyword" clearable placeholder="课程代码/课程名称" style="width: 250px;"/>
+          <el-input
+              v-model="searchParams.keyword"
+              clearable
+              placeholder="课程代码/课程名称"
+              style="width: 250px;"
+          />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="searchParams.status" clearable placeholder="选择状态" style="width: 120px;">
-            <el-option :value="1" label="正常"/>
-            <el-option :value="0" label="禁用"/>
+          <el-select
+              v-model="searchParams.status"
+              clearable
+              placeholder="选择状态"
+              style="width: 120px;"
+          >
+            <el-option
+                :value="1"
+                label="正常"
+            />
+            <el-option
+                :value="0"
+                label="禁用"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button
+              type="primary"
+              @click="handleSearch"
+          >
+            查询
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 课程列表 -->
     <el-card class="course-list-card">
-      <el-table v-loading="loading" :data="courseList" style="width: 100%">
-        <el-table-column label="课程代码" prop="courseCode" width="150"/>
-        <el-table-column label="课程名称" min-width="200" prop="courseName"/>
-        <el-table-column label="学分" prop="credit" width="80"/>
-        <el-table-column label="学时" prop="hours" width="80"/>
+      <el-table
+          v-loading="loading"
+          :data="courseList"
+          style="width: 100%"
+      >
+        <el-table-column
+            label="课程代码"
+            prop="courseCode"
+            width="150"
+        />
+        <el-table-column
+            label="课程名称"
+            min-width="200"
+            prop="courseName"
+        />
+        <el-table-column
+            label="学分"
+            prop="credit"
+            width="80"
+        />
+        <el-table-column
+            label="学时"
+            prop="hours"
+            width="80"
+        />
         <!-- 可以添加院系、类型等字段 -->
-        <el-table-column label="状态" prop="status" width="80">
+        <el-table-column
+            label="状态"
+            prop="status"
+            width="80"
+        >
           <template #default="scope">
             <el-switch
                 v-model="scope.row.status"
@@ -46,21 +98,44 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createTime" width="180">
+        <el-table-column
+            label="创建时间"
+            prop="createTime"
+            width="180"
+        >
           <template #default="scope">
             {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="150">
+        <el-table-column
+            fixed="right"
+            label="操作"
+            width="150"
+        >
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleEditCourse(scope.row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDeleteCourse(scope.row)">删除</el-button>
+            <el-button
+                size="small"
+                type="primary"
+                @click="handleEditCourse(scope.row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+                size="small"
+                type="danger"
+                @click="handleDeleteCourse(scope.row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 分页 -->
-      <div v-if="total > 0" class="pagination-container">
+      <div
+          v-if="total > 0"
+          class="pagination-container"
+      >
         <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
@@ -73,14 +148,117 @@
       </div>
     </el-card>
 
-    <!-- 添加/编辑课程对话框 (占位符) -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
-      <p>添加/编辑课程表单待实现...</p>
-      <!-- 表单通常包含：课程代码、名称、学分、学时、描述等 -->
+    <!-- 添加/编辑课程对话框 -->
+    <el-dialog
+        v-model="dialogVisible"
+        :title="dialogTitle"
+        width="600px"
+        @close="resetForm"
+    >
+      <el-form
+          ref="courseFormRef"
+          :model="courseForm"
+          :rules="courseFormRules"
+          label-width="100px"
+      >
+        <el-form-item
+            label="课程代码"
+            prop="courseNo"
+        >
+          <el-input
+              v-model="courseForm.courseNo"
+              :disabled="isEditMode"
+              placeholder="请输入课程代码"
+          />
+        </el-form-item>
+        <el-form-item
+            label="课程名称"
+            prop="courseName"
+        >
+          <el-input
+              v-model="courseForm.courseName"
+              placeholder="请输入课程名称"
+          />
+        </el-form-item>
+        <el-form-item
+            label="学分"
+            prop="credit"
+        >
+          <el-input-number
+              v-model="courseForm.credit"
+              :min="0"
+              :precision="1"
+              :step="0.5"
+              placeholder="请输入学分"
+          />
+        </el-form-item>
+        <el-form-item
+            label="所属学院ID"
+            prop="collegeId"
+        >
+          <el-input
+              v-model.number="courseForm.collegeId"
+              placeholder="请输入所属学院ID (可选)"
+          />
+        </el-form-item>
+        <el-form-item
+            label="所属学院"
+            prop="collegeName"
+        >
+          <el-input
+              v-model="courseForm.collegeName"
+              placeholder="请输入所属学院名称 (可选)"
+          />
+        </el-form-item>
+        <el-form-item
+            label="课程类型"
+            prop="courseType"
+        >
+          <el-select
+              v-model="courseForm.courseType"
+              placeholder="选择课程类型 (可选)"
+          >
+            <el-option
+                :value="1"
+                label="必修课"
+            />
+            <el-option
+                :value="2"
+                label="选修课"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+            label="状态"
+            prop="status"
+        >
+          <el-switch
+              v-model="courseForm.status"
+              :active-value="1"
+              :inactive-value="0"
+              active-text="已开课"
+              inactive-text="未开课"
+          />
+        </el-form-item>
+        <el-form-item
+            label="课程简介"
+            prop="introduction"
+        >
+          <el-input
+              v-model="courseForm.introduction"
+              :rows="3"
+              placeholder="请输入课程简介(可选)"
+              type="textarea"
+          />
+        </el-form-item>
+      </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitCourseForm">确定</el-button>
+          <el-button
+              type="primary"
+              @click="submitCourseForm"
+          >确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -88,7 +266,7 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue';
+import {computed, onMounted, reactive, ref} from 'vue';
 import {
   ElButton,
   ElCard,
@@ -97,6 +275,7 @@ import {
   ElFormItem,
   ElIcon,
   ElInput,
+  ElInputNumber,
   ElMessage,
   ElMessageBox,
   ElOption,
@@ -107,12 +286,7 @@ import {
   ElTableColumn
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {deleteCourse, getCourseList, updateCourseStatus} from '@/api/course';
-
-// 修改组件名称为多词组合
-defineOptions({
-  name: 'CourseManagement'
-})
+import {addCourse, deleteCourse, getCourseList, updateCourse, updateCourseStatus} from '@/api/course';
 
 const loading = ref(false);
 const courseList = ref([]);
@@ -126,8 +300,43 @@ const searchParams = reactive({
 
 const dialogVisible = ref(false);
 const dialogTitle = ref('添加课程');
+const courseFormRef = ref(null);
+const courseForm = ref({
+  id: null,
+  courseNo: '',
+  courseName: '',
+  credit: 0.0,
+  courseType: null,
+  collegeId: null,
+  collegeName: '',
+  introduction: '',
+  status: 1,
+});
 
-// 获取课程列表
+const courseFormRules = reactive({
+  courseNo: [
+    {required: true, message: '请输入课程代码', trigger: 'blur'}
+  ],
+  courseName: [
+    {required: true, message: '请输入课程名称', trigger: 'blur'}
+  ],
+  credit: [
+    {required: true, message: '请输入学分', trigger: 'blur'},
+    {type: 'number', message: '学分必须为数字值'},
+    {
+      validator: (rule, value, callback) => {
+        if (value < 0) {
+          callback(new Error('学分不能为负数'));
+        } else {
+          callback();
+        }
+      }, trigger: 'blur'
+    }
+  ],
+});
+
+const isEditMode = computed(() => !!courseForm.value.id);
+
 const fetchCourses = async () => {
   loading.value = true;
   try {
@@ -137,7 +346,6 @@ const fetchCourses = async () => {
       keyword: searchParams.keyword || null,
       status: searchParams.status
     };
-    // 使用 getAllCourses 或类似的 API
     const res = await getCourseList(params);
     courseList.value = res.data.list || [];
     total.value = res.data.total || 0;
@@ -149,42 +357,52 @@ const fetchCourses = async () => {
   }
 };
 
-// 搜索
 const handleSearch = () => {
   currentPage.value = 1;
   fetchCourses();
 };
 
-// 分页大小改变
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
   fetchCourses();
 };
 
-// 当前页改变
 const handleCurrentChange = (val) => {
   currentPage.value = val;
   fetchCourses();
 };
 
-// 添加课程（打开对话框）
+const resetForm = () => {
+  if (courseFormRef.value) {
+    courseFormRef.value.resetFields();
+  }
+  courseForm.value = {
+    id: null,
+    courseNo: '',
+    courseName: '',
+    credit: 0.0,
+    courseType: null,
+    collegeId: null,
+    collegeName: '',
+    introduction: '',
+    status: 1,
+  };
+};
+
 const handleAddCourse = () => {
+  resetForm();
   dialogTitle.value = '添加课程';
-  // 清空表单逻辑待添加
   dialogVisible.value = true;
-  ElMessage.info('添加课程功能待实现');
 };
 
-// 编辑课程（打开对话框）
 const handleEditCourse = (row) => {
+  resetForm();
   dialogTitle.value = '编辑课程';
-  // 填充表单逻辑待添加
+  courseForm.value = {...row};
   dialogVisible.value = true;
-  ElMessage.info(`编辑课程 ${row.courseName} 功能待实现`);
 };
 
-// 删除课程
 const handleDeleteCourse = (row) => {
   ElMessageBox.confirm(`确定要删除课程 ${row.courseName} 吗?`, '提示', {
     confirmButtonText: '确定',
@@ -194,7 +412,7 @@ const handleDeleteCourse = (row) => {
     try {
       await deleteCourse(row.id);
       ElMessage.success('删除成功');
-      fetchCourses(); // 刷新列表
+      fetchCourses();
     } catch (error) {
       console.error("删除课程失败", error);
       ElMessage.error("删除课程失败");
@@ -204,27 +422,43 @@ const handleDeleteCourse = (row) => {
   });
 };
 
-// 更改课程状态
 const handleStatusChange = async (row) => {
+  const originalStatus = row.status === 1 ? 0 : 1;
+  const actionText = row.status === 1 ? '启用' : '禁用';
   try {
     await updateCourseStatus(row.id, row.status);
-    ElMessage.success(`课程 ${row.courseName} 状态更新成功`);
+    ElMessage.success(`课程 ${row.courseName} 已${actionText}`);
   } catch (error) {
     console.error("更新课程状态失败", error);
-    ElMessage.error("更新课程状态失败");
-    // 状态改回去
-    row.status = row.status === 1 ? 0 : 1;
+    ElMessage.error(`更新课程 ${row.courseName} 状态失败`);
+    row.status = originalStatus;
   }
 };
 
-// 提交课程表单 (添加/编辑)
 const submitCourseForm = () => {
-  // 表单验证和提交逻辑待实现
-  dialogVisible.value = false;
-  ElMessage.info('提交课程表单功能待实现');
+  courseFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        if (isEditMode.value) {
+          const {id, ...updateData} = courseForm.value;
+          await updateCourse(id, updateData);
+          ElMessage.success('课程信息更新成功');
+        } else {
+          await addCourse(courseForm.value);
+          ElMessage.success('课程添加成功');
+        }
+        dialogVisible.value = false;
+        await fetchCourses();
+      } catch (error) {
+        console.error("提交课程表单失败", error);
+      }
+    } else {
+      console.log('课程表单验证失败');
+      return false;
+    }
+  });
 };
 
-// 格式化时间
 const formatTime = (timeStr) => {
   if (!timeStr) return '-';
   try {
@@ -235,11 +469,16 @@ const formatTime = (timeStr) => {
   }
 };
 
-// 组件挂载后加载数据
 onMounted(() => {
   fetchCourses();
 });
 
+</script>
+
+<script>
+export default {
+  name: 'CourseManagement'
+}
 </script>
 
 <style scoped>

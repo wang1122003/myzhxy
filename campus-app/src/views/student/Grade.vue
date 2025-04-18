@@ -24,31 +24,81 @@
             style="margin-right: 10px;"
             @change="handleFilterChange"
         >
-          <el-option label="全部" value=""/>
-          <el-option label="通过" value="pass"/>
-          <el-option label="不通过" value="fail"/>
+          <el-option
+              label="全部"
+              value=""
+          />
+          <el-option
+              label="通过"
+              value="pass"
+          />
+          <el-option
+              label="不通过"
+              value="fail"
+          />
         </el-select>
       </div>
     </div>
 
     <el-card class="grade-card">
-      <el-tabs v-model="activeTab" @tab-click="handleTabChange">
-        <el-tab-pane label="成绩列表" name="list">
-          <el-table :data="grades" border style="width: 100%">
-            <el-table-column label="课程名称" prop="courseName"/>
-            <el-table-column label="课程代码" prop="courseCode" width="120"/>
-            <el-table-column label="学分" prop="credit" width="80"/>
-            <el-table-column label="成绩" prop="grade" width="80">
+      <el-tabs
+          v-model="activeTab"
+          @tab-click="handleTabChange"
+      >
+        <el-tab-pane
+            label="成绩列表"
+            name="list"
+        >
+          <el-table
+              :data="grades"
+              border
+              style="width: 100%"
+          >
+            <el-table-column
+                label="课程名称"
+                prop="courseName"
+            />
+            <el-table-column
+                label="课程代码"
+                prop="courseCode"
+                width="120"
+            />
+            <el-table-column
+                label="学分"
+                prop="credit"
+                width="80"
+            />
+            <el-table-column
+                label="成绩"
+                prop="grade"
+                width="80"
+            >
               <template #default="scope">
                 <span :class="{ 'text-danger': scope.row.grade < 60 }">
                   {{ scope.row.grade }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="绩点" prop="gradePoint" width="80"/>
-            <el-table-column label="学期" prop="semester" width="150"/>
-            <el-table-column label="课程类型" prop="courseType" width="120"/>
-            <el-table-column label="考试类型" prop="examType" width="120"/>
+            <el-table-column
+                label="绩点"
+                prop="gradePoint"
+                width="80"
+            />
+            <el-table-column
+                label="学期"
+                prop="semester"
+                width="150"
+            />
+            <el-table-column
+                label="课程类型"
+                prop="courseType"
+                width="120"
+            />
+            <el-table-column
+                label="考试类型"
+                prop="examType"
+                width="120"
+            />
           </el-table>
 
           <div class="pagination-container">
@@ -63,7 +113,10 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="统计分析" name="stats">
+        <el-tab-pane
+            label="统计分析"
+            name="stats"
+        >
           <div class="stats-container">
             <div class="stats-card">
               <el-card>
@@ -74,20 +127,36 @@
                 </template>
                 <div class="stats-summary">
                   <div class="stats-item">
-                    <div class="stats-label">已修学分</div>
-                    <div class="stats-value">{{ semesterStats.totalCredit }}</div>
+                    <div class="stats-label">
+                      已修学分
+                    </div>
+                    <div class="stats-value">
+                      {{ semesterStats.totalCredit }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">平均分</div>
-                    <div class="stats-value">{{ semesterStats.averageGrade.toFixed(2) }}</div>
+                    <div class="stats-label">
+                      平均分
+                    </div>
+                    <div class="stats-value">
+                      {{ semesterStats.averageGrade.toFixed(2) }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">平均绩点</div>
-                    <div class="stats-value">{{ semesterStats.gpa.toFixed(2) }}</div>
+                    <div class="stats-label">
+                      平均绩点
+                    </div>
+                    <div class="stats-value">
+                      {{ semesterStats.gpa.toFixed(2) }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">课程总数</div>
-                    <div class="stats-value">{{ semesterStats.totalCourses }}</div>
+                    <div class="stats-label">
+                      课程总数
+                    </div>
+                    <div class="stats-value">
+                      {{ semesterStats.totalCourses }}
+                    </div>
                   </div>
                 </div>
               </el-card>
@@ -102,20 +171,36 @@
                 </template>
                 <div class="stats-summary">
                   <div class="stats-item">
-                    <div class="stats-label">总学分</div>
-                    <div class="stats-value">{{ overallStats.totalCredit }}</div>
+                    <div class="stats-label">
+                      总学分
+                    </div>
+                    <div class="stats-value">
+                      {{ overallStats.totalCredit }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">总平均分</div>
-                    <div class="stats-value">{{ overallStats.averageGrade.toFixed(2) }}</div>
+                    <div class="stats-label">
+                      总平均分
+                    </div>
+                    <div class="stats-value">
+                      {{ overallStats.averageGrade.toFixed(2) }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">总绩点</div>
-                    <div class="stats-value">{{ overallStats.gpa.toFixed(2) }}</div>
+                    <div class="stats-label">
+                      总绩点
+                    </div>
+                    <div class="stats-value">
+                      {{ overallStats.gpa.toFixed(2) }}
+                    </div>
                   </div>
                   <div class="stats-item">
-                    <div class="stats-label">总课程数</div>
-                    <div class="stats-value">{{ overallStats.totalCourses }}</div>
+                    <div class="stats-label">
+                      总课程数
+                    </div>
+                    <div class="stats-value">
+                      {{ overallStats.totalCourses }}
+                    </div>
                   </div>
                 </div>
               </el-card>
@@ -130,8 +215,14 @@
                 </div>
               </template>
               <div class="chart-area">
-                <div ref="pieChartRef" class="pie-chart"></div>
-                <div ref="barChartRef" class="bar-chart"></div>
+                <div
+                    ref="pieChartRef"
+                    class="pie-chart"
+                />
+                <div
+                    ref="barChartRef"
+                    class="bar-chart"
+                />
               </div>
             </el-card>
           </div>

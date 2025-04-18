@@ -17,6 +17,9 @@
         <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
     </context:component-scan>
 
+    <!-- 扫描 Config 包 (包含 SecurityConfig 和 JwtAuthenticationFilter) -->
+    <context:component-scan base-package="com.campus.config"/>
+
     <!-- 扫描utils包中的Web相关组件 -->
     <context:component-scan base-package="com.campus.utils" use-default-filters="false">
         <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$GlobalExceptionHandler"/>

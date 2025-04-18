@@ -15,6 +15,45 @@ export function getStudentGrades(params) {
     })
 }
 
+// 获取课程学生成绩列表
+export function getCourseStudents(params) {
+    return request({
+        url: '/grades/course-students',
+        method: 'get',
+        params
+    })
+}
+
+// 保存学生成绩
+export function saveStudentGrades(data) {
+    return request({
+        url: '/grades/save-batch',
+        method: 'post',
+        data
+    })
+}
+
+// 导出成绩
+export function exportGrades(courseId) {
+    return request({
+        url: `/grades/export/${courseId}`,
+        method: 'get',
+        responseType: 'blob'
+    })
+}
+
+// 导入成绩
+export function importGrades(formData) {
+    return request({
+        url: '/grades/import',
+        method: 'post',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+}
+
 // 未来可能需要的其他成绩相关 API
 // export function getGradeById(id) { ... }
 // export function addGrade(data) { ... }

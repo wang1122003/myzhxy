@@ -22,30 +22,71 @@
       </div>
     </div>
 
-    <el-card v-loading="loadingGrades" class="grades-card">
-      <el-table :data="grades" border style="width: 100%">
-        <el-table-column label="课程代码" prop="courseCode" width="150"/>
-        <el-table-column label="课程名称" min-width="200" prop="courseName"/>
-        <el-table-column label="学分" prop="credit" width="80"/>
-        <el-table-column label="成绩类型" prop="gradeType" width="120">
+    <el-card
+        v-loading="loadingGrades"
+        class="grades-card"
+    >
+      <el-table
+          :data="grades"
+          border
+          style="width: 100%"
+      >
+        <el-table-column
+            label="课程代码"
+            prop="courseCode"
+            width="150"
+        />
+        <el-table-column
+            label="课程名称"
+            min-width="200"
+            prop="courseName"
+        />
+        <el-table-column
+            label="学分"
+            prop="credit"
+            width="80"
+        />
+        <el-table-column
+            label="成绩类型"
+            prop="gradeType"
+            width="120"
+        >
           <template #default="scope">
             {{ scope.row.gradeType === 'score' ? '百分制' : '等级制' }}
           </template>
         </el-table-column>
-        <el-table-column label="成绩" prop="gradeValue" width="100">
+        <el-table-column
+            label="成绩"
+            prop="gradeValue"
+            width="100"
+        >
           <template #default="scope">
             <el-tag :type="getTagType(scope.row.gradeValue, scope.row.gradeType)">
               {{ formatGrade(scope.row.gradeValue, scope.row.gradeType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="绩点" prop="gpa" width="80"/>
-        <el-table-column label="所属学期" prop="semester" width="180"/>
+        <el-table-column
+            label="绩点"
+            prop="gpa"
+            width="80"
+        />
+        <el-table-column
+            label="所属学期"
+            prop="semester"
+            width="180"
+        />
       </el-table>
-      <el-empty v-if="grades.length === 0 && !loadingGrades" description="暂无成绩记录"/>
+      <el-empty
+          v-if="grades.length === 0 && !loadingGrades"
+          description="暂无成绩记录"
+      />
 
       <!-- 可以在这里添加总学分、平均绩点等统计信息 -->
-      <div v-if="grades.length > 0" class="summary-info">
+      <div
+          v-if="grades.length > 0"
+          class="summary-info"
+      >
         <!-- 待添加 -->
       </div>
     </el-card>
@@ -57,11 +98,6 @@ import {onMounted, ref} from 'vue';
 import {ElCard, ElEmpty, ElMessage, ElOption, ElSelect, ElTable, ElTableColumn, ElTag} from 'element-plus';
 import {getStudentGrades} from '@/api/grade'; // 假设 API 在这里
 import {getTerms} from '@/api/common'; // 复用获取学期的 API
-
-// 修改组件名称为多词组合
-defineOptions({
-  name: 'GradeManagement'
-})
 
 const loadingGrades = ref(false);
 const loadingSemesters = ref(false);
@@ -136,6 +172,13 @@ onMounted(async () => {
   // 初始加载所有成绩或最新学期成绩（取决于产品设计）
   await fetchGrades();
 });
+</script>
+
+<script>
+// 添加标准的 export default
+export default {
+  name: 'StudentGrades' // 使用更明确的多词名称
+}
 </script>
 
 <style scoped>

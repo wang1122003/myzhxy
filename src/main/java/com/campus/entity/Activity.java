@@ -1,20 +1,28 @@
 package com.campus.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 校园活动实体类
  */
 @Data
+@TableName(value = "activity", autoResultMap = true)
 public class Activity implements Serializable {
     private static final long serialVersionUID = 1L;
     
     /**
      * 活动ID
      */
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     
     /**
@@ -91,4 +99,25 @@ public class Activity implements Serializable {
      * 更新时间
      */
     private Date updateTime;
+
+    /**
+     * 参与者列表，使用JSON数组存储
+     * 从ActivityParticipant实体集成而来
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Participant> participants;
+
+    /**
+     * 参与者内部类
+     */
+    @Data
+    public static class Participant implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private Long userId;
+        private String name;
+        private String avatar;
+        private Date registerTime;
+        private Integer status; // 状态：1-已报名，2-已签到，3-已取消
+    }
 }

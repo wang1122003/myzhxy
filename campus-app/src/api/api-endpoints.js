@@ -130,7 +130,24 @@ export const FORUM_API = {
     ADD_TAG: '/forum/tags',
     UPDATE_TAG: '/forum/tags/:id',
     DELETE_TAG: '/forum/tags/:id',
-    BATCH_DELETE_TAGS: '/forum/tags/batch'
+    BATCH_DELETE_TAGS: '/forum/tags/batch',
+
+    // --- 合并自外部定义 ---
+    GET_CATEGORIES: '/forum/categories',
+    ADD_CATEGORY: '/forum/categories',
+    UPDATE_CATEGORY: '/forum/categories',
+    DELETE_CATEGORY: '/forum/categories',
+    UNLIKE_POST: '/forum/posts/unlike',
+    GET_TOP: '/forum/posts/top',
+    GET_ESSENCE: '/forum/posts/essence',
+    SET_TOP: '/forum/posts/top',
+    SET_ESSENCE: '/forum/posts/essence',
+    UPDATE_STATUS: '/forum/posts/status',
+    UNLIKE_COMMENT: '/forum/comments/unlike',
+    GET_ALL_CATEGORIES: '/forum/categories/all',
+    GET_AVAILABLE_FORUMS: '/forum/forums',
+    UPLOAD_POST_IMAGE: '/upload/image',
+    UPLOAD_FILE: '/upload/file'
 }
 
 // 文件相关接口
@@ -165,4 +182,6 @@ export const COMMON_API = {
     GET_ACTIVITY_TYPES: '/common/activity-types',
     GET_NOTICE_TYPES: '/common/notice-types',
     GET_POST_CATEGORIES: '/common/post-categories'
-} 
+}
+
+// --- 以下内容已移除并合并或移动到 forum.js ---

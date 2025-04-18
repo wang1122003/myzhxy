@@ -1,14 +1,18 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.campus.dto.PageResult;
+import com.campus.entity.Post;
+
 import java.util.List;
 import java.util.Map;
-
-import com.campus.entity.Post;
 
 /**
  * 论坛帖子服务接口
  */
-public interface PostService {
+public interface PostService extends IService<Post> {
     
     /**
      * 根据ID查询帖子
@@ -41,15 +45,6 @@ public interface PostService {
      * @return 帖子分页数据
      */
     Map<String, Object> getMyPosts(int page, int size);
-    
-    /**
-     * 根据分类获取帖子
-     * @param category 分类名称
-     * @param page 页码
-     * @param size 每页大小
-     * @return 帖子分页数据
-     */
-    Map<String, Object> getPostsByCategory(String category, int page, int size);
     
     /**
      * 搜索帖子
@@ -109,29 +104,6 @@ public interface PostService {
      * @return 是否成功
      */
     boolean unlikePost(Long id);
-    
-    /**
-     * 获取帖子标签
-     * @param postId 帖子ID
-     * @return 标签列表
-     */
-    List<Map<String, Object>> getPostTags(Long postId);
-    
-    /**
-     * 为帖子添加标签
-     * @param postId 帖子ID
-     * @param tagIds 标签ID数组
-     * @return 是否成功
-     */
-    boolean addTagsToPost(Long postId, Long[] tagIds);
-    
-    /**
-     * 从帖子移除标签
-     * @param postId 帖子ID
-     * @param tagId 标签ID
-     * @return 是否成功
-     */
-    boolean removeTagFromPost(Long postId, Long tagId);
     
     /**
      * 获取帖子统计信息
@@ -250,4 +222,66 @@ public interface PostService {
      * @return 是否成功
      */
     boolean deletePost(Long id);
+
+    /**
+     * 分页查询帖子列表
+     *
+     * @param params 查询参数 (包含过滤条件)
+     * @param page   当前页码
+     * @param size   每页数量
+     * @return 分页结果
+     */
+    PageResult<Post> findPage(Map<String, Object> params, int page, int size);
+
+    /**
+     * 根据板块ID获取帖子
+     *
+     * @param forumId 板块ID
+     * @param page    页码
+     * @param size    每页大小
+     * @return 帖子分页数据 (Map 格式，适配 Controller)
+     */
+    Map<String, Object> getPostsByForumId(Long forumId, int page, int size);
+
+    /**
+     * 分页查询帖子列表
+     *
+     * @param page    分页参数
+     * @param forumId 板块ID
+     * @return 帖子分页列表
+     */
+    IPage<Post> getPostPage(Page<Post> page, Long forumId);
+
+    /**
+     * 根据ID获取帖子详情
+     *
+     * @param id 帖子ID
+     * @return 帖子详情
+     */
+    Post getPostDetail(Long id);
+
+    /**
+     * 创建帖子
+     *
+     * @param post 帖子信息
+     * @return 是否成功
+     */
+    boolean createPost(Post post);
+
+    /**
+     * 根据标签查询帖子
+     *
+     * @param tag  标签名
+     * @param page 分页参数
+     * @return 帖子分页列表
+     */
+    IPage<Post> getPostsByTag(String tag, Page<Post> page);
+
+    /**
+     * 获取热门标签
+     *
+     * @param limit 限制数量
+     * @return 热门标签列表
+     */
+    List<String> getHotTags(int limit);
 }

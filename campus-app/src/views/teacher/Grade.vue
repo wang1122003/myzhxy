@@ -21,49 +21,108 @@
     </div>
 
     <!-- 课程未选择提示 -->
-    <el-empty v-if="!selectedCourseId" description="请选择一个课程进行成绩管理"/>
+    <el-empty
+        v-if="!selectedCourseId"
+        description="请选择一个课程进行成绩管理"
+    />
 
     <!-- 课程选择后的成绩管理 -->
     <template v-else>
       <el-card class="grade-card">
         <el-tabs v-model="activeTab">
           <!-- 成绩项管理 -->
-          <el-tab-pane label="成绩项管理" name="items">
+          <el-tab-pane
+              label="成绩项管理"
+              name="items"
+          >
             <div class="tab-header">
-              <el-button type="primary" @click="addGradeItem">添加评分项</el-button>
+              <el-button
+                  type="primary"
+                  @click="addGradeItem"
+              >
+                添加评分项
+              </el-button>
             </div>
 
-            <el-table v-loading="itemsLoading" :data="gradeItems" border style="width: 100%">
-              <el-table-column label="评分项名称" min-width="150" prop="itemName"/>
-              <el-table-column label="权重" prop="weight" width="80">
+            <el-table
+                v-loading="itemsLoading"
+                :data="gradeItems"
+                border
+                style="width: 100%"
+            >
+              <el-table-column
+                  label="评分项名称"
+                  min-width="150"
+                  prop="itemName"
+              />
+              <el-table-column
+                  label="权重"
+                  prop="weight"
+                  width="80"
+              >
                 <template #default="scope">
                   {{ scope.row.weight }}%
                 </template>
               </el-table-column>
-              <el-table-column label="满分" prop="maxScore" width="80"/>
-              <el-table-column label="评分进度" width="200">
+              <el-table-column
+                  label="满分"
+                  prop="maxScore"
+                  width="80"
+              />
+              <el-table-column
+                  label="评分进度"
+                  width="200"
+              >
                 <template #default="scope">
                   <el-progress
                       :format="() => `${scope.row.gradedCount}/${scope.row.totalCount}`"
                       :percentage="getGradePercentage(scope.row)"
                       :status="scope.row.gradedCount === scope.row.totalCount ? 'success' : ''"
-                  ></el-progress>
+                  />
                 </template>
               </el-table-column>
-              <el-table-column fixed="right" label="操作" width="250">
+              <el-table-column
+                  fixed="right"
+                  label="操作"
+                  width="250"
+              >
                 <template #default="scope">
-                  <el-button link type="primary" @click="gradeStudents(scope.row)">评分</el-button>
-                  <el-button link type="primary" @click="editGradeItem(scope.row)">编辑</el-button>
-                  <el-button link type="danger" @click="deleteGradeItem(scope.row)">删除</el-button>
+                  <el-button
+                      link
+                      type="primary"
+                      @click="gradeStudents(scope.row)"
+                  >
+                    评分
+                  </el-button>
+                  <el-button
+                      link
+                      type="primary"
+                      @click="editGradeItem(scope.row)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                      link
+                      type="danger"
+                      @click="deleteGradeItem(scope.row)"
+                  >
+                    删除
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>
 
-            <el-empty v-if="gradeItems.length === 0 && !itemsLoading" description="暂无评分项"/>
+            <el-empty
+                v-if="gradeItems.length === 0 && !itemsLoading"
+                description="暂无评分项"
+            />
           </el-tab-pane>
 
           <!-- 学生成绩管理 -->
-          <el-tab-pane label="学生成绩管理" name="students">
+          <el-tab-pane
+              label="学生成绩管理"
+              name="students"
+          >
             <div class="filter-container">
               <el-input
                   v-model="searchQuery"
@@ -79,13 +138,38 @@
                   </el-icon>
                 </template>
               </el-input>
-              <el-button type="primary" @click="handleFilter">搜索</el-button>
-              <el-button type="success" @click="exportGrades">导出成绩</el-button>
+              <el-button
+                  type="primary"
+                  @click="handleFilter"
+              >
+                搜索
+              </el-button>
+              <el-button
+                  type="success"
+                  @click="exportGrades"
+              >
+                导出成绩
+              </el-button>
             </div>
 
-            <el-table v-loading="studentsLoading" :data="filteredStudents" border style="width: 100%">
-              <el-table-column fixed="left" label="学号" prop="studentId" width="120"/>
-              <el-table-column fixed="left" label="姓名" prop="studentName" width="100"/>
+            <el-table
+                v-loading="studentsLoading"
+                :data="filteredStudents"
+                border
+                style="width: 100%"
+            >
+              <el-table-column
+                  fixed="left"
+                  label="学号"
+                  prop="studentId"
+                  width="120"
+              />
+              <el-table-column
+                  fixed="left"
+                  label="姓名"
+                  prop="studentName"
+                  width="100"
+              />
               <el-table-column
                   v-for="item in gradeItems"
                   :key="item.id"
@@ -97,22 +181,44 @@
                   <div v-if="getStudentItemGrade(scope.row, item.id)">
                     {{ getStudentItemGrade(scope.row, item.id).score || '-' }}
                   </div>
-                  <el-button v-else size="small" @click="addStudentGrade(scope.row, item)">录入</el-button>
+                  <el-button
+                      v-else
+                      size="small"
+                      @click="addStudentGrade(scope.row, item)"
+                  >
+                    录入
+                  </el-button>
                 </template>
               </el-table-column>
-              <el-table-column label="总评" width="100">
+              <el-table-column
+                  label="总评"
+                  width="100"
+              >
                 <template #default="scope">
                   {{ calculateTotalScore(scope.row) }}
                 </template>
               </el-table-column>
-              <el-table-column fixed="right" label="操作" width="150">
+              <el-table-column
+                  fixed="right"
+                  label="操作"
+                  width="150"
+              >
                 <template #default="scope">
-                  <el-button link type="primary" @click="editStudentGrades(scope.row)">编辑成绩</el-button>
+                  <el-button
+                      link
+                      type="primary"
+                      @click="editStudentGrades(scope.row)"
+                  >
+                    编辑成绩
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>
 
-            <el-empty v-if="students.length === 0 && !studentsLoading" description="暂无学生信息"/>
+            <el-empty
+                v-if="students.length === 0 && !studentsLoading"
+                description="暂无学生信息"
+            />
           </el-tab-pane>
         </el-tabs>
       </el-card>
@@ -123,11 +229,25 @@
           :title="itemDialogType === 'add' ? '添加评分项' : '编辑评分项'"
           width="500px"
       >
-        <el-form ref="itemFormRef" :model="itemForm" :rules="itemRules" label-width="100px">
-          <el-form-item label="评分项名称" prop="itemName">
-            <el-input v-model="itemForm.itemName" placeholder="请输入评分项名称"/>
+        <el-form
+            ref="itemFormRef"
+            :model="itemForm"
+            :rules="itemRules"
+            label-width="100px"
+        >
+          <el-form-item
+              label="评分项名称"
+              prop="itemName"
+          >
+            <el-input
+                v-model="itemForm.itemName"
+                placeholder="请输入评分项名称"
+            />
           </el-form-item>
-          <el-form-item label="权重" prop="weight">
+          <el-form-item
+              label="权重"
+              prop="weight"
+          >
             <el-input-number
                 v-model="itemForm.weight"
                 :max="100"
@@ -137,7 +257,10 @@
             />
             <span class="form-hint">总权重: {{ totalWeight }}%{{ totalWeight > 100 ? ' (超出100%)' : '' }}</span>
           </el-form-item>
-          <el-form-item label="满分" prop="maxScore">
+          <el-form-item
+              label="满分"
+              prop="maxScore"
+          >
             <el-input-number
                 v-model="itemForm.maxScore"
                 :max="100"
@@ -146,7 +269,10 @@
                 style="width: 180px;"
             />
           </el-form-item>
-          <el-form-item label="描述" prop="description">
+          <el-form-item
+              label="描述"
+              prop="description"
+          >
             <el-input
                 v-model="itemForm.description"
                 :rows="3"
@@ -158,7 +284,10 @@
         <template #footer>
           <span class="dialog-footer">
             <el-button @click="itemDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitGradeItem">确定</el-button>
+            <el-button
+                type="primary"
+                @click="submitGradeItem"
+            >确定</el-button>
           </span>
         </template>
       </el-dialog>
@@ -185,10 +314,25 @@
             </el-input>
           </div>
 
-          <el-table :data="filteredGradeStudents" border style="width: 100%">
-            <el-table-column label="学号" prop="studentId" width="120"/>
-            <el-table-column label="姓名" prop="studentName" width="100"/>
-            <el-table-column label="成绩" width="150">
+          <el-table
+              :data="filteredGradeStudents"
+              border
+              style="width: 100%"
+          >
+            <el-table-column
+                label="学号"
+                prop="studentId"
+                width="120"
+            />
+            <el-table-column
+                label="姓名"
+                prop="studentName"
+                width="100"
+            />
+            <el-table-column
+                label="成绩"
+                width="150"
+            >
               <template #default="scope">
                 <el-input-number
                     v-model="scope.row.score"
@@ -200,7 +344,10 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column label="评语" min-width="200">
+            <el-table-column
+                label="评语"
+                min-width="200"
+            >
               <template #default="scope">
                 <el-input
                     v-model="scope.row.comment"
@@ -220,20 +367,38 @@
                 :step="1"
                 style="width: 120px; margin-right: 10px;"
             />
-            <el-button type="primary" @click="setBatchScore">应用到所有未评分学生</el-button>
+            <el-button
+                type="primary"
+                @click="setBatchScore"
+            >
+              应用到所有未评分学生
+            </el-button>
           </div>
         </div>
 
         <div v-else-if="gradeDialogType === 'single'">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="学号">{{ currentStudent.studentId }}</el-descriptions-item>
-            <el-descriptions-item label="姓名">{{ currentStudent.studentName }}</el-descriptions-item>
-            <el-descriptions-item label="班级">{{ currentStudent.className }}</el-descriptions-item>
+          <el-descriptions
+              :column="1"
+              border
+          >
+            <el-descriptions-item label="学号">
+              {{ currentStudent.studentId }}
+            </el-descriptions-item>
+            <el-descriptions-item label="姓名">
+              {{ currentStudent.studentName }}
+            </el-descriptions-item>
+            <el-descriptions-item label="班级">
+              {{ currentStudent.className }}
+            </el-descriptions-item>
           </el-descriptions>
 
           <div class="student-grades-form">
             <h3>成绩明细</h3>
-            <el-form ref="studentGradesFormRef" :model="studentGradesForm" label-width="150px">
+            <el-form
+                ref="studentGradesFormRef"
+                :model="studentGradesForm"
+                label-width="150px"
+            >
               <el-form-item
                   v-for="item in gradeItems"
                   :key="item.id"
@@ -247,7 +412,10 @@
                     :step="1"
                     style="width: 120px; margin-right: 10px;"
                 />
-                <span v-if="studentGradesForm[item.id] !== null" class="score-hint">
+                <span
+                    v-if="studentGradesForm[item.id] !== null"
+                    class="score-hint"
+                >
                   折算后: {{ calculateWeightedScore(studentGradesForm[item.id], item) }}
                 </span>
               </el-form-item>
@@ -262,7 +430,10 @@
         <template #footer>
           <span class="dialog-footer">
             <el-button @click="gradeDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitGrades">保存</el-button>
+            <el-button
+                type="primary"
+                @click="submitGrades"
+            >保存</el-button>
           </span>
         </template>
       </el-dialog>
@@ -557,7 +728,7 @@ const submitGradeItem = async () => {
   try {
     await itemFormRef.value.validate()
 
-    if (totalWeight > 100) {
+    if (totalWeight.value > 100) {
       const confirmResult = await ElMessageBox.confirm(
           '当前评分项权重总和超过100%，是否继续？',
           '警告',

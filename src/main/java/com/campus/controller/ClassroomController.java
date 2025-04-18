@@ -1,13 +1,17 @@
 package com.campus.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Classroom;
+import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
 import com.campus.utils.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 教室管理控制器
@@ -19,12 +23,46 @@ public class ClassroomController {
     
     @Autowired
     private ClassroomService classroomService;
+
+    /**
+     * 分页并按条件获取教室列表
+     *
+     * @param page     当前页码, 默认为1
+     * @param size     每页数量, 默认为10
+     * @param keyword  关键词(教室编号/名称)
+     * @param building 教学楼
+     * @param status   状态 (0:禁用, 1:正常)
+     * @return 分页教室列表
+     */
+    @GetMapping
+    public Result getClassroomsByPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String building,
+            @RequestParam(required = false) Integer status) {
+        try {
+            IPage<Classroom> pageData = classroomService.getClassroomsByPage(page, size, keyword, building, status);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("total", pageData.getTotal());
+            result.put("list", pageData.getRecords());
+            result.put("pages", pageData.getPages());
+            result.put("current", pageData.getCurrent());
+            result.put("size", pageData.getSize());
+
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("分页获取教室列表失败", e);
+            return Result.error("获取教室列表失败: " + e.getMessage());
+        }
+    }
     
     /**
      * 获取所有教室
      * @return 教室列表
      */
-    @GetMapping
+    @GetMapping("/all")
     public Result getAllClassrooms() {
         try {
             List<Classroom> classrooms = classroomService.getAllClassrooms();
@@ -137,16 +175,17 @@ public class ClassroomController {
     @DeleteMapping("/{id}")
     public Result deleteClassroom(@PathVariable Long id) {
         try {
-            // TODO: 检查教室是否已被课表引用，如果是则不允许删除
-            
             boolean success = classroomService.deleteClassroom(id);
             if (success) {
                 return Result.success("删除教室成功");
             } else {
                 return Result.error("删除教室失败");
             }
+        } catch (CustomException ce) {
+            log.warn("删除教室失败 (ID: {}): {}", id, ce.getMessage());
+            return Result.error(ce.getMessage());
         } catch (Exception e) {
-            log.error("删除教室失败", e);
+            log.error("删除教室失败 (ID: {})", id, e);
             return Result.error("删除教室失败: " + e.getMessage());
         }
     }
@@ -162,15 +201,15 @@ public class ClassroomController {
             if (ids == null || ids.length == 0) {
                 return Result.error("未选择要删除的教室");
             }
-            
-            // TODO: 检查教室是否已被课表引用，如果是则不允许删除
-            
             boolean success = classroomService.batchDeleteClassrooms(ids);
             if (success) {
                 return Result.success("批量删除成功");
             } else {
                 return Result.error("批量删除失败");
             }
+        } catch (CustomException ce) {
+            log.warn("批量删除教室失败: {}", ce.getMessage());
+            return Result.error(ce.getMessage());
         } catch (Exception e) {
             log.error("批量删除教室失败", e);
             return Result.error("批量删除教室失败: " + e.getMessage());

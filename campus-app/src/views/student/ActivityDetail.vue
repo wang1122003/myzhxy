@@ -2,7 +2,10 @@
   <div class="activity-detail-container">
     <div class="page-header">
       <div class="back-button">
-        <el-button text @click="goBack">
+        <el-button
+            text
+            @click="goBack"
+        >
           <el-icon>
             <ArrowLeft/>
           </el-icon>
@@ -29,19 +32,43 @@
       </div>
     </div>
 
-    <el-card v-loading="loading" class="activity-detail-card" shadow="hover">
+    <el-card
+        v-loading="loading"
+        class="activity-detail-card"
+        shadow="hover"
+    >
       <template v-if="activity.id">
         <div class="activity-header">
-          <h1 class="activity-title">{{ activity.title }}</h1>
+          <h1 class="activity-title">
+            {{ activity.title }}
+          </h1>
           <div class="activity-status">
-            <el-tag v-if="activity.status === 1" type="success">报名中</el-tag>
-            <el-tag v-else-if="activity.status === 2" type="warning">进行中</el-tag>
-            <el-tag v-else-if="activity.status === 3" type="info">已结束</el-tag>
+            <el-tag
+                v-if="activity.status === 1"
+                type="success"
+            >
+              报名中
+            </el-tag>
+            <el-tag
+                v-else-if="activity.status === 2"
+                type="warning"
+            >
+              进行中
+            </el-tag>
+            <el-tag
+                v-else-if="activity.status === 3"
+                type="info"
+            >
+              已结束
+            </el-tag>
           </div>
         </div>
 
         <div class="activity-cover">
-          <img :src="activity.coverImage || 'https://via.placeholder.com/800x300'" alt="活动封面"/>
+          <img
+              :src="activity.coverImage || 'https://via.placeholder.com/800x300'"
+              alt="活动封面"
+          >
         </div>
 
         <div class="activity-meta">
@@ -75,7 +102,10 @@
             </el-icon>
             <span>报名人数：{{ activity.enrolledCount || 0 }}</span>
           </div>
-          <div v-if="activity.quota" class="meta-item">
+          <div
+              v-if="activity.quota"
+              class="meta-item"
+          >
             <el-icon>
               <Star/>
             </el-icon>
@@ -83,13 +113,27 @@
           </div>
         </div>
 
-        <el-divider content-position="left">活动详情</el-divider>
+        <el-divider content-position="left">
+          活动详情
+        </el-divider>
 
-        <div class="activity-content" v-html="activity.description"></div>
+        <div
+            class="activity-content"
+            v-html="activity.description"
+        />
 
-        <div v-if="activity.attachments && activity.attachments.length > 0" class="activity-attachments">
-          <el-divider content-position="left">活动资料</el-divider>
-          <div v-for="(attachment, index) in activity.attachments" :key="index" class="attachment-item">
+        <div
+            v-if="activity.attachments && activity.attachments.length > 0"
+            class="activity-attachments"
+        >
+          <el-divider content-position="left">
+            活动资料
+          </el-divider>
+          <div
+              v-for="(attachment, index) in activity.attachments"
+              :key="index"
+              class="attachment-item"
+          >
             <el-button
                 :loading="downloadLoading === attachment.id"
                 link
@@ -105,12 +149,15 @@
         </div>
 
         <template v-if="activity.enrolled">
-          <el-divider content-position="left">报名信息</el-divider>
+          <el-divider content-position="left">
+            报名信息
+          </el-divider>
           <div class="enrollment-info">
             <p>您已成功报名此活动！</p>
             <p>报名时间：{{ formatDateTime(activity.enrollTime) }}</p>
             <div v-if="activity.participationStatus">
-              <p>参与状态：
+              <p>
+                参与状态：
                 <el-tag
                     :type="activity.participationStatus === 'ATTENDED' ? 'success' : 'info'"
                 >
@@ -125,7 +172,9 @@
         </template>
 
         <template v-if="activity.participants && activity.participants.length > 0">
-          <el-divider content-position="left">参与人员</el-divider>
+          <el-divider content-position="left">
+            参与人员
+          </el-divider>
           <div class="participant-list">
             <el-avatar
                 v-for="participant in activity.participants"
@@ -136,8 +185,16 @@
             >
               {{ participant.name ? participant.name.substring(0, 1) : 'U' }}
             </el-avatar>
-            <div v-if="activity.participants.length >= 10" class="more-participants">
-              <el-button text @click="showAllParticipants">查看全部</el-button>
+            <div
+                v-if="activity.participants.length >= 10"
+                class="more-participants"
+            >
+              <el-button
+                  text
+                  @click="showAllParticipants"
+              >
+                查看全部
+              </el-button>
             </div>
           </div>
         </template>
@@ -151,13 +208,24 @@
         width="50%"
     >
       <div class="participants-dialog">
-        <div v-for="participant in activity.participants" :key="participant.id" class="participant-item">
-          <el-avatar :size="40" :src="participant.avatar">
+        <div
+            v-for="participant in activity.participants"
+            :key="participant.id"
+            class="participant-item"
+        >
+          <el-avatar
+              :size="40"
+              :src="participant.avatar"
+          >
             {{ participant.name ? participant.name.substring(0, 1) : 'U' }}
           </el-avatar>
           <div class="participant-info">
-            <div class="participant-name">{{ participant.name }}</div>
-            <div class="participant-department">{{ participant.department || '未知院系' }}</div>
+            <div class="participant-name">
+              {{ participant.name }}
+            </div>
+            <div class="participant-department">
+              {{ participant.department || '未知院系' }}
+            </div>
           </div>
           <div class="participant-status">
             <el-tag

@@ -2,13 +2,23 @@
   <div class="profile-container">
     <div class="page-header">
       <h2>个人信息</h2>
-      <el-button type="primary" @click="handleEdit">编辑信息</el-button>
+      <el-button
+          type="primary"
+          @click="handleEdit"
+      >
+        编辑信息
+      </el-button>
     </div>
 
     <el-card class="profile-card">
       <div class="profile-info">
         <div class="avatar-container">
-          <el-avatar :size="100" :src="userAvatar">{{ userInfo.name?.substring(0, 1) }}</el-avatar>
+          <el-avatar
+              :size="100"
+              :src="userAvatar"
+          >
+            {{ userInfo.name?.substring(0, 1) }}
+          </el-avatar>
           <el-upload
               :action="uploadAvatarUrl"
               :disabled="uploadingAvatar"
@@ -19,7 +29,11 @@
               class="avatar-uploader"
               :on-error="handleAvatarError"
           >
-            <el-button :loading="uploadingAvatar" size="small" type="primary">
+            <el-button
+                :loading="uploadingAvatar"
+                size="small"
+                type="primary"
+            >
               <el-icon>
                 <Upload/>
               </el-icon>
@@ -29,14 +43,32 @@
         </div>
 
         <div class="info-container">
-          <el-descriptions :column="2" border title="基本信息">
-            <el-descriptions-item label="工号">{{ userInfo.username }}</el-descriptions-item>
-            <el-descriptions-item label="姓名">{{ userInfo.name }}</el-descriptions-item>
-            <el-descriptions-item label="性别">{{ userInfo.gender === 'male' ? '男' : '女' }}</el-descriptions-item>
-            <el-descriptions-item label="院系">{{ userInfo.department }}</el-descriptions-item>
-            <el-descriptions-item label="职称">{{ userInfo.title || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="邮箱">{{ userInfo.email }}</el-descriptions-item>
-            <el-descriptions-item label="手机">{{ userInfo.phone }}</el-descriptions-item>
+          <el-descriptions
+              :column="2"
+              border
+              title="基本信息"
+          >
+            <el-descriptions-item label="工号">
+              {{ userInfo.username }}
+            </el-descriptions-item>
+            <el-descriptions-item label="姓名">
+              {{ userInfo.name }}
+            </el-descriptions-item>
+            <el-descriptions-item label="性别">
+              {{ userInfo.gender === 'male' ? '男' : '女' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="院系">
+              {{ userInfo.department }}
+            </el-descriptions-item>
+            <el-descriptions-item label="职称">
+              {{ userInfo.title || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="邮箱">
+              {{ userInfo.email }}
+            </el-descriptions-item>
+            <el-descriptions-item label="手机">
+              {{ userInfo.phone }}
+            </el-descriptions-item>
           </el-descriptions>
 
           <el-divider/>
@@ -55,33 +87,69 @@
         title="编辑个人信息"
         width="500px"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" :disabled="true"/>
+      <el-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-width="100px"
+      >
+        <el-form-item
+            label="姓名"
+            prop="name"
+        >
+          <el-input
+              v-model="form.name"
+              :disabled="true"
+          />
         </el-form-item>
-        <el-form-item label="性别" prop="gender">
+        <el-form-item
+            label="性别"
+            prop="gender"
+        >
           <el-radio-group v-model="form.gender">
-            <el-radio label="male">男</el-radio>
-            <el-radio label="female">女</el-radio>
+            <el-radio label="male">
+              男
+            </el-radio>
+            <el-radio label="female">
+              女
+            </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-input v-model="form.department" :disabled="true"/>
+        <el-form-item
+            label="院系"
+            prop="department"
+        >
+          <el-input
+              v-model="form.department"
+              :disabled="true"
+          />
         </el-form-item>
-        <el-form-item label="职称" prop="title">
+        <el-form-item
+            label="职称"
+            prop="title"
+        >
           <el-input v-model="form.title"/>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item
+            label="邮箱"
+            prop="email"
+        >
           <el-input v-model="form.email"/>
         </el-form-item>
-        <el-form-item label="手机" prop="phone">
+        <el-form-item
+            label="手机"
+            prop="phone"
+        >
           <el-input v-model="form.phone"/>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">保存</el-button>
+          <el-button
+              type="primary"
+              @click="handleSubmit"
+          >保存</el-button>
         </span>
       </template>
     </el-dialog>

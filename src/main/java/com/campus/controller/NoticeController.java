@@ -1,8 +1,11 @@
 package com.campus.controller;
 
+import com.campus.dto.NoticeDTO;
 import com.campus.entity.Notice;
+import com.campus.exception.CustomException;
 import com.campus.service.NoticeService;
 import com.campus.utils.Result;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +14,7 @@ import java.util.List;
 /**
  * 通知公告控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/notices")
 public class NoticeController {
@@ -24,14 +28,18 @@ public class NoticeController {
      * @return 通知详情
      */
     @GetMapping("/{id}")
-    public Result getNotice(@PathVariable Long id) {
-        Notice notice = noticeService.getNoticeById(id);
-        if (notice != null) {
-            // 增加阅读次数
-            noticeService.incrementViewCount(id);
-            return Result.success("获取成功", notice);
-        } else {
-            return Result.error("通知不存在");
+    public Result getNotice(@PathVariable("id") Long id) {
+        try {
+            Notice notice = noticeService.getNoticeWithAttachments(id);
+            if (notice != null) {
+                noticeService.incrementViewCount(id);
+                return Result.success("获取成功", notice);
+            } else {
+                return Result.error("通知不存在");
+            }
+        } catch (Exception e) {
+            log.error("获取通知详情失败 (ID: {})", id, e);
+            return Result.error("获取通知详情失败: " + e.getMessage());
         }
     }
     
@@ -73,7 +81,7 @@ public class NoticeController {
      * @return 通知列表
      */
     @GetMapping("/recent")
-    public Result getRecentNotices(@RequestParam(defaultValue = "5") Integer limit) {
+    public Result getRecentNotices(@RequestParam(value = "limit", defaultValue = "5") Integer limit) {
         List<Notice> notices = noticeService.getRecentNotices(limit);
         return Result.success("获取成功", notices);
     }
@@ -101,31 +109,41 @@ public class NoticeController {
     
     /**
      * 添加通知
-     * @param notice 通知信息
+     * @param noticeDto 通知信息 DTO (包含 attachmentIds)
      * @return 添加结果
      */
     @PostMapping
-    public Result addNotice(@RequestBody Notice notice) {
-        if (noticeService.addNotice(notice)) {
+    public Result addNotice(@RequestBody NoticeDTO noticeDto) {
+        try {
+            noticeService.addNotice(noticeDto);
             return Result.success("添加成功");
-        } else {
-            return Result.error("添加失败");
+        } catch (CustomException ce) {
+            log.warn("添加通知失败: {}", ce.getMessage());
+            return Result.error(ce.getMessage());
+        } catch (Exception e) {
+            log.error("添加通知时发生错误", e);
+            return Result.error("添加失败: " + e.getMessage());
         }
     }
     
     /**
      * 更新通知
      * @param id 通知ID
-     * @param notice 通知信息
+     * @param noticeDto 通知信息 DTO (包含 attachmentIds)
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public Result updateNotice(@PathVariable Long id, @RequestBody Notice notice) {
-        notice.setId(id);
-        if (noticeService.updateNotice(notice)) {
+    public Result updateNotice(@PathVariable Long id, @RequestBody NoticeDTO noticeDto) {
+        try {
+            noticeDto.setId(id);
+            noticeService.updateNotice(noticeDto);
             return Result.success("更新成功");
-        } else {
-            return Result.error("更新失败");
+        } catch (CustomException ce) {
+            log.warn("更新通知失败 (ID: {}): {}", id, ce.getMessage());
+            return Result.error(ce.getMessage());
+        } catch (Exception e) {
+            log.error("更新通知时发生错误 (ID: {})", id, e);
+            return Result.error("更新失败: " + e.getMessage());
         }
     }
     

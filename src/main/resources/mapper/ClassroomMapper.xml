@@ -192,4 +192,23 @@
         GROUP BY type
         ORDER BY classroom_count DESC
     </select>
+
+    <!-- 分页并按条件查询教室 -->
+    <select id="findPageByCondition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM classroom
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (room_number LIKE CONCAT('%', #{keyword}, '%') OR building LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="building != null and building != ''">
+                AND building = #{building}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY building, room_number
+    </select>
 </mapper> 

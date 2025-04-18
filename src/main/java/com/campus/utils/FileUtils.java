@@ -31,6 +31,8 @@ public class FileUtils {
     public static final String COURSE_MATERIAL_DIR = getBaseUploadDir() + "/courses";
     // 帖子图片上传路径
     public static final String POST_IMAGE_DIR = getBaseUploadDir() + "/posts";
+    // 通知附件上传路径
+    public static final String NOTICE_ATTACHMENT_DIR = getBaseUploadDir() + "/notices";
     // 临时文件路径
     public static final String TEMP_DIR = getBaseUploadDir() + "/temp";
     
@@ -40,6 +42,39 @@ public class FileUtils {
      */
     public static String getBaseUploadDir() {
         return "uploads"; // 默认值，应与配置文件和InitializationUtils保持一致
+    }
+
+    /**
+     * 获取上传根目录的完整路径
+     *
+     * @return 上传根目录的完整路径
+     */
+    public static String getUploadRootDir() {
+        return new File(getBaseUploadDir()).getAbsolutePath();
+    }
+
+    /**
+     * 获取文件的完整物理路径
+     *
+     * @param relativePath 相对于上传根目录的路径
+     * @return 完整的物理路径
+     */
+    public static String getPhysicalPath(String relativePath) {
+        if (relativePath == null || relativePath.isEmpty()) {
+            return getUploadRootDir();
+        }
+
+        // 处理路径开头的斜杠
+        if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
+            relativePath = relativePath.substring(1);
+        }
+
+        // 如果relativePath已经包含了基础目录，需要避免重复
+        if (relativePath.startsWith(getBaseUploadDir())) {
+            return new File(relativePath).getAbsolutePath();
+        } else {
+            return new File(getUploadRootDir(), relativePath).getAbsolutePath();
+        }
     }
     
     /**

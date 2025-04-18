@@ -1,7 +1,9 @@
 <template>
   <el-container class="layout-container">
     <el-aside width="200px">
-      <div class="logo">智慧校园</div>
+      <div class="logo">
+        智慧校园
+      </div>
       <el-menu
           :default-active="$route.path"
           active-text-color="#409EFF"
@@ -53,13 +55,23 @@
         <div class="header-right">
           <el-dropdown trigger="click">
             <div class="avatar-wrapper">
-              <el-avatar :size="30" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"/>
+              <el-avatar
+                  :size="30"
+                  src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"
+              />
               <span class="username">{{ userInfo.name || '学生' }}</span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="goToProfile">个人资料</el-dropdown-item>
-                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item @click="goToProfile">
+                  个人资料
+                </el-dropdown-item>
+                <el-dropdown-item
+                    divided
+                    @click="logout"
+                >
+                  退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>

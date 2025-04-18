@@ -7,9 +7,9 @@
             v-model="semester"
             placeholder="选择学期"
             style="margin-right: 10px;"
-            @change="fetchSchedule"
             :loading="loadingSemesters"
             filterable
+            @change="fetchSchedule"
         >
           <el-option
               v-for="item in semestersRef"
@@ -18,25 +18,52 @@
               :value="item.value"
           />
         </el-select>
-        <el-radio-group v-model="viewType" style="margin-left: 20px;">
-          <el-radio-button label="week">周视图</el-radio-button>
-          <el-radio-button label="list">列表视图</el-radio-button>
+        <el-radio-group
+            v-model="viewType"
+            style="margin-left: 20px;"
+        >
+          <el-radio-button label="week">
+            周视图
+          </el-radio-button>
+          <el-radio-button label="list">
+            列表视图
+          </el-radio-button>
         </el-radio-group>
       </div>
     </div>
 
-    <el-card v-loading="loadingSchedule || loadingTimeSlots || loadingWeekdays" class="schedule-card">
+    <el-card
+        v-loading="loadingSchedule || loadingTimeSlots || loadingWeekdays"
+        class="schedule-card"
+    >
       <!-- 周视图 -->
-      <div v-if="viewType === 'week'" class="week-view">
+      <div
+          v-if="viewType === 'week'"
+          class="week-view"
+      >
         <div class="time-column">
-          <div class="header-cell">时间</div>
-          <div v-for="time in timeSlotsRef" :key="time.slot" class="time-cell">
+          <div class="header-cell">
+            时间
+          </div>
+          <div
+              v-for="time in timeSlotsRef"
+              :key="time.slot"
+              class="time-cell"
+          >
             {{ time.label }}
-            <div class="time-range">{{ time.startTime }} - {{ time.endTime }}</div>
+            <div class="time-range">
+              {{ time.startTime }} - {{ time.endTime }}
+            </div>
           </div>
         </div>
-        <div v-for="day in weekdaysRef" :key="day.value" class="day-column">
-          <div class="header-cell">{{ day.label }}</div>
+        <div
+            v-for="day in weekdaysRef"
+            :key="day.value"
+            class="day-column"
+        >
+          <div class="header-cell">
+            {{ day.label }}
+          </div>
           <div
               v-for="time in timeSlotsRef"
               :key="`${day.value}-${time.slot}`"
@@ -49,33 +76,66 @@
                 class="course-item"
                 @click="showCourseDetail(findCourseForCell(day.value, time))"
             >
-              <div class="course-name">{{ findCourseForCell(day.value, time).courseName }}</div>
-              <div class="course-location">{{ findCourseForCell(day.value, time).classroom }}</div>
+              <div class="course-name">
+                {{ findCourseForCell(day.value, time).courseName }}
+              </div>
+              <div class="course-location">
+                {{ findCourseForCell(day.value, time).classroom }}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 列表视图 -->
-      <div v-else class="list-view">
-        <el-table :data="scheduleList" border style="width: 100%">
-          <el-table-column label="课程名称" prop="courseName"/>
-          <el-table-column label="授课教师" prop="teacherName"/>
-          <el-table-column label="星期" prop="weekday">
+      <div
+          v-else
+          class="list-view"
+      >
+        <el-table
+            :data="scheduleList"
+            border
+            style="width: 100%"
+        >
+          <el-table-column
+              label="课程名称"
+              prop="courseName"
+          />
+          <el-table-column
+              label="授课教师"
+              prop="teacherName"
+          />
+          <el-table-column
+              label="星期"
+              prop="weekday"
+          >
             <template #default="scope">
               {{ formatWeekday(scope.row.weekday) }}
             </template>
           </el-table-column>
-          <el-table-column label="开始时间" prop="startTime"/>
-          <el-table-column label="结束时间" prop="endTime"/>
-          <el-table-column label="教室" prop="classroom"/>
-          <el-table-column label="操作" width="100">
+          <el-table-column
+              label="开始时间"
+              prop="startTime"
+          />
+          <el-table-column
+              label="结束时间"
+              prop="endTime"
+          />
+          <el-table-column
+              label="教室"
+              prop="classroom"
+          />
+          <el-table-column
+              label="操作"
+              width="100"
+          >
             <template #default="scope">
               <el-button
                   size="small"
                   type="primary"
                   @click="showCourseDetail(scope.row)"
-              >详情
+              >
+                详情
               </el-button>
             </template>
           </el-table-column>
@@ -90,14 +150,26 @@
         width="500px"
     >
       <template v-if="currentCourse">
-        <el-descriptions :column="1" border title="">
-          <el-descriptions-item label="课程名称">{{ currentCourse.courseName }}</el-descriptions-item>
-          <el-descriptions-item label="授课教师">{{ currentCourse.teacherName }}</el-descriptions-item>
+        <el-descriptions
+            :column="1"
+            border
+            title=""
+        >
+          <el-descriptions-item label="课程名称">
+            {{ currentCourse.courseName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="授课教师">
+            {{ currentCourse.teacherName }}
+          </el-descriptions-item>
           <el-descriptions-item label="上课时间">
             {{ formatWeekday(currentCourse.weekday) }} {{ currentCourse.startTime }} - {{ currentCourse.endTime }}
           </el-descriptions-item>
-          <el-descriptions-item label="上课地点">{{ currentCourse.classroom }}</el-descriptions-item>
-          <el-descriptions-item label="学分">{{ currentCourse.credit }}</el-descriptions-item>
+          <el-descriptions-item label="上课地点">
+            {{ currentCourse.classroom }}
+          </el-descriptions-item>
+          <el-descriptions-item label="学分">
+            {{ currentCourse.credit }}
+          </el-descriptions-item>
         </el-descriptions>
       </template>
       <template #footer>

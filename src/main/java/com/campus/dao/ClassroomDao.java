@@ -2,7 +2,6 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Classroom;
-
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -169,4 +168,16 @@ public interface ClassroomDao extends BaseMapper<Classroom> {
      * @return 是否存在
      */
     boolean isRoomNumberExists(String roomNumber);
+
+    /**
+     * 分页并按条件查询教室 (由 PageHelper 拦截)
+     *
+     * @param keyword  关键词 (教室编号/名称)
+     * @param building 教学楼
+     * @param status   状态
+     * @return 教室列表 (当前页数据)
+     */
+    List<Classroom> findPageByCondition(@Param("keyword") String keyword,
+                                        @Param("building") String building,
+                                        @Param("status") Integer status);
 }

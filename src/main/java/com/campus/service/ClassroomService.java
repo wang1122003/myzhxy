@@ -1,8 +1,9 @@
 package com.campus.service;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Classroom;
+
+import java.util.List;
 
 /**
  * 教室服务接口
@@ -92,4 +93,16 @@ public interface ClassroomService {
      * @return 是否成功
      */
     boolean updateClassroomStatus(Long id, Integer status);
+
+    /**
+     * 分页并按条件查询教室
+     *
+     * @param page     当前页码
+     * @param size     每页数量
+     * @param keyword  关键词 (教室编号/名称)
+     * @param building 教学楼
+     * @param status   状态
+     * @return 分页教室列表 (MyBatis-Plus IPage)
+     */
+    IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status);
 }

@@ -1,9 +1,14 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.CourseDao;
 import com.campus.entity.Course;
+import com.campus.exception.CustomException;
 import com.campus.service.CourseService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,164 +21,175 @@ import java.util.Map;
  * 课程服务实现类
  */
 @Service
-public class CourseServiceImpl implements CourseService {
-
-    @Autowired
-    private CourseDao courseDao;
+public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements CourseService {
 
     @Override
     public Course getCourseById(Long id) {
-        return courseDao.findById(id);
+        return this.getById(id);
     }
 
     @Override
     public Course getCourseByCourseNo(String courseNo) {
-        return courseDao.findByCourseCode(courseNo);
+        return this.getOne(new LambdaQueryWrapper<Course>().eq(Course::getCourseNo, courseNo));
     }
 
     @Override
-    public List<Course> getAllCourses() {
-        return courseDao.findAll();
+    public IPage<Course> getAllCourses(int pageNum, int pageSize) {
+        IPage<Course> page = new Page<>(pageNum, pageSize);
+        return this.page(page);
     }
 
     @Override
     public List<Course> getCoursesByCourseType(Integer courseType) {
-        return courseDao.findByCourseType(String.valueOf(courseType));
+        return this.list(new LambdaQueryWrapper<Course>().eq(Course::getCourseType, courseType));
     }
 
     @Override
     public List<Course> getCoursesByCollegeId(Long collegeId) {
-        // 假设学院ID对应department字段
-        // 这里可能需要根据实际模型做调整
-        return courseDao.findByDepartment(String.valueOf(collegeId));
+        return baseMapper.findByDepartment(String.valueOf(collegeId));
     }
 
     @Override
     @Transactional
     public boolean addCourse(Course course) {
-        // 设置创建时间和更新时间
+        validateCourse(course);
+
+        long count = this.count(new LambdaQueryWrapper<Course>().eq(Course::getCourseNo, course.getCourseNo()));
+        if (count > 0) {
+            throw new CustomException("课程代码 '" + course.getCourseNo() + "' 已存在");
+        }
+
         Date now = new Date();
         course.setCreateTime(now);
         course.setUpdateTime(now);
-        
-        // 如果没有设置状态，默认为未开课
         if (course.getStatus() == null) {
-            course.setStatus(0);
+            course.setStatus(1);
         }
-        
-        return courseDao.insert(course) > 0;
+
+        return this.save(course);
     }
 
     @Override
     @Transactional
     public boolean updateCourse(Course course) {
-        // 设置更新时间
+        if (course.getId() == null) {
+            throw new CustomException("更新课程时必须提供课程ID");
+        }
+        validateCourse(course);
+
+        LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Course::getCourseNo, course.getCourseNo());
+        wrapper.ne(Course::getId, course.getId());
+        if (this.count(wrapper) > 0) {
+            throw new CustomException("课程代码 '" + course.getCourseNo() + "' 已被其他课程使用");
+        }
+
         course.setUpdateTime(new Date());
-        
-        return courseDao.update(course) > 0;
+        if (course.getStatus() == null) {
+            course.setStatus(1);
+        }
+
+        return this.updateById(course);
     }
 
     @Override
     @Transactional
     public boolean deleteCourse(Long id) {
-        return courseDao.delete(id) > 0;
+        return this.removeById(id);
     }
 
     @Override
     @Transactional
     public boolean batchDeleteCourses(Long[] ids) {
-        return courseDao.batchDelete(ids) > 0;
+        return this.removeByIds(List.of(ids));
     }
 
     @Override
     @Transactional
     public boolean updateCourseStatus(Long id, Integer status) {
-        return courseDao.updateStatus(id, status) > 0;
+        return baseMapper.updateStatus(id, status) > 0;
     }
     
     @Override
-    public List<Course> getCoursesByPage(int pageNum, int pageSize) {
-        int offset = (pageNum - 1) * pageSize;
-        return courseDao.findByPage(offset, pageSize);
+    public IPage<Course> getCoursesByPage(int pageNum, int pageSize) {
+        IPage<Course> page = new Page<>(pageNum, pageSize);
+        return this.page(page);
     }
     
     @Override
     public int getCourseCount() {
-        return courseDao.getCount();
+        return (int) this.count();
     }
     
     @Override
     public List<Course> searchCourses(String keyword) {
-        return courseDao.searchCourses(keyword);
+        return baseMapper.searchCourses(keyword);
     }
     
     @Override
     public boolean isCourseNoExists(String courseNo) {
-        return courseDao.isCourseCodeExists(courseNo);
+        return this.count(new LambdaQueryWrapper<Course>().eq(Course::getCourseNo, courseNo)) > 0;
     }
     
     @Override
     public Map<String, Object> getCourseStats() {
-        // 这个方法可能需要多个DAO调用来构建完整的统计信息
         Map<String, Object> stats = new HashMap<>();
-        
-        // 课程总数
-        stats.put("totalCourses", courseDao.getCount());
-        
-        // 根据状态统计
+        stats.put("totalCourses", (int) this.count());
         stats.put("activeCourses", getActiveCourseCount());
         stats.put("inactiveCourses", getInactiveCourseCount());
-        
-        // 其他可能的统计信息
         stats.put("departmentCount", getDepartmentCount());
         stats.put("averageCredits", getAverageCredits());
-        
         return stats;
     }
     
     @Override
     public List<Map<String, Object>> getCourseTypeStats() {
-        // 调用DAO层方法获取课程类型统计
-        return courseDao.getCourseTypeStats();
+        return baseMapper.getCourseTypeStats();
     }
     
     @Override
     public List<Map<String, Object>> getCollegeCourseStats() {
-        // 假设学院对应department
-        return courseDao.getDepartmentStats();
+        return baseMapper.getDepartmentStats();
     }
     
     @Override
     public List<Map<String, Object>> getCreditDistribution() {
-        // 调用DAO层方法获取学分分布统计
-        return courseDao.getCreditDistribution();
+        return baseMapper.getCreditDistribution();
     }
     
     @Override
     public List<Map<String, Object>> getCourseStatusStats() {
-        // 调用DAO层方法获取课程状态统计
-        return courseDao.getStatusStats();
+        return baseMapper.getStatusStats();
     }
     
-    // 辅助方法
-    
     private int getActiveCourseCount() {
-        // 假设状态为1表示激活状态
-        return courseDao.getStatusCount(1);
+        return baseMapper.getStatusCount(1);
     }
     
     private int getInactiveCourseCount() {
-        // 假设状态为0表示非激活状态
-        return courseDao.getStatusCount(0);
+        return baseMapper.getStatusCount(0);
     }
     
     private int getDepartmentCount() {
-        // 获取不同学院/部门的数量
-        return courseDao.getDepartmentCount();
+        return baseMapper.getDepartmentCount();
     }
     
     private double getAverageCredits() {
-        // 获取平均学分
-        return courseDao.getAverageCredits();
+        return baseMapper.getAverageCredits();
+    }
+
+    private void validateCourse(Course course) {
+        if (course == null) {
+            throw new CustomException("课程信息不能为空");
+        }
+        if (StringUtils.isBlank(course.getCourseNo())) {
+            throw new CustomException("课程代码不能为空");
+        }
+        if (StringUtils.isBlank(course.getCourseName())) {
+            throw new CustomException("课程名称不能为空");
+        }
+        if (course.getCredit() == null || course.getCredit() < 0) {
+            throw new CustomException("学分不能为空且必须为非负数");
+        }
     }
 }

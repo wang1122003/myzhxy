@@ -91,6 +91,24 @@ public interface UserDao extends BaseMapper<User> {
     boolean isPhoneExists(String phone);
 
     /**
+     * 更新用户状态
+     *
+     * @param id     用户ID
+     * @param status 状态值
+     * @return 影响行数
+     */
+    int updateUserStatus(@Param("id") Long id, @Param("status") Integer status);
+
+    /**
+     * 更新密码
+     *
+     * @param id       用户ID
+     * @param password 加密后的新密码
+     * @return 影响行数
+     */
+    int updatePassword(@Param("id") Long id, @Param("password") String password);
+
+    /**
      * 批量删除用户
      *
      * @param ids 用户ID列表

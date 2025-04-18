@@ -19,7 +19,7 @@ public class Notification {
      * 主键ID
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     
     /**
      * 通知标题
@@ -45,7 +45,7 @@ public class Notification {
      * 发送者ID
      */
     @TableField("sender_id")
-    private Integer senderId;
+    private Long senderId;
     
     /**
      * 目标类型（如：全体、学院、班级、个人）
@@ -57,7 +57,7 @@ public class Notification {
      * 目标ID
      */
     @TableField("target_id")
-    private Integer targetId;
+    private Long targetId;
     
     /**
      * 状态（0-草稿，1-已发送，2-已撤回）

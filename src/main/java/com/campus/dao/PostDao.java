@@ -2,7 +2,7 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Post;
-
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * 论坛帖子数据访问接口
  */
+@Mapper
 @Repository
 public interface PostDao extends BaseMapper<Post> {
     /**
@@ -211,13 +212,6 @@ public interface PostDao extends BaseMapper<Post> {
     int countByAuthorId(Long authorId);
     
     /**
-     * 根据分类获取帖子总数
-     * @param category 分类
-     * @return 帖子总数
-     */
-    int countByCategory(String category);
-    
-    /**
      * 根据关键词获取帖子总数
      * @param keyword 关键词
      * @return 帖子总数
@@ -241,24 +235,6 @@ public interface PostDao extends BaseMapper<Post> {
     List<Post> findByAuthorIdAndPage(@Param("authorId") Long authorId, @Param("offset") Integer offset, @Param("limit") Integer limit);
     
     /**
-     * 根据分类分页查询帖子
-     * @param category 分类
-     * @param offset 偏移量
-     * @param limit 数量限制
-     * @return 帖子列表
-     */
-    List<Post> findByCategoryAndPage(@Param("category") String category, @Param("offset") Integer offset, @Param("limit") Integer limit);
-    
-    /**
-     * 根据关键词分页查询帖子
-     * @param keyword 关键词
-     * @param offset 偏移量
-     * @param limit 数量限制
-     * @return 帖子列表
-     */
-    List<Post> findByKeywordAndPage(@Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
-    
-    /**
      * 根据帖子ID查询评论
      * @param postId 帖子ID
      * @return 评论列表
@@ -269,10 +245,14 @@ public interface PostDao extends BaseMapper<Post> {
      * 插入评论
      * @param postId 帖子ID
      * @param userId 用户ID
+     * @param authorName 作者名
      * @param content 评论内容
      * @return 影响行数
      */
-    int insertComment(@Param("postId") Long postId, @Param("userId") Long userId, @Param("content") String content);
+    int insertComment(@Param("postId") Long postId,
+                      @Param("userId") Long userId,
+                      @Param("authorName") String authorName,
+                      @Param("content") String content);
     
     /**
      * 删除评论

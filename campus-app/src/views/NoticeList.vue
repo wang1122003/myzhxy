@@ -1,35 +1,67 @@
 <template>
   <div class="notice-list-container">
-    <el-page-header title="返回首页" @back="goBack">
+    <el-page-header
+        title="返回首页"
+        @back="goBack"
+    >
       <template #content>
         <span class="text-large font-600 mr-3">通知公告</span>
       </template>
     </el-page-header>
 
     <el-card class="notice-list-card">
-      <el-table v-loading="loadingNotices || loadingNoticeTypes" :data="noticeList" height="calc(100vh - 260px)"
-                style="width: 100%">
-        <el-table-column label="标题" min-width="300" prop="title" show-overflow-tooltip/>
-        <el-table-column label="类型" prop="type" width="120">
+      <el-table
+          v-loading="loadingNotices || loadingNoticeTypes"
+          :data="noticeList"
+          height="calc(100vh - 260px)"
+          style="width: 100%"
+      >
+        <el-table-column
+            label="标题"
+            min-width="300"
+            prop="title"
+            show-overflow-tooltip
+        />
+        <el-table-column
+            label="类型"
+            prop="type"
+            width="120"
+        >
           <template #default="scope">
             <el-tag :type="noticeTypeMapComputed[scope.row.type]?.tag || 'info'">
               {{ noticeTypeMapComputed[scope.row.type]?.name || '其他' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="发布时间" prop="publishTime" width="180">
+        <el-table-column
+            label="发布时间"
+            prop="publishTime"
+            width="180"
+        >
           <template #default="scope">
             {{ formatTime(scope.row.publishTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100">
+        <el-table-column
+            label="操作"
+            width="100"
+        >
           <template #default="scope">
-            <el-button link type="primary" @click="viewNotice(scope.row)">查看</el-button>
+            <el-button
+                link
+                type="primary"
+                @click="viewNotice(scope.row)"
+            >
+              查看
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <div v-if="totalNotices > 0" class="pagination-container">
+      <div
+          v-if="totalNotices > 0"
+          class="pagination-container"
+      >
         <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
@@ -41,7 +73,10 @@
         />
       </div>
 
-      <el-empty v-if="noticeList.length === 0 && !loadingNotices" description="暂无通知公告"/>
+      <el-empty
+          v-if="noticeList.length === 0 && !loadingNotices"
+          description="暂无通知公告"
+      />
     </el-card>
 
     <!-- 公告详情对话框 (复用 Home.vue 的结构) -->
@@ -52,25 +87,38 @@
         top="5vh"
         width="60%"
     >
-      <div v-if="currentNotice.id" v-loading="loadingNoticeDetail">
+      <div
+          v-if="currentNotice.id"
+          v-loading="loadingNoticeDetail"
+      >
         <div class="notice-content">
           <div class="notice-info">
             <span>发布人：{{ currentNotice.publisher }}</span>
             <span>发布时间：{{ formatTime(currentNotice.publishTime) }}</span>
           </div>
           <el-divider/>
-          <div class="notice-text" v-html="currentNotice.content"></div>
-          <div v-if="currentNotice.attachments && currentNotice.attachments.length" class="notice-attachments">
+          <div
+              class="notice-text"
+              v-html="currentNotice.content"
+          />
+          <div
+              v-if="currentNotice.attachments && currentNotice.attachments.length"
+              class="notice-attachments"
+          >
             <el-divider/>
             <h4>附件：</h4>
             <ul>
-              <li v-for="file in currentNotice.attachments" :key="file.id">
+              <li
+                  v-for="file in currentNotice.attachments"
+                  :key="file.id"
+              >
                 <el-link
                     :disabled="downloadingAttachment[file.id]"
                     :loading="downloadingAttachment[file.id]"
                     type="primary"
                     @click="downloadAttachment(file)"
-                >{{ file.name }}
+                >
+                  {{ file.name }}
                 </el-link>
               </li>
             </ul>

@@ -99,4 +99,24 @@ export function getStudentCourses() {
         url: '/student/courses',
         method: 'get'
     })
+}
+
+// 获取所有课程 (用于下拉选择)
+export function getAllCoursesForSelect(params) {
+    // Assuming the backend endpoint GET /api/courses returns all courses
+    // or add a specific endpoint if needed, e.g., /api/courses/select-list
+    return request({
+        url: COURSE_API.GET_ALL, // Reusing GET_ALL, ensure it returns needed fields (id, courseName, courseNo)
+        method: 'get',
+        params // Allow optional filtering if backend supports it
+    })
+}
+
+// 获取所有课程 (分页列表，可能需要像 classroom 一样调整)
+export function getCourseList(params) {
+    return request({
+        url: COURSE_API.GET_ALL,
+        method: 'get',
+        params
+    })
 } 

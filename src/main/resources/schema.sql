@@ -158,132 +158,98 @@ CREATE TABLE IF NOT EXISTS `schedule` (
     FOREIGN KEY (`classroom_id`) REFERENCES `classroom` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 创建活动表
+-- 创建活动表（已集成参与者信息）
 CREATE TABLE IF NOT EXISTS `activity` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(200) NOT NULL,
-    `description` TEXT,
-    `start_time` DATETIME NOT NULL,
-    `end_time` DATETIME NOT NULL,
-    `location` VARCHAR(200),
-    `organizer_id` BIGINT NOT NULL,
-    `status` TINYINT DEFAULT 1,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`organizer_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                                          `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+                                          `title`             VARCHAR(200) NOT NULL COMMENT '活动标题',
+                                          `description`       TEXT         NOT NULL COMMENT '活动描述',
+                                          `poster`            VARCHAR(255) NULL COMMENT '活动海报URL',
+                                          `organizer_id`      BIGINT       NOT NULL COMMENT '组织者ID',
+                                          `location`          VARCHAR(255) NULL COMMENT '活动地点',
+                                          `start_time`        DATETIME     NOT NULL COMMENT '活动开始时间',
+                                          `end_time`          DATETIME     NOT NULL COMMENT '活动结束时间',
+                                          `max_participants`  INT      DEFAULT 0 COMMENT '最大参与人数，0表示不限',
+                                          `participants`      JSON         NULL COMMENT '参与者数组，格式：[{user_id, name, register_time, status}]',
+                                          `participant_count` INT      DEFAULT 0 COMMENT '当前参与人数',
+                                          `status`            TINYINT  DEFAULT 1 COMMENT '状态：1-正常，0-取消',
+                                          `create_time`       DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                          `update_time`       DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                          PRIMARY KEY (`id`),
+                                          INDEX `idx_organizer` (`organizer_id`),
+                                          INDEX `idx_time` (`start_time`, `end_time`),
+                                          CONSTRAINT `fk_activity_user` FOREIGN KEY (`organizer_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='活动表（已集成参与者信息）';
 
--- 创建活动参与者表
-CREATE TABLE IF NOT EXISTS `activity_participant` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `activity_id` BIGINT NOT NULL,
-    `user_id` BIGINT NOT NULL,
-    `status` TINYINT DEFAULT 1,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`activity_id`) REFERENCES `activity` (`id`),
-    FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-    UNIQUE KEY `uk_activity_user` (`activity_id`, `user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建通知表
+-- 创建通知表（已集成阅读计数）
 CREATE TABLE IF NOT EXISTS `notification` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(200) NOT NULL,
     `content` TEXT NOT NULL,
     `sender_id` BIGINT NOT NULL,
-    `type` TINYINT NOT NULL,
+    `publisher_id`     BIGINT       NOT NULL COMMENT '发布者ID (同步sender_id字段)',
+    `publisher_name`   VARCHAR(100) NULL COMMENT '发布者姓名',
+    `notice_type`      TINYINT      NULL COMMENT '通知类型（数字格式）',
+    `type`             VARCHAR(50)  NOT NULL COMMENT '通知类型（字符串格式）',
+    `priority`         INT     DEFAULT 0 COMMENT '优先级',
+    `target_type`      VARCHAR(50)  NULL COMMENT '目标类型: 全体/学院/班级/个人',
+    `target_id`        BIGINT       NULL COMMENT '目标ID',
+    `status`           TINYINT DEFAULT 0 COMMENT '状态：0-草稿, 1-已发布, 2-已撤回',
+    `is_top`           TINYINT DEFAULT 0 COMMENT '是否置顶：0-否, 1-是',
+    `view_count`       INT     DEFAULT 0 COMMENT '阅读次数',
+    `send_time`        DATETIME     NULL COMMENT '发送时间',
+    `expire_time`      DATETIME     NULL COMMENT '过期时间',
+    `attachments_json` TEXT         NULL COMMENT '附件信息列表JSON字符串',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`),
+    FOREIGN KEY (`publisher_id`) REFERENCES `user` (`id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='通知表（已集成阅读计数）';
 
--- 创建通知接收者表
-CREATE TABLE IF NOT EXISTS `notification_receiver` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `notification_id` BIGINT NOT NULL,
-    `receiver_id` BIGINT NOT NULL,
-    `status` TINYINT DEFAULT 0,
-    `read_time` DATETIME,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`notification_id`) REFERENCES `notification` (`id`),
-    FOREIGN KEY (`receiver_id`) REFERENCES `user` (`id`),
-    UNIQUE KEY `uk_notification_receiver` (`notification_id`, `receiver_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建帖子表
+-- 创建帖子表（已集成论坛板块和标签信息）
 CREATE TABLE IF NOT EXISTS `post` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `title` VARCHAR(200) NOT NULL,
-    `content` TEXT NOT NULL,
-    `author_id` BIGINT NOT NULL,
-    `status` TINYINT DEFAULT 1,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`author_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                                      `id`            BIGINT       NOT NULL AUTO_INCREMENT,
+                                      `title`         VARCHAR(200) NOT NULL COMMENT '帖子标题',
+                                      `content`       TEXT         NOT NULL COMMENT '帖子内容',
+                                      `author_id`     BIGINT       NOT NULL COMMENT '作者ID',
+                                      `forum_type`    VARCHAR(50)  NULL COMMENT '板块类型，例如：学习交流、校园生活、招聘信息等',
+                                      `forum_color`   VARCHAR(7) DEFAULT '#cccccc' COMMENT '板块颜色代码，用于前端显示',
+                                      `tags`          JSON         NULL COMMENT '标签数组，格式：["标签1", "标签2"]',
+                                      `view_count`    INT        DEFAULT 0 COMMENT '浏览次数',
+                                      `like_count`    INT        DEFAULT 0 COMMENT '点赞次数',
+                                      `comment_count` INT        DEFAULT 0 COMMENT '评论次数',
+                                      `status`        TINYINT    DEFAULT 1 COMMENT '状态：1-正常，0-禁用',
+                                      `is_top`        TINYINT    DEFAULT 0 COMMENT '是否置顶：1-置顶，0-不置顶',
+                                      `is_essence`    TINYINT    DEFAULT 0 COMMENT '是否精华：1-精华，0-普通',
+                                      `create_time`   DATETIME   DEFAULT CURRENT_TIMESTAMP,
+                                      `update_time`   DATETIME   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                      PRIMARY KEY (`id`),
+                                      INDEX `idx_author` (`author_id`),
+                                      INDEX `idx_forum_type` (`forum_type`),
+                                      CONSTRAINT `fk_post_user` FOREIGN KEY (`author_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='帖子表（已集成论坛板块和标签信息）';
 
--- 创建评论表
+-- 创建评论表（使用数组形式存储嵌套评论）
 CREATE TABLE IF NOT EXISTS `comment` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `content` TEXT NOT NULL,
-    `post_id` BIGINT NOT NULL,
-    `author_id` BIGINT NOT NULL,
-    `parent_id` BIGINT,
-    `status` TINYINT DEFAULT 1,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`post_id`) REFERENCES `post` (`id`),
-    FOREIGN KEY (`author_id`) REFERENCES `user` (`id`),
-    FOREIGN KEY (`parent_id`) REFERENCES `comment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建标签表
-CREATE TABLE IF NOT EXISTS `tag` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(50) NOT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建帖子标签关联表
-CREATE TABLE IF NOT EXISTS `post_tag` (
-    `post_id` BIGINT NOT NULL,
-    `tag_id` BIGINT NOT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`post_id`, `tag_id`),
-    FOREIGN KEY (`post_id`) REFERENCES `post` (`id`),
-    FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建日志表
-CREATE TABLE IF NOT EXISTS `log` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT NOT NULL,
-    `operation` VARCHAR(200) NOT NULL,
-    `method` VARCHAR(200),
-    `params` TEXT,
-    `ip` VARCHAR(50),
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 创建备份表
-CREATE TABLE IF NOT EXISTS `backup` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(200) NOT NULL,
-    `path` VARCHAR(500) NOT NULL,
-    `size` BIGINT NOT NULL,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
+                                         `id`          BIGINT NOT NULL AUTO_INCREMENT,
+                                         `post_id`     BIGINT NOT NULL COMMENT '帖子ID',
+                                         `content`     TEXT   NOT NULL COMMENT '评论内容',
+                                         `author_id`   BIGINT NOT NULL COMMENT '评论作者ID',
+                                         `parent_id`   BIGINT NULL COMMENT '父评论ID，用于回复功能',
+                                         `replies`     JSON   NULL COMMENT '回复数组，格式：[{id, content, author_id, create_time}]',
+                                         `like_count`  INT      DEFAULT 0 COMMENT '点赞次数',
+                                         `status`      TINYINT  DEFAULT 1 COMMENT '状态：1-正常，0-禁用',
+                                         `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                         `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                         PRIMARY KEY (`id`),
+                                         INDEX `idx_post` (`post_id`),
+                                         INDEX `idx_author` (`author_id`),
+                                         INDEX `idx_parent` (`parent_id`),
+                                         CONSTRAINT `fk_comment_post` FOREIGN KEY (`post_id`) REFERENCES `post` (`id`) ON DELETE CASCADE,
+                                         CONSTRAINT `fk_comment_user` FOREIGN KEY (`author_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+                                         CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `comment` (`id`) ON DELETE SET NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='帖子评论表（使用数组形式存储嵌套评论）';

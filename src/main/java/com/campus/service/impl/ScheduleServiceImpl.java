@@ -1,12 +1,12 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.dao.ScheduleDao;
 import com.campus.entity.Schedule;
 import com.campus.service.ScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -123,12 +123,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
         
         // 检查班级时间冲突
-        if (checkClassTimeConflict(schedule.getClassId(), schedule.getWeekDay(), 
-            schedule.getStartTime(), schedule.getEndTime())) {
-            return true;
-        }
-        
-        return false;
+        return checkClassTimeConflict(schedule.getClassId(), schedule.getWeekDay(),
+                schedule.getStartTime(), schedule.getEndTime());
     }
 
     @Override
@@ -440,5 +436,38 @@ public class ScheduleServiceImpl implements ScheduleService {
         
         // 获取该班级的所有课表
         return scheduleDao.findByClassId(classId);
+    }
+
+    @Override
+    public boolean isClassroomInUse(Long classroomId) {
+        // 调用 DAO 层查询使用该教室的课表数量
+        return scheduleDao.countByClassroomId(classroomId) > 0;
+    }
+
+    /**
+     * 检查课程是否已被排课
+     *
+     * @param courseId 课程ID
+     * @return 如果已排课返回 true，否则返回 false
+     */
+    @Override
+    public boolean isCourseScheduled(Long courseId) {
+        // 调用 DAO 层查询该课程的排课数量
+        return scheduleDao.countByCourseId(courseId) > 0;
+    }
+
+    /**
+     * 查找给定课程ID列表中已被排课的课程ID
+     *
+     * @param courseIds 课程ID列表
+     * @return 已被排课的课程ID列表
+     */
+    @Override
+    public List<Long> findScheduledCourseIds(List<Long> courseIds) {
+        // 调用 DAO 层查询在列表中的已排课课程ID
+        if (courseIds == null || courseIds.isEmpty()) {
+            return new java.util.ArrayList<>(); // 返回空列表
+        }
+        return scheduleDao.findScheduledCourseIdsInList(courseIds);
     }
 }

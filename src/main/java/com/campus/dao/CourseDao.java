@@ -2,7 +2,6 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Course;
-
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -129,9 +128,9 @@ public interface CourseDao extends BaseMapper<Course> {
     /**
      * 检查课程代码是否存在
      * @param courseCode 课程代码
-     * @return 是否存在
+     * @return 影响行数 (通常 > 0 表示存在)
      */
-    boolean isCourseCodeExists(String courseCode);
+    int countByCourseCode(String courseCode);
     
     /**
      * 获取指定状态的课程数量

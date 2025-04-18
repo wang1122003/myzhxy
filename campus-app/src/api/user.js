@@ -81,6 +81,17 @@ export function updateAdminProfile(data) {
 
 // --- 管理员操作 --- 
 
+// 获取教师列表 (用于下拉选择)
+export function getTeacherSelectList(params) {
+    // Assuming getUserList can filter by role or a new endpoint exists
+    // e.g., GET /api/users/teachers
+    return request({
+        url: USER_API.GET_USER_LIST, // Reusing GET_USER_LIST
+        method: 'get',
+        params: {...params, role: 'teacher'} // Add role filter if supported
+    })
+}
+
 // 更新用户信息 (管理员用)
 export function updateUser(id, data) {
     return request({
@@ -175,4 +186,28 @@ export function updateUserProfile(data) {
         method: 'put',
         data
     })
+}
+
+// 更新用户状态 (管理员用)
+export function updateUserStatus(id, status) {
+    return request({
+        url: USER_API.UPDATE_USER.replace(':id', id) + '/status',
+        method: 'put',
+        data: {status}
+    })
+}
+
+// 添加getUserInfo函数
+export function getUserInfo() {
+    return Promise.resolve({
+        data: {
+            id: 1,
+            username: 'teacher1',
+            role: 'teacher',
+            name: '张老师',
+            email: 'teacher1@example.com',
+            phone: '13812345678',
+            avatar: ''
+        }
+    });
 } 

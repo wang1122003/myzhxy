@@ -23,15 +23,24 @@
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" @tab-click="handleTabChange">
-      <el-tab-pane label="我的文件" name="personal">
+    <el-tabs
+        v-model="activeTab"
+        @tab-click="handleTabChange"
+    >
+      <el-tab-pane
+          label="我的文件"
+          name="personal"
+      >
         <div class="file-list-container">
           <el-table
               v-loading="loading"
               :data="files"
               style="width: 100%"
           >
-            <el-table-column label="文件名" min-width="200">
+            <el-table-column
+                label="文件名"
+                min-width="200"
+            >
               <template #default="scope">
                 <div class="file-name">
                   <el-icon class="file-icon">
@@ -43,42 +52,63 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="大小" prop="fileSize" width="120">
+            <el-table-column
+                label="大小"
+                prop="fileSize"
+                width="120"
+            >
               <template #default="scope">
                 {{ formatFileSize(scope.row.fileSize) }}
               </template>
             </el-table-column>
-            <el-table-column label="类型" prop="fileType" width="120">
+            <el-table-column
+                label="类型"
+                prop="fileType"
+                width="120"
+            >
               <template #default="scope">
                 {{ getFileType(scope.row.filename) }}
               </template>
             </el-table-column>
-            <el-table-column label="上传时间" prop="uploadTime" width="180">
+            <el-table-column
+                label="上传时间"
+                prop="uploadTime"
+                width="180"
+            >
               <template #default="scope">
                 {{ formatDate(scope.row.uploadTime) }}
               </template>
             </el-table-column>
-            <el-table-column fixed="right" label="操作" width="200">
+            <el-table-column
+                fixed="right"
+                label="操作"
+                width="200"
+            >
               <template #default="scope">
                 <el-button
                     :loading="downloadLoading === scope.row.id"
                     size="small"
                     type="primary"
                     @click="handleDownload(scope.row)"
-                >下载
+                >
+                  下载
                 </el-button>
                 <el-button
                     :loading="deleteLoading === scope.row.id"
                     size="small"
                     type="danger"
                     @click="handleDelete(scope.row)"
-                >删除
+                >
+                  删除
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
 
-          <div v-if="total > 0" class="pagination-container">
+          <div
+              v-if="total > 0"
+              class="pagination-container"
+          >
             <el-pagination
                 v-model:current-page="currentPage"
                 v-model:page-size="pageSize"
@@ -90,11 +120,17 @@
             />
           </div>
 
-          <el-empty v-if="files.length === 0 && !loading" description="暂无文件"/>
+          <el-empty
+              v-if="files.length === 0 && !loading"
+              description="暂无文件"
+          />
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="课程资料" name="course">
+      <el-tab-pane
+          label="课程资料"
+          name="course"
+      >
         <div class="course-resource-container">
           <div class="filter-container">
             <el-select
@@ -120,7 +156,10 @@
               :data="resources"
               style="width: 100%"
           >
-            <el-table-column label="文件名" min-width="200">
+            <el-table-column
+                label="文件名"
+                min-width="200"
+            >
               <template #default="scope">
                 <div class="file-name">
                   <el-icon class="file-icon">
@@ -132,32 +171,56 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="所属课程" prop="courseName" width="180"/>
-            <el-table-column label="上传人" prop="uploadUser" width="120"/>
-            <el-table-column label="大小" prop="fileSize" width="120">
+            <el-table-column
+                label="所属课程"
+                prop="courseName"
+                width="180"
+            />
+            <el-table-column
+                label="上传人"
+                prop="uploadUser"
+                width="120"
+            />
+            <el-table-column
+                label="大小"
+                prop="fileSize"
+                width="120"
+            >
               <template #default="scope">
                 {{ formatFileSize(scope.row.fileSize) }}
               </template>
             </el-table-column>
-            <el-table-column label="上传时间" prop="uploadTime" width="180">
+            <el-table-column
+                label="上传时间"
+                prop="uploadTime"
+                width="180"
+            >
               <template #default="scope">
                 {{ formatDate(scope.row.uploadTime) }}
               </template>
             </el-table-column>
-            <el-table-column fixed="right" label="操作" width="120">
+            <el-table-column
+                fixed="right"
+                label="操作"
+                width="120"
+            >
               <template #default="scope">
                 <el-button
                     :loading="downloadLoading === scope.row.id"
                     size="small"
                     type="primary"
                     @click="handleDownload(scope.row)"
-                >下载
+                >
+                  下载
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
 
-          <div v-if="resourceTotal > 0" class="pagination-container">
+          <div
+              v-if="resourceTotal > 0"
+              class="pagination-container"
+          >
             <el-pagination
                 v-model:current-page="resourceCurrentPage"
                 v-model:page-size="resourcePageSize"
@@ -169,7 +232,10 @@
             />
           </div>
 
-          <el-empty v-if="resources.length === 0 && !resourceLoading" description="暂无课程资料"/>
+          <el-empty
+              v-if="resources.length === 0 && !resourceLoading"
+              description="暂无课程资料"
+          />
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -177,7 +243,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {onMounted, ref} from 'vue';
 import {
   ElButton,
   ElEmpty,
@@ -197,20 +263,8 @@ import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
 import {deleteFile, downloadFile, getFileList, getResourceList} from '@/api/file';
 import {getStudentCourses} from '@/api/course';
 
-// 修改组件名称为多词组合
-defineOptions({
-  name: 'FileManagement'
-})
-
+// General loading state for personal files tab
 const loading = ref(false);
-
-// 上传URL和请求头
-const uploadUrl = '/api/file/upload'
-const headers = computed(() => {
-  return {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-})
 
 // 文件相关状态
 const files = ref([])
@@ -457,13 +511,18 @@ const getFileType = (filename) => {
 
 // 初始加载
 onMounted(() => {
-  if (activeTab.value === 'personal') {
-    fetchFiles()
-  } else if (activeTab.value === 'course') {
+  fetchFiles();
+  if (activeTab.value === 'course') {
     fetchCourses()
     fetchCourseResources()
   }
 })
+</script>
+
+<script>
+export default {
+  name: 'FileManagement'
+}
 </script>
 
 <style scoped>

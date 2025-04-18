@@ -1,9 +1,9 @@
 package com.campus.service;
 
+import com.campus.entity.Schedule;
+
 import java.util.List;
 import java.util.Map;
-
-import com.campus.entity.Schedule;
 
 /**
  * 课程表服务接口
@@ -260,4 +260,28 @@ public interface ScheduleService {
      * @return 是否成功
      */
     boolean updateScheduleStatus(Long id, Integer status);
+
+    /**
+     * 检查教室是否在课表中使用
+     *
+     * @param classroomId 教室ID
+     * @return 如果使用返回 true，否则返回 false
+     */
+    boolean isClassroomInUse(Long classroomId);
+
+    /**
+     * 检查课程是否已被排课
+     *
+     * @param courseId 课程ID
+     * @return 如果已排课返回 true，否则返回 false
+     */
+    boolean isCourseScheduled(Long courseId);
+
+    /**
+     * 查找给定课程ID列表中已被排课的课程ID
+     *
+     * @param courseIds 课程ID列表
+     * @return 已被排课的课程ID列表
+     */
+    List<Long> findScheduledCourseIds(List<Long> courseIds);
 }

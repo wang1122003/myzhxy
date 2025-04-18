@@ -3,134 +3,130 @@
 <mapper namespace="com.campus.dao.PostDao">
     <!-- 结果映射 -->
     <resultMap id="BaseResultMap" type="com.campus.entity.Post">
-        <id column="id" property="id" jdbcType="INTEGER"/>
+        <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="title" property="title" jdbcType="VARCHAR"/>
         <result column="content" property="content" jdbcType="LONGVARCHAR"/>
-        <result column="author_id" property="authorId" jdbcType="INTEGER"/>
-        <result column="category" property="category" jdbcType="VARCHAR"/>
+        <result column="author_id" property="authorId" jdbcType="BIGINT"/>
+        <result column="forum_type" property="forumType" jdbcType="VARCHAR"/>
+        <result column="forum_color" property="forumColor" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
         <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
         <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
         <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
-        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="is_top" property="isTop" jdbcType="TINYINT"/>
+        <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <!-- 关联属性 -->
         <association property="author" javaType="com.campus.entity.User">
             <id column="u_id" property="id"/>
             <result column="username" property="username"/>
             <result column="real_name" property="realName"/>
             <result column="avatar" property="avatar"/>
         </association>
-        <!-- 标签集合 -->
-        <collection property="tags" javaType="java.util.List" ofType="com.campus.entity.Tag">
-            <id column="tag_id" property="id"/>
-            <result column="tag_name" property="name"/>
-            <result column="tag_color" property="color"/>
-        </collection>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        p.id, p.title, p.content, p.author_id, p.category, p.view_count,
-        p.like_count, p.comment_count, p.status, p.create_time, p.update_time
+        p.id, p.title, p.content, p.author_id, p.forum_type, p.forum_color, p.tags,
+        p.view_count, p.like_count, p.comment_count, p.is_top, p.is_essence, p.status, 
+        p.create_time, p.update_time
     </sql>
 
     <!-- 获取所有帖子（分页） -->
     <select id="getAllPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=INTEGER}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
-            <if test="category != null and category != ''">
-                AND p.category = #{category,jdbcType=VARCHAR}
-            </if>
-            <if test="tagId != null">
-                AND t.id = #{tagId,jdbcType=INTEGER}
+            <if test="forumType != null">
+                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
             </if>
         </where>
         ORDER BY p.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
     </select>
 
     <!-- 获取帖子总数 -->
     <select id="getPostCount" resultType="java.lang.Integer">
-        SELECT COUNT(DISTINCT p.id)
+        SELECT COUNT(*)
         FROM post p
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=INTEGER}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
-            <if test="category != null and category != ''">
-                AND p.category = #{category,jdbcType=VARCHAR}
+            <if test="forumType != null">
+                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
             </if>
-            <if test="tagId != null">
-                AND t.id = #{tagId,jdbcType=INTEGER}
+            <if test="tag != null">
+                AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
             </if>
         </where>
     </select>
 
     <!-- 根据ID获取帖子 -->
-    <select id="getPostById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <select id="getPostById" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.id = #{id,jdbcType=INTEGER}
+        WHERE p.id = #{id,jdbcType=BIGINT}
     </select>
 
     <!-- 根据作者ID获取帖子（分页） -->
-    <select id="getPostsByAuthorId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <select id="getPostsByAuthorId" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.author_id = #{authorId,jdbcType=INTEGER}
+        WHERE p.author_id = #{authorId,jdbcType=BIGINT}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=INTEGER}
+            AND p.status = #{status,jdbcType=TINYINT}
         </if>
         ORDER BY p.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
     </select>
 
-    <!-- 根据分类获取帖子（分页） -->
-    <select id="getPostsByCategory" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <!-- 根据论坛类型获取帖子（分页） -->
+    <select id="getPostsByForumType" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.category = #{category,jdbcType=VARCHAR}
+        WHERE p.forum_type = #{forumType,jdbcType=VARCHAR}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=INTEGER}
+            AND p.status = #{status,jdbcType=TINYINT}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+
+    <!-- 根据标签获取帖子 -->
+    <select id="getPostsByTag" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name, u.avatar
+        FROM post p
+        LEFT JOIN user u ON p.author_id = u.id
+        WHERE JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
+        <if test="status != null">
+            AND p.status = #{status,jdbcType=TINYINT}
         </if>
         ORDER BY p.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
     </select>
 
@@ -138,81 +134,64 @@
     <select id="getHotPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
         WHERE p.status = 1
-        <if test="category != null and category != ''">
-            AND p.category = #{category,jdbcType=VARCHAR}
+        <if test="forumType != null">
+            AND p.forum_type = #{forumType,jdbcType=VARCHAR}
         </if>
-        <if test="tagId != null">
-            AND t.id = #{tagId,jdbcType=INTEGER}
+        <if test="tag != null">
+            AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
         </if>
         ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
-        LIMIT #{limit,jdbcType=INTEGER}
+        limit #{limit,jdbcType=INTEGER}
     </select>
 
     <!-- 搜索帖子（分页） -->
     <select id="searchPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
+        u.id as u_id, u.username, u.real_name, u.avatar
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (
                     p.title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
                     OR p.content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
                 )
             </if>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=INTEGER}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
-            <if test="category != null and category != ''">
-                AND p.category = #{category,jdbcType=VARCHAR}
+            <if test="forumType != null">
+                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
             </if>
-            <if test="tagId != null">
-                AND t.id = #{tagId,jdbcType=INTEGER}
+            <if test="tag != null">
+                AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
             </if>
         </where>
         ORDER BY p.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
     </select>
 
     <!-- 添加帖子 -->
     <insert id="addPost" parameterType="com.campus.entity.Post" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO post (
-            title, content, author_id, category, view_count,
-            like_count, comment_count, status, create_time, update_time
+        INSERT INTO post (title, content, author_id, forum_type, forum_color, tags,
+                          view_count, like_count, comment_count, is_top, is_essence, status,
+                          create_time, update_time
         )
-        VALUES (
-            #{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{authorId,jdbcType=INTEGER},
-            #{category,jdbcType=VARCHAR}, 0, 0, 0, #{status,jdbcType=INTEGER}, NOW(), NOW()
+        VALUES (#{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{authorId,jdbcType=BIGINT},
+                #{forumType,jdbcType=VARCHAR}, #{forumColor,jdbcType=VARCHAR},
+                #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+                #{viewCount,jdbcType=INTEGER}, #{likeCount,jdbcType=INTEGER}, #{commentCount,jdbcType=INTEGER},
+                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
+                NOW(), NOW()
         )
-    </insert>
-
-    <!-- 批量添加帖子 -->
-    <insert id="batchAddPosts" parameterType="java.util.List">
-        INSERT INTO post (
-            title, content, author_id, category, view_count,
-            like_count, comment_count, status, create_time, update_time
-        )
-        VALUES
-        <foreach collection="list" item="item" separator=",">
-            (
-                #{item.title,jdbcType=VARCHAR}, #{item.content,jdbcType=LONGVARCHAR}, #{item.authorId,jdbcType=INTEGER},
-                #{item.category,jdbcType=VARCHAR}, 0, 0, 0, #{item.status,jdbcType=INTEGER}, NOW(), NOW()
-            )
-        </foreach>
     </insert>
 
     <!-- 更新帖子 -->
@@ -221,367 +200,26 @@
         SET
             title = #{title,jdbcType=VARCHAR},
             content = #{content,jdbcType=LONGVARCHAR},
-            category = #{category,jdbcType=VARCHAR},
-            status = #{status,jdbcType=INTEGER},
+            forum_type  = #{forumType,jdbcType=VARCHAR},
+            forum_color = #{forumColor,jdbcType=VARCHAR},
+            tags        = #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            status      = #{status,jdbcType=TINYINT},
             update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
+        WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
-    <!-- 批量更新帖子状态 -->
-    <update id="batchUpdatePostStatus">
-        UPDATE post
-        SET
-            status = #{status,jdbcType=INTEGER},
-            update_time = NOW()
-        WHERE id IN
-        <foreach collection="postIds" item="postId" open="(" separator="," close=")">
-            #{postId,jdbcType=INTEGER}
-        </foreach>
-    </update>
-
-    <!-- 删除帖子 -->
-    <delete id="deletePost" parameterType="java.lang.Integer">
-        DELETE FROM post
-        WHERE id = #{id,jdbcType=INTEGER}
-    </delete>
-
-    <!-- 批量删除帖子 -->
-    <delete id="batchDeletePosts">
-        DELETE FROM post
-        WHERE id IN
-        <foreach collection="postIds" item="postId" open="(" separator="," close=")">
-            #{postId,jdbcType=INTEGER}
-        </foreach>
-    </delete>
-
-    <!-- 更新帖子状态 -->
-    <update id="updatePostStatus">
-        UPDATE post
-        SET
-            status = #{status,jdbcType=INTEGER},
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-    </update>
-
-    <!-- 增加浏览次数 -->
-    <update id="incrementViewCount" parameterType="java.lang.Integer">
-        UPDATE post
-        SET
-            view_count = view_count + 1,
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-    </update>
-
-    <!-- 增加点赞数 -->
-    <update id="incrementLikeCount" parameterType="java.lang.Integer">
-        UPDATE post
-        SET
-            like_count = like_count + 1,
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-    </update>
-
-    <!-- 减少点赞数 -->
-    <update id="decrementLikeCount" parameterType="java.lang.Integer">
-        UPDATE post
-        SET
-            like_count = like_count - 1,
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-        AND like_count > 0
-    </update>
-
-    <!-- 增加评论数 -->
-    <update id="incrementCommentCount" parameterType="java.lang.Integer">
-        UPDATE post
-        SET
-            comment_count = comment_count + 1,
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-    </update>
-
-    <!-- 减少评论数 -->
-    <update id="decrementCommentCount" parameterType="java.lang.Integer">
-        UPDATE post
-        SET
-            comment_count = comment_count - 1,
-            update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
-        AND comment_count > 0
-    </update>
-
-    <!-- 添加帖子标签 -->
-    <insert id="addPostTag">
-        INSERT INTO post_tag (
-            post_id, tag_id, create_time
-        )
-        VALUES (
-            #{postId,jdbcType=INTEGER}, #{tagId,jdbcType=INTEGER}, NOW()
-        )
-    </insert>
-
-    <!-- 批量添加帖子标签 -->
-    <insert id="batchAddPostTags">
-        INSERT INTO post_tag (
-            post_id, tag_id, create_time
-        )
-        VALUES
-        <foreach collection="tagIds" item="tagId" separator=",">
-            (
-                #{postId,jdbcType=INTEGER}, #{tagId,jdbcType=INTEGER}, NOW()
-            )
-        </foreach>
-    </insert>
-
-    <!-- 删除帖子标签 -->
-    <delete id="deletePostTag">
-        DELETE FROM post_tag
-        WHERE post_id = #{postId,jdbcType=INTEGER}
-        AND tag_id = #{tagId,jdbcType=INTEGER}
-    </delete>
-
-    <!-- 批量删除帖子标签 -->
-    <delete id="batchDeletePostTags">
-        DELETE FROM post_tag
-        WHERE post_id = #{postId,jdbcType=INTEGER}
-        AND tag_id IN
-        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-            #{tagId,jdbcType=INTEGER}
-        </foreach>
-    </delete>
-
-    <!-- 获取帖子统计信息 -->
-    <select id="getPostStats" resultType="java.util.Map">
-        SELECT
-            COUNT(*) as total_posts,
-            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_posts,
-            SUM(view_count) as total_views,
-            SUM(like_count) as total_likes,
-            SUM(comment_count) as total_comments,
-            COUNT(DISTINCT author_id) as total_authors,
-            COUNT(DISTINCT category) as total_categories,
-            COUNT(DISTINCT pt.tag_id) as total_tags,
-            AVG(view_count) as avg_views,
-            AVG(like_count) as avg_likes,
-            AVG(comment_count) as avg_comments
-        FROM post p
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
+    <!-- 获取热门标签 -->
+    <select id="getHotTags" resultType="java.lang.String">
+        SELECT tag, COUNT(*) AS count
+        FROM (SELECT JSON_UNQUOTE(tags_element) AS tag
+              FROM post p,
+                   JSON_TABLE(
+                           p.tags,
+                           '$[*]' COLUMNS (tags_element VARCHAR(50) PATH '$')
+                   ) AS tj
+              WHERE p.status = 1) t
+        GROUP BY tag
+        ORDER BY count DESC
+        limit #{limit, jdbcType=INTEGER}
     </select>
-
-    <!-- 获取帖子分类统计 -->
-    <select id="getPostCategoryStats" resultType="java.util.Map">
-        SELECT
-            category,
-            COUNT(*) as post_count,
-            SUM(view_count) as total_views,
-            SUM(like_count) as total_likes,
-            SUM(comment_count) as total_comments
-        FROM post
-        WHERE status = 1
-        GROUP BY category
-        ORDER BY post_count DESC
-    </select>
-
-    <!-- 获取帖子标签统计 -->
-    <select id="getPostTagStats" resultType="java.util.Map">
-        SELECT
-            t.id as tag_id,
-            t.name as tag_name,
-            t.color as tag_color,
-            COUNT(pt.post_id) as post_count,
-            SUM(p.view_count) as total_views,
-            SUM(p.like_count) as total_likes,
-            SUM(p.comment_count) as total_comments
-        FROM tag t
-        LEFT JOIN post_tag pt ON t.id = pt.tag_id
-        LEFT JOIN post p ON pt.post_id = p.id
-        WHERE p.status = 1
-        GROUP BY t.id, t.name, t.color
-        ORDER BY post_count DESC
-    </select>
-
-    <!-- 获取帖子发布趋势 -->
-    <select id="getPostPublishTrend" resultType="java.util.Map">
-        SELECT
-            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
-            COUNT(*) as post_count,
-            SUM(view_count) as view_count,
-            SUM(like_count) as like_count,
-            SUM(comment_count) as comment_count
-        FROM post
-        WHERE create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
-        ORDER BY date ASC
-    </select>
-
-    <!-- 获取作者发帖统计 -->
-    <select id="getAuthorPostStats" resultType="java.util.Map">
-        SELECT
-            u.id as author_id,
-            u.username,
-            u.real_name,
-            u.avatar,
-            COUNT(p.id) as post_count,
-            SUM(p.view_count) as total_views,
-            SUM(p.like_count) as total_likes,
-            SUM(p.comment_count) as total_comments,
-            AVG(p.view_count) as avg_views,
-            AVG(p.like_count) as avg_likes,
-            AVG(p.comment_count) as avg_comments
-        FROM user u
-        LEFT JOIN post p ON u.id = p.author_id
-        WHERE p.status = 1
-        GROUP BY u.id, u.username, u.real_name, u.avatar
-        ORDER BY post_count DESC
-    </select>
-
-    <!-- 获取标签帖子数 -->
-    <select id="getTagPostCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
-        SELECT COUNT(pt.post_id)
-        FROM post_tag pt
-        LEFT JOIN post p ON pt.post_id = p.id
-        WHERE pt.tag_id = #{tagId} AND p.status = 1
-    </select>
-
-    <!-- 获取帖子总数 -->
-    <select id="countAll" resultType="java.lang.Integer">
-        SELECT COUNT(id)
-        FROM post
-    </select>
-
-    <!-- 根据作者ID获取帖子总数 -->
-    <select id="countByAuthorId" parameterType="java.lang.Long" resultType="java.lang.Integer">
-        SELECT COUNT(id)
-        FROM post
-        WHERE author_id = #{authorId}
-    </select>
-
-    <!-- 根据分类获取帖子总数 -->
-    <select id="countByCategory" parameterType="java.lang.String" resultType="java.lang.Integer">
-        SELECT COUNT(id)
-        FROM post
-        WHERE category = #{category}
-    </select>
-
-    <!-- 根据关键词获取帖子总数 -->
-    <select id="countByKeyword" parameterType="java.lang.String" resultType="java.lang.Integer">
-        SELECT COUNT(id)
-        FROM post
-        WHERE title LIKE CONCAT('%', #{keyword}, '%')
-        OR content LIKE CONCAT('%', #{keyword}, '%')
-    </select>
-
-    <!-- 根据状态获取帖子总数 -->
-    <select id="countByStatus" parameterType="java.lang.Integer" resultType="java.lang.Integer">
-        SELECT COUNT(id)
-        FROM post
-        WHERE status = #{status}
-    </select>
-
-    <!-- 根据作者ID分页查询帖子 -->
-    <select id="findByAuthorIdAndPage" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
-        FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.author_id = #{authorId}
-        ORDER BY p.create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
-
-    <!-- 根据分类分页查询帖子 -->
-    <select id="findByCategoryAndPage" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
-        FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.category = #{category}
-        ORDER BY p.create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
-
-    <!-- 根据关键词分页查询帖子 -->
-    <select id="findByKeywordAndPage" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        t.id as tag_id, t.name as tag_name, t.color as tag_color
-        FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        LEFT JOIN post_tag pt ON p.id = pt.post_id
-        LEFT JOIN tag t ON pt.tag_id = t.id
-        WHERE p.title LIKE CONCAT('%', #{keyword}, '%')
-        OR p.content LIKE CONCAT('%', #{keyword}, '%')
-        ORDER BY p.create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
-
-    <!-- 根据帖子ID查询评论 -->
-    <select id="findCommentsByPostId" parameterType="java.lang.Long" resultType="java.util.Map">
-        SELECT 
-            c.id,
-            c.post_id,
-            c.user_id,
-            c.content,
-            c.create_time,
-            u.username,
-            u.real_name,
-            u.avatar
-        FROM comment c
-        LEFT JOIN user u ON c.user_id = u.id
-        WHERE c.post_id = #{postId}
-        ORDER BY c.create_time DESC
-    </select>
-
-    <!-- 插入评论 -->
-    <insert id="insertComment">
-        INSERT INTO comment (post_id, user_id, content, create_time)
-        VALUES (#{postId}, #{userId}, #{content}, NOW())
-    </insert>
-
-    <!-- 删除评论 -->
-    <delete id="deleteComment" parameterType="java.lang.Long">
-        DELETE FROM comment
-        WHERE id = #{commentId}
-    </delete>
-
-    <!-- 插入点赞 -->
-    <insert id="insertLike">
-        INSERT INTO post_like (post_id, user_id, create_time)
-        VALUES (#{postId}, #{userId}, NOW())
-    </insert>
-
-    <!-- 删除点赞 -->
-    <delete id="deleteLike">
-        DELETE FROM post_like
-        WHERE post_id = #{postId} AND user_id = #{userId}
-    </delete>
-
-    <!-- 根据帖子ID查询标签 -->
-    <select id="findTagsByPostId" parameterType="java.lang.Long" resultType="java.util.Map">
-        SELECT 
-            t.id,
-            t.name,
-            t.color
-        FROM tag t
-        LEFT JOIN post_tag pt ON t.id = pt.tag_id
-        WHERE pt.post_id = #{postId}
-    </select>
-
-    <!-- 插入帖子标签 -->
-    <insert id="insertPostTags">
-        INSERT INTO post_tag (post_id, tag_id, create_time)
-        VALUES
-        <foreach collection="tagIds" item="tagId" separator=",">
-            (#{postId}, #{tagId}, NOW())
-        </foreach>
-    </insert>
 </mapper>

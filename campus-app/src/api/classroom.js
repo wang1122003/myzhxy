@@ -1,8 +1,8 @@
 import request from './request'
 import {CLASSROOM_API} from './api-endpoints'
 
-// 获取所有教室
-export function getAllClassrooms(params) {
+// 获取教室列表（分页）
+export function getClassroomList(params) {
     return request({
         url: CLASSROOM_API.GET_ALL,
         method: 'get',
@@ -41,15 +41,6 @@ export function deleteClassroom(id) {
     return request({
         url: CLASSROOM_API.DELETE.replace(':id', id),
         method: 'delete'
-    })
-}
-
-// 获取教室列表（分页）
-export function getClassroomList(params) {
-    return request({
-        url: CLASSROOM_API.GET_LIST,
-        method: 'get',
-        params
     })
 }
 

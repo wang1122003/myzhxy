@@ -23,8 +23,14 @@
         <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
     </context:component-scan>
 
+    <!-- 扫描配置类 -->
+    <context:component-scan base-package="com.campus.config"/>
+
     <!-- 配置数据库和应用属性 -->
     <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties" />
+
+    <!-- 显式定义 StorageProperties Bean -->
+    <bean id="storageProperties" class="com.campus.config.StorageProperties"/>
 
     <!-- 配置数据源 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
@@ -113,6 +119,9 @@
     <!-- 配置基于注解的声明式事务 -->
     <tx:annotation-driven transaction-manager="transactionManager" />
 
-    <!-- 确保JwtUtil可被注入 -->
+    <!-- 恢复 JwtUtil Bean 定义 -->
     <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
+
+    <!-- 配置 ObjectMapper Bean，使其在根上下文可用 -->
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 </beans>

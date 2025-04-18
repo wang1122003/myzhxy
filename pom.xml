@@ -14,10 +14,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-        <spring.version>6.0.13</spring.version>
-        <mysql.version>8.0.33</mysql.version>
+        <spring.version>6.2.6</spring.version>
+        <spring-security.version>6.4.4</spring-security.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mysql.version>9.2.0</mysql.version>
         <druid.version>1.2.18</druid.version>
-        <jackson.version>2.15.2</jackson.version>
+        <jackson.version>2.17.0</jackson.version>
         <lombok.version>1.18.30</lombok.version>
         <log4j.version>2.20.0</log4j.version>
         <slf4j.version>2.0.9</slf4j.version>
@@ -77,29 +79,36 @@
             <artifactId>spring-aspects</artifactId>
             <version>${spring.version}</version>
         </dependency>
+
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+            <version>${spring-security.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+            <version>${spring-security.version}</version>
+        </dependency>
         
         <!-- MyBatis-Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus</artifactId>
-            <version>3.5.3.2</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
-            <version>3.5.3.2</version>
+            <version>${mybatis-plus.version}</version>
         </dependency>
-        
-        <!-- MyBatis Spring 集成 -->
+
+        <!-- 添加 mybatis-spring 依赖 -->
         <dependency>
             <groupId>org.mybatis</groupId>
             <artifactId>mybatis-spring</artifactId>
             <version>3.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
-            <version>3.5.13</version>
         </dependency>
 
         <!-- MySQL Driver -->
@@ -143,11 +152,6 @@
 
         <!-- Logging -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
@@ -165,7 +169,19 @@
             <version>6.0.0</version>
             <scope>provided</scope>
         </dependency>
-        
+
+        <!-- Jakarta EE APIs -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
         <!-- JWT支持 -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -197,23 +213,36 @@
             <version>2.14.0</version>
         </dependency>
 
-        <!-- 以下三个验证Jakarta Bean Validation API -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version> <!-- 确保 API 版本兼容 -->
-        </dependency>
         <!-- Hibernate Validator Implementation -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>8.0.1.Final</version> <!-- 使用与 Jakarta EE 9+ 兼容的版本 -->
+            <version>8.0.1.Final</version>
         </dependency>
         <!-- Expression Language (EL) Implementation - Required by Hibernate Validator -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.el</artifactId>
-            <version>4.0.2</version> <!-- 确保 EL 版本兼容 -->
+            <version>4.0.2</version>
+        </dependency>
+
+        <!-- Apache Commons Lang -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.13.0</version>
+        </dependency>
+
+        <!-- JSTL -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
         </dependency>
 
     </dependencies>
@@ -247,41 +276,6 @@
                 <version>3.3.1</version>
                 <configuration>
                     <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.cargo</groupId>
-                <artifactId>cargo-maven3-plugin</artifactId>
-                <version>1.10.19</version>
-                <configuration>
-                    <container>
-                        <containerId>tomcat11x</containerId>
-                        <type>embedded</type>
-                        <dependencies>
-                            <dependency>
-                                <groupId>ch.qos.logback</groupId>
-                                <artifactId>logback-classic</artifactId>
-                                <classpath>shared</classpath>
-                            </dependency>
-                        </dependencies>
-                    </container>
-                    <configuration>
-                        <properties>
-                            <cargo.servlet.port>8080</cargo.servlet.port>
-                            <cargo.logging>high</cargo.logging>
-                            <cargo.tomcat.uriencoding>UTF-8</cargo.tomcat.uriencoding>
-                        </properties>
-                    </configuration>
-                    <deployables>
-                        <deployable>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>${project.artifactId}</artifactId>
-                            <type>war</type>
-                            <properties>
-                                <context>/campus</context>
-                            </properties>
-                        </deployable>
-                    </deployables>
                 </configuration>
             </plugin>
         </plugins>

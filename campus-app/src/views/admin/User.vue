@@ -155,12 +155,7 @@ import {
   ElTag
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {addUser, deleteUser, getUserList, resetPassword, updateUser} from '@/api/user'; // 引入 API
-
-// 修改组件名称为多词组合
-defineOptions({
-  name: 'UserManagement'
-})
+import {addUser, deleteUser, getUserList, resetPassword, updateUser, updateUserStatus} from '@/api/user'; // 引入 API
 
 const loading = ref(false);
 const userList = ref([]);
@@ -249,51 +244,57 @@ const handleCurrentChange = (val) => {
 // 重置表单
 const resetForm = () => {
   if (userFormRef.value) {
-    userFormRef.value.resetFields();
+    userFormRef.value.resetFields(); // 重置表单项为初始值
   }
-  // 手动重置不在 resetFields 范围内的字段
-  userForm.value.id = null;
-  userForm.value.password = ''; // 清空密码字段
+  // 手动重置不在 resetFields 范围内的字段或需要特定初始值的字段
+  userForm.value = {
+    id: null, // 确保 id 被清空
+    username: '',
+    password: '', // 清空密码字段
+    name: '',
+    role: '',
+    email: '',
+    phone: '',
+    status: 1 // 默认状态为 1 (正常)
+  };
 };
 
 // 添加用户（打开对话框）
 const handleAddUser = () => {
   resetForm(); // 先重置表单
   dialogTitle.value = '添加用户';
-  // 确保添加时密码校验规则生效
-  userFormRules.password[0].required = true;
   dialogVisible.value = true;
 };
 
 // 编辑用户（打开对话框）
 const handleEditUser = (row) => {
-  resetForm(); // 先重置表单
+  resetForm(); // 先重置，防止数据污染
   dialogTitle.value = '编辑用户';
-  // 填充表单数据
+  // 使用 Object.assign 或扩展运算符复制数据，避免直接引用
   userForm.value = {...row};
-  // 编辑时密码不是必填项，移除校验
-  userFormRules.password[0].required = false;
+  // 编辑时通常不直接修改密码，password 字段留空或在 userForm 中移除
+  delete userForm.value.password; // 从表单数据中移除密码字段
   dialogVisible.value = true;
 };
 
 // 删除用户
 const handleDeleteUser = (row) => {
   if (row.username === 'admin') {
-    ElMessage.warning('不能删除超级管理员');
+    ElMessage.warning('不能删除超级管理员账号');
     return;
   }
-  ElMessageBox.confirm(`确定要删除用户 ${row.username} 吗?`, '提示', {
-    confirmButtonText: '确定',
+  ElMessageBox.confirm(`确定要删除用户 ${row.name} (${row.username}) 吗? 此操作不可恢复。`, '警告', {
+    confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     try {
       await deleteUser(row.id);
-      ElMessage.success('删除成功');
-      fetchUsers(); // 刷新列表
+      ElMessage.success('用户删除成功');
+      await fetchUsers(); // 刷新列表
     } catch (error) {
       console.error("删除用户失败", error);
-      ElMessage.error("删除用户失败");
+      // ElMessage.error("删除用户失败"); // 错误消息由拦截器处理
     }
   }).catch(() => {
     ElMessage.info('已取消删除');
@@ -302,41 +303,39 @@ const handleDeleteUser = (row) => {
 
 // 重置密码
 const handleResetPassword = (row) => {
-  ElMessageBox.confirm(`确定要重置用户 ${row.username} 的密码吗? (新密码将是默认密码)`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-        type: 'warning'
-  }).then(async () => {
+  ElMessageBox.confirm(`确定要重置用户 ${row.name} (${row.username}) 的密码吗? 新密码将是默认密码（例如 '123456'）。`, '提示', {
+        confirmButtonText: '确定重置',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+  ).then(async () => {
     try {
-      // 调用重置密码 API
+      // 调用重置密码 API，传入用户 ID
       await resetPassword(row.id);
-      ElMessage.success('密码重置成功');
+      ElMessage.success(`用户 ${row.username} 的密码已重置`);
+      // 通常不需要刷新列表，因为密码是后台操作
     } catch (error) {
-      console.error("重置密码失败", error);
-      ElMessage.error(error.message || "重置密码失败");
+      console.error(`重置用户 ${row.username} 密码失败`, error);
+      // ElMessage.error(`重置密码失败`); // 错误消息由拦截器处理
     }
   }).catch(() => {
-    ElMessage.info('已取消操作');
+    ElMessage.info('已取消重置密码');
   });
 };
 
 // 更改用户状态
 const handleStatusChange = async (row) => {
-  // 确保更新的是列表中的数据，而不是编辑表单中的旧数据
-  const userToUpdate = userList.value.find(u => u.id === row.id);
-  if (!userToUpdate) return;
-
-  const newStatus = userToUpdate.status; // 获取最新的状态值
-
+  const originalStatus = row.status === 1 ? 0 : 1; // 记录原始状态的反状态，用于失败时回滚
+  const actionText = row.status === 1 ? '启用' : '禁用';
   try {
-    await updateUser(userToUpdate.id, {status: newStatus});
-    ElMessage.success(`用户 ${userToUpdate.username} 状态更新成功`);
+    await updateUserStatus(row.id, row.status); // 假设 API 是 updateUserStatus(userId, status)
+    ElMessage.success(`用户 ${row.username} 已${actionText}`);
   } catch (error) {
-    console.error("更新用户状态失败", error);
-    ElMessage.error("更新用户状态失败");
+    console.error(`更新用户状态失败 for ${row.username}`, error);
+    ElMessage.error(`更新用户 ${row.username} 状态失败`);
     // 状态改回去
-    userToUpdate.status = newStatus === 1 ? 0 : 1;
-    }
+    row.status = originalStatus;
+  }
 };
 
 // 提交用户表单 (添加/编辑)
@@ -345,19 +344,22 @@ const submitUserForm = () => {
     if (valid) {
       try {
         if (isEditMode.value) {
-          // 编辑用户
-          await updateUser(userForm.value.id, userForm.value);
+          // 编辑模式 - 调用 updateUser API
+          // 确保只发送需要的字段，特别是移除 password
+          const {password, id, ...updateData} = userForm.value;
+          await updateUser(id, updateData);
           ElMessage.success('用户信息更新成功');
         } else {
-          // 添加用户
+          // 添加模式 - 调用 addUser API
           await addUser(userForm.value);
           ElMessage.success('用户添加成功');
         }
-        dialogVisible.value = false;
-        fetchUsers(); // 刷新列表
+        dialogVisible.value = false; // 关闭对话框
+        await fetchUsers(); // 刷新用户列表
       } catch (error) {
         console.error("提交用户表单失败", error);
-        ElMessage.error(error.message || (isEditMode.value ? "更新用户信息失败" : "添加用户失败"));
+        // 错误消息由 API 请求拦截器处理，这里可以不再重复提示
+        // ElMessage.error(isEditMode.value ? '更新用户失败' : '添加用户失败');
       }
     } else {
       console.log('表单验证失败');
@@ -402,6 +404,12 @@ onMounted(() => {
   fetchUsers();
 });
 
+</script>
+
+<script>
+export default {
+  name: 'UserManagement'
+}
 </script>
 
 <style scoped>

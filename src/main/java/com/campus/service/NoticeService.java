@@ -1,8 +1,10 @@
 package com.campus.service;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.campus.dto.NoticeDTO;
 import com.campus.entity.Notice;
+
+import java.util.List;
 
 /**
  * 通知公告服务接口
@@ -10,14 +12,21 @@ import com.campus.entity.Notice;
 public interface NoticeService {
     
     /**
-     * 根据ID获取通知
+     * 根据ID获取通知 (不一定包含附件)
      * @param id 通知ID
      * @return 通知对象
      */
     Notice getNoticeById(Long id);
-    
+
     /**
-     * 获取所有通知
+     * 根据ID获取通知 (包含附件列表)
+     * @param id 通知ID
+     * @return 通知对象 (包含附件信息)
+     */
+    Notice getNoticeWithAttachments(Long id);
+
+    /**
+     * 查询所有通知
      * @return 通知列表
      */
     List<Notice> getAllNotices();
@@ -57,18 +66,18 @@ public interface NoticeService {
     List<Notice> getNoticesByPublisherId(Long publisherId);
     
     /**
-     * 添加通知
-     * @param notice 通知对象
+     * 添加通知 (使用 DTO)
+     * @param noticeDto 通知信息 DTO
      * @return 是否成功
      */
-    boolean addNotice(Notice notice);
+    boolean addNotice(NoticeDTO noticeDto);
     
     /**
-     * 更新通知
-     * @param notice 通知对象
+     * 更新通知 (使用 DTO)
+     * @param noticeDto 通知信息 DTO
      * @return 是否成功
      */
-    boolean updateNotice(Notice notice);
+    boolean updateNotice(NoticeDTO noticeDto);
     
     /**
      * 更新通知状态
@@ -79,13 +88,6 @@ public interface NoticeService {
     boolean updateNoticeStatus(Long id, Integer status);
     
     /**
-     * 增加阅读次数
-     * @param id 通知ID
-     * @return 是否成功
-     */
-    boolean incrementViewCount(Long id);
-    
-    /**
      * 删除通知
      * @param id 通知ID
      * @return 是否成功
@@ -94,8 +96,49 @@ public interface NoticeService {
     
     /**
      * 批量删除通知
-     * @param ids ID数组
+     * @param ids 通知ID数组
      * @return 是否成功
      */
     boolean batchDeleteNotices(Long[] ids);
+
+    /**
+     * 增加通知阅读次数
+     *
+     * @param id 通知ID
+     */
+    void incrementViewCount(Long id);
+
+    /**
+     * 获取通知总数
+     *
+     * @return 通知数量
+     */
+    int getNoticeCount();
+
+    /**
+     * 分页查询通知
+     *
+     * @param pageNum  页码
+     * @param pageSize 每页数量
+     * @return 通知分页结果 (IPage)
+     */
+    IPage<Notice> getNoticesByPage(int pageNum, int pageSize);
+
+    /**
+     * 搜索通知
+     *
+     * @param keyword 关键词
+     * @return 通知列表
+     */
+    List<Notice> searchNotices(String keyword);
+
+    /**
+     * 分页搜索通知
+     *
+     * @param keyword  关键词
+     * @param pageNum  页码
+     * @param pageSize 每页数量
+     * @return 通知分页结果 (IPage)
+     */
+    IPage<Notice> searchNoticesPaged(String keyword, int pageNum, int pageSize);
 } 

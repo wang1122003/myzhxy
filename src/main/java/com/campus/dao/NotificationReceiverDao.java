@@ -2,7 +2,6 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.NotificationReceiver;
-
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -20,7 +19,7 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @param receiverType 接收者类型
      * @return 通知接收记录列表
      */
-    List<NotificationReceiver> getUserNotifications(@Param("receiverId") Integer receiverId, 
+    List<NotificationReceiver> getUserNotifications(@Param("receiverId") Long receiverId, 
                                                   @Param("receiverType") String receiverType);
     
     /**
@@ -29,7 +28,7 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @param receiverType 接收者类型
      * @return 未读通知列表
      */
-    List<NotificationReceiver> getUnreadNotifications(@Param("receiverId") Integer receiverId, 
+    List<NotificationReceiver> getUnreadNotifications(@Param("receiverId") Long receiverId, 
                                                     @Param("receiverType") String receiverType);
     
     /**
@@ -37,14 +36,14 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @param receiverId 接收者ID
      * @return 未读通知列表
      */
-    List<NotificationReceiver> getUnreadNotificationsWithoutType(Integer receiverId);
+    List<NotificationReceiver> getUnreadNotificationsWithoutType(Long receiverId);
     
     /**
      * 标记通知为已读
      * @param id 通知接收记录ID
      * @return 影响行数
      */
-    int markAsRead(Integer id);
+    int markAsRead(Long id);
     
     /**
      * 批量标记通知为已读
@@ -52,7 +51,7 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @param receiverType 接收者类型
      * @return 影响行数
      */
-    int markAllAsRead(@Param("receiverId") Integer receiverId, 
+    int markAllAsRead(@Param("receiverId") Long receiverId, 
                      @Param("receiverType") String receiverType);
     
     /**
@@ -60,12 +59,12 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @param notificationId 通知ID
      * @return 接收记录列表
      */
-    List<NotificationReceiver> getByNotificationId(Integer notificationId);
+    List<NotificationReceiver> getByNotificationId(Long notificationId);
     
     /**
      * 删除通知接收记录
      * @param id 接收记录ID
      * @return 影响行数
      */
-    int deleteNotificationReceiver(Integer id);
+    int deleteNotificationReceiver(Long id);
 }

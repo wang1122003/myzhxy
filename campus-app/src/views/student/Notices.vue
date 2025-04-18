@@ -33,14 +33,21 @@
       </div>
     </div>
 
-    <el-card class="notice-list-card" shadow="hover">
+    <el-card
+        class="notice-list-card"
+        shadow="hover"
+    >
       <el-table
           v-loading="loading"
           :data="notices"
           style="width: 100%"
           @row-click="handleRowClick"
       >
-        <el-table-column label="标题" min-width="300" prop="title">
+        <el-table-column
+            label="标题"
+            min-width="300"
+            prop="title"
+        >
           <template #default="scope">
             <div class="notice-title">
               <el-tag
@@ -64,13 +71,25 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="发布者" prop="publisher" width="150"/>
-        <el-table-column label="发布时间" prop="publishTime" width="180">
+        <el-table-column
+            label="发布者"
+            prop="publisher"
+            width="150"
+        />
+        <el-table-column
+            label="发布时间"
+            prop="publishTime"
+            width="180"
+        >
           <template #default="scope">
             {{ formatDate(scope.row.publishTime) }}
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="120">
+        <el-table-column
+            fixed="right"
+            label="操作"
+            width="120"
+        >
           <template #default="scope">
             <el-button
                 size="small"
@@ -83,7 +102,10 @@
         </el-table-column>
       </el-table>
 
-      <div v-if="total > 0" class="pagination-container">
+      <div
+          v-if="total > 0"
+          class="pagination-container"
+      >
         <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
@@ -111,11 +133,21 @@
           <span>类型: {{ getNoticeTypeName(currentNotice.type) }}</span>
         </div>
         <el-divider/>
-        <div class="notice-content" v-html="currentNotice.content"></div>
+        <div
+            class="notice-content"
+            v-html="currentNotice.content"
+        />
 
-        <div v-if="currentNotice.attachments && currentNotice.attachments.length > 0" class="notice-attachments">
+        <div
+            v-if="currentNotice.attachments && currentNotice.attachments.length > 0"
+            class="notice-attachments"
+        >
           <h4>附件列表:</h4>
-          <div v-for="(attachment, index) in currentNotice.attachments" :key="index" class="attachment-item">
+          <div
+              v-for="(attachment, index) in currentNotice.attachments"
+              :key="index"
+              class="attachment-item"
+          >
             <el-button
                 :loading="downloadLoading === attachment.id"
                 link

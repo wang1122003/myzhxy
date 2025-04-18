@@ -6,6 +6,8 @@ import com.campus.service.UserService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.util.DigestUtils;
@@ -24,6 +26,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    // Explicitly declare the logger
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -252,19 +257,26 @@ public class UserController {
      */
     @GetMapping("/current")
     public Result getCurrentUser(HttpServletRequest request) {
-        // 从请求属性中获取用户ID
-        Long userId = (Long) request.getAttribute("userId");
-        
-        if (userId != null) {
-            User user = userService.getUserById(userId);
-            if (user != null) {
+        // 使用 AuthService 获取当前登录用户 (从 Token 解析)
+        User basicUserInfo = authService.getCurrentUser(request);
+
+        if (basicUserInfo != null && basicUserInfo.getId() != null) {
+            // 根据 ID 从数据库获取完整的用户信息
+            User fullUserInfo = userService.getUserById(basicUserInfo.getId());
+            if (fullUserInfo != null) {
                 // 清除敏感信息
-                user.setPassword(null);
-                return Result.success("获取成功", user);
+                fullUserInfo.setPassword(null);
+                return Result.success("获取成功", fullUserInfo);
+            } else {
+                // 如果根据ID找不到用户（理论上不应发生，除非用户刚被删除）
+                log.warn("无法根据 AuthService 提供的有效 userId {} 找到用户", basicUserInfo.getId());
+                return Result.error("无法获取当前用户信息，用户数据可能不存在");
             }
+        } else {
+            // 如果 AuthService 返回 null 或 ID 为 null，说明 Token 无效或解析失败
+            log.info("无法获取当前用户信息，Token 无效或解析失败");
+            return Result.error("无法获取当前用户信息，请重新登录");
         }
-        
-        return Result.error("无法获取当前用户信息");
     }
     
     /**

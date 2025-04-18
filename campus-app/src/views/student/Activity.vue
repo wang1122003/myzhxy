@@ -1,11 +1,17 @@
 <template>
   <div class="activity-detail">
-    <el-page-header title="返回列表" @back="goBack">
+    <el-page-header
+        title="返回列表"
+        @back="goBack"
+    >
       <template #content>
         <span class="text-large font-600 mr-3"> 活动详情 </span>
       </template>
     </el-page-header>
-    <el-card v-loading="loading" class="activity-content">
+    <el-card
+        v-loading="loading"
+        class="activity-content"
+    >
       <template v-if="activity">
         <div class="activity-header">
           <h2>{{ activity.title }}</h2>
@@ -15,17 +21,32 @@
             <span>活动地点: {{ activity.location }}</span>
           </div>
           <div class="activity-status">
-            <el-tag :type="getStatusType(activity.status)">{{ getStatusName(activity.status) }}</el-tag>
-            <el-tag v-if="activity.enrolled" style="margin-left: 10px;" type="success">已报名</el-tag>
+            <el-tag :type="getStatusType(activity.status)">
+              {{ getStatusName(activity.status) }}
+            </el-tag>
+            <el-tag
+                v-if="activity.enrolled"
+                style="margin-left: 10px;"
+                type="success"
+            >
+              已报名
+            </el-tag>
           </div>
         </div>
         <el-divider/>
         <div class="activity-body">
           <!-- 封面图 -->
-          <el-image v-if="activity.coverImage" :src="activity.coverImage" fit="cover"
-                    style="width: 100%; height: 300px; margin-bottom: 20px;"></el-image>
+          <el-image
+              v-if="activity.coverImage"
+              :src="activity.coverImage"
+              fit="cover"
+              style="width: 100%; height: 300px; margin-bottom: 20px;"
+          />
           <!-- 描述内容 -->
-          <div class="activity-description" v-html="activity.description"></div>
+          <div
+              class="activity-description"
+              v-html="activity.description"
+          />
         </div>
         <el-divider/>
         <div class="activity-footer">
@@ -35,19 +56,27 @@
               :loading="registerLoading"
               type="primary"
               @click="handleRegister"
-          >报名参加
+          >
+            报名参加
           </el-button>
           <el-button
               v-if="activity.status === 1 && activity.enrolled"
               :loading="cancelLoading"
               type="danger"
               @click="handleCancel"
-          >取消报名
+          >
+            取消报名
           </el-button>
-          <span v-if="activity.status !== 1" class="info-text">活动已开始或已结束，无法报名/取消报名</span>
+          <span
+              v-if="activity.status !== 1"
+              class="info-text"
+          >活动已开始或已结束，无法报名/取消报名</span>
         </div>
       </template>
-      <el-empty v-else-if="!loading" description="活动不存在或已被删除"/>
+      <el-empty
+          v-else-if="!loading"
+          description="活动不存在或已被删除"
+      />
     </el-card>
   </div>
 </template>

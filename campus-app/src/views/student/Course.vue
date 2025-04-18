@@ -3,7 +3,12 @@
     <div class="header">
       <h2>课程选择</h2>
       <div class="filter-container">
-        <el-select v-model="semester" clearable placeholder="学期" @change="fetchCourses">
+        <el-select
+            v-model="semester"
+            clearable
+            placeholder="学期"
+            @change="fetchCourses"
+        >
           <el-option
               v-for="item in semesterOptions"
               :key="item.value"
@@ -12,7 +17,12 @@
           />
         </el-select>
 
-        <el-select v-model="courseType" clearable placeholder="课程类型" @change="fetchCourses">
+        <el-select
+            v-model="courseType"
+            clearable
+            placeholder="课程类型"
+            @change="fetchCourses"
+        >
           <el-option
               v-for="item in courseTypeOptions"
               :key="item.value"
@@ -37,23 +47,66 @@
     </div>
 
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="可选课程" name="available">
-        <el-table v-loading="loading" :data="availableCourses" style="width: 100%">
-          <el-table-column label="课程代码" prop="courseCode" width="120"/>
-          <el-table-column label="课程名称" prop="courseName" width="180"/>
-          <el-table-column label="授课教师" prop="teacher" width="120"/>
-          <el-table-column label="课程类型" prop="courseType" width="120">
+      <el-tab-pane
+          label="可选课程"
+          name="available"
+      >
+        <el-table
+            v-loading="loading"
+            :data="availableCourses"
+            style="width: 100%"
+        >
+          <el-table-column
+              label="课程代码"
+              prop="courseCode"
+              width="120"
+          />
+          <el-table-column
+              label="课程名称"
+              prop="courseName"
+              width="180"
+          />
+          <el-table-column
+              label="授课教师"
+              prop="teacher"
+              width="120"
+          />
+          <el-table-column
+              label="课程类型"
+              prop="courseType"
+              width="120"
+          >
             <template #default="scope">
               <el-tag :type="getCourseTypeTag(scope.row.courseType)">
                 {{ getCourseTypeName(scope.row.courseType) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="学分" prop="credit" width="80"/>
-          <el-table-column label="学期" prop="semester" width="120"/>
-          <el-table-column label="上课时间" min-width="180" prop="schedule"/>
-          <el-table-column label="上课地点" prop="classroom" width="120"/>
-          <el-table-column label="容量" prop="capacity" width="120">
+          <el-table-column
+              label="学分"
+              prop="credit"
+              width="80"
+          />
+          <el-table-column
+              label="学期"
+              prop="semester"
+              width="120"
+          />
+          <el-table-column
+              label="上课时间"
+              min-width="180"
+              prop="schedule"
+          />
+          <el-table-column
+              label="上课地点"
+              prop="classroom"
+              width="120"
+          />
+          <el-table-column
+              label="容量"
+              prop="capacity"
+              width="120"
+          >
             <template #default="scope">
               {{ scope.row.selectedCount }}/{{ scope.row.capacity }}
               <el-progress
@@ -62,7 +115,11 @@
               />
             </template>
           </el-table-column>
-          <el-table-column fixed="right" label="操作" width="120">
+          <el-table-column
+              fixed="right"
+              label="操作"
+              width="120"
+          >
             <template #default="scope">
               <el-button
                   :disabled="scope.row.selectedCount >= scope.row.capacity || scope.row.isConflict"
@@ -90,24 +147,71 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="已选课程" name="selected">
-        <el-table v-loading="loadingSelected" :data="selectedCourses" style="width: 100%">
-          <el-table-column label="课程代码" prop="courseCode" width="120"/>
-          <el-table-column label="课程名称" prop="courseName" width="180"/>
-          <el-table-column label="授课教师" prop="teacher" width="120"/>
-          <el-table-column label="课程类型" prop="courseType" width="120">
+      <el-tab-pane
+          label="已选课程"
+          name="selected"
+      >
+        <el-table
+            v-loading="loadingSelected"
+            :data="selectedCourses"
+            style="width: 100%"
+        >
+          <el-table-column
+              label="课程代码"
+              prop="courseCode"
+              width="120"
+          />
+          <el-table-column
+              label="课程名称"
+              prop="courseName"
+              width="180"
+          />
+          <el-table-column
+              label="授课教师"
+              prop="teacher"
+              width="120"
+          />
+          <el-table-column
+              label="课程类型"
+              prop="courseType"
+              width="120"
+          >
             <template #default="scope">
               <el-tag :type="getCourseTypeTag(scope.row.courseType)">
                 {{ getCourseTypeName(scope.row.courseType) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="学分" prop="credit" width="80"/>
-          <el-table-column label="学期" prop="semester" width="120"/>
-          <el-table-column label="上课时间" min-width="180" prop="schedule"/>
-          <el-table-column label="上课地点" prop="classroom" width="120"/>
-          <el-table-column label="选课时间" prop="selectTime" width="180"/>
-          <el-table-column fixed="right" label="操作" width="120">
+          <el-table-column
+              label="学分"
+              prop="credit"
+              width="80"
+          />
+          <el-table-column
+              label="学期"
+              prop="semester"
+              width="120"
+          />
+          <el-table-column
+              label="上课时间"
+              min-width="180"
+              prop="schedule"
+          />
+          <el-table-column
+              label="上课地点"
+              prop="classroom"
+              width="120"
+          />
+          <el-table-column
+              label="选课时间"
+              prop="selectTime"
+              width="180"
+          />
+          <el-table-column
+              fixed="right"
+              label="操作"
+              width="120"
+          >
             <template #default="scope">
               <el-button
                   :loading="submitting"
@@ -130,19 +234,39 @@
         width="60%"
     >
       <template v-if="currentCourse">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="课程代码">{{ currentCourse.courseCode }}</el-descriptions-item>
-          <el-descriptions-item label="课程名称">{{ currentCourse.courseName }}</el-descriptions-item>
+        <el-descriptions
+            :column="2"
+            border
+        >
+          <el-descriptions-item label="课程代码">
+            {{ currentCourse.courseCode }}
+          </el-descriptions-item>
+          <el-descriptions-item label="课程名称">
+            {{ currentCourse.courseName }}
+          </el-descriptions-item>
           <el-descriptions-item label="课程类型">
             <el-tag :type="getCourseTypeTag(currentCourse.courseType)">
               {{ getCourseTypeName(currentCourse.courseType) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="学分">{{ currentCourse.credit }}</el-descriptions-item>
-          <el-descriptions-item label="授课教师">{{ currentCourse.teacher }}</el-descriptions-item>
-          <el-descriptions-item label="学期">{{ currentCourse.semester }}</el-descriptions-item>
-          <el-descriptions-item :span="2" label="上课时间">{{ currentCourse.schedule }}</el-descriptions-item>
-          <el-descriptions-item label="上课地点">{{ currentCourse.classroom }}</el-descriptions-item>
+          <el-descriptions-item label="学分">
+            {{ currentCourse.credit }}
+          </el-descriptions-item>
+          <el-descriptions-item label="授课教师">
+            {{ currentCourse.teacher }}
+          </el-descriptions-item>
+          <el-descriptions-item label="学期">
+            {{ currentCourse.semester }}
+          </el-descriptions-item>
+          <el-descriptions-item
+              :span="2"
+              label="上课时间"
+          >
+            {{ currentCourse.schedule }}
+          </el-descriptions-item>
+          <el-descriptions-item label="上课地点">
+            {{ currentCourse.classroom }}
+          </el-descriptions-item>
           <el-descriptions-item label="课程容量">
             {{ currentCourse.selectedCount }}/{{ currentCourse.capacity }}
             <el-progress
@@ -150,7 +274,10 @@
                 :status="getCapacityStatus(currentCourse)"
             />
           </el-descriptions-item>
-          <el-descriptions-item :span="2" label="课程简介">
+          <el-descriptions-item
+              :span="2"
+              label="课程简介"
+          >
             {{ currentCourse.description || '暂无课程简介' }}
           </el-descriptions-item>
         </el-descriptions>

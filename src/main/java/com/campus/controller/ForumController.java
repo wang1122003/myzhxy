@@ -1,24 +1,25 @@
 package com.campus.controller;
 
+import com.campus.dto.PageResult;
 import com.campus.entity.Comment;
+import com.campus.entity.Forum;
 import com.campus.entity.Post;
-import com.campus.entity.Tag;
 import com.campus.service.CommentService;
+import com.campus.service.ForumService;
 import com.campus.service.PostService;
-import com.campus.service.TagService;
 import com.campus.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 论坛功能统一控制器
- * 整合帖子、评论和标签的所有功能
+ * 整合帖子、评论和板块的功能
  */
 @RestController
 @RequestMapping("/api/forum")
@@ -31,7 +32,72 @@ public class ForumController {
     private CommentService commentService;
 
     @Autowired
-    private TagService tagService;
+    private ForumService forumService;
+
+    // =============== 板块/分类相关 API (新增/修改) ===============
+
+    /**
+     * 获取所有可用的板块列表 (用于下拉列表等)
+     *
+     * @return 板块列表
+     */
+    @GetMapping("/forums")
+    public ResponseEntity<List<Forum>> getAvailableForums() {
+        List<Forum> forums = forumService.listAvailableForums();
+        return ResponseEntity.ok(forums);
+    }
+
+    /**
+     * 获取所有论坛分类
+     *
+     * @return 分类列表
+     */
+    @GetMapping("/categories")
+    public Result getForumCategories() {
+        List<Forum> forums = forumService.listAvailableForums();
+        return Result.success(forums);
+    }
+
+    /**
+     * 创建论坛分类
+     *
+     * @param forum 分类信息
+     * @return 创建结果
+     */
+    @PostMapping("/categories")
+    public Result createForumCategory(@RequestBody Forum forum) {
+        forum.setCreateTime(new Date());
+        forum.setUpdateTime(new Date());
+        boolean success = forumService.save(forum);
+        return success ? Result.success() : Result.error("创建分类失败");
+    }
+
+    /**
+     * 更新论坛分类
+     *
+     * @param id    分类ID
+     * @param forum 分类信息
+     * @return 更新结果
+     */
+    @PutMapping("/categories/{id}")
+    public Result updateForumCategory(@PathVariable Long id, @RequestBody Forum forum) {
+        forum.setId(id);
+        forum.setUpdateTime(new Date());
+        boolean success = forumService.updateById(forum);
+        return success ? Result.success() : Result.error("更新分类失败");
+    }
+
+    /**
+     * 删除论坛分类
+     *
+     * @param id 分类ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/categories/{id}")
+    public Result deleteForumCategory(@PathVariable Long id) {
+        boolean success = forumService.removeById(id);
+        return success ? Result.success() : Result.error("删除分类失败");
+    }
 
     // =============== 帖子相关 API ===============
 
@@ -59,93 +125,43 @@ public class ForumController {
      * @return 帖子列表分页数据
      */
     @GetMapping("/posts")
-    public ResponseEntity<Map<String, Object>> getAllPosts(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        Map<String, Object> result = postService.getAllPosts(page, size);
-        return ResponseEntity.ok(result);
+    public Result getAllPosts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String forumType,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false, defaultValue = "createTime") String sortBy) {
+
+        Map<String, Object> params = new java.util.HashMap<>();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            params.put("keyword", keyword);
+        }
+        if (forumType != null && !forumType.trim().isEmpty()) {
+            params.put("forumType", forumType);
+        }
+        if (tag != null && !tag.trim().isEmpty()) {
+            params.put("tag", tag);
+        }
+        params.put("sortBy", sortBy);
+
+        PageResult<Post> pageResult = postService.findPage(params, page, size);
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", pageResult.getTotal());
+        result.put("rows", pageResult.getRecords());
+        return Result.success(result);
     }
 
     /**
-     * 根据用户ID获取帖子
-     *
-     * @param userId 用户ID
-     * @param page   页码
-     * @param size   每页数量
-     * @return 该用户的帖子列表分页数据
-     */
-    @GetMapping("/posts/user/{userId}")
-    public ResponseEntity<Map<String, Object>> getPostsByUserId(
-            @PathVariable Long userId,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        Map<String, Object> result = postService.getPostsByUserId(userId, page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 获取当前用户帖子
-     *
-     * @param page 页码
-     * @param size 每页数量
-     * @return 当前用户的帖子列表分页数据
-     */
-    @GetMapping("/posts/my")
-    public ResponseEntity<Map<String, Object>> getMyPosts(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        Map<String, Object> result = postService.getMyPosts(page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 根据分类获取帖子
-     *
-     * @param category 帖子分类
-     * @param page     页码
-     * @param size     每页数量
-     * @return 指定分类的帖子列表分页数据
-     */
-    @GetMapping("/posts/category/{category}")
-    public ResponseEntity<Map<String, Object>> getPostsByCategory(
-            @PathVariable String category,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        Map<String, Object> result = postService.getPostsByCategory(category, page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 搜索帖子
-     *
-     * @param keyword 搜索关键词
-     * @param page    页码
-     * @param size    每页数量
-     * @return 搜索结果分页数据
-     */
-    @GetMapping("/posts/search")
-    public ResponseEntity<Map<String, Object>> searchPosts(
-            @RequestParam String keyword,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        Map<String, Object> result = postService.searchPosts(keyword, page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * 添加帖子
+     * 创建帖子
      *
      * @param post 帖子信息
-     * @return 添加结果
+     * @return 创建结果
      */
     @PostMapping("/posts")
-    public ResponseEntity<String> addPost(@RequestBody Post post) {
-        boolean result = postService.addPost(post);
-        if (result) {
-            return ResponseEntity.ok("添加成功");
-        } else {
-            return ResponseEntity.badRequest().body("添加失败");
-        }
+    public Result createPost(@RequestBody Post post) {
+        boolean success = postService.createPost(post);
+        return success ? Result.success() : Result.error("创建帖子失败");
     }
 
     /**
@@ -156,14 +172,10 @@ public class ForumController {
      * @return 更新结果
      */
     @PutMapping("/posts/{id}")
-    public ResponseEntity<String> updatePost(@PathVariable Long id, @RequestBody Post post) {
+    public Result updatePost(@PathVariable Long id, @RequestBody Post post) {
         post.setId(id);
-        boolean result = postService.updatePost(post);
-        if (result) {
-            return ResponseEntity.ok("更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("更新失败");
-        }
+        boolean success = postService.updatePost(post);
+        return success ? Result.success() : Result.error("更新帖子失败");
     }
 
     /**
@@ -173,425 +185,166 @@ public class ForumController {
      * @return 删除结果
      */
     @DeleteMapping("/posts/{id}")
-    public ResponseEntity<String> deletePost(@PathVariable Long id) {
-        boolean result = postService.deletePost(id);
-        if (result) {
-            return ResponseEntity.ok("删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("删除失败");
-        }
+    public Result deletePost(@PathVariable Long id) {
+        boolean success = postService.deletePost(id);
+        return success ? Result.success() : Result.error("删除帖子失败");
     }
 
     /**
-     * 获取热门帖子
+     * 获取我的帖子
      *
-     * @param limit 数量限制
-     * @return 热门帖子列表
+     * @param page 页码
+     * @param size 每页数量
+     * @return 我的帖子列表
      */
-    @GetMapping("/posts/hot")
-    public ResponseEntity<List<Post>> getHotPosts(
-            @RequestParam(value = "limit", defaultValue = "5") int limit) {
-        List<Post> posts = postService.getHotPosts(limit);
-        return ResponseEntity.ok(posts);
+    @GetMapping("/posts/my")
+    public Result getMyPosts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Map<String, Object> result = postService.getMyPosts(page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取用户的帖子
+     *
+     * @param userId 用户ID
+     * @param page 页码
+     * @param size 每页数量
+     * @return 用户帖子列表
+     */
+    @GetMapping("/posts/user/{userId}")
+    public Result getUserPosts(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Map<String, Object> result = postService.getPostsByUserId(userId, page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 搜索帖子
+     *
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页数量
+     * @return 搜索结果
+     */
+    @GetMapping("/posts/search")
+    public Result searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Map<String, Object> result = postService.searchPosts(keyword, page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 点赞帖子
+     *
+     * @param id 帖子ID
+     * @return 点赞结果
+     */
+    @PostMapping("/posts/{id}/like")
+    public Result likePost(@PathVariable Long id) {
+        boolean success = postService.likePost(id);
+        return success ? Result.success() : Result.error("点赞失败");
+    }
+
+    /**
+     * 取消点赞帖子
+     *
+     * @param id 帖子ID
+     * @return 取消点赞结果
+     */
+    @DeleteMapping("/posts/{id}/unlike")
+    public Result unlikePost(@PathVariable Long id) {
+        boolean success = postService.unlikePost(id);
+        return success ? Result.success() : Result.error("取消点赞失败");
     }
 
     /**
      * 增加帖子浏览量
      *
      * @param id 帖子ID
-     * @return 更新结果
+     * @return 增加结果
      */
-    @PutMapping("/posts/{id}/views")
-    public ResponseEntity<String> incrementViews(@PathVariable Long id) {
-        boolean result = postService.incrementViews(id);
-        if (result) {
-            return ResponseEntity.ok("更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("更新失败");
-        }
+    @PostMapping("/posts/{id}/view")
+    public Result incrementViewCount(@PathVariable Long id) {
+        boolean success = postService.incrementViews(id);
+        return success ? Result.success() : Result.error("操作失败");
     }
 
     /**
-     * 点赞/取消点赞帖子
+     * 获取热门帖子
      *
-     * @param id     帖子ID
-     * @param isLike 是否点赞
-     * @return 点赞结果
+     * @return 热门帖子列表
      */
-    @PutMapping("/posts/{id}/like")
-    public ResponseEntity<String> likePost(
-            @PathVariable Long id,
-            @RequestParam(value = "isLike", defaultValue = "true") boolean isLike) {
-        boolean result = isLike ?
-                postService.likePost(id) :
-                postService.unlikePost(id);
-
-        if (result) {
-            return ResponseEntity.ok(isLike ? "点赞成功" : "取消点赞成功");
-        } else {
-            return ResponseEntity.badRequest().body(isLike ? "点赞失败" : "取消点赞失败");
-        }
+    @GetMapping("/posts/hot")
+    public Result getHotPosts(@RequestParam(defaultValue = "10") int limit) {
+        List<Post> posts = postService.getHotPosts(limit);
+        return Result.success(posts);
     }
 
     /**
-     * 获取帖子统计信息
-     *
-     * @return 统计信息
-     */
-    @GetMapping("/posts/stats")
-    public ResponseEntity<Map<String, Object>> getPostStats() {
-        Map<String, Object> stats = postService.getPostStats();
-        return ResponseEntity.ok(stats);
-    }
-
-    // =============== 评论相关 API ===============
-
-    /**
-     * 获取评论详情
-     *
-     * @param id 评论ID
-     * @return 评论详情
-     */
-    @GetMapping("/comments/{id}")
-    public ResponseEntity<Comment> getComment(@PathVariable Long id) {
-        Comment comment = commentService.getCommentById(id);
-        if (comment != null) {
-            return ResponseEntity.ok(comment);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * 根据帖子ID获取评论
+     * 获取帖子评论
      *
      * @param postId 帖子ID
      * @return 评论列表
      */
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<List<Map<String, Object>>> getCommentsByPostId(@PathVariable Long postId) {
-        List<Map<String, Object>> comments = postService.getCommentsByPostId(postId);
-        return ResponseEntity.ok(comments);
+    public Result getPostComments(@PathVariable Long postId) {
+        List<Comment> comments = commentService.getCommentsByPostId(postId);
+        return Result.success(comments);
     }
 
     /**
-     * 根据用户ID获取评论
-     *
-     * @param userId 用户ID
-     * @return 评论列表
-     */
-    @GetMapping("/comments/user/{userId}")
-    public ResponseEntity<List<Comment>> getCommentsByUserId(@PathVariable Long userId) {
-        return ResponseEntity.ok(commentService.getCommentsByUserId(userId));
-    }
-
-    /**
-     * 获取帖子的一级评论
+     * 发表评论
      *
      * @param postId 帖子ID
-     * @return 一级评论列表
-     */
-    @GetMapping("/posts/{postId}/root-comments")
-    public ResponseEntity<List<Comment>> getRootCommentsByPostId(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getRootCommentsByPostId(postId));
-    }
-
-    /**
-     * 获取子评论
-     *
-     * @param parentId 父评论ID
-     * @return 子评论列表
-     */
-    @GetMapping("/comments/{parentId}/children")
-    public ResponseEntity<List<Comment>> getChildComments(@PathVariable Long parentId) {
-        return ResponseEntity.ok(commentService.getCommentsByParentId(parentId));
-    }
-
-    /**
-     * 添加评论
-     *
-     * @param comment 评论信息
-     * @return 添加结果
-     */
-    @PostMapping("/comments")
-    public ResponseEntity<String> addComment(@RequestBody Comment comment) {
-        if (commentService.addComment(comment)) {
-            return ResponseEntity.ok("评论成功");
-        } else {
-            return ResponseEntity.badRequest().body("评论失败");
-        }
-    }
-
-    /**
-     * 添加帖子评论
-     *
-     * @param postId  帖子ID
      * @param comment 评论内容
-     * @return 添加结果
+     * @return 评论结果
      */
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<String> addPostComment(
-            @PathVariable Long postId,
-            @RequestBody Map<String, String> comment) {
-        boolean result = postService.addComment(postId, comment.get("content"));
-        if (result) {
-            return ResponseEntity.ok("评论成功");
-        } else {
-            return ResponseEntity.badRequest().body("评论失败");
-        }
-    }
-
-    /**
-     * 更新评论
-     *
-     * @param id      评论ID
-     * @param comment 评论信息
-     * @return 更新结果
-     */
-    @PutMapping("/comments/{id}")
-    public ResponseEntity<String> updateComment(@PathVariable Long id, @RequestBody Comment comment) {
-        comment.setId(id);
-        if (commentService.updateComment(comment)) {
-            return ResponseEntity.ok("更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("更新失败");
-        }
+    public Result addComment(@PathVariable Long postId, @RequestBody Comment comment) {
+        comment.setPostId(postId);
+        boolean success = commentService.addComment(comment);
+        return success ? Result.success() : Result.error("评论失败");
     }
 
     /**
      * 删除评论
      *
-     * @param id 评论ID
-     * @return 删除结果
-     */
-    @DeleteMapping("/comments/{id}")
-    public ResponseEntity<String> deleteComment(@PathVariable Long id) {
-        if (commentService.deleteComment(id)) {
-            return ResponseEntity.ok("删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("删除失败");
-        }
-    }
-
-    /**
-     * 删除帖子评论
-     *
      * @param commentId 评论ID
      * @return 删除结果
      */
-    @DeleteMapping("/posts/comments/{commentId}")
-    public ResponseEntity<String> deletePostComment(@PathVariable Long commentId) {
-        boolean result = postService.deleteComment(commentId);
-        if (result) {
-            return ResponseEntity.ok("删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("删除失败");
-        }
-    }
-
-    /**
-     * 批量删除评论
-     *
-     * @param ids 评论ID数组
-     * @return 删除结果
-     */
-    @DeleteMapping("/comments/batch")
-    public ResponseEntity<String> batchDeleteComments(@RequestBody Long[] ids) {
-        if (commentService.batchDeleteComments(ids)) {
-            return ResponseEntity.ok("批量删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("批量删除失败");
-        }
+    @DeleteMapping("/comments/{commentId}")
+    public Result deleteComment(@PathVariable Long commentId) {
+        boolean success = commentService.deleteComment(commentId);
+        return success ? Result.success() : Result.error("删除评论失败");
     }
 
     /**
      * 点赞评论
      *
-     * @param id 评论ID
+     * @param commentId 评论ID
      * @return 点赞结果
      */
-    @PutMapping("/comments/{id}/like")
-    public ResponseEntity<String> likeComment(@PathVariable Long id) {
-        if (commentService.incrementLikeCount(id)) {
-            return ResponseEntity.ok("点赞成功");
-        } else {
-            return ResponseEntity.badRequest().body("点赞失败");
-        }
-    }
-
-    // =============== 标签相关 API ===============
-
-    /**
-     * 获取标签列表
-     *
-     * @return 标签列表
-     */
-    @GetMapping("/tags")
-    public List<Tag> getTagList() {
-        return tagService.getAllTags();
+    @PostMapping("/comments/{commentId}/like")
+    public Result likeComment(@PathVariable Long commentId) {
+        boolean success = commentService.likeComment(commentId);
+        return success ? Result.success() : Result.error("点赞失败");
     }
 
     /**
-     * 根据ID获取标签
+     * 取消点赞评论
      *
-     * @param id 标签ID
-     * @return 标签对象
+     * @param commentId 评论ID
+     * @return 取消点赞结果
      */
-    @GetMapping("/tags/{id}")
-    public Tag getTagById(@PathVariable Integer id) {
-        return tagService.getTagById(id);
-    }
-
-    /**
-     * 根据帖子ID获取标签
-     *
-     * @param postId 帖子ID
-     * @return 标签列表
-     */
-    @GetMapping("/posts/{postId}/tags")
-    public ResponseEntity<List<Map<String, Object>>> getPostTags(@PathVariable Long postId) {
-        List<Map<String, Object>> tags = postService.getPostTags(postId);
-        return ResponseEntity.ok(tags);
-    }
-
-    /**
-     * 添加标签到帖子
-     *
-     * @param postId 帖子ID
-     * @param tagIds 标签ID数组
-     * @return 添加结果
-     */
-    @PostMapping("/posts/{postId}/tags")
-    public ResponseEntity<String> addTagsToPost(
-            @PathVariable Long postId,
-            @RequestBody Long[] tagIds) {
-        boolean result = postService.addTagsToPost(postId, tagIds);
-        if (result) {
-            return ResponseEntity.ok("标签添加成功");
-        } else {
-            return ResponseEntity.badRequest().body("标签添加失败");
-        }
-    }
-
-    /**
-     * 从帖子移除标签
-     *
-     * @param postId 帖子ID
-     * @param tagId  标签ID
-     * @return 移除结果
-     */
-    @DeleteMapping("/posts/{postId}/tags/{tagId}")
-    public ResponseEntity<String> removeTagFromPost(
-            @PathVariable Long postId,
-            @PathVariable Long tagId) {
-        boolean result = postService.removeTagFromPost(postId, tagId);
-        if (result) {
-            return ResponseEntity.ok("标签移除成功");
-        } else {
-            return ResponseEntity.badRequest().body("标签移除失败");
-        }
-    }
-
-    /**
-     * 搜索标签
-     *
-     * @param keyword 关键词
-     * @return 标签列表
-     */
-    @GetMapping("/tags/search")
-    public List<Tag> searchTags(@RequestParam("keyword") String keyword) {
-        // 搜索获取标签
-        List<Tag> allTags = tagService.getAllTags();
-        List<Tag> result = new ArrayList<>();
-
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return allTags;
-        }
-
-        String lowerKeyword = keyword.toLowerCase();
-        for (Tag tag : allTags) {
-            if (tag.getName().toLowerCase().contains(lowerKeyword)) {
-                result.add(tag);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * 添加标签
-     *
-     * @param tag 标签对象
-     * @return 添加结果
-     */
-    @PostMapping("/tags")
-    public Result addTag(@RequestBody Tag tag) {
-        // 设置创建时间和更新时间
-        tag.setCreateTime(new Date());
-        tag.setUpdateTime(new Date());
-
-        boolean success = tagService.addTag(tag);
-
-        if (success) {
-            return Result.success("标签添加成功");
-        } else {
-            return Result.error("标签添加失败");
-        }
-    }
-
-    /**
-     * 更新标签
-     *
-     * @param id  标签ID
-     * @param tag 标签对象
-     * @return 更新结果
-     */
-    @PutMapping("/tags/{id}")
-    public Result updateTag(@PathVariable Integer id, @RequestBody Tag tag) {
-        // 设置ID和更新时间
-        tag.setId(id);
-        tag.setUpdateTime(new Date());
-
-        boolean success = tagService.updateTag(tag);
-
-        if (success) {
-            return Result.success("标签更新成功");
-        } else {
-            return Result.error("标签更新失败");
-        }
-    }
-
-    /**
-     * 删除标签
-     *
-     * @param id 标签ID
-     * @return 删除结果
-     */
-    @DeleteMapping("/tags/{id}")
-    public Result deleteTag(@PathVariable Integer id) {
-        boolean success = tagService.deleteTag(id);
-
-        if (success) {
-            return Result.success("标签删除成功");
-        } else {
-            return Result.error("标签删除失败");
-        }
-    }
-
-    /**
-     * 批量删除标签
-     *
-     * @param ids 标签ID列表
-     * @return 删除结果
-     */
-    @DeleteMapping("/tags/batch")
-    public Result batchDeleteTags(@RequestBody List<Integer> ids) {
-        boolean success = tagService.batchDeleteTags(ids);
-
-        if (success) {
-            return Result.success("标签批量删除成功");
-        } else {
-            return Result.error("标签批量删除失败");
-        }
+    @DeleteMapping("/comments/{commentId}/unlike")
+    public Result unlikeComment(@PathVariable Long commentId) {
+        boolean success = commentService.cancelLikeComment(commentId);
+        return success ? Result.success() : Result.error("取消点赞失败");
     }
 } 

@@ -47,7 +47,7 @@ export function deleteNotice(id) {
 // 获取通知列表（分页）
 export function getNoticeList(params) {
     return request({
-        url: NOTICE_API.GET_LIST,
+        url: NOTICE_API.GET_ALL,
         method: 'get',
         params
     })

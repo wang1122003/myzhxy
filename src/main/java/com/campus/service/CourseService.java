@@ -1,9 +1,10 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.campus.entity.Course;
+
 import java.util.List;
 import java.util.Map;
-
-import com.campus.entity.Course;
 
 /**
  * 课程服务接口
@@ -25,10 +26,12 @@ public interface CourseService {
     Course getCourseByCourseNo(String courseNo);
     
     /**
-     * 查询所有课程
-     * @return 课程列表
+     * 查询所有课程 (分页)
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @return 课程分页结果
      */
-    List<Course> getAllCourses();
+    IPage<Course> getAllCourses(int pageNum, int pageSize);
     
     /**
      * 根据课程类型查询课程
@@ -81,12 +84,12 @@ public interface CourseService {
     boolean updateCourseStatus(Long id, Integer status);
     
     /**
-     * 分页查询课程
+     * 分页查询课程 (此方法可能与 getAllCourses(pageNum, pageSize) 重复，考虑是否保留)
      * @param pageNum 页码
      * @param pageSize 每页大小
-     * @return 课程列表
+     * @return 课程分页结果 (IPage)
      */
-    List<Course> getCoursesByPage(int pageNum, int pageSize);
+    IPage<Course> getCoursesByPage(int pageNum, int pageSize);
     
     /**
      * 获取课程总数

@@ -2,7 +2,6 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Schedule;
-
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -246,4 +245,28 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
      * @return 影响行数
      */
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+
+    /**
+     * 根据教室ID统计课表数量
+     *
+     * @param classroomId 教室ID
+     * @return 数量
+     */
+    long countByClassroomId(@Param("classroomId") Long classroomId);
+
+    /**
+     * 根据课程ID统计课表数量
+     *
+     * @param courseId 课程ID
+     * @return 数量
+     */
+    long countByCourseId(@Param("courseId") Long courseId);
+
+    /**
+     * 查找给定课程ID列表中已被排课的课程ID
+     *
+     * @param courseIds 课程ID列表
+     * @return 已被排课的课程ID列表
+     */
+    List<Long> findScheduledCourseIdsInList(@Param("courseIds") List<Long> courseIds);
 }

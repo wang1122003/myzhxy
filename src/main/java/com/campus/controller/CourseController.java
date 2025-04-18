@@ -1,9 +1,13 @@
 package com.campus.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Course;
+import com.campus.exception.CustomException;
 import com.campus.service.CourseService;
+import com.campus.service.ScheduleService;
+import com.campus.utils.Result;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,12 +15,16 @@ import java.util.List;
 /**
  * 课程管理控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/courses")
 public class CourseController {
 
     @Autowired
     private CourseService courseService;
+
+    @Autowired
+    private ScheduleService scheduleService;
 
     /**
      * 获取课程详情
@@ -25,12 +33,17 @@ public class CourseController {
      * @return 课程详细信息
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Course> getCourseById(@PathVariable Long id) {
-        Course course = courseService.getCourseById(id);
-        if (course != null) {
-            return ResponseEntity.ok(course);
-        } else {
-            return ResponseEntity.notFound().build();
+    public Result getCourseById(@PathVariable Long id) {
+        try {
+            Course course = courseService.getCourseById(id);
+            if (course != null) {
+                return Result.success(course);
+            } else {
+                return Result.error("课程不存在");
+            }
+        } catch (Exception e) {
+            log.error("获取课程详情失败 (ID: {})", id, e);
+            return Result.error("获取课程详情失败: " + e.getMessage());
         }
     }
 
@@ -41,23 +54,38 @@ public class CourseController {
      * @return 课程详细信息
      */
     @GetMapping("/no/{courseNo}")
-    public ResponseEntity<Course> getCourseByCourseNo(@PathVariable String courseNo) {
-        Course course = courseService.getCourseByCourseNo(courseNo);
-        if (course != null) {
-            return ResponseEntity.ok(course);
-        } else {
-            return ResponseEntity.notFound().build();
+    public Result getCourseByCourseNo(@PathVariable String courseNo) {
+        try {
+            Course course = courseService.getCourseByCourseNo(courseNo);
+            if (course != null) {
+                return Result.success(course);
+            } else {
+                return Result.error("课程不存在");
+            }
+        } catch (Exception e) {
+            log.error("通过编号获取课程失败 (Code: {})", courseNo, e);
+            return Result.error("获取课程失败: " + e.getMessage());
         }
     }
 
     /**
-     * 获取所有课程
-     * 
-     * @return 课程列表
+     * 获取课程列表 (分页)
+     * @param pageNum 页码
+     * @param pageSize 每页大小
+     * @return 课程分页结果
      */
     @GetMapping
-    public ResponseEntity<List<Course>> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllCourses());
+    public Result getAllCourses(@RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+                                @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+        try {
+            // TODO: This should likely be paginated like Classrooms (已完成)
+            // List<Course> courses = courseService.getAllCourses(); // 旧逻辑
+            IPage<Course> pageResult = courseService.getAllCourses(pageNum, pageSize);
+            return Result.success(pageResult); // 返回分页结果
+        } catch (Exception e) {
+            log.error("获取课程列表失败", e);
+            return Result.error("获取课程列表失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -67,8 +95,14 @@ public class CourseController {
      * @return 课程列表
      */
     @GetMapping("/type/{courseType}")
-    public ResponseEntity<List<Course>> getCoursesByCourseType(@PathVariable Integer courseType) {
-        return ResponseEntity.ok(courseService.getCoursesByCourseType(courseType));
+    public Result getCoursesByCourseType(@PathVariable Integer courseType) {
+        try {
+            List<Course> courses = courseService.getCoursesByCourseType(courseType);
+            return Result.success(courses);
+        } catch (Exception e) {
+            log.error("按类型获取课程失败 (Type: {})", courseType, e);
+            return Result.error("获取课程列表失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -78,8 +112,14 @@ public class CourseController {
      * @return 课程列表
      */
     @GetMapping("/college/{collegeId}")
-    public ResponseEntity<List<Course>> getCoursesByCollegeId(@PathVariable Long collegeId) {
-        return ResponseEntity.ok(courseService.getCoursesByCollegeId(collegeId));
+    public Result getCoursesByCollegeId(@PathVariable Long collegeId) {
+        try {
+            List<Course> courses = courseService.getCoursesByCollegeId(collegeId);
+            return Result.success(courses);
+        } catch (Exception e) {
+            log.error("按学院获取课程失败 (CollegeID: {})", collegeId, e);
+            return Result.error("获取课程列表失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -89,12 +129,17 @@ public class CourseController {
      * @return 添加结果
      */
     @PostMapping
-    public ResponseEntity<String> addCourse(@RequestBody Course course) {
-        boolean result = courseService.addCourse(course);
-        if (result) {
-            return ResponseEntity.ok("添加成功");
-        } else {
-            return ResponseEntity.badRequest().body("添加失败");
+    public Result addCourse(@RequestBody Course course) {
+        try {
+            boolean result = courseService.addCourse(course);
+            // Service layer now throws exception on failure
+            return Result.success("添加成功");
+        } catch (CustomException ce) {
+            log.warn("添加课程失败: {}", ce.getMessage());
+            return Result.error(ce.getMessage());
+        } catch (Exception e) {
+            log.error("添加课程时发生错误", e);
+            return Result.error("添加课程失败: " + e.getMessage());
         }
     }
 
@@ -106,13 +151,18 @@ public class CourseController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateCourse(@PathVariable Long id, @RequestBody Course course) {
-        course.setId(id);
-        boolean result = courseService.updateCourse(course);
-        if (result) {
-            return ResponseEntity.ok("更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("更新失败");
+    public Result updateCourse(@PathVariable Long id, @RequestBody Course course) {
+        try {
+            course.setId(id);
+            boolean result = courseService.updateCourse(course);
+            // Service layer now throws exception on failure
+            return Result.success("更新成功");
+        } catch (CustomException ce) {
+            log.warn("更新课程失败 (ID: {}): {}", id, ce.getMessage());
+            return Result.error(ce.getMessage());
+        } catch (Exception e) {
+            log.error("更新课程时发生错误 (ID: {})", id, e);
+            return Result.error("更新课程失败: " + e.getMessage());
         }
     }
 
@@ -123,12 +173,27 @@ public class CourseController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCourse(@PathVariable Long id) {
-        boolean result = courseService.deleteCourse(id);
-        if (result) {
-            return ResponseEntity.ok("删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("删除失败");
+    public Result deleteCourse(@PathVariable Long id) {
+        try {
+            // TODO: Add check if course is used in schedule?
+            // 在调用删除之前，应该检查该课程是否被任何课表/排课引用
+            // boolean isInSchedule = scheduleService.isCourseScheduled(id); // 示例调用
+            // if (isInSchedule) {
+            //     return Result.error("课程已被排课使用，无法删除");
+            // }
+            if (scheduleService.isCourseScheduled(id)) {
+                return Result.error("课程已被排课使用，无法删除");
+            }
+            boolean result = courseService.deleteCourse(id);
+            if (result) {
+                return Result.success("删除成功");
+            } else {
+                // 如果 ServiceImpl.removeById 返回 false，通常意味着 ID 不存在
+                return Result.error("删除失败或课程不存在");
+            }
+        } catch (Exception e) {
+            log.error("删除课程失败 (ID: {})", id, e);
+            return Result.error("删除课程失败: " + e.getMessage());
         }
     }
 
@@ -139,12 +204,33 @@ public class CourseController {
      * @return 删除结果
      */
     @DeleteMapping("/batch")
-    public ResponseEntity<String> batchDeleteCourses(@RequestBody Long[] ids) {
-        boolean result = courseService.batchDeleteCourses(ids);
-        if (result) {
-            return ResponseEntity.ok("批量删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("批量删除失败");
+    public Result batchDeleteCourses(@RequestBody Long[] ids) {
+        try {
+            if (ids == null || ids.length == 0) {
+                return Result.error("未选择要删除的课程");
+            }
+            // TODO: Add check if any course is used in schedule?
+            // 在调用批量删除之前，应该检查这些课程中是否有任何一个被课表/排课引用
+            // List<Long> scheduledCourseIds = scheduleService.findScheduledCourses(List.of(ids)); // 示例调用
+            // if (!scheduledCourseIds.isEmpty()) {
+            //     return Result.error("部分课程已被排课使用，无法删除: " + scheduledCourseIds);
+            // }
+            List<Long> idList = List.of(ids);
+            List<Long> scheduledCourseIds = scheduleService.findScheduledCourseIds(idList);
+            if (scheduledCourseIds != null && !scheduledCourseIds.isEmpty()) {
+                log.warn("尝试批量删除课程，但以下课程已被排课使用: {}", scheduledCourseIds);
+                return Result.error("部分课程已被排课使用，无法删除。请先处理相关排课。");
+            }
+            boolean result = courseService.batchDeleteCourses(ids);
+            if (result) {
+                return Result.success("批量删除成功");
+            } else {
+                // 如果 ServiceImpl.removeByIds 返回 false，通常意味着部分或全部 ID 不存在
+                return Result.error("批量删除失败或部分课程不存在");
+            }
+        } catch (Exception e) {
+            log.error("批量删除课程失败", e);
+            return Result.error("批量删除课程失败: " + e.getMessage());
         }
     }
 
@@ -156,12 +242,17 @@ public class CourseController {
      * @return 更新结果
      */
     @PutMapping("/{id}/status/{status}")
-    public ResponseEntity<String> updateCourseStatus(@PathVariable Long id, @PathVariable Integer status) {
-        boolean result = courseService.updateCourseStatus(id, status);
-        if (result) {
-            return ResponseEntity.ok("状态更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("状态更新失败");
+    public Result updateCourseStatus(@PathVariable Long id, @PathVariable Integer status) {
+        try {
+            boolean result = courseService.updateCourseStatus(id, status);
+            if (result) {
+                return Result.success("状态更新成功");
+            } else {
+                return Result.error("状态更新失败");
+            }
+        } catch (Exception e) {
+            log.error("更新课程状态失败 (ID: {}, Status: {})", id, status, e);
+            return Result.error("状态更新失败: " + e.getMessage());
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.campus.service;
 
-import java.util.List;
-
 import com.campus.entity.Comment;
+
+import java.util.List;
 
 /**
  * 论坛评论服务接口
@@ -99,4 +99,28 @@ public interface CommentService {
      * @return 是否成功
      */
     boolean incrementLikeCount(Long id);
+
+    /**
+     * 减少评论点赞次数
+     *
+     * @param id 评论ID
+     * @return 是否成功
+     */
+    boolean decrementLikeCount(Long id);
+
+    /**
+     * 点赞评论
+     *
+     * @param commentId 评论ID
+     * @return 是否成功
+     */
+    boolean likeComment(Long commentId);
+
+    /**
+     * 取消点赞评论
+     *
+     * @param commentId 评论ID
+     * @return 是否成功
+     */
+    boolean cancelLikeComment(Long commentId);
 }

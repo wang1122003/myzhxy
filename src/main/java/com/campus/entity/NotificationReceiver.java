@@ -1,11 +1,11 @@
 package com.campus.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -13,65 +13,47 @@ import java.util.Date;
  */
 @Data
 @TableName("notification_receiver")
-public class NotificationReceiver {
+public class NotificationReceiver implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     /**
      * 主键ID
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
     
     /**
      * 通知ID
      */
-    @TableField("notification_id")
-    private Integer notificationId;
+    private Long notificationId;
     
     /**
-     * 接收者ID
+     * 接收者用户ID
      */
-    @TableField("receiver_id")
-    private Integer receiverId;
+    private Long receiverId;
     
     /**
-     * 接收者类型（如：学生、教师）
+     * 是否已读：0-未读，1-已读
      */
-    @TableField("receiver_type")
-    private String receiverType;
-    
-    /**
-     * 阅读状态（0-未读，1-已读）
-     */
-    @TableField("read_status")
-    private Integer readStatus;
+    private Integer isRead;
     
     /**
      * 阅读时间
      */
-    @TableField("read_time")
     private Date readTime;
+
+    /**
+     * 状态：0-删除，1-正常
+     */
+    private Integer status;
     
     /**
      * 创建时间
      */
-    @TableField("create_time")
     private Date createTime;
     
     /**
      * 更新时间
      */
-    @TableField("update_time")
     private Date updateTime;
-    
-    /**
-     * 通知信息
-     */
-    @TableField(exist = false)
-    private Notification notification;
-    
-    /**
-     * 接收者信息
-     */
-    @TableField(exist = false)
-    private User receiver;
-}
+} 

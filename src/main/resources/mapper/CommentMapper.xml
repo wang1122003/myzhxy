@@ -1,59 +1,58 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.campus.dao.CommentDao">
-    <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.campus.entity.Comment">
-        <id column="id" property="id" jdbcType="INTEGER"/>
-        <result column="post_id" property="postId" jdbcType="INTEGER"/>
-        <result column="author_id" property="authorId" jdbcType="INTEGER"/>
-        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
-        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
-        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
-        <result column="status" property="status" jdbcType="INTEGER"/>
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <!-- 关联属性 -->
+    <!-- 定义Comment的结果映射 -->
+    <resultMap id="CommentResultMap" type="com.campus.entity.Comment">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="post_id" jdbcType="INTEGER" property="postId"/>
+        <result column="author_id" jdbcType="INTEGER" property="authorId"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+        <result column="parent_id" jdbcType="INTEGER" property="parentId"/>
+        <result column="like_count" jdbcType="INTEGER" property="likeCount"/>
+        <result column="status" jdbcType="INTEGER" property="status"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="replies" jdbcType="VARCHAR" property="repliesJson"/>
+        <!-- 作者信息 (使用嵌套的 resultMap 或 association) -->
+        <!-- 确保 User 实体类有对应的属性 -->
         <association property="author" javaType="com.campus.entity.User">
-            <id column="u_id" property="id"/>
+            <id column="user_id" property="id"/> <!-- 根据 User 实体主键类型调整 jdbcType -->
             <result column="username" property="username"/>
             <result column="real_name" property="realName"/>
             <result column="avatar" property="avatar"/>
         </association>
+        <!-- 如果需要 Post 信息 -->
+        <!--
         <association property="post" javaType="com.campus.entity.Post">
             <id column="p_id" property="id"/>
-            <result column="title" property="title"/>
+            <result column="p_title" property="title"/>
         </association>
-        <!-- 回复集合 -->
-        <collection property="replies" javaType="java.util.List" ofType="com.campus.entity.Comment">
-            <id column="r_id" property="id"/>
-            <result column="r_content" property="content"/>
-            <result column="r_like_count" property="likeCount"/>
-            <result column="r_status" property="status"/>
-            <result column="r_create_time" property="createTime"/>
-            <association property="author" javaType="com.campus.entity.User">
-                <id column="r_u_id" property="id"/>
-                <result column="r_username" property="username"/>
-                <result column="r_real_name" property="realName"/>
-                <result column="r_avatar" property="avatar"/>
-            </association>
-        </collection>
+        -->
+        <!-- 如果需要回复列表 (通常使用 select 嵌套查询实现) -->
+        <!--
+        <collection property="replies" ofType="com.campus.entity.Comment" select="getRepliesByCommentId" column="id"/>
+        -->
     </resultMap>
 
-    <!-- 通用查询结果列 -->
+    <!-- 通用查询结果列 (为 JOIN 查询添加别名) -->
     <sql id="Base_Column_List">
         c.id, c.post_id, c.author_id, c.content, c.parent_id,
-        c.like_count, c.status, c.create_time, c.update_time
+        c.like_count, c.status, c.create_time, c.update_time, c.replies
+    </sql>
+    <sql id="User_Columns">
+        u.id as user_id, u.username, u.real_name, u.avatar
+    </sql>
+    <sql id="Post_Columns">
+        p.id as p_id, p.title as p_title
     </sql>
 
     <!-- 获取所有评论（分页） -->
-    <select id="getAllComments" resultMap="BaseResultMap">
+    <select id="getAllComments" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
+        <include refid="User_Columns"/>
+        FROM comment c <!-- 确认表名是否为 comment -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名是否为 user -->
         <where>
             <if test="status != null">
                 AND c.status = #{status,jdbcType=INTEGER}
@@ -67,14 +66,14 @@
         </where>
         ORDER BY c.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
         </if>
     </select>
 
     <!-- 获取评论总数 -->
     <select id="getCommentCount" resultType="java.lang.Integer">
         SELECT COUNT(*)
-        FROM comment c
+        FROM comment c <!-- 确认表名 -->
         <where>
             <if test="status != null">
                 AND c.status = #{status,jdbcType=INTEGER}
@@ -88,39 +87,26 @@
         </where>
     </select>
 
-    <!-- 根据ID获取评论（包含回复） -->
-    <select id="getCommentById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!-- 根据ID获取评论（包含作者） -->
+    <select id="getCommentById" parameterType="java.lang.Integer" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title,
-        r.id as r_id, r.content as r_content, r.like_count as r_like_count,
-        r.status as r_status, r.create_time as r_create_time,
-        ru.id as r_u_id, ru.username as r_username,
-        ru.real_name as r_real_name, ru.avatar as r_avatar
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
-        LEFT JOIN comment r ON c.id = r.parent_id
-        LEFT JOIN user ru ON r.author_id = ru.id
+        <include refid="User_Columns"/>
+        <!-- ,<include refid="Post_Columns"/> --> <!-- 如果需要 Post 信息 -->
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        <!-- LEFT JOIN post p ON c.post_id = p.id --> <!-- 如果需要 Post 信息 -->
         WHERE c.id = #{id,jdbcType=INTEGER}
+        <!-- 注意：此查询不再尝试加载回复 -->
     </select>
 
-    <!-- 根据帖子ID获取评论（分页，包含回复） -->
-    <select id="getCommentsByPostId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!-- 根据帖子ID获取根评论（分页，包含作者） -->
+    <select id="getCommentsByPostId" parameterType="java.lang.Integer" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title,
-        r.id as r_id, r.content as r_content, r.like_count as r_like_count,
-        r.status as r_status, r.create_time as r_create_time,
-        ru.id as r_u_id, ru.username as r_username,
-        ru.real_name as r_real_name, ru.avatar as r_avatar
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
-        LEFT JOIN comment r ON c.id = r.parent_id
-        LEFT JOIN user ru ON r.author_id = ru.id
+        <include refid="User_Columns"/>
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
         WHERE c.post_id = #{postId,jdbcType=INTEGER}
         AND c.parent_id IS NULL
         <if test="status != null">
@@ -128,94 +114,100 @@
         </if>
         ORDER BY c.create_time ASC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
         </if>
+        <!-- 注意：此查询不再尝试加载回复，如果需要回复，在 Service 层单独查询或使用嵌套查询 -->
     </select>
 
-    <!-- 根据作者ID获取评论（分页） -->
-    <select id="getCommentsByAuthorId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!-- 根据作者ID获取评论（分页，包含作者和帖子标题） -->
+    <select id="getCommentsByAuthorId" parameterType="java.lang.Integer" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
+        <include refid="User_Columns"/>,
+        p.id as p_id, p.title as p_title <!-- 为 Post 信息添加别名 -->
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        LEFT JOIN post p ON c.post_id = p.id <!-- 确认表名 post -->
         WHERE c.author_id = #{authorId,jdbcType=INTEGER}
         <if test="status != null">
             AND c.status = #{status,jdbcType=INTEGER}
         </if>
         ORDER BY c.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
         </if>
+        <!-- 注意：ResultMap 中需要添加 Post 关联 -->
+        <!--
+        <association property="post" javaType="com.campus.entity.Post">
+            <id column="p_id" property="id"/>
+            <result column="p_title" property="title"/>
+        </association>
+        -->
     </select>
 
-    <!-- 获取评论的回复（分页） -->
-    <select id="getRepliesByCommentId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!-- 获取评论的回复（分页，包含作者） -->
+    <select id="getRepliesByCommentId" parameterType="java.lang.Integer" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
+        <include refid="User_Columns"/>
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
         WHERE c.parent_id = #{commentId,jdbcType=INTEGER}
         <if test="status != null">
             AND c.status = #{status,jdbcType=INTEGER}
         </if>
         ORDER BY c.create_time ASC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
         </if>
     </select>
 
-    <!-- 获取评论树结构 -->
-    <select id="getCommentTree" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!-- 获取评论树结构 (使用 WITH RECURSIVE, 需要数据库支持，如 MySQL 8.0+) -->
+    <!-- 这个查询比较复杂，其 ResultMap 可能需要单独定义或调整 CommentResultMap -->
+    <select id="getCommentTree" parameterType="java.lang.Integer" resultMap="CommentResultMap">
         WITH RECURSIVE comment_tree AS (
-            -- 获取根评论
             SELECT
                 c.id, c.post_id, c.author_id, c.content, c.parent_id,
-                c.like_count, c.status, c.create_time, c.update_time,
-                u.id as u_id, u.username, u.real_name, u.avatar,
-                p.id as p_id, p.title,
+        c.like_count, c.status, c.create_time, c.update_time, c.replies,
+        u.id as user_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title as p_title,
                 0 as level
-            FROM comment c
-            LEFT JOIN user u ON c.author_id = u.id
-            LEFT JOIN post p ON c.post_id = p.id
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        LEFT JOIN post p ON c.post_id = p.id <!-- 确认表名 -->
             WHERE c.post_id = #{postId,jdbcType=INTEGER}
             AND c.parent_id IS NULL
             AND c.status = 1
 
             UNION ALL
 
-            -- 获取子评论
             SELECT
                 c.id, c.post_id, c.author_id, c.content, c.parent_id,
-                c.like_count, c.status, c.create_time, c.update_time,
-                u.id as u_id, u.username, u.real_name, u.avatar,
-                p.id as p_id, p.title,
+        c.like_count, c.status, c.create_time, c.update_time, c.replies,
+        u.id as user_id, u.username, u.real_name, u.avatar,
+        p.id as p_id, p.title as p_title,
                 ct.level + 1 as level
-            FROM comment c
-            LEFT JOIN user u ON c.author_id = u.id
-            LEFT JOIN post p ON c.post_id = p.id
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        LEFT JOIN post p ON c.post_id = p.id <!-- 确认表名 -->
             INNER JOIN comment_tree ct ON c.parent_id = ct.id
             WHERE c.status = 1
         )
         SELECT *
         FROM comment_tree
         ORDER BY level ASC, create_time ASC
+        <!-- 这个查询通常不建议在 Mapper XML 中直接分页 -->
     </select>
 
-    <!-- 搜索评论（分页） -->
-    <select id="searchComments" resultMap="BaseResultMap">
+    <!-- 搜索评论（分页，包含作者和帖子标题） -->
+    <select id="searchComments" resultMap="CommentResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar,
-        p.id as p_id, p.title
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
+        <include refid="User_Columns"/>,
+        <include refid="Post_Columns"/>
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        LEFT JOIN post p ON c.post_id = p.id <!-- 确认表名 -->
         <where>
             <if test="keyword != null and keyword != ''">
                 AND c.content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
@@ -232,50 +224,64 @@
         </where>
         ORDER BY c.create_time DESC
         <if test="offset != null and limit != null">
-            LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
         </if>
+        <!-- 注意：ResultMap 中需要添加 Post 关联 -->
     </select>
 
     <!-- 添加评论 -->
     <insert id="addComment" parameterType="com.campus.entity.Comment" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO comment (
+        INSERT INTO comment ( <!-- 确认表名 -->
             post_id, author_id, content, parent_id, like_count,
-            status, create_time, update_time
+        status, create_time, update_time, replies
         )
         VALUES (
             #{postId,jdbcType=INTEGER}, #{authorId,jdbcType=INTEGER}, #{content,jdbcType=LONGVARCHAR},
-            #{parentId,jdbcType=INTEGER}, 0, #{status,jdbcType=INTEGER}, NOW(), NOW()
+        #{parentId,jdbcType=INTEGER}, #{likeCount,jdbcType=INTEGER},
+        #{status,jdbcType=INTEGER}, NOW(), NOW(), #{repliesJson,jdbcType=VARCHAR} <!-- 映射 repliesJson -->
         )
     </insert>
 
     <!-- 批量添加评论 -->
     <insert id="batchAddComments" parameterType="java.util.List">
-        INSERT INTO comment (
+        INSERT INTO comment ( <!-- 确认表名 -->
             post_id, author_id, content, parent_id, like_count,
-            status, create_time, update_time
+        status, create_time, update_time, replies
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
             (
                 #{item.postId,jdbcType=INTEGER}, #{item.authorId,jdbcType=INTEGER}, #{item.content,jdbcType=LONGVARCHAR},
-                #{item.parentId,jdbcType=INTEGER}, 0, #{item.status,jdbcType=INTEGER}, NOW(), NOW()
+            #{item.parentId,jdbcType=INTEGER}, #{item.likeCount,jdbcType=INTEGER},
+            #{item.status,jdbcType=INTEGER}, NOW(), NOW(), #{item.repliesJson,jdbcType=VARCHAR}
             )
         </foreach>
     </insert>
 
     <!-- 更新评论 -->
     <update id="updateComment" parameterType="com.campus.entity.Comment">
-        UPDATE comment
-        SET
-            content = #{content,jdbcType=LONGVARCHAR},
-            status = #{status,jdbcType=INTEGER},
+        UPDATE comment <!-- 确认表名 -->
+        <set>
+            <if test="content != null">
+                content = #{content,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="likeCount != null"> <!-- 允许更新点赞数 -->
+                like_count = #{likeCount,jdbcType=INTEGER},
+            </if>
+            <if test="repliesJson != null"> <!-- 允许更新回复JSON -->
+                replies = #{repliesJson,jdbcType=VARCHAR},
+            </if>
             update_time = NOW()
+        </set>
         WHERE id = #{id,jdbcType=INTEGER}
     </update>
 
     <!-- 批量更新评论状态 -->
     <update id="batchUpdateCommentStatus">
-        UPDATE comment
+        UPDATE comment <!-- 确认表名 -->
         SET
             status = #{status,jdbcType=INTEGER},
             update_time = NOW()
@@ -285,29 +291,28 @@
         </foreach>
     </update>
 
-    <!-- 删除评论 -->
+    <!-- 删除评论 (及其子评论，如果需要递归删除) -->
+    <!-- 注意：简单删除可能只删除指定 ID 的评论，不处理子评论。如果需要递归，应在 Service 层处理或使用数据库特性 -->
     <delete id="deleteComment" parameterType="java.lang.Integer">
-        DELETE FROM comment
+        DELETE FROM comment <!-- 确认表名 -->
         WHERE id = #{id,jdbcType=INTEGER}
-        OR parent_id = #{id,jdbcType=INTEGER}
+        <!-- OR parent_id = #{id,jdbcType=INTEGER} --> <!-- 如果需要同时删除直接子评论 -->
     </delete>
 
     <!-- 批量删除评论 -->
+    <!-- 注意：同样不处理子评论的递归删除 -->
     <delete id="batchDeleteComments">
-        DELETE FROM comment
+        DELETE FROM comment <!-- 确认表名 -->
         WHERE id IN
         <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
             #{commentId,jdbcType=INTEGER}
         </foreach>
-        OR parent_id IN
-        <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
-            #{commentId,jdbcType=INTEGER}
-        </foreach>
+        <!-- OR parent_id IN ... --> <!-- 如果需要同时删除子评论 -->
     </delete>
 
     <!-- 更新评论状态 -->
     <update id="updateCommentStatus">
-        UPDATE comment
+        UPDATE comment <!-- 确认表名 -->
         SET
             status = #{status,jdbcType=INTEGER},
             update_time = NOW()
@@ -316,7 +321,7 @@
 
     <!-- 增加点赞数 -->
     <update id="incrementLikeCount" parameterType="java.lang.Integer">
-        UPDATE comment
+        UPDATE comment <!-- 确认表名 -->
         SET
             like_count = like_count + 1,
             update_time = NOW()
@@ -325,7 +330,7 @@
 
     <!-- 减少点赞数 -->
     <update id="decrementLikeCount" parameterType="java.lang.Integer">
-        UPDATE comment
+        UPDATE comment <!-- 确认表名 -->
         SET
             like_count = like_count - 1,
             update_time = NOW()
@@ -345,7 +350,7 @@
             COUNT(DISTINCT post_id) as total_posts,
             AVG(like_count) as avg_likes,
             MAX(like_count) as max_likes
-        FROM comment
+        FROM comment <!-- 确认表名 -->
     </select>
 
     <!-- 获取帖子的评论统计信息 -->
@@ -358,7 +363,7 @@
             COUNT(DISTINCT author_id) as total_authors,
             AVG(like_count) as avg_likes,
             MAX(like_count) as max_likes
-        FROM comment
+        FROM comment <!-- 确认表名 -->
         WHERE post_id = #{postId,jdbcType=INTEGER}
     </select>
 
@@ -372,7 +377,7 @@
             COUNT(DISTINCT post_id) as total_posts,
             AVG(like_count) as avg_likes,
             MAX(like_count) as max_likes
-        FROM comment
+        FROM comment <!-- 确认表名 -->
         WHERE author_id = #{authorId,jdbcType=INTEGER}
     </select>
 
@@ -384,7 +389,7 @@
             SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) as root_count,
             SUM(CASE WHEN parent_id IS NOT NULL THEN 1 ELSE 0 END) as reply_count,
             SUM(like_count) as like_count
-        FROM comment
+        FROM comment <!-- 确认表名 -->
         WHERE create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY DATE_FORMAT(create_time, '%Y-%m-%d')
         ORDER BY date ASC
@@ -403,14 +408,14 @@
             u.avatar,
             p.id as post_id,
             p.title as post_title
-        FROM comment c
-        LEFT JOIN user u ON c.author_id = u.id
-        LEFT JOIN post p ON c.post_id = p.id
+        FROM comment c <!-- 确认表名 -->
+        LEFT JOIN user u ON c.author_id = u.id <!-- 确认表名 -->
+        LEFT JOIN post p ON c.post_id = p.id <!-- 确认表名 -->
         WHERE c.status = 1
         <if test="postId != null">
             AND c.post_id = #{postId,jdbcType=INTEGER}
         </if>
         ORDER BY c.like_count DESC
-        LIMIT #{limit,jdbcType=INTEGER}
+        limit #{limit,jdbcType=INTEGER} <!-- 使用小写 limit -->
     </select>
-</mapper> 
+</mapper>

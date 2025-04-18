@@ -146,7 +146,7 @@ public class FileController {
      *
      * @param file 课程材料文件
      * @param courseId 课程ID
-     * @return 上传结果
+     * @return 上传结果 (文件相对路径)
      */
     @PostMapping("/upload/course/material/{courseId}")
     public Result<String> uploadCourseMaterial(@RequestParam("file") MultipartFile file, @PathVariable("courseId") Long courseId) {
@@ -158,11 +158,34 @@ public class FileController {
             return Result.error("课程材料上传失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 上传通知附件
+     *
+     * @param file 附件文件
+     * @return 上传结果 (包含 name 和 url 的 Map)
+     */
+    @PostMapping("/upload/notice/attachment")
+    public Result<Map<String, String>> uploadNoticeAttachment(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, String> fileInfo = fileService.uploadNoticeAttachment(file);
+            return Result.success("通知附件上传成功", fileInfo);
+        } catch (IOException e) {
+            logger.error("通知附件上传失败: IO Error", e);
+            return Result.error("通知附件上传失败: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.warn("通知附件上传失败: Invalid Argument - {}", e.getMessage());
+            return Result.error("通知附件上传失败: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("通知附件上传失败: Unexpected Error", e);
+            return Result.error("通知附件上传失败，请稍后重试");
+        }
+    }
     
     /**
      * 删除文件
      *
-     * @param filePath 文件路径
+     * @param filePath 文件相对路径 (e.g., uploads/images/uuid.jpg)
      * @return 删除结果
      */
     @DeleteMapping("/delete")
@@ -172,10 +195,11 @@ public class FileController {
             if (success) {
                 return Result.success("文件删除成功", true);
             } else {
-                return Result.error("文件删除失败");
+                // Consider differentiating between "not found" and "failed to delete"
+                return Result.error("文件删除失败或文件不存在"); 
             }
         } catch (Exception e) {
-            logger.error("文件删除失败", e);
+            logger.error("删除文件时发生异常, path: {}", filePath, e);
             return Result.error("文件删除失败: " + e.getMessage());
         }
     }

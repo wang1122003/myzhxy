@@ -28,7 +28,7 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public Notification getNotificationById(Long id) {
-        return notificationDao.getNotificationById(id.intValue());
+        return notificationDao.getNotificationById(id);
     }
     
     @Override
@@ -40,7 +40,7 @@ public class NotificationServiceImpl implements NotificationService {
     public List<Notification> getNotificationsByUserId(Long userId) {
         // 获取用户接收到的所有通知
         List<NotificationReceiver> receivers = notificationReceiverDao.getUserNotifications(
-                userId.intValue(), "USER");
+                userId, "USER");
         
         List<Notification> notifications = new ArrayList<>();
         for (NotificationReceiver receiver : receivers) {
@@ -57,7 +57,7 @@ public class NotificationServiceImpl implements NotificationService {
     public List<Notification> getUnreadNotifications(Long userId) {
         // 获取用户未读的通知
         List<NotificationReceiver> receivers = notificationReceiverDao.getUnreadNotifications(
-                userId.intValue(), "USER");
+                userId, "USER");
         
         List<Notification> notifications = new ArrayList<>();
         for (NotificationReceiver receiver : receivers) {
@@ -91,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public boolean deleteNotification(Long id) {
         // 获取相关的接收记录
-        List<NotificationReceiver> receivers = notificationReceiverDao.getByNotificationId(id.intValue());
+        List<NotificationReceiver> receivers = notificationReceiverDao.getByNotificationId(id);
         
         // 删除接收记录
         for (NotificationReceiver receiver : receivers) {
@@ -99,7 +99,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
         
         // 删除通知
-        return notificationDao.deleteById(id.intValue()) > 0;
+        return notificationDao.deleteById(id) > 0;
     }
     
     @Override
@@ -107,11 +107,13 @@ public class NotificationServiceImpl implements NotificationService {
     public boolean markAsRead(Long id, Long userId) {
         // 根据通知ID和用户ID查找接收记录
         List<NotificationReceiver> receivers = notificationReceiverDao.getUserNotifications(
-                userId.intValue(), "USER");
+                userId, "USER");
         
         for (NotificationReceiver receiver : receivers) {
-            if (receiver.getNotificationId().equals(id.intValue())) {
-                return notificationReceiverDao.markAsRead(receiver.getId()) > 0;
+            if (receiver.getNotificationId().equals(id)) {
+                receiver.setIsRead(1); // 标记为已读
+                receiver.setReadTime(new Date());
+                return notificationReceiverDao.updateById(receiver) > 0;
             }
         }
         
@@ -121,7 +123,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public boolean markAllAsRead(Long userId) {
-        return notificationReceiverDao.markAllAsRead(userId.intValue(), "USER") > 0;
+        return notificationReceiverDao.markAllAsRead(userId, "USER") > 0;
     }
     
     @Override
@@ -141,9 +143,9 @@ public class NotificationServiceImpl implements NotificationService {
             // 创建通知接收者
             NotificationReceiver receiver = new NotificationReceiver();
             receiver.setNotificationId(notification.getId());
-            receiver.setReceiverId(userId.intValue());
-            receiver.setReceiverType("USER");
-            receiver.setReadStatus(0); // 0-未读
+            receiver.setReceiverId(userId);
+            receiver.setIsRead(0); // 0-未读
+            receiver.setStatus(1); // 1-正常
             receiver.setCreateTime(new Date());
             
             return notificationReceiverDao.insert(receiver) > 0;
@@ -175,9 +177,9 @@ public class NotificationServiceImpl implements NotificationService {
             for (Long userId : userIds) {
                 NotificationReceiver receiver = new NotificationReceiver();
                 receiver.setNotificationId(notification.getId());
-                receiver.setReceiverId(userId.intValue());
-                receiver.setReceiverType("USER");
-                receiver.setReadStatus(0); // 0-未读
+                receiver.setReceiverId(userId);
+                receiver.setIsRead(0); // 0-未读
+                receiver.setStatus(1); // 1-正常
                 receiver.setCreateTime(new Date());
                 
                 if (notificationReceiverDao.insert(receiver) <= 0) {

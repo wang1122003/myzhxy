@@ -20,17 +20,38 @@
       </div>
     </div>
 
-    <el-tabs v-model="activeName" @tab-click="handleTabClick">
-      <el-tab-pane label="全部活动" name="all"></el-tab-pane>
-      <el-tab-pane label="我报名的" name="enrolled"></el-tab-pane>
+    <el-tabs
+        v-model="activeName"
+        @tab-click="handleTabClick"
+    >
+      <el-tab-pane
+          label="全部活动"
+          name="all"
+      />
+      <el-tab-pane
+          label="我报名的"
+          name="enrolled"
+      />
     </el-tabs>
 
     <el-row :gutter="20">
-      <el-col v-for="activity in displayActivities" :key="activity.id" :span="8">
-        <el-card class="activity-card" shadow="hover">
-          <img :src="activity.coverImage || 'https://via.placeholder.com/300x150'" class="activity-image"/>
+      <el-col
+          v-for="activity in displayActivities"
+          :key="activity.id"
+          :span="8"
+      >
+        <el-card
+            class="activity-card"
+            shadow="hover"
+        >
+          <img
+              :src="activity.coverImage || 'https://via.placeholder.com/300x150'"
+              class="activity-image"
+          >
           <div class="activity-content">
-            <h3 class="activity-title">{{ activity.title }}</h3>
+            <h3 class="activity-title">
+              {{ activity.title }}
+            </h3>
             <p class="activity-time">
               <el-icon>
                 <Calendar/>
@@ -43,27 +64,52 @@
               </el-icon>
               {{ activity.location }}
             </p>
-            <p class="activity-description">{{ activity.description }}</p>
+            <p class="activity-description">
+              {{ activity.description }}
+            </p>
             <div class="activity-footer">
-              <el-tag v-if="activity.status === 1" type="success">报名中</el-tag>
-              <el-tag v-else-if="activity.status === 2" type="warning">进行中</el-tag>
-              <el-tag v-else-if="activity.status === 3" type="info">已结束</el-tag>
+              <el-tag
+                  v-if="activity.status === 1"
+                  type="success"
+              >
+                报名中
+              </el-tag>
+              <el-tag
+                  v-else-if="activity.status === 2"
+                  type="warning"
+              >
+                进行中
+              </el-tag>
+              <el-tag
+                  v-else-if="activity.status === 3"
+                  type="info"
+              >
+                已结束
+              </el-tag>
 
               <div class="activity-actions">
-                <el-button size="small" type="primary" @click="viewActivityDetail(activity.id)">查看详情</el-button>
+                <el-button
+                    size="small"
+                    type="primary"
+                    @click="viewActivityDetail(activity.id)"
+                >
+                  查看详情
+                </el-button>
                 <el-button
                     v-if="!activity.enrolled && activity.status === 1"
                     size="small"
                     type="success"
                     @click="joinActivity(activity.id)"
-                >报名
+                >
+                  报名
                 </el-button>
                 <el-button
                     v-if="activity.enrolled && activity.status === 1"
                     size="small"
                     type="danger"
                     @click="cancelJoin(activity.id)"
-                >取消报名
+                >
+                  取消报名
                 </el-button>
               </div>
             </div>

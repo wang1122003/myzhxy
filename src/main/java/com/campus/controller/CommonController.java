@@ -5,7 +5,10 @@ import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -84,6 +87,29 @@ public class CommonController {
         } catch (Exception e) {
             log.error("获取最近通知公告失败", e);
             return Result.error("获取最近通知公告失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有通知类型
+     *
+     * @return 通知类型列表
+     */
+    @GetMapping("/notice-types")
+    public Result getNoticeTypes() {
+        try {
+            // 实际应用中，这些类型可能来自数据库或枚举
+            List<Map<String, Object>> noticeTypes = new ArrayList<>();
+            noticeTypes.add(Map.of("id", 1, "name", "系统通知", "description", "关于系统维护、升级等重要通知"));
+            noticeTypes.add(Map.of("id", 2, "name", "教学通知", "description", "关于选课、考试、成绩等教学相关通知"));
+            noticeTypes.add(Map.of("id", 3, "name", "学工通知", "description", "关于奖助学金、评优、活动等学生工作通知"));
+            noticeTypes.add(Map.of("id", 4, "name", "生活通知", "description", "关于宿舍、食堂、水电等生活相关通知"));
+            noticeTypes.add(Map.of("id", 99, "name", "其他通知", "description", "未分类的其他通知"));
+
+            return Result.success("获取通知类型成功", noticeTypes);
+        } catch (Exception e) {
+            log.error("获取通知类型失败", e);
+            return Result.error("获取通知类型失败: " + e.getMessage());
         }
     }
     

@@ -2,13 +2,23 @@
   <div class="profile-container">
     <div class="page-header">
       <h2>个人信息</h2>
-      <el-button type="primary" @click="handleEdit">编辑信息</el-button>
+      <el-button
+          type="primary"
+          @click="handleEdit"
+      >
+        编辑信息
+      </el-button>
     </div>
 
     <el-card class="profile-card">
       <div class="profile-info">
         <div class="avatar-container">
-          <el-avatar :size="100" :src="userAvatar">{{ userInfo.name?.substring(0, 1) }}</el-avatar>
+          <el-avatar
+              :size="100"
+              :src="userAvatar"
+          >
+            {{ userInfo.name?.substring(0, 1) }}
+          </el-avatar>
           <el-upload
               :action="uploadAvatarUrl"
               :before-upload="beforeAvatarUpload"
@@ -19,7 +29,11 @@
               :show-file-list="false"
               class="avatar-uploader"
           >
-            <el-button :loading="uploadingAvatar" size="small" type="primary">
+            <el-button
+                :loading="uploadingAvatar"
+                size="small"
+                type="primary"
+            >
               <el-icon>
                 <Upload/>
               </el-icon>
@@ -29,12 +43,26 @@
         </div>
 
         <div class="info-container">
-          <el-descriptions :column="2" border title="基本信息">
-            <el-descriptions-item label="用户名">{{ userInfo.username }}</el-descriptions-item>
-            <el-descriptions-item label="姓名">{{ userInfo.name }}</el-descriptions-item>
-            <el-descriptions-item label="角色">管理员</el-descriptions-item>
-            <el-descriptions-item label="邮箱">{{ userInfo.email }}</el-descriptions-item>
-            <el-descriptions-item label="手机">{{ userInfo.phone }}</el-descriptions-item>
+          <el-descriptions
+              :column="2"
+              border
+              title="基本信息"
+          >
+            <el-descriptions-item label="用户名">
+              {{ userInfo.username }}
+            </el-descriptions-item>
+            <el-descriptions-item label="姓名">
+              {{ userInfo.name }}
+            </el-descriptions-item>
+            <el-descriptions-item label="角色">
+              管理员
+            </el-descriptions-item>
+            <el-descriptions-item label="邮箱">
+              {{ userInfo.email }}
+            </el-descriptions-item>
+            <el-descriptions-item label="手机">
+              {{ userInfo.phone }}
+            </el-descriptions-item>
             <!-- 可以根据需要添加其他管理员特有字段 -->
           </el-descriptions>
         </div>
@@ -47,14 +75,28 @@
         title="编辑个人信息"
         width="500px"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="姓名" prop="name">
+      <el-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-width="100px"
+      >
+        <el-form-item
+            label="姓名"
+            prop="name"
+        >
           <el-input v-model="form.name"/>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item
+            label="邮箱"
+            prop="email"
+        >
           <el-input v-model="form.email"/>
         </el-form-item>
-        <el-form-item label="手机" prop="phone">
+        <el-form-item
+            label="手机"
+            prop="phone"
+        >
           <el-input v-model="form.phone"/>
         </el-form-item>
         <!-- 管理员可编辑字段较少 -->
@@ -62,7 +104,10 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">保存</el-button>
+          <el-button
+              type="primary"
+              @click="handleSubmit"
+          >保存</el-button>
         </span>
       </template>
     </el-dialog>

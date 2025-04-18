@@ -4,6 +4,10 @@ import com.campus.dao.CommentDao;
 import com.campus.entity.Comment;
 import com.campus.service.CommentService;
 import com.campus.service.PostService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,40 +21,75 @@ import java.util.List;
 @Service
 public class CommentServiceImpl implements CommentService {
 
+    private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
+
     @Autowired
     private CommentDao commentDao;
     
     @Autowired
     private PostService postService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
     public Comment getCommentById(Long id) {
-        return commentDao.findById(id);
+        Comment comment = commentDao.getCommentById(id);
+        if (comment != null && comment.getRepliesJson() != null) {
+            processReplies(comment);
+        }
+        return comment;
     }
 
     @Override
     public List<Comment> getAllComments() {
-        return commentDao.findAll();
+        List<Comment> comments = commentDao.getAllComments();
+        comments.forEach(this::processReplies);
+        return comments;
     }
 
     @Override
     public List<Comment> getCommentsByPostId(Long postId) {
-        return commentDao.findByPostId(postId);
+        List<Comment> comments = commentDao.getCommentsByPostId(postId);
+        comments.forEach(this::processReplies);
+        return comments;
     }
 
     @Override
     public List<Comment> getCommentsByUserId(Long userId) {
-        return commentDao.findByUserId(userId);
+        List<Comment> comments = commentDao.getCommentsByAuthorId(userId, null);
+        comments.forEach(this::processReplies);
+        return comments;
     }
 
     @Override
     public List<Comment> getCommentsByParentId(Long parentId) {
-        return commentDao.findByParentId(parentId);
+        List<Comment> comments = commentDao.getCommentsByParentId(parentId);
+        comments.forEach(this::processReplies);
+        return comments;
     }
 
     @Override
     public List<Comment> getRootCommentsByPostId(Long postId) {
-        return commentDao.findRootCommentsByPostId(postId);
+        List<Comment> comments = commentDao.getRootCommentsByPostId(postId);
+        comments.forEach(this::processReplies);
+        return comments;
+    }
+
+    /**
+     * 处理评论回复，将JSON字符串转换为对象列表
+     */
+    private void processReplies(Comment comment) {
+        if (comment == null || comment.getRepliesJson() == null || comment.getRepliesJson().isEmpty()) {
+            return;
+        }
+
+        try {
+            Comment[] replies = objectMapper.readValue(comment.getRepliesJson(), Comment[].class);
+            comment.setReplies(java.util.Arrays.asList(replies));
+        } catch (JsonProcessingException e) {
+            log.error("反序列化评论回复失败 (Comment ID: {}): {}", comment.getId(), e.getMessage(), e);
+        }
     }
 
     @Override
@@ -68,23 +107,8 @@ public class CommentServiceImpl implements CommentService {
         if (comment.getStatus() == null) {
             comment.setStatus(1);
         }
-        
-        // 如果没有设置父评论ID，默认为0（一级评论）
-        if (comment.getParentId() == null) {
-            comment.setParentId(0L);
-        }
-        
-        // 如果没有设置回复评论ID，默认为0
-        if (comment.getReplyId() == null) {
-            comment.setReplyId(0L);
-        }
-        
-        // 如果没有设置回复用户ID，默认为0
-        if (comment.getReplyUserId() == null) {
-            comment.setReplyUserId(0L);
-        }
-        
-        boolean result = commentDao.insert(comment) > 0;
+
+        boolean result = commentDao.addComment(comment) > 0;
         
         // 增加帖子评论次数
         if (result && comment.getPostId() != null) {
@@ -99,43 +123,55 @@ public class CommentServiceImpl implements CommentService {
     public boolean updateComment(Comment comment) {
         // 设置更新时间
         comment.setUpdateTime(new Date());
-        
-        return commentDao.update(comment) > 0;
+
+        return commentDao.updateComment(comment) > 0;
     }
 
     @Override
     @Transactional
     public boolean deleteComment(Long id) {
-        return commentDao.delete(id) > 0;
+        return commentDao.deleteComment(id) > 0;
     }
 
     @Override
     @Transactional
     public boolean batchDeleteComments(Long[] ids) {
-        return commentDao.batchDelete(ids) > 0;
+        return commentDao.batchDeleteComments(ids) > 0;
     }
 
     @Override
     @Transactional
     public boolean deleteCommentsByPostId(Long postId) {
-        return commentDao.deleteByPostId(postId) > 0;
+        return commentDao.deleteCommentsByPostId(postId) > 0;
     }
 
     @Override
     @Transactional
     public boolean updateCommentStatus(Long id, Integer status) {
-        return commentDao.updateStatus(id, status) > 0;
+        return commentDao.updateCommentStatus(id, status) > 0;
     }
 
     @Override
     @Transactional
     public boolean incrementLikeCount(Long id) {
-        Comment comment = commentDao.findById(id);
-        if (comment != null) {
-            comment.setLikeCount(comment.getLikeCount() + 1);
-            comment.setUpdateTime(new Date());
-            return commentDao.update(comment) > 0;
-        }
-        return false;
+        return commentDao.incrementLikeCount(id) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean decrementLikeCount(Long id) {
+        return commentDao.decrementLikeCount(id) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean likeComment(Long commentId) {
+        return incrementLikeCount(commentId);
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelLikeComment(Long commentId) {
+        return decrementLikeCount(commentId);
     }
 }

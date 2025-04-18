@@ -2,125 +2,320 @@
   <div class="forum-management-container">
     <div class="page-header">
       <h2>论坛管理</h2>
-      <!-- 可以添加板块管理等入口 -->
+      <div class="action-buttons">
+        <el-button type="success" @click="activeTab = 'categories'">
+          <el-icon>
+            <Menu/>
+          </el-icon>
+          板块管理
+        </el-button>
+        <el-button type="warning" @click="activeTab = 'comments'">
+          <el-icon>
+            <ChatDotRound/>
+          </el-icon>
+          评论管理
+        </el-button>
+        <el-button
+            type="primary"
+            @click="handleAddPost"
+        >
+          <el-icon>
+            <Plus/>
+          </el-icon>
+          发布帖子
+        </el-button>
+      </div>
     </div>
 
-    <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="searchParams" @submit.prevent="handleSearch">
-        <el-form-item label="关键词">
-          <el-input v-model="searchParams.keyword" clearable placeholder="帖子标题/内容/作者" style="width: 250px;"/>
+    <el-tabs v-model="activeTab" type="border-card" @tab-click="handleTabClick">
+      <el-tab-pane label="帖子管理" name="posts">
+        <!-- 搜索和筛选 -->
+        <el-card class="filter-card">
+          <el-form
+              :inline="true"
+              :model="searchParams"
+              @submit.prevent="handleSearch"
+          >
+            <el-form-item label="关键词">
+              <el-input
+                  v-model="searchParams.keyword"
+                  clearable
+                  placeholder="帖子标题/内容/作者"
+                  style="width: 250px;"
+              />
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select
+                  v-model="searchParams.status"
+                  clearable
+                  collapse-tags
+                  multiple
+                  placeholder="帖子状态"
+                  style="width: 200px;"
+              >
+                <el-option
+                    label="置顶"
+                    value="isTop"
+                />
+                <el-option
+                    label="加精"
+                    value="isEssence"
+                />
+                <el-option
+                    label="锁定"
+                    value="isLocked"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                  type="primary"
+                  @click="handleSearch"
+              >
+                查询
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+
+        <!-- 帖子列表 -->
+        <el-card class="post-list-card">
+          <el-table
+              v-loading="loading"
+              :data="forumList"
+              style="width: 100%"
+          >
+            <el-table-column type="expand">
+              <template #default="props">
+                <div style="padding: 10px 20px;">
+                  <p><strong>内容预览:</strong></p>
+                  <p>{{ truncateContent(props.row.content) }}</p>
+                  <!-- 可以添加查看完整内容或回复列表的链接 -->
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+                label="标题"
+                min-width="250"
+                prop="title"
+                show-overflow-tooltip
+            />
+            <el-table-column
+                label="作者"
+                prop="authorName"
+                width="120"
+            />
+            <el-table-column
+                label="板块/分类"
+                prop="category"
+                width="120"
+            />
+            <el-table-column
+                label="状态"
+                width="180"
+            >
+              <template #default="scope">
+                <el-tag
+                    v-if="scope.row.isTop"
+                    size="small"
+                    style="margin-right: 5px;"
+                    type="danger"
+                >
+                  置顶
+                </el-tag>
+                <el-tag
+                    v-if="scope.row.isEssence"
+                    size="small"
+                    style="margin-right: 5px;"
+                    type="warning"
+                >
+                  加精
+                </el-tag>
+                <el-tag
+                    v-if="scope.row.isLocked"
+                    size="small"
+                    type="info"
+                >
+                  锁定
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+                label="浏览"
+                prop="viewCount"
+                sortable
+                width="80"
+            />
+            <el-table-column
+                label="点赞"
+                prop="likeCount"
+                sortable
+                width="80"
+            />
+            <el-table-column
+                label="评论"
+                prop="commentCount"
+                sortable
+                width="80"
+            />
+            <el-table-column
+                label="发布时间"
+                prop="createTime"
+                width="180"
+            >
+              <template #default="scope">
+                {{ formatTime(scope.row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+                fixed="right"
+                label="操作"
+                width="280"
+            >
+              <template #default="scope">
+                <el-button
+                    size="small"
+                    @click="toggleTop(scope.row)"
+                >
+                  {{
+                    scope.row.isTop ? '取消置顶' : '置顶'
+                  }}
+                </el-button>
+                <el-button
+                    size="small"
+                    @click="toggleEssence(scope.row)"
+                >
+                  {{
+                    scope.row.isEssence ? '取消加精' : '加精'
+                  }}
+                </el-button>
+                <el-button
+                    size="small"
+                    @click="toggleLock(scope.row)"
+                >
+                  {{
+                    scope.row.isLocked ? '解锁' : '锁定'
+                  }}
+                </el-button>
+                <el-button
+                    size="small"
+                    type="primary"
+                    @click="handleEditPost(scope.row)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                    size="small"
+                    type="danger"
+                    @click="handleDeletePost(scope.row)"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <div
+              v-if="total > 0"
+              class="pagination-container"
+          >
+            <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="total"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+            />
+          </div>
+        </el-card>
+      </el-tab-pane>
+
+      <!-- 新增的管理标签页 -->
+      <el-tab-pane label="板块管理" name="categories">
+        <CategoryManagement @refresh="fetchForumCategories"/>
+      </el-tab-pane>
+
+      <el-tab-pane label="评论管理" name="comments">
+        <CommentManagement/>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- 编辑帖子对话框 -->
+    <el-dialog
+        v-model="dialogVisible"
+        :close-on-click-modal="false"
+        :title="dialogTitle"
+        top="5vh"
+        width="80%"
+        @close="handleDialogClose"
+    >
+      <el-form
+          ref="postFormRef"
+          :model="postForm"
+          :rules="rules"
+          label-width="100px"
+      >
+        <el-form-item
+            label="标题"
+            prop="title"
+        >
+          <el-input
+              v-model="postForm.title"
+              placeholder="请输入帖子标题"
+          />
         </el-form-item>
-        <el-form-item label="板块/分类">
-          <el-input v-model="searchParams.category" clearable placeholder="输入板块名称" style="width: 180px;"/>
-          <!-- 或者使用下拉选择已有的板块 -->
-          <!-- <el-select v-model="searchParams.category" placeholder="选择板块" clearable style="width: 180px;">
-            <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.name" />
-          </el-select> -->
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchParams.status" clearable collapse-tags multiple placeholder="帖子状态"
-                     style="width: 200px;">
-            <el-option label="置顶" value="isTop"/>
-            <el-option label="加精" value="isEssence"/>
-            <el-option label="锁定" value="isLocked"/>
+        <el-form-item
+            label="板块/分类"
+            prop="forumId"
+        >
+          <el-select
+              v-model="postForm.forumId"
+              :loading="loadingCategories"
+              filterable
+              placeholder="选择板块"
+              style="width: 100%;"
+          >
+            <el-option
+                v-for="category in categories"
+                :key="category.id"
+                :label="category.name"
+                :value="category.id"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 帖子列表 -->
-    <el-card class="post-list-card">
-      <el-table v-loading="loading" :data="forumList" style="width: 100%">
-        <el-table-column type="expand">
-          <template #default="props">
-            <div style="padding: 10px 20px;">
-              <p><strong>内容预览:</strong></p>
-              <p>{{ truncateContent(props.row.content) }}</p>
-              <!-- 可以添加查看完整内容或回复列表的链接 -->
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="标题" min-width="250" prop="title" show-overflow-tooltip/>
-        <el-table-column label="作者" prop="authorName" width="120"/>
-        <el-table-column label="板块/分类" prop="category" width="120"/>
-        <el-table-column label="状态" width="180">
-          <template #default="scope">
-            <el-tag v-if="scope.row.isTop" size="small" style="margin-right: 5px;" type="danger">置顶</el-tag>
-            <el-tag v-if="scope.row.isEssence" size="small" style="margin-right: 5px;" type="warning">加精</el-tag>
-            <el-tag v-if="scope.row.isLocked" size="small" type="info">锁定</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="浏览" prop="viewCount" sortable width="80"/>
-        <el-table-column label="点赞" prop="likeCount" sortable width="80"/>
-        <el-table-column label="评论" prop="commentCount" sortable width="80"/>
-        <el-table-column label="发布时间" prop="createTime" width="180">
-          <template #default="scope">
-            {{ formatTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="280">
-          <template #default="scope">
-            <el-button size="small" @click="toggleTop(scope.row)">{{
-                scope.row.isTop ? '取消置顶' : '置顶'
-              }}
-            </el-button>
-            <el-button size="small" @click="toggleEssence(scope.row)">{{
-                scope.row.isEssence ? '取消加精' : '加精'
-              }}
-            </el-button>
-            <el-button size="small" @click="toggleLock(scope.row)">{{
-                scope.row.isLocked ? '解锁' : '锁定'
-              }}
-            </el-button>
-            <el-button size="small" type="primary" @click="handleEditPost(scope.row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDeletePost(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div v-if="total > 0" class="pagination-container">
-        <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-
-    <!-- 编辑帖子对话框 (占位符) -->
-    <el-dialog v-model="dialogVisible" :title="isEditMode ? '编辑帖子' : '添加帖子'" top="5vh" width="70%"
-               @close="resetForm">
-      <el-form ref="postFormRef" :model="postForm" :rules="rules" label-width="100px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="postForm.title" placeholder="请输入帖子标题"/>
-        </el-form-item>
-        <el-form-item label="板块/分类" prop="category">
-          <el-input v-model="postForm.category" placeholder="请输入或选择板块"/>
-          <!-- TODO: 替换为板块选择器 -->
-        </el-form-item>
-        <el-form-item label="内容" prop="content">
-          <el-input
-              v-model="postForm.content"
-              type="textarea"
-              :rows="10"
-              placeholder="请输入帖子内容"
-          />
-          <!-- TODO: 替换为富文本编辑器 -->
+        <el-form-item
+            label="内容"
+            prop="content"
+        >
+          <!-- Replace el-input with WangEditor -->
+          <div style="border: 1px solid #ccc; width: 100%;">
+            <Toolbar
+                :default-config="toolbarConfig"
+                :editor="editorRef"
+                mode="default"
+                style="border-bottom: 1px solid #ccc"
+            />
+            <Editor
+                v-model="postForm.content"
+                :default-config="editorConfig"
+                mode="default"
+                style="height: 400px; overflow-y: hidden;"
+                @onCreated="handleEditorCreated"
+            />
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitPostForm">{{ isEditMode ? '更新' : '创建' }}</el-button>
+          <el-button
+              :loading="submitting"
+              type="primary"
+              @click="submitPostForm"
+          >{{ dialogTitle }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -128,13 +323,14 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef} from 'vue'
 import {
   ElButton,
   ElCard,
   ElDialog,
   ElForm,
   ElFormItem,
+  ElIcon,
   ElInput,
   ElMessage,
   ElMessageBox,
@@ -143,16 +339,18 @@ import {
   ElSelect,
   ElTable,
   ElTableColumn,
+  ElTabPane,
+  ElTabs,
   ElTag
 } from 'element-plus'
-import {deleteForum, getForumList, updateForum} from '@/api/forum'
+import {ChatDotRound, Menu, Plus} from '@element-plus/icons-vue'
+import {addPost, deletePost, getForumList, searchPosts, updatePost} from '@/api/forum'
+import {getToken} from '@/utils/auth'
+import '@wangeditor/editor/dist/css/style.css'
+import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
+import CategoryManagement from '@/components/forum/CategoryManagement.vue'
+import CommentManagement from '@/components/forum/CommentManagement.vue'
 
-// 修改组件名称为多词组合
-defineOptions({
-  name: 'ForumManagement'
-})
-
-// 修复 ref 值访问问题
 const forumList = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
@@ -169,26 +367,101 @@ const currentPostId = ref(null);
 const postFormRef = ref(null);
 const postForm = reactive({
   title: '',
-  category: '',
+  forumId: null,
   content: ''
 });
 const rules = ref({
   title: [{required: true, message: '请输入帖子标题', trigger: 'blur'}],
-  category: [{required: true, message: '请输入或选择板块', trigger: 'blur'}],
-  content: [{required: true, message: '请输入帖子内容', trigger: 'blur'}]
+  forumId: [{required: true, message: '请选择板块', trigger: 'change'}],
+  content: [
+    {required: true, message: '请输入帖子内容', trigger: 'blur'},
+    {
+      validator: (rule, value, callback) => {
+        const editor = editorRef.value;
+        if (editor && editor.isEmpty()) {
+          callback(new Error('请输入帖子内容'));
+        } else {
+          callback();
+        }
+      }, trigger: 'blur'
+    }
+  ]
 });
 
-// 获取帖子列表
-const fetchForums = async () => {
+const submitting = ref(false);
+
+const editorRef = shallowRef();
+const toolbarConfig = {};
+const editorConfig = {
+  placeholder: '请输入帖子内容...',
+  MENU_CONF: {
+    uploadImage: {
+      server: '/api/forum/posts/upload/image',
+      fieldName: 'file',
+      headers: {Authorization: `Bearer ${getToken()}`},
+      customInsert(res, insertFn) {
+        if (res.code === 200 && res.data) {
+          let imageUrl = res.data;
+          if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+            imageUrl = `${window.location.origin}/${imageUrl}`;
+          } else if (imageUrl && imageUrl.startsWith('/uploads')) {
+            imageUrl = `${window.location.origin}${imageUrl}`;
+          }
+          insertFn(imageUrl, 'image', imageUrl);
+        } else {
+          ElMessage.error(res.message || '图片上传失败');
+        }
+      },
+      onError(file, err, res) {
+        console.error('上传图片错误:', err, res);
+        ElMessage.error('上传图片错误: ' + (res?.message || err.message));
+      },
+    }
+  }
+};
+
+const handleEditorCreated = (editor) => {
+  editorRef.value = editor
+};
+
+onBeforeUnmount(() => {
+  const editor = editorRef.value
+  if (editor == null) return
+  editor.destroy()
+});
+
+const categories = ref([]);
+const loadingCategories = ref(false);
+
+const fetchForumCategories = async () => {
+  loadingCategories.value = true;
+  try {
+    const res = await getForumList();
+    categories.value = res.data || res || [];
+  } catch (error) {
+    console.error("获取板块列表失败:", error);
+    ElMessage.error('获取板块列表失败');
+    categories.value = [];
+  } finally {
+    loadingCategories.value = false;
+  }
+};
+
+const fetchPosts = async () => {
   loading.value = true;
   try {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
       keyword: searchParams.keyword || null,
-      status: searchParams.status
     };
-    const res = await getForumList(params);
+    if (searchParams.status && searchParams.status.length > 0) {
+      params.isTop = searchParams.status.includes('isTop') ? true : undefined;
+      params.isEssence = searchParams.status.includes('isEssence') ? true : undefined;
+      params.isLocked = searchParams.status.includes('isLocked') ? true : undefined;
+    }
+
+    const res = await searchPosts(params); 
     forumList.value = res.data.list || [];
     total.value = res.data.total || 0;
   } catch (error) {
@@ -199,50 +472,49 @@ const fetchForums = async () => {
   }
 };
 
-// 搜索
 const handleSearch = () => {
   currentPage.value = 1;
-  fetchForums();
+  fetchPosts();
 };
 
-// 分页大小改变
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
-  fetchForums();
+  fetchPosts();
 };
 
-// 当前页改变
 const handleCurrentChange = (val) => {
   currentPage.value = val;
-  fetchForums();
+  fetchPosts();
 };
 
-// 截断内容预览
 const truncateContent = (content) => {
   const maxLength = 100;
   if (!content) return '';
   return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
 }
 
-// 重置表单
-const resetForm = () => {
-  postFormRef.value?.resetFields();
+const handleDialogClose = () => {
+  if (postFormRef.value) {
+    postFormRef.value.resetFields();
+  }
   postForm.title = '';
-  postForm.category = '';
+  postForm.forumId = null;
   postForm.content = '';
+  if (editorRef.value) {
+    editorRef.value.setHtml('');
+  }
   currentPostId.value = null;
   isEditMode.value = false;
+  submitting.value = false;
 };
-
-// --- 操作按钮逻辑 (占位符或调用API) ---
 
 const toggleTop = async (row) => {
   const targetStatus = !row.isTop;
   try {
-    await updateForum(row.id, {isTop: targetStatus});
+    await updatePost(row.id, {isTop: targetStatus});
     ElMessage.success(targetStatus ? '置顶成功' : '取消置顶成功');
-    row.isTop = targetStatus; // 直接更新前端状态
+    row.isTop = targetStatus;
   } catch (error) {
     ElMessage.error('操作失败');
     }
@@ -251,7 +523,7 @@ const toggleTop = async (row) => {
 const toggleEssence = async (row) => {
   const targetStatus = !row.isEssence;
   try {
-    await updateForum(row.id, {isEssence: targetStatus});
+    await updatePost(row.id, {isEssence: targetStatus});
     ElMessage.success(targetStatus ? '加精成功' : '取消加精成功');
     row.isEssence = targetStatus;
   } catch (error) {
@@ -262,21 +534,37 @@ const toggleEssence = async (row) => {
 const toggleLock = async (row) => {
   const targetStatus = !row.isLocked;
   try {
-    await updateForum(row.id, {isLocked: targetStatus});
-    ElMessage.success(targetStatus ? '锁定成功' : '解锁成功');
+    await updatePost(row.id, {isLocked: targetStatus});
+    ElMessage.success(targetStatus ? (row.isLocked ? '解锁成功' : '锁定成功') : (row.isLocked ? '锁定失败' : '解锁失败'));
     row.isLocked = targetStatus;
   } catch (error) {
     ElMessage.error('操作失败');
     }
 };
 
-const handleEditPost = (row) => {
-  dialogVisible.value = true;
+const handleEditPost = async (row) => {
   isEditMode.value = true;
+  dialogVisible.value = true;
   currentPostId.value = row.id;
+
+  if (postFormRef.value) postFormRef.value.clearValidate();
+  postForm.title = '';
+  postForm.forumId = null;
+  postForm.content = '';
+  if (editorRef.value) editorRef.value.setHtml('');
+
+  await fetchForumCategories();
+  dialogVisible.value = true;
+
   postForm.title = row.title;
-  postForm.category = row.category;
-  postForm.content = row.content;
+  postForm.forumId = row.forumId;
+
+  await nextTick();
+  if (editorRef.value) {
+    editorRef.value.setHtml(row.content || '');
+  } else {
+    postForm.content = row.content || '';
+  }
 };
 
 const handleDeletePost = (row) => {
@@ -286,9 +574,9 @@ const handleDeletePost = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await deleteForum(row.id);
+      await deletePost(row.id);
       ElMessage.success('删除成功');
-      fetchForums(); // 刷新列表
+      fetchPosts();
     } catch (error) {
       console.error("删除帖子失败", error);
       ElMessage.error("删除帖子失败");
@@ -298,40 +586,58 @@ const handleDeletePost = (row) => {
   });
 };
 
+const handleAddPost = () => {
+  isEditMode.value = false;
+  currentPostId.value = null;
+  if (postFormRef.value) {
+    postFormRef.value.resetFields();
+  }
+  postForm.title = '';
+  postForm.forumId = null;
+  postForm.content = '';
+  if (editorRef.value) {
+    editorRef.value.setHtml('');
+  }
+  fetchForumCategories();
+  dialogVisible.value = true;
+};
+
+const dialogTitle = computed(() => (isEditMode.value ? '编辑帖子' : '发布新帖子'));
+
 const submitPostForm = async () => {
   if (!postFormRef.value) return;
   await postFormRef.value.validate(async (valid) => {
     if (valid) {
+      submitting.value = true;
       try {
+        const editor = editorRef.value;
+        if (!editor) throw new Error("编辑器未初始化");
+
         const postData = {
           title: postForm.title,
-          category: postForm.category,
-          content: postForm.content,
+          forumId: postForm.forumId,
+          content: editor.getHtml(),
         };
 
         if (isEditMode.value && currentPostId.value) {
-          await updateForum(currentPostId.value, postData);
+          await updatePost(currentPostId.value, postData);
           ElMessage.success('帖子更新成功');
-          dialogVisible.value = false;
-          // 找到列表中对应的项并更新，避免全量刷新
-          const index = forumList.value.findIndex(p => p.id === currentPostId.value);
-          if (index !== -1) {
-            forumList.value[index] = {...forumList.value[index], ...postData};
-          } else {
-            fetchForums(); // 如果找不到，还是刷新一下列表
-          }
         } else {
-          ElMessage.info('添加帖子功能待实现');
+          await addPost(postData);
+          ElMessage.success('帖子发布成功');
         }
+        dialogVisible.value = false;
+        fetchPosts();
       } catch (error) {
         console.error("提交帖子失败", error);
-        ElMessage.error(isEditMode.value ? '更新帖子失败' : '添加帖子失败');
+        ElMessage.error(isEditMode.value ? '更新帖子失败' : '发布帖子失败');
+      } finally {
+        submitting.value = false;
       }
     }
   });
 };
 
-// 格式化时间
 const formatTime = (timeStr) => {
   if (!timeStr) return '-';
   try {
@@ -342,11 +648,25 @@ const formatTime = (timeStr) => {
   }
 };
 
-// 组件挂载后加载数据
+// 标签页配置
+const activeTab = ref('posts') // 默认显示帖子管理
+
+// 处理标签页切换
+const handleTabClick = (tab) => {
+  console.log('当前标签页:', tab.props.name)
+}
+
 onMounted(() => {
-  fetchForums();
+  fetchForumCategories();
+  handleSearch();
 });
 
+</script>
+
+<script>
+export default {
+  name: 'ForumManagement'
+}
 </script>
 
 <style scoped>

@@ -2,16 +2,29 @@
   <div class="home-container">
     <div class="home-header">
       <h2>教师工作台</h2>
-      <p class="welcome-text">欢迎回来，{{ userInfo.name || '老师' }}！今天是 {{ currentDate }}</p>
+      <p class="welcome-text">
+        欢迎回来，{{ userInfo.name || '老师' }}！今天是 {{ currentDate }}
+      </p>
     </div>
 
     <!-- 统计卡片 -->
-    <el-row :gutter="20" class="stat-row">
-      <el-col :md="6" :sm="12" :xs="24">
+    <el-row
+        :gutter="20"
+        class="stat-row"
+    >
+      <el-col
+          :md="6"
+          :sm="12"
+          :xs="24"
+      >
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.totalCourses }}</div>
-            <div class="stat-label">授课课程数</div>
+            <div class="stat-value">
+              {{ stats.totalCourses }}
+            </div>
+            <div class="stat-label">
+              授课课程数
+            </div>
           </div>
           <div class="stat-icon">
             <el-icon>
@@ -20,11 +33,19 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :md="6" :sm="12" :xs="24">
+      <el-col
+          :md="6"
+          :sm="12"
+          :xs="24"
+      >
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.totalStudents }}</div>
-            <div class="stat-label">学生总数</div>
+            <div class="stat-value">
+              {{ stats.totalStudents }}
+            </div>
+            <div class="stat-label">
+              学生总数
+            </div>
           </div>
           <div class="stat-icon">
             <el-icon>
@@ -33,11 +54,19 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :md="6" :sm="12" :xs="24">
+      <el-col
+          :md="6"
+          :sm="12"
+          :xs="24"
+      >
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.teachingHours }}</div>
-            <div class="stat-label">本周课时</div>
+            <div class="stat-value">
+              {{ stats.teachingHours }}
+            </div>
+            <div class="stat-label">
+              本周课时
+            </div>
           </div>
           <div class="stat-icon">
             <el-icon>
@@ -46,11 +75,19 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :md="6" :sm="12" :xs="24">
+      <el-col
+          :md="6"
+          :sm="12"
+          :xs="24"
+      >
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-value">{{ stats.pendingGrades }}</div>
-            <div class="stat-label">待登记成绩</div>
+            <div class="stat-value">
+              {{ stats.pendingGrades }}
+            </div>
+            <div class="stat-label">
+              待登记成绩
+            </div>
           </div>
           <div class="stat-icon">
             <el-icon>
@@ -61,18 +98,36 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" class="content-row">
+    <el-row
+        :gutter="20"
+        class="content-row"
+    >
       <!-- 今日课程 -->
-      <el-col :md="12" :xs="24">
+      <el-col
+          :md="12"
+          :xs="24"
+      >
         <el-card class="today-courses">
           <template #header>
             <div class="card-header">
               <span>今日课程</span>
-              <el-button text type="primary" @click="goToSchedule">查看完整课表</el-button>
+              <el-button
+                  text
+                  type="primary"
+                  @click="goToSchedule"
+              >
+                查看完整课表
+              </el-button>
             </div>
           </template>
-          <el-empty v-if="todayCourses.length === 0" description="今日没有课程安排"/>
-          <div v-else class="course-list">
+          <el-empty
+              v-if="todayCourses.length === 0"
+              description="今日没有课程安排"
+          />
+          <div
+              v-else
+              class="course-list"
+          >
             <div
                 v-for="course in todayCourses"
                 :key="course.id"
@@ -80,13 +135,20 @@
                 @click="viewCourseDetail(course)"
             >
               <div class="course-time">
-                <div class="time-range">{{ course.startTime }} - {{ course.endTime }}</div>
-                <div :class="getCourseStatus(course).class" class="time-status">
+                <div class="time-range">
+                  {{ course.startTime }} - {{ course.endTime }}
+                </div>
+                <div
+                    :class="getCourseStatus(course).class"
+                    class="time-status"
+                >
                   {{ getCourseStatus(course).text }}
                 </div>
               </div>
               <div class="course-info">
-                <div class="course-name">{{ course.courseName }}</div>
+                <div class="course-name">
+                  {{ course.courseName }}
+                </div>
                 <div class="course-location">
                   <el-icon>
                     <Location/>
@@ -106,25 +168,45 @@
       </el-col>
 
       <!-- 最新通知 -->
-      <el-col :md="12" :xs="24">
+      <el-col
+          :md="12"
+          :xs="24"
+      >
         <el-card class="latest-notices">
           <template #header>
             <div class="card-header">
               <span>最新通知</span>
-              <el-button text type="primary" @click="goToNotices">查看全部</el-button>
+              <el-button
+                  text
+                  type="primary"
+                  @click="goToNotices"
+              >
+                查看全部
+              </el-button>
             </div>
           </template>
-          <el-empty v-if="notices.length === 0" description="暂无通知"/>
-          <div v-else class="notice-list">
+          <el-empty
+              v-if="notices.length === 0"
+              description="暂无通知"
+          />
+          <div
+              v-else
+              class="notice-list"
+          >
             <div
                 v-for="notice in notices"
                 :key="notice.id"
                 class="notice-item"
                 @click="viewNoticeDetail(notice)"
             >
-              <div class="notice-title">{{ notice.title }}</div>
+              <div class="notice-title">
+                {{ notice.title }}
+              </div>
               <div class="notice-meta">
-                <el-tag :type="getNoticeTagType(notice.type)" size="small">
+                <el-tag
+                    :type="getNoticeTagType(notice.type)"
+                    size="small"
+                >
                   {{ getNoticeName(notice.type) }}
                 </el-tag>
                 <span class="notice-time">{{ notice.publishTime }}</span>
@@ -135,31 +217,60 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" class="content-row">
+    <el-row
+        :gutter="20"
+        class="content-row"
+    >
       <!-- 近期截止任务 -->
-      <el-col :md="12" :xs="24">
+      <el-col
+          :md="12"
+          :xs="24"
+      >
         <el-card class="upcoming-tasks">
           <template #header>
             <div class="card-header">
               <span>近期截止任务</span>
-              <el-button text type="primary" @click="goToCourses">管理课程</el-button>
+              <el-button
+                  text
+                  type="primary"
+                  @click="goToCourses"
+              >
+                管理课程
+              </el-button>
             </div>
           </template>
-          <el-empty v-if="upcomingTasks.length === 0" description="暂无截止任务"/>
-          <div v-else class="task-list">
+          <el-empty
+              v-if="upcomingTasks.length === 0"
+              description="暂无截止任务"
+          />
+          <div
+              v-else
+              class="task-list"
+          >
             <div
                 v-for="task in upcomingTasks"
                 :key="task.id"
                 class="task-item"
             >
               <div class="task-info">
-                <div class="task-title">{{ task.title }}</div>
-                <div class="task-course">{{ task.courseName }}</div>
+                <div class="task-title">
+                  {{ task.title }}
+                </div>
+                <div class="task-course">
+                  {{ task.courseName }}
+                </div>
               </div>
               <div class="task-deadline">
-                <div class="deadline-label">截止日期</div>
-                <div class="deadline-value">{{ task.deadline }}</div>
-                <div :class="getTaskStatus(task).class" class="task-status">
+                <div class="deadline-label">
+                  截止日期
+                </div>
+                <div class="deadline-value">
+                  {{ task.deadline }}
+                </div>
+                <div
+                    :class="getTaskStatus(task).class"
+                    class="task-status"
+                >
                   {{ getTaskStatus(task).text }}
                 </div>
               </div>
@@ -169,16 +280,31 @@
       </el-col>
 
       <!-- 待批改作业 -->
-      <el-col :md="12" :xs="24">
+      <el-col
+          :md="12"
+          :xs="24"
+      >
         <el-card class="pending-assignments">
           <template #header>
             <div class="card-header">
               <span>待批改作业</span>
-              <el-button text type="primary" @click="goToCourses">查看全部</el-button>
+              <el-button
+                  text
+                  type="primary"
+                  @click="goToCourses"
+              >
+                查看全部
+              </el-button>
             </div>
           </template>
-          <el-empty v-if="pendingAssignments.length === 0" description="暂无待批改作业"/>
-          <div v-else class="assignment-list">
+          <el-empty
+              v-if="pendingAssignments.length === 0"
+              description="暂无待批改作业"
+          />
+          <div
+              v-else
+              class="assignment-list"
+          >
             <div
                 v-for="assignment in pendingAssignments"
                 :key="assignment.id"
@@ -186,15 +312,19 @@
                 @click="goToGradeAssignment(assignment)"
             >
               <div class="assignment-info">
-                <div class="assignment-title">{{ assignment.title }}</div>
-                <div class="assignment-course">{{ assignment.courseName }}</div>
+                <div class="assignment-title">
+                  {{ assignment.title }}
+                </div>
+                <div class="assignment-course">
+                  {{ assignment.courseName }}
+                </div>
               </div>
               <div class="assignment-stats">
                 <el-progress
                     :format="() => `${assignment.gradedCount}/${assignment.totalCount}`"
                     :percentage="getPercentage(assignment.gradedCount, assignment.totalCount)"
                     :status="getPercentage(assignment.gradedCount, assignment.totalCount) === 100 ? 'success' : ''"
-                ></el-progress>
+                />
               </div>
             </div>
           </div>
@@ -213,15 +343,27 @@
           <span>发布人: {{ currentNotice.publisher }}</span>
           <span>发布时间: {{ currentNotice.publishTime }}</span>
         </div>
-        <div class="notice-dialog-content" v-html="currentNotice.content"></div>
-        <div v-if="currentNotice.attachments && currentNotice.attachments.length > 0" class="notice-dialog-attachments">
-          <div class="attachments-title">附件：</div>
+        <div
+            class="notice-dialog-content"
+            v-html="currentNotice.content"
+        />
+        <div
+            v-if="currentNotice.attachments && currentNotice.attachments.length > 0"
+            class="notice-dialog-attachments"
+        >
+          <div class="attachments-title">
+            附件：
+          </div>
           <div
               v-for="(attachment, index) in currentNotice.attachments"
               :key="index"
               class="attachment-item"
           >
-            <el-button link type="primary" @click="downloadAttachment(attachment)">
+            <el-button
+                link
+                type="primary"
+                @click="downloadAttachment(attachment)"
+            >
               <el-icon>
                 <Download/>
               </el-icon>
@@ -239,16 +381,33 @@
         width="500px"
     >
       <template v-if="currentCourse">
-        <el-descriptions :column="1" border title="">
-          <el-descriptions-item label="课程名称">{{ currentCourse.courseName }}</el-descriptions-item>
-          <el-descriptions-item label="上课时间">{{ currentCourse.startTime }} - {{
+        <el-descriptions
+            :column="1"
+            border
+            title=""
+        >
+          <el-descriptions-item label="课程名称">
+            {{ currentCourse.courseName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="上课时间">
+            {{ currentCourse.startTime }} - {{
               currentCourse.endTime
             }}
           </el-descriptions-item>
-          <el-descriptions-item label="上课地点">{{ currentCourse.classroom }}</el-descriptions-item>
-          <el-descriptions-item label="班级">{{ currentCourse.className }}</el-descriptions-item>
-          <el-descriptions-item label="学生人数">{{ currentCourse.studentCount || 0 }}人</el-descriptions-item>
-          <el-descriptions-item v-if="currentCourse.description" label="备注">{{
+          <el-descriptions-item label="上课地点">
+            {{ currentCourse.classroom }}
+          </el-descriptions-item>
+          <el-descriptions-item label="班级">
+            {{ currentCourse.className }}
+          </el-descriptions-item>
+          <el-descriptions-item label="学生人数">
+            {{ currentCourse.studentCount || 0 }}人
+          </el-descriptions-item>
+          <el-descriptions-item
+              v-if="currentCourse.description"
+              label="备注"
+          >
+            {{
               currentCourse.description
             }}
           </el-descriptions-item>

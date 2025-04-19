@@ -5,7 +5,7 @@
     <resultMap id="BaseResultMap" type="com.campus.entity.Activity">
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="title" property="title" jdbcType="VARCHAR"/>
-        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
         <result column="activity_type" property="activityType" jdbcType="INTEGER"/>
         <result column="location" property="location" jdbcType="VARCHAR"/>
         <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
@@ -23,7 +23,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, title, content, activity_type, location, start_time, end_time,
+        id, title, description, activity_type, location, start_time, end_time,
         organizer_id, organizer_name, contact, poster_url, max_participants,
         current_participants, status, create_time, update_time
     </sql>
@@ -102,13 +102,11 @@
 
     <!-- 添加活动 -->
     <insert id="insert" parameterType="com.campus.entity.Activity" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO activity (
-            title, content, activity_type, location, start_time, end_time,
+        INSERT INTO activity (title, description, activity_type, location, start_time, end_time,
             organizer_id, organizer_name, contact, poster_url, max_participants,
             current_participants, status, create_time, update_time
         )
-        VALUES (
-            #{title,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, #{activityType,jdbcType=INTEGER},
+        VALUES (#{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{activityType,jdbcType=INTEGER},
             #{location,jdbcType=VARCHAR}, #{startTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP},
             #{organizerId,jdbcType=BIGINT}, #{organizerName,jdbcType=VARCHAR}, #{contact,jdbcType=VARCHAR},
             #{posterUrl,jdbcType=VARCHAR}, #{maxParticipants,jdbcType=INTEGER}, #{currentParticipants,jdbcType=INTEGER},
@@ -121,7 +119,7 @@
         UPDATE activity
         <set>
             <if test="title != null">title = #{title,jdbcType=VARCHAR},</if>
-            <if test="content != null">content = #{content,jdbcType=VARCHAR},</if>
+            <if test="description != null">description = #{description,jdbcType=VARCHAR},</if>
             <if test="activityType != null">activity_type = #{activityType,jdbcType=INTEGER},</if>
             <if test="location != null">location = #{location,jdbcType=VARCHAR},</if>
             <if test="startTime != null">start_time = #{startTime,jdbcType=TIMESTAMP},</if>
@@ -167,7 +165,7 @@
         <include refid="Base_Column_List"/>
         FROM activity
         WHERE title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
-        OR content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        OR description LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR location LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR organizer_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         ORDER BY start_time DESC

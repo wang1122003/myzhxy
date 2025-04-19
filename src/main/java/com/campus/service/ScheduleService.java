@@ -284,4 +284,14 @@ public interface ScheduleService {
      * @return 已被排课的课程ID列表
      */
     List<Long> findScheduledCourseIds(List<Long> courseIds);
+
+    /**
+     * 根据学生ID和学期字符串获取课表
+     * 注意: 由于数据库 schema 限制，目前实现会忽略 semester 参数
+     *
+     * @param studentId 学生ID
+     * @param semester  学期字符串 (格式如 2023-2024-1), 当前实现未使用
+     * @return 课表列表
+     */
+    List<Schedule> getSchedulesByStudentIdAndSemester(Long studentId, String semester);
 }

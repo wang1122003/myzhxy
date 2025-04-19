@@ -203,4 +203,81 @@ public class CommonController {
         
         return Result.success("获取系统配置成功", config);
     }
+
+    /**
+     * 获取学期列表
+     *
+     * @return 学期列表
+     */
+    @GetMapping("/terms")
+    public Result getTerms() {
+        try {
+            // 在实际应用中，学期列表可能来自数据库或更复杂的配置
+            // 这里提供一个简单的硬编码示例
+            List<Map<String, String>> terms = new ArrayList<>();
+            terms.add(Map.of("value", "2024-2025-1", "label", "2024-2025学年 第一学期"));
+            terms.add(Map.of("value", "2023-2024-2", "label", "2023-2024学年 第二学期"));
+            terms.add(Map.of("value", "2023-2024-1", "label", "2023-2024学年 第一学期"));
+            terms.add(Map.of("value", "2022-2023-2", "label", "2022-2023学年 第二学期"));
+            // 可以添加更多学期...
+
+            return Result.success("获取学期列表成功", terms);
+        } catch (Exception e) {
+            log.error("获取学期列表失败", e);
+            return Result.error("获取学期列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取时间段列表 (用于课表)
+     *
+     * @return 时间段列表
+     */
+    @GetMapping("/time-slots")
+    public Result getTimeSlots() {
+        try {
+            List<Map<String, Object>> timeSlots = new ArrayList<>();
+            // value 对应数据库存储， label 用于显示， slot 是节次
+            timeSlots.add(Map.of("value", 1, "label", "第1节", "slot", 1, "startTime", "08:00", "endTime", "08:45"));
+            timeSlots.add(Map.of("value", 2, "label", "第2节", "slot", 2, "startTime", "08:55", "endTime", "09:40"));
+            timeSlots.add(Map.of("value", 3, "label", "第3节", "slot", 3, "startTime", "10:00", "endTime", "10:45"));
+            timeSlots.add(Map.of("value", 4, "label", "第4节", "slot", 4, "startTime", "10:55", "endTime", "11:40"));
+            timeSlots.add(Map.of("value", 5, "label", "第5节", "slot", 5, "startTime", "14:00", "endTime", "14:45"));
+            timeSlots.add(Map.of("value", 6, "label", "第6节", "slot", 6, "startTime", "14:55", "endTime", "15:40"));
+            timeSlots.add(Map.of("value", 7, "label", "第7节", "slot", 7, "startTime", "16:00", "endTime", "16:45"));
+            timeSlots.add(Map.of("value", 8, "label", "第8节", "slot", 8, "startTime", "16:55", "endTime", "17:40"));
+            timeSlots.add(Map.of("value", 9, "label", "第9节", "slot", 9, "startTime", "19:00", "endTime", "19:45"));
+            timeSlots.add(Map.of("value", 10, "label", "第10节", "slot", 10, "startTime", "19:55", "endTime", "20:40"));
+
+            return Result.success("获取时间段成功", timeSlots);
+        } catch (Exception e) {
+            log.error("获取时间段失败", e);
+            return Result.error("获取时间段失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取星期列表 (用于课表)
+     *
+     * @return 星期列表
+     */
+    @GetMapping("/weekdays")
+    public Result getWeekdays() {
+        try {
+            List<Map<String, Object>> weekdays = new ArrayList<>();
+            // value 对应数据库存储 (通常 1-7), label 用于显示
+            weekdays.add(Map.of("value", 1, "label", "周一"));
+            weekdays.add(Map.of("value", 2, "label", "周二"));
+            weekdays.add(Map.of("value", 3, "label", "周三"));
+            weekdays.add(Map.of("value", 4, "label", "周四"));
+            weekdays.add(Map.of("value", 5, "label", "周五"));
+            weekdays.add(Map.of("value", 6, "label", "周六"));
+            weekdays.add(Map.of("value", 7, "label", "周日"));
+
+            return Result.success("获取星期成功", weekdays);
+        } catch (Exception e) {
+            log.error("获取星期失败", e);
+            return Result.error("获取星期失败: " + e.getMessage());
+        }
+    }
 } 

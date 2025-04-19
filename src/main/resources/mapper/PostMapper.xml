@@ -138,12 +138,6 @@
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE p.status = 1
-        <if test="forumType != null">
-            AND p.forum_type = #{forumType,jdbcType=VARCHAR}
-        </if>
-        <if test="tag != null">
-            AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
-        </if>
         ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
         limit #{limit,jdbcType=INTEGER}
     </select>
@@ -205,6 +199,13 @@
             tags        = #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
             status      = #{status,jdbcType=TINYINT},
             update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 增加浏览量 -->
+    <update id="incrementViews" parameterType="java.lang.Long">
+        UPDATE post
+        SET view_count = view_count + 1
         WHERE id = #{id,jdbcType=BIGINT}
     </update>
 

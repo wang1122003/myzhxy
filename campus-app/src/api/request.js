@@ -4,7 +4,7 @@ import router from '@/router'
 
 // 创建axios实例
 const request = axios.create({
-    baseURL: 'http://localhost:8080/campus/api', // 添加 /campus 上下文路径
+    baseURL: 'http://localhost:8080/campus', // 修改 baseURL，移除末尾的 /api
     timeout: 15000 // 请求超时时间，增加到15秒
 })
 

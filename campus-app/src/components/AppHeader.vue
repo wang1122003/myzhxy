@@ -101,13 +101,13 @@ export default {
     })
 
     const userRoleName = computed(() => {
-      const role = userRole.value
+      const role = localStorage.getItem('role')
       const names = {
         student: '学生',
         teacher: '教师',
         admin: '管理员'
       }
-      return names[role] || role
+      return names[role] || ''
     })
 
     const goToHome = () => {

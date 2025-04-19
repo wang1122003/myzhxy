@@ -1,9 +1,9 @@
 package com.campus.service;
 
+import com.campus.entity.Score;
+
 import java.util.List;
 import java.util.Map;
-
-import com.campus.entity.Score;
 
 /**
  * 成绩服务接口
@@ -394,4 +394,13 @@ public interface ScoreService {
      * @return GPA值
      */
     double calculateStudentTermGPA(Long studentId, Long termId);
+
+    /**
+     * 获取指定学生在指定学期（可选）的成绩列表
+     *
+     * @param studentId 学生ID
+     * @param semester  学期标识符 (例如 "2023-2024-1")，如果为null或空则查询所有学期
+     * @return 成绩列表
+     */
+    List<Score> getStudentScores(Long studentId, String semester);
 }

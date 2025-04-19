@@ -1,6 +1,7 @@
 package com.campus.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -30,11 +31,13 @@ public class Score implements Serializable {
     /**
      * 学生姓名
      */
+    @TableField(exist = false)
     private String studentName;
     
     /**
      * 学号
      */
+    @TableField(exist = false)
     private String studentNo;
     
     /**
@@ -45,56 +48,67 @@ public class Score implements Serializable {
     /**
      * 课程名称
      */
+    @TableField(exist = false)
     private String courseName;
     
     /**
      * 教师ID
      */
+    @TableField(exist = false)
     private Long teacherId;
     
     /**
      * 教师姓名
      */
+    @TableField(exist = false)
     private String teacherName;
     
     /**
      * 学期ID
      */
+    @TableField(exist = false)
     private Long termId;
     
     /**
      * 学期名称
      */
+    @TableField(exist = false)
     private String termName;
     
     /**
      * 平时成绩
      */
+    @TableField(exist = false)
     private Float regularScore;
     
     /**
      * 期中成绩
      */
+    @TableField(exist = false)
     private Float midtermScore;
     
     /**
      * 期末成绩
      */
+    @TableField(exist = false)
     private Float finalScore;
     
     /**
-     * 总评成绩
+     * 总评成绩 (映射到数据库的 score 列)
      */
-    private Float totalScore;
+    @TableField("score") // 显式指定映射到数据库的 score 列
+    private Float totalScore; 
     
     /**
      * 成绩等级：A、B、C、D、E、F
      */
+    @TableField(exist = false)
     private String grade;
     
     /**
      * 备注
      */
+    @TableField(exist = false)
     private String remark;
     
     /**
@@ -110,20 +124,24 @@ public class Score implements Serializable {
     /**
      * 关联课程
      */
+    @TableField(exist = false)
     private Course course;
     
     /**
      * 关联学生
      */
+    @TableField(exist = false)
     private Student student;
     
     /**
      * 关联教师
      */
+    @TableField(exist = false)
     private Teacher teacher;
     
     /**
      * 关联学期
      */
+    @TableField(exist = false)
     private Term term;
 }

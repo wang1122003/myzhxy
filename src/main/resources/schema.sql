@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS `activity` (
                                           `id`                BIGINT       NOT NULL AUTO_INCREMENT,
                                           `title`             VARCHAR(200) NOT NULL COMMENT '活动标题',
                                           `description`       TEXT         NOT NULL COMMENT '活动描述',
+                                          `activity_type` TINYINT NULL COMMENT '活动类型：1-娱乐比赛，2-公益服务，3-学术讲座，4-社团活动，5-其他',
                                           `poster`            VARCHAR(255) NULL COMMENT '活动海报URL',
                                           `organizer_id`      BIGINT       NOT NULL COMMENT '组织者ID',
                                           `location`          VARCHAR(255) NULL COMMENT '活动地点',

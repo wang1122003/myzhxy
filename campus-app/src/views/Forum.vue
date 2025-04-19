@@ -92,7 +92,7 @@
                     <span>{{ post.likeCount }}</span>
                   </div>
                 </div>
-                <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+                <div v-if="Array.isArray(post.tags) && post.tags.length > 0" class="post-tags">
                   <el-tag
                       v-for="tag in post.tags.slice(0, 3)"
                       :key="tag.id"
@@ -100,7 +100,7 @@
                       size="small">
                     {{ tag.name }}
                   </el-tag>
-                  <span v-if="post.tags.length > 3">...</span>
+                  <span v-if="Array.isArray(post.tags) && post.tags.length > 3">...</span>
                 </div>
               </div>
             </el-card>
@@ -126,7 +126,7 @@
           <template #header>
             <div class="side-card-header">
               <el-icon>
-                <Hot/>
+                <Opportunity/>
               </el-icon>
               <span>热门帖子</span>
             </div>
@@ -181,8 +181,8 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {ChatDotRound, Collection, EditPen, Hot, InfoFilled, Search, Star, View} from '@element-plus/icons-vue'
-import {getAllPosts, getForumCategories, getForumTags, getHotPosts, viewPost} from '@/api/forum'
+import {ChatDotRound, Collection, EditPen, InfoFilled, Opportunity, Search, Star, View} from '@element-plus/icons-vue'
+import {getAllCategories, getAllPosts, getForumCategories, getHotPosts, viewPost} from '@/api/forum'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
 import CreatePost from '@/components/forum/CreatePost.vue'
@@ -190,7 +190,15 @@ import CreatePost from '@/components/forum/CreatePost.vue'
 export default {
   name: 'ForumPage',
   components: {
-    CreatePost
+    CreatePost,
+    EditPen,
+    InfoFilled,
+    View,
+    ChatDotRound,
+    Star,
+    Opportunity,
+    Collection,
+    Search
   },
   setup() {
     const router = useRouter()
@@ -263,7 +271,7 @@ export default {
         }
 
         const res = await getAllPosts(params)
-        posts.value = res.data.list
+        posts.value = res.data.rows
         total.value = res.data.total
       } catch (error) {
         console.error('获取帖子列表失败:', error)
@@ -290,13 +298,9 @@ export default {
     const fetchPopularTags = async () => {
       loadingTags.value = true
       try {
-        // 使用导入的 getForumTags 函数，可能需要加参数获取热门的
-        const res = await getForumTags({limit: 15, sortBy: 'count'}); // 假设后端支持参数
-        // popularTags.value = res.data; // 假设返回 { data: [{id: 1, name: 'tag1', count: 10}, ...] }
-        // 如果后端不支持参数，可能需要获取所有标签后前端处理
-        if (Array.isArray(res.data)) { // 确保 res.data 是数组
-          // 如果没有 count 字段，需要后端添加或前端模拟
-          popularTags.value = res.data.slice(0, 15).map(tag => ({...tag, count: tag.count || 0})); // 取前15个
+        const res = await getAllCategories({limit: 15, sortBy: 'count'}); // Assuming backend supports parameters
+        if (Array.isArray(res.data)) { // Ensure res.data is an array
+          popularTags.value = res.data.slice(0, 15).map(tag => ({...tag, count: tag.count || 0})); // Take top 15
         } else {
           popularTags.value = [];
         }
@@ -423,7 +427,7 @@ export default {
       View,
       ChatDotRound,
       Star,
-      Hot,
+      Opportunity,
       Collection,
       EditPen,
       InfoFilled

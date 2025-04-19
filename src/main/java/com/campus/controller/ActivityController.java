@@ -1,14 +1,20 @@
 package com.campus.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Activity;
+import com.campus.entity.User;
 import com.campus.service.ActivityService;
+import com.campus.service.AuthService;
 import com.campus.utils.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 校园活动控制器
@@ -22,6 +28,9 @@ public class ActivityController {
     
     @Autowired
     private FileController fileController;
+
+    @Autowired
+    private AuthService authService;
     
     /**
      * 获取活动详情
@@ -39,12 +48,37 @@ public class ActivityController {
     }
     
     /**
-     * 获取所有活动
-     * @return 活动列表
+     * 获取活动列表（支持分页和搜索）
+     * @param page 页码, 默认为1
+     * @param pageSize 每页数量, 默认为10 (注意前端请求的是pageSize)
+     * @param keyword 关键词 (可选)
+     * @param activityType 活动类型 (可选)
+     * @param status 活动状态 (可选)
+     * @return 分页后的活动列表及分页信息
      */
     @GetMapping
-    public ResponseEntity<List<Activity>> getAllActivities() {
-        return ResponseEntity.ok(activityService.getAllActivities());
+    public Result getAllActivities(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize, // 保持参数名为 pageSize
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer activityType,
+            @RequestParam(required = false) Integer status
+    ) {
+        try {
+            IPage<Activity> activityPage = activityService.getActivityPage(page, pageSize, keyword, activityType, status);
+            // 将 IPage 转换为包含 list 和 total 的 Map，以便前端处理
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("list", activityPage.getRecords());
+            responseData.put("total", activityPage.getTotal());
+            responseData.put("pages", activityPage.getPages());
+            responseData.put("currentPage", activityPage.getCurrent());
+            responseData.put("pageSize", activityPage.getSize());
+
+            return Result.success(responseData);
+        } catch (Exception e) {
+            // log.error("获取活动列表失败", e);
+            return Result.error("获取活动列表失败: " + e.getMessage());
+        }
     }
     
     /**
@@ -195,6 +229,35 @@ public class ActivityController {
             return ResponseEntity.ok("状态更新成功");
         } else {
             return ResponseEntity.badRequest().body("状态更新失败");
+        }
+    }
+
+    /**
+     * 获取当前学生参加的活动列表
+     *
+     * @param request HTTP请求，用于获取当前用户
+     * @return 活动列表
+     */
+    @GetMapping("/student/my")
+    public Result getStudentActivities(HttpServletRequest request) {
+        User currentUser = authService.getCurrentUser(request);
+        if (currentUser == null) {
+            return Result.error("未登录或无法获取用户信息");
+        }
+
+        // 权限检查：确保是学生
+        // 注意：User 类中表示学生类型的字段需要确认，假设是 1
+        // if (currentUser.getUserType() == null || currentUser.getUserType() != 1) {
+        //     return Result.error("非学生用户无权访问此接口");
+        // }
+
+        try {
+            Long studentId = currentUser.getId();
+            List<Activity> activities = activityService.getStudentEnrolledActivities(studentId);
+            return Result.success(activities);
+        } catch (Exception e) {
+            // logger.error("获取学生参加的活动列表失败, studentId: {}", currentUser.getId(), e);
+            return Result.error("获取活动列表失败: " + e.getMessage());
         }
     }
 }

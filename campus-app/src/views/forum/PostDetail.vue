@@ -138,7 +138,7 @@
                     @click="handleLikeComment(comment)"
                 >
                   <el-icon>
-                    <ThumbUp/>
+                    <Star/>
                   </el-icon>
                   <span>{{ comment.likeCount || 0 }}</span>
                 </el-button>
@@ -201,7 +201,7 @@
                         @click="handleLikeComment(subComment)"
                     >
                       <el-icon>
-                        <ThumbUp/>
+                        <Star/>
                       </el-icon>
                       <span>{{ subComment.likeCount || 0 }}</span>
                     </el-button>
@@ -298,7 +298,7 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, ThumbUp, View} from '@element-plus/icons-vue'
+import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, View} from '@element-plus/icons-vue'
 import {
   addComment,
   cancelLikeComment,
@@ -319,9 +319,8 @@ export default {
     Star,
     View,
     ChatDotRound,
-    ThumbUp,
-    MoreFilled,
-    ChatLineRound
+    ChatLineRound,
+    MoreFilled
   },
   setup() {
     const route = useRoute()

@@ -1,10 +1,12 @@
 import request from './request'
 import {USER_API} from './api-endpoints'
 
+const API_BASE = '/api';
+
 // 用户登录
 export function login(data) {
     return request({
-        url: USER_API.LOGIN,
+        url: `${API_BASE}${USER_API.LOGIN}`,
         method: 'post',
         data: data
     })
@@ -13,7 +15,7 @@ export function login(data) {
 // 用户注册
 export function register(data) {
     return request({
-        url: USER_API.REGISTER,
+        url: `${API_BASE}${USER_API.REGISTER}`,
         method: 'post',
         data
     })
@@ -22,7 +24,7 @@ export function register(data) {
 // 获取当前用户信息 (通用)
 export function getCurrentUser() {
     return request({
-        url: USER_API.GET_CURRENT_USER, // 使用已定义的 '/users/current'
+        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 使用已定义的 '/users/current'
         method: 'get'
     })
 }
@@ -30,7 +32,7 @@ export function getCurrentUser() {
 // 获取学生个人信息 (使用通用接口)
 export function getStudentProfile() {
     return request({
-        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
+        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
         method: 'get'
     })
 }
@@ -38,7 +40,7 @@ export function getStudentProfile() {
 // 更新学生个人信息 (使用通用接口)
 export function updateStudentProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: `${API_BASE}${USER_API.UPDATE_CURRENT_USER}`, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -47,7 +49,7 @@ export function updateStudentProfile(data) {
 // 获取教师个人信息 (使用通用接口)
 export function getTeacherProfile() {
     return request({
-        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
+        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
         method: 'get'
     })
 }
@@ -55,7 +57,7 @@ export function getTeacherProfile() {
 // 更新教师个人信息 (使用通用接口)
 export function updateTeacherProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: `${API_BASE}${USER_API.UPDATE_CURRENT_USER}`, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -64,7 +66,7 @@ export function updateTeacherProfile(data) {
 // 获取管理员个人信息 (使用通用接口)
 export function getAdminProfile() {
     return request({
-        url: USER_API.GET_CURRENT_USER, // 改为使用通用获取接口
+        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
         method: 'get'
     })
 }
@@ -72,7 +74,7 @@ export function getAdminProfile() {
 // 更新管理员个人信息 (使用通用接口)
 export function updateAdminProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: `${API_BASE}${USER_API.UPDATE_CURRENT_USER}`, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -86,7 +88,7 @@ export function getTeacherSelectList(params) {
     // Assuming getUserList can filter by role or a new endpoint exists
     // e.g., GET /api/users/teachers
     return request({
-        url: USER_API.GET_USER_LIST, // Reusing GET_USER_LIST
+        url: `${API_BASE}${USER_API.GET_USER_LIST}`, // Reusing GET_USER_LIST
         method: 'get',
         params: {...params, role: 'teacher'} // Add role filter if supported
     })
@@ -95,7 +97,7 @@ export function getTeacherSelectList(params) {
 // 更新用户信息 (管理员用)
 export function updateUser(id, data) {
     return request({
-        url: USER_API.UPDATE_USER.replace(':id', id),
+        url: `${API_BASE}${USER_API.UPDATE_USER.replace(':id', id)}`,
         method: 'put',
         data
     })
@@ -104,7 +106,7 @@ export function updateUser(id, data) {
 // 修改密码 (个人用)
 export function changePassword(data) {
     return request({
-        url: USER_API.CHANGE_PASSWORD,
+        url: `${API_BASE}${USER_API.CHANGE_PASSWORD}`,
         method: 'put',
         data
     })
@@ -113,7 +115,7 @@ export function changePassword(data) {
 // 获取用户列表 (管理员用)
 export function getUserList(params) {
     return request({
-        url: USER_API.GET_USER_LIST,
+        url: `${API_BASE}${USER_API.GET_USER_LIST}`,
         method: 'get',
         params
     })
@@ -122,7 +124,7 @@ export function getUserList(params) {
 // 添加用户 (管理员用)
 export function addUser(data) {
     return request({
-        url: USER_API.ADD_USER,
+        url: `${API_BASE}${USER_API.ADD_USER}`,
         method: 'post',
         data
     })
@@ -131,7 +133,7 @@ export function addUser(data) {
 // 删除用户 (管理员用)
 export function deleteUser(id) {
     return request({
-        url: USER_API.DELETE_USER.replace(':id', id),
+        url: `${API_BASE}${USER_API.DELETE_USER.replace(':id', id)}`,
         method: 'delete'
     })
 }
@@ -139,7 +141,7 @@ export function deleteUser(id) {
 // 重置用户密码 (管理员用)
 export function resetPassword(id) {
     return request({
-        url: USER_API.RESET_PASSWORD.replace(':id', id), // 使用刚添加的 RESET_PASSWORD
+        url: `${API_BASE}${USER_API.RESET_PASSWORD.replace(':id', id)}`, // 使用刚添加的 RESET_PASSWORD
         method: 'put'
     })
 }
@@ -149,7 +151,7 @@ export function resetPassword(id) {
 // 检查权限 (可能已废弃，使用后端 Filter)
 export function checkPermission(permission) {
     return request({
-        url: USER_API.CHECK_PERMISSION,
+        url: `${API_BASE}${USER_API.CHECK_PERMISSION}`,
         method: 'get',
         params: {permission}
     })
@@ -158,7 +160,7 @@ export function checkPermission(permission) {
 // 获取权限列表 (可能已废弃)
 export function getPermissions() {
     return request({
-        url: USER_API.GET_PERMISSIONS,
+        url: `${API_BASE}${USER_API.GET_PERMISSIONS}`,
         method: 'get'
     })
 }
@@ -166,7 +168,7 @@ export function getPermissions() {
 // 登出
 export function logout() {
     return request({
-        url: USER_API.LOGOUT,
+        url: `${API_BASE}${USER_API.LOGOUT}`,
         method: 'post'
     })
 }
@@ -183,7 +185,7 @@ export function getUserProfile() {
 // 更新用户个人信息 (通用 profile 接口) - 改用 updateCurrentUser
 export function updateCurrentUserProfile(data) { // 重命名以避免与通用更新混淆，或直接调用通用更新
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 使用通用更新接口
+        url: `${API_BASE}${USER_API.UPDATE_CURRENT_USER}`, // 使用通用更新接口
         method: 'put',
         data
     })
@@ -192,7 +194,7 @@ export function updateCurrentUserProfile(data) { // 重命名以避免与通用�
 // 更新用户状态 (管理员用)
 export function updateUserStatus(id, status) {
     return request({
-        url: USER_API.UPDATE_USER.replace(':id', id) + '/status',
+        url: `${API_BASE}${USER_API.UPDATE_USER.replace(':id', id)}/status`,
         method: 'put',
         data: {status}
     })

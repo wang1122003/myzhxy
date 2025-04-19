@@ -2,17 +2,16 @@ package com.campus.controller;
 
 import com.campus.dto.PageResult;
 import com.campus.entity.Comment;
-import com.campus.entity.Forum;
 import com.campus.entity.Post;
 import com.campus.service.CommentService;
 import com.campus.service.ForumService;
 import com.campus.service.PostService;
 import com.campus.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,67 +36,61 @@ public class ForumController {
     // =============== 板块/分类相关 API (新增/修改) ===============
 
     /**
-     * 获取所有可用的板块列表 (用于下拉列表等)
+     * 获取所有论坛分类类型
      *
-     * @return 板块列表
-     */
-    @GetMapping("/forums")
-    public ResponseEntity<List<Forum>> getAvailableForums() {
-        List<Forum> forums = forumService.listAvailableForums();
-        return ResponseEntity.ok(forums);
-    }
-
-    /**
-     * 获取所有论坛分类
-     *
-     * @return 分类列表
+     * @return 分类类型列表
      */
     @GetMapping("/categories")
-    public Result getForumCategories() {
-        List<Forum> forums = forumService.listAvailableForums();
-        return Result.success(forums);
+    public Result<List<Map<String, Object>>> getForumCategories() {
+        List<String> forumTypes = forumService.listAvailableForumTypes();
+        List<Map<String, Object>> categories = new java.util.ArrayList<>();
+        for (int i = 0; i < forumTypes.size(); i++) {
+            Map<String, Object> category = new HashMap<>();
+            category.put("id", i + 1);
+            category.put("name", forumTypes.get(i));
+            categories.add(category);
+        }
+        return Result.success(categories);
     }
 
     /**
-     * 创建论坛分类
-     *
-     * @param forum 分类信息
-     * @return 创建结果
+     * 获取所有可用的板块列表 (用于下拉列表等)
+     * @deprecated 此接口依赖不存在的 forum 表，请使用 /categories 接口替代
+     * @return 板块列表
      */
+    @Deprecated
+    @GetMapping("/forums")
+    public ResponseEntity<?> getAvailableForums() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body("This endpoint is deprecated, use /categories instead.");
+    }
+
+    // 创建、更新、删除分类的接口已注释掉，因为它们基于不存在的 Forum 表/实体
+    /*
     @PostMapping("/categories")
     public Result createForumCategory(@RequestBody Forum forum) {
-        forum.setCreateTime(new Date());
-        forum.setUpdateTime(new Date());
-        boolean success = forumService.save(forum);
-        return success ? Result.success() : Result.error("创建分类失败");
+        // forum.setCreateTime(new Date());
+        // forum.setUpdateTime(new Date());
+        // boolean success = forumService.save(forum); // Error: save undefined
+        // return success ? Result.success() : Result.error("创建分类失败");
+         return Result.error("Category creation not implemented based on forum_type");
     }
 
-    /**
-     * 更新论坛分类
-     *
-     * @param id    分类ID
-     * @param forum 分类信息
-     * @return 更新结果
-     */
     @PutMapping("/categories/{id}")
     public Result updateForumCategory(@PathVariable Long id, @RequestBody Forum forum) {
-        forum.setId(id);
-        forum.setUpdateTime(new Date());
-        boolean success = forumService.updateById(forum);
-        return success ? Result.success() : Result.error("更新分类失败");
+        // forum.setId(id);
+        // forum.setUpdateTime(new Date());
+        // boolean success = forumService.updateById(forum); // Error: updateById undefined
+        // return success ? Result.success() : Result.error("更新分类失败");
+         return Result.error("Category update not implemented based on forum_type");
     }
 
-    /**
-     * 删除论坛分类
-     *
-     * @param id 分类ID
-     * @return 删除结果
-     */
     @DeleteMapping("/categories/{id}")
     public Result deleteForumCategory(@PathVariable Long id) {
-        boolean success = forumService.removeById(id);
-        return success ? Result.success() : Result.error("删除分类失败");
+        // boolean success = forumService.removeById(id); // Error: removeById undefined
+        // return success ? Result.success() : Result.error("删除分类失败");
+         return Result.error("Category deletion not implemented based on forum_type");
     }
+    */
 
     // =============== 帖子相关 API ===============
 
@@ -125,7 +118,7 @@ public class ForumController {
      * @return 帖子列表分页数据
      */
     @GetMapping("/posts")
-    public Result getAllPosts(
+    public Result<Map<String, Object>> getAllPosts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
@@ -159,9 +152,9 @@ public class ForumController {
      * @return 创建结果
      */
     @PostMapping("/posts")
-    public Result createPost(@RequestBody Post post) {
+    public Result<Void> createPost(@RequestBody Post post) {
         boolean success = postService.createPost(post);
-        return success ? Result.success() : Result.error("创建帖子失败");
+        return success ? Result.success(null) : Result.error("创建帖子失败");
     }
 
     /**
@@ -281,7 +274,7 @@ public class ForumController {
      * @return 热门帖子列表
      */
     @GetMapping("/posts/hot")
-    public Result getHotPosts(@RequestParam(defaultValue = "10") int limit) {
+    public Result<List<Post>> getHotPosts(@RequestParam(defaultValue = "10") int limit) {
         List<Post> posts = postService.getHotPosts(limit);
         return Result.success(posts);
     }

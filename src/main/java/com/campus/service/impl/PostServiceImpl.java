@@ -75,7 +75,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
     @Override
     public List<Post> getHotPosts(int limit) {
-        return postDao.findHot(limit);
+        return postDao.getHotPosts(limit);
     }
 
     @Override
@@ -88,17 +88,13 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
             throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
         }
         post.setAuthorId(currentUserId);
-        // post.setAuthorName(currentUsername); // authorName 和 forumName 应由查询填充，插入时不设置
 
-        // 2. Handle Forum Info (forumId from frontend)
-        if (post.getForumId() == null) {
-            // Handle error: forumId is required but missing
-            log.error("Forum ID is required to create a post.");
-            return false; // Cannot create post without forumId
+        // 2. Check Forum Type (forumId was removed)
+        if (!StringUtils.hasText(post.getForumType())) {
+            log.error("Forum type is required to create a post.");
+            return false; // Cannot create post without forumType
         }
-        // forumName will be populated by JOINs when querying, not set on insert
-        post.setForumName(null);
-        // Removed TagService check and forumName fetching logic here
+        post.setForumName(null); // forumName is @TableField(exist = false)
 
         // 3. Set initial values & timestamps
         Date now = new Date();
@@ -369,89 +365,81 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @SuppressWarnings("unchecked") // Suppress warning for potential raw type usage with Mybatis-Plus Page/IPage
     public PageResult<Post> findPage(Map<String, Object> params, int page, int size) {
-        // 使用 Mybatis-Plus 的 Page 对象
-        IPage<Post> mybatisPage = new Page<>(page, size);
+        Page<Post> postPage = new Page<>(page, size);
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
 
-        // 2. 构建查询条件
-        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        // Construct query conditions based on params
+        String keyword = (String) params.get("keyword");
+        String forumType = (String) params.get("forumType"); // Use forumType from params
+        String tag = (String) params.get("tag");
+        String sortBy = (String) params.getOrDefault("sortBy", "create_time"); // Default sort
+        String sortOrder = (String) params.getOrDefault("sortOrder", "desc"); // Default order
 
-        // 处理 keyword 搜索 (标题、内容)
-        if (params.containsKey("keyword") && StringUtils.hasText(params.get("keyword").toString())) {
-            String keyword = params.get("keyword").toString();
-            wrapper.and(w -> w.like(Post::getTitle, keyword).or().like(Post::getContent, keyword));
-            // 如果需要搜索作者名，需要联表查询或在 Post 实体冗余作者名
-            // .or().like(Post::getAuthorName, keyword)); // 假设 Post 实体有 authorName
+        if (StringUtils.hasText(keyword)) {
+            queryWrapper.and(qw -> qw.like("title", keyword).or().like("content", keyword));
+        }
+        if (StringUtils.hasText(forumType)) {
+            queryWrapper.eq("forum_type", forumType); // Filter by forum_type instead
+        }
+        if (StringUtils.hasText(tag)) {
+            // Assuming tags are stored as a JSON array of strings
+            queryWrapper.apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag);
         }
 
-        // 处理 forumId 过滤
-        if (params.containsKey("forumId") && params.get("forumId") != null) {
-            try {
-                Long forumId = Long.parseLong(params.get("forumId").toString());
-                wrapper.eq(Post::getForumId, forumId);
-            } catch (NumberFormatException e) {
-                // log error or ignore invalid forumId
-            }
+        // Add sorting
+        boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
+        String validSortBy = switch (sortBy) {
+            case "viewCount" -> "view_count";
+            case "likeCount" -> "like_count";
+            case "commentCount" -> "comment_count";
+            default -> "create_time"; // Default to create_time
+        };
+        queryWrapper.orderBy(true, isAsc, validSortBy);
+
+        // Always filter by status = 1 (normal posts)
+        queryWrapper.eq("status", 1);
+
+        IPage<Post> pageData = this.page(postPage, queryWrapper);
+
+        // 处理作者信息
+        if (pageData.getRecords() != null) {
+            pageData.getRecords().forEach(p -> {
+                if (p.getAuthor() != null) {
+                    p.setAuthorName(StringUtils.hasText(p.getAuthor().getRealName()) ? p.getAuthor().getRealName() : p.getAuthor().getUsername());
+                    p.setAuthorAvatar(p.getAuthor().getAvatar());
+                }
+            });
         }
 
-        // 处理 status 过滤 (假设前端传递的是 isTop, isEssence, isLocked)
-        // 注意：Post 实体目前没有 isLocked，这里仅处理 isTop 和 isEssence
-        if (params.containsKey("status")) {
-            Object statusObj = params.get("status");
-            if (statusObj instanceof String statusStr && StringUtils.hasText(statusStr)) {
-                if (statusStr.contains("isTop")) wrapper.eq(Post::getIsTop, 1);
-                if (statusStr.contains("isEssence")) wrapper.eq(Post::getIsEssence, 1);
-                // if (statusStr.contains("isLocked")) wrapper.eq(Post::getStatus, SOME_LOCKED_STATUS); // 如果需要锁定状态
-            } else if (statusObj instanceof Iterable) { // 处理前端传数组的情况 ['isTop', 'isEssence']
-                ((Iterable<?>) statusObj).forEach(item -> {
-                    if ("isTop".equals(item)) wrapper.eq(Post::getIsTop, 1);
-                    if ("isEssence".equals(item)) wrapper.eq(Post::getIsEssence, 1);
-                    // if ("isLocked".equals(item)) wrapper.eq(Post::getStatus, SOME_LOCKED_STATUS);
-                });
-            }
-        }
+        // 使用构造函数创建 PageResult
+        PageResult<Post> pageResult = new PageResult<>(pageData.getTotal(), pageData.getRecords(), pageData.getCurrent(), pageData.getSize());
 
-        // 默认查询已发布的帖子 (status = 1), 除非明确指定了其他状态查询需求
-        // 如果需要查询草稿或已删除，前端参数需要明确指出，并在此处调整逻辑
-        if (!params.containsKey("queryAllStatus")) { // 添加一个参数来决定是否查询所有状态
-            wrapper.eq(Post::getStatus, 1); // 默认只看已发布的
-        }
-
-        // 添加排序条件，例如按置顶、精华、创建时间排序
-        wrapper.orderByDesc(Post::getIsTop, Post::getIsEssence, Post::getCreateTime);
-
-        // 3. 执行查询
-        IPage<Post> resultPage = this.baseMapper.selectPage(mybatisPage, wrapper);
-
-        // 4. 封装返回结果
-        return new PageResult<>(resultPage.getTotal(), resultPage.getRecords(), resultPage.getCurrent(), resultPage.getSize());
+        return pageResult;
     }
 
     @Override
     public Map<String, Object> getPostsByForumId(Long forumId, int page, int size) {
-        // 复用 findPage 方法
-        Map<String, Object> params = new HashMap<>();
-        params.put("forumId", forumId);
-        PageResult<Post> pageResult = findPage(params, page, size);
+        // This method relied on the non-existent forumId.
+        // Returning empty as it needs redesign based on forumType.
+        log.warn("getPostsByForumId is called but forumId is deprecated. Redesign needed.");
         Map<String, Object> result = new HashMap<>();
-        result.put("total", pageResult.getTotal());
-        result.put("rows", pageResult.getRecords());
+        result.put("total", 0L);
+        result.put("rows", List.of());
         return result;
     }
 
     @Override
     public IPage<Post> getPostPage(Page<Post> page, Long forumId) {
-        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Post::getStatus, 1);
-
-        if (forumId != null && forumId > 0) {
-            wrapper.eq(Post::getForumId, forumId);
-        }
-
-        // 先按置顶排序，再按创建时间倒序
-        wrapper.orderByDesc(Post::getIsTop);
-        wrapper.orderByDesc(Post::getCreateTime);
-
-        return this.page(page, wrapper);
+        // This method relied on the non-existent forumId.
+        // Returning empty page as it needs redesign based on forumType.
+        log.warn("getPostPage is called but forumId is deprecated. Redesign needed.");
+        return new Page<>(page.getCurrent(), page.getSize(), 0);
+        // Original logic that would fail:
+        // LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        // wrapper.eq(Post::getForumId, forumId); // Error: getForumId not found
+        // wrapper.eq(Post::getStatus, 1);
+        // wrapper.orderByDesc(Post::getCreateTime);
+        // return postDao.selectPage(page, wrapper);
     }
 
     @Override

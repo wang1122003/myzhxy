@@ -1,28 +1,22 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.campus.dao.CourseDao;
 import com.campus.dao.ScoreDao;
 import com.campus.entity.Course;
 import com.campus.entity.Score;
 import com.campus.service.ScoreService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import lombok.extern.slf4j.Slf4j;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardOpenOption;
-import java.io.IOException;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * 成绩服务实现类
@@ -1119,4 +1113,45 @@ public class ScoreServiceImpl implements ScoreService {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * 获取指定学生在指定学期（可选）的成绩列表
+     *
+     * @param studentId 学生ID
+     * @param semester  学期标识符 (例如 "2023-2024-1")，如果为null或空则查询所有学期
+     * @return 成绩列表
+     */
+    @Override
+    public List<Score> getStudentScores(Long studentId, String semester) {
+        log.debug("Fetching scores for studentId: {}, semester: {}", studentId, semester);
+        try {
+            LambdaQueryWrapper<Score> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Score::getStudentId, studentId);
+
+            // 如果指定了学期，需要根据 semester 字符串查找对应的 termId
+            if (StringUtils.hasText(semester)) {
+                // TODO: 实现根据 semester 字符串查找 termId 的逻辑
+                // Long termId = findTermIdBySemesterString(semester);
+                // if (termId != null) {
+                //     queryWrapper.eq(Score::getTermId, termId);
+                // } else {
+                //     log.warn("未找到学期标识符 '{}' 对应的 termId，将返回该学生所有成绩", semester);
+                //     // 如果找不到对应 termId，可以选择返回所有成绩或空列表
+                // }
+                log.warn("按 semester 字符串 ('{}') 筛选成绩的功能尚未实现，将返回该学生所有成绩", semester);
+            }
+
+            queryWrapper.orderByAsc(Score::getCourseId);
+
+            List<Score> scores = scoreDao.selectList(queryWrapper);
+            log.debug("Found {} scores for studentId: {}, semester filter (if implemented): '{}'", scores.size(), studentId, semester);
+            return scores;
+        } catch (Exception e) {
+            log.error("查询学生成绩时出错 - studentId: {}, semester: {}", studentId, semester, e);
+            return Collections.emptyList();
+        }
+    }
+
+    // 可以在这里添加一个根据 semester 字符串查找 termId 的辅助方法 (如果需要)
+    // private Long findTermIdBySemesterString(String semester) { ... }
 }

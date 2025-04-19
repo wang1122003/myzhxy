@@ -1,21 +1,18 @@
 package com.campus.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.campus.entity.Forum;
-
 import java.util.List;
 
 /**
  * 论坛板块服务接口
  */
-public interface ForumService extends IService<Forum> {
+public interface ForumService {
 
     /**
-     * 获取所有启用的板块列表，按 sortOrder 排序
+     * 获取所有可用的论坛类型列表
      *
-     * @return 板块列表
+     * @return 论坛类型字符串列表
      */
-    List<Forum> listAvailableForums();
+    List<String> listAvailableForumTypes();
 
     // 可根据需要添加其他业务方法，例如：
     // Forum findByName(String name);

@@ -32,6 +32,14 @@
         s.status, s.create_time, s.update_time
     </sql>
 
+    <!-- 查询所有课程表 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM schedule s
+        ORDER BY s.term_id DESC, s.week_day, s.start_time
+    </select>
+
     <!-- 分页查询课程表 -->
     <select id="findByPage" resultMap="BaseResultMap">
         SELECT
@@ -182,6 +190,30 @@
 
     <!-- 查找给定课程ID列表中已被排课的课程ID -->
     <select id="findScheduledCourseIdsInList" resultType="long">
+        SELECT DISTINCT course_id
+        FROM schedule
+        WHERE course_id IN
+        <foreach item="item" collection="courseIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 根据学生ID查询其所有课表安排 -->
+    <select id="findByStudentId" resultType="com.campus.entity.Schedule">
+        SELECT s.*
+        FROM schedule s
+                 JOIN course_selection cs ON s.course_id = cs.course_id
+        WHERE cs.student_id = (
+            -- 假设 studentId 参数是 user 表的 ID, 需要通过 student 表关联
+            SELECT st.id
+            FROM student st
+            WHERE st.user_id = #{studentId})
+        -- 可以添加排序，例如按星期、开始时间
+        ORDER BY s.week_day ASC, s.start_time ASC
+    </select>
+
+    <!-- 查找给定课程ID列表中已被排课的课程ID (匹配 DAO 接口中的 findScheduledCourseIds) -->
+    <select id="findScheduledCourseIds" resultType="java.lang.Long">
         SELECT DISTINCT course_id
         FROM schedule
         WHERE course_id IN

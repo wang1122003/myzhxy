@@ -53,10 +53,10 @@ public class Post implements Serializable {
     private String authorAvatar;
     
     /**
-     * 论坛板块ID
+     * 论坛板块ID (数据库中不存在此列，已移除)
      */
-    @TableField("forum_id")
-    private Long forumId;
+    // @TableField("forum_id")
+    // private Long forumId;
     
     /**
      * 板块名称，从Forum实体填充而来

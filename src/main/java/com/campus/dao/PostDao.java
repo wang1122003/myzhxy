@@ -66,7 +66,7 @@ public interface PostDao extends BaseMapper<Post> {
      * @param limit 数量限制
      * @return 帖子列表
      */
-    List<Post> findHot(Integer limit);
+    List<Post> getHotPosts(@Param("limit") Integer limit);
     
     /**
      * 根据分类查询帖子
@@ -155,13 +155,6 @@ public interface PostDao extends BaseMapper<Post> {
      * @return 影响行数
      */
     int updateCommentCount(@Param("id") Long id, @Param("commentCount") Integer commentCount);
-    
-    /**
-     * 获取热门帖子
-     * @param limit 数量限制
-     * @return 帖子列表
-     */
-    List<Post> getHotPosts(@Param("limit") Integer limit);
     
     /**
      * 获取最新帖子

@@ -31,9 +31,9 @@ public class Activity implements Serializable {
     private String title;
     
     /**
-     * 活动内容
+     * 活动描述
      */
-    private String content;
+    private String description;
     
     /**
      * 活动类型：1-娱乐比赛，2-公益服务，3-学术讲座，4-社团活动，5-其他
@@ -63,11 +63,13 @@ public class Activity implements Serializable {
     /**
      * 组织者名称
      */
+    @TableField(exist = false)
     private String organizerName;
     
     /**
      * 联系方式
      */
+    @TableField(exist = false)
     private String contact;
     
     /**

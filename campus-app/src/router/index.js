@@ -5,7 +5,26 @@ const routes = [
     {
         path: '/',
         name: 'Home',
-        component: () => import('../views/HomePage.vue')
+        component: () => import('../views/HomePage.vue'),
+        beforeEnter: (to, from, next) => {
+            const token = localStorage.getItem('token')
+            const userRole = localStorage.getItem('role')
+
+            if (token && userRole) {
+                // 已登录用户根据角色重定向到对应的首页
+                if (userRole === 'admin') {
+                    next('/admin')
+                } else if (userRole === 'teacher') {
+                    next('/teacher')
+                } else if (userRole === 'student') {
+                    next('/student')
+                } else {
+                    next() // 未知角色，显示普通首页
+                }
+            } else {
+                next() // 未登录用户显示普通首页
+            }
+        }
     },
     {
         path: '/error',

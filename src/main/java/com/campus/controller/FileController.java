@@ -15,18 +15,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 文件管理控制器
  */
 @RestController
-@RequestMapping("/api/file")
+@RequestMapping("/api")
 public class FileController {
     
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
@@ -34,7 +38,7 @@ public class FileController {
     @Autowired
     private FileService fileService;
 
-    @Value("${file.upload.path}")
+    @Value("${file.upload.path:uploads}")
     private String uploadPath;
     
     /**
@@ -279,98 +283,119 @@ public class FileController {
         }
     }
 
-    // =============== 从FileManagerController合并的方法 ===============
-
     /**
-     * 获取目录结构
+     * 获取文件列表（目录结构）
      *
-     * @param directory 目录路径，相对于上传根目录
-     * @return 目录内容
+     * @param directory 请求的相对目录，默认为空（即根目录）
+     * @return 目录下的文件和子目录列表
      */
-    @GetMapping("/manager/list")
+    @GetMapping("/file/manager/list")
     public Result listDirectory(@RequestParam(value = "directory", defaultValue = "") String directory) {
+        logger.info("Listing directory: '{}' relative to upload path: '{}'", directory, uploadPath);
         try {
-            // 安全检查：防止目录遍历攻击
-            if (directory.contains("..") || directory.startsWith("/") || directory.contains("\\")) {
-                return Result.error("无效的目录路径");
+            // -- 修复 Windows 路径问题 --
+            Path baseUploadPath;
+            // 检查 uploadPath 是否是绝对路径 (Windows or Unix-like)
+            if (Paths.get(uploadPath).isAbsolute()) {
+                baseUploadPath = Paths.get(uploadPath).normalize();
+            } else {
+                // 如果是相对路径，则相对于当前工作目录解析
+                baseUploadPath = Paths.get(System.getProperty("user.dir"), uploadPath).normalize();
             }
+            logger.debug("Resolved base upload path object: {}", baseUploadPath);
 
-            // 构建完整路径
-            Path dirPath = Paths.get(uploadPath, directory);
-            File dir = dirPath.toFile();
-
-            if (!dir.exists() || !dir.isDirectory()) {
-                return Result.error("目录不存在");
-            }
-
-            List<Map<String, Object>> files = new ArrayList<>();
-            File[] fileList = dir.listFiles();
-
-            if (fileList != null) {
-                for (File file : fileList) {
-                    Map<String, Object> fileInfo = new HashMap<>();
-                    fileInfo.put("name", file.getName());
-                    fileInfo.put("isDirectory", file.isDirectory());
-                    fileInfo.put("size", file.length());
-                    fileInfo.put("lastModified", file.lastModified());
-                    fileInfo.put("path", getRelativePath(file));
-
-                    if (!file.isDirectory()) {
-                        // 构建文件ID
-                        String relativePath = getRelativePath(file);
-                        fileInfo.put("fileId", relativePath);
-                    }
-
-                    files.add(fileInfo);
+            // 确保基础上传目录存在
+            if (!Files.exists(baseUploadPath)) {
+                logger.warn("Base upload directory does not exist, attempting to create: {}", baseUploadPath);
+                try {
+                    Files.createDirectories(baseUploadPath);
+                } catch (IOException ioException) {
+                    logger.error("Failed to create base upload directory: {}", baseUploadPath, ioException);
+                    return Result.error("基础上传目录不存在且无法创建");
                 }
             }
+            // -- 修复结束 --
 
-            // 先排序目录，再排序文件
-            files.sort((a, b) -> {
-                boolean aIsDir = (boolean) a.get("isDirectory");
-                boolean bIsDir = (boolean) b.get("isDirectory");
+            // 解析请求的相对目录路径，并清理可能存在的路径遍历字符
+            String cleanDirectory = directory.replace("..", ""); // Basic sanitation
+            Path targetDirectoryPath = baseUploadPath.resolve(cleanDirectory).normalize();
+            logger.debug("Target directory path object: {}", targetDirectoryPath);
 
-                if (aIsDir && !bIsDir) {
-                    return -1;
-                } else if (!aIsDir && bIsDir) {
-                    return 1;
-                } else {
-                    return ((String) a.get("name")).compareTo((String) b.get("name"));
-                }
-            });
+            // 安全检查：确保目标目录仍在基础上传路径之下
+            if (!targetDirectoryPath.startsWith(baseUploadPath)) {
+                logger.warn("Access denied: Attempt to access directory outside base upload path. Target: {}", targetDirectoryPath);
+                return Result.error("无权访问该目录");
+            }
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("currentPath", directory);
-            result.put("files", files);
+            File targetDir = targetDirectoryPath.toFile();
+            logger.debug("Target directory file object: {}, Exists: {}, IsDirectory: {}", targetDir, targetDir.exists(), targetDir.isDirectory());
 
-            return Result.success(result);
+            if (!targetDir.exists() || !targetDir.isDirectory()) {
+                logger.warn("Directory not found or not a directory: {}", targetDirectoryPath);
+                return Result.error("目录不存在或不是一个有效的目录");
+            }
+
+            // 获取文件和子目录列表
+            List<Map<String, Object>> fileList;
+            try (Stream<Path> stream = Files.list(targetDirectoryPath)) {
+                fileList = stream.map(path -> {
+                            File file = path.toFile();
+                            Map<String, Object> fileInfo = new HashMap<>();
+                            fileInfo.put("name", file.getName());
+                            // 生成相对于 baseUploadPath 的相对路径，并统一使用 / 作为分隔符
+                            String relativePath = baseUploadPath.relativize(path).toString().replace('\\', '/');
+                            fileInfo.put("path", relativePath);
+                            fileInfo.put("isDirectory", file.isDirectory());
+                            fileInfo.put("size", file.isDirectory() ? 0 : file.length());
+                            fileInfo.put("lastModified", file.lastModified());
+                            // 可以添加更多信息，如类型、权限等
+                            return fileInfo;
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            logger.info("Successfully listed {} items in directory: {}", fileList.size(), targetDirectoryPath);
+            // 返回当前目录的相对路径和文件列表
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("currentPath", baseUploadPath.relativize(targetDirectoryPath).toString().replace('\\', '/'));
+            responseData.put("files", fileList);
+
+            return Result.success("获取目录结构成功", responseData);
+
+        } catch (IOException e) {
+            logger.error("获取目录 '{}' 结构失败: IO Error", directory, e);
+            // 提供更具体的错误信息给前端可能没有必要，但日志需要详细
+            return Result.error("获取目录结构失败，请检查服务器日志");
+        } catch (InvalidPathException e) {
+            logger.error("获取目录 '{}' 结构失败: Invalid Path Syntax for '{}' or '{}'", directory, uploadPath, directory, e);
+            return Result.error("获取目录结构失败: 路径包含非法字符或格式错误");
         } catch (Exception e) {
-            logger.error("获取目录结构失败", e);
-            return Result.error("获取目录结构失败: " + e.getMessage());
+            logger.error("获取目录 '{}' 结构失败: Unexpected Error", directory, e);
+            return Result.error("获取目录结构失败，请联系管理员");
         }
     }
 
     /**
      * 批量删除文件
      *
-     * @param fileIds 文件ID列表
+     * @param filePaths 文件相对路径列表 (相对于 uploadPath)
      * @return 删除结果
      */
     @DeleteMapping("/manager/batch-delete")
-    public Result batchDeleteFiles(@RequestBody List<String> fileIds) {
-        if (fileIds == null || fileIds.isEmpty()) {
+    public Result batchDeleteFiles(@RequestBody List<String> filePaths) {
+        if (filePaths == null || filePaths.isEmpty()) {
             return Result.error("未选择任何文件");
         }
 
         List<String> successList = new ArrayList<>();
         List<String> failList = new ArrayList<>();
 
-        for (String fileId : fileIds) {
-            boolean success = fileService.deleteFile(fileId);
+        for (String filePath : filePaths) {
+            boolean success = fileService.deleteFile(filePath);
             if (success) {
-                successList.add(fileId);
+                successList.add(filePath);
             } else {
-                failList.add(fileId);
+                failList.add(filePath);
             }
         }
 
@@ -470,18 +495,6 @@ public class FileController {
         }
 
         return files;
-    }
-
-    /**
-     * 获取文件相对于上传根目录的路径
-     *
-     * @param file 文件
-     * @return 相对路径
-     */
-    private String getRelativePath(File file) {
-        Path basePath = Paths.get(uploadPath);
-        Path filePath = file.toPath();
-        return basePath.relativize(filePath).toString().replace("\\", "/");
     }
 
     /**

@@ -1,10 +1,12 @@
 import request from './request'
 import {COMMON_API} from './api-endpoints'
 
+const API_BASE = '/api'; // Define the base path
+
 // 获取学院列表
 export function getColleges() {
     return request({
-        url: COMMON_API.GET_COLLEGES,
+        url: `${API_BASE}${COMMON_API.GET_COLLEGES}`,
         method: 'get'
     })
 }
@@ -12,7 +14,7 @@ export function getColleges() {
 // 获取系部列表
 export function getDepartments() {
     return request({
-        url: COMMON_API.GET_DEPARTMENTS,
+        url: `${API_BASE}${COMMON_API.GET_DEPARTMENTS}`,
         method: 'get'
     })
 }
@@ -20,7 +22,7 @@ export function getDepartments() {
 // 获取专业列表
 export function getMajors() {
     return request({
-        url: COMMON_API.GET_MAJORS,
+        url: `${API_BASE}${COMMON_API.GET_MAJORS}`,
         method: 'get'
     })
 }
@@ -28,7 +30,7 @@ export function getMajors() {
 // 获取班级列表
 export function getClasses() {
     return request({
-        url: COMMON_API.GET_CLASSES,
+        url: `${API_BASE}${COMMON_API.GET_CLASSES}`,
         method: 'get'
     })
 }
@@ -36,7 +38,7 @@ export function getClasses() {
 // 获取学期列表
 export function getTerms() {
     return request({
-        url: COMMON_API.GET_TERMS,
+        url: `${API_BASE}${COMMON_API.GET_TERMS}`,
         method: 'get'
     })
 }
@@ -44,7 +46,7 @@ export function getTerms() {
 // 获取星期列表
 export function getWeekdays() {
     return request({
-        url: COMMON_API.GET_WEEKDAYS,
+        url: `${API_BASE}${COMMON_API.GET_WEEKDAYS}`,
         method: 'get'
     })
 }
@@ -52,7 +54,7 @@ export function getWeekdays() {
 // 获取时间段列表
 export function getTimeSlots() {
     return request({
-        url: COMMON_API.GET_TIME_SLOTS,
+        url: `${API_BASE}${COMMON_API.GET_TIME_SLOTS}`,
         method: 'get'
     })
 }
@@ -60,7 +62,7 @@ export function getTimeSlots() {
 // 获取教室类型列表
 export function getRoomTypes() {
     return request({
-        url: COMMON_API.GET_ROOM_TYPES,
+        url: `${API_BASE}${COMMON_API.GET_ROOM_TYPES}`,
         method: 'get'
     })
 }
@@ -68,7 +70,7 @@ export function getRoomTypes() {
 // 获取课程类型列表
 export function getCourseTypes() {
     return request({
-        url: COMMON_API.GET_COURSE_TYPES,
+        url: `${API_BASE}${COMMON_API.GET_COURSE_TYPES}`,
         method: 'get'
     })
 }
@@ -76,7 +78,7 @@ export function getCourseTypes() {
 // 获取活动类型列表
 export function getActivityTypes() {
     return request({
-        url: COMMON_API.GET_ACTIVITY_TYPES,
+        url: `${API_BASE}${COMMON_API.GET_ACTIVITY_TYPES}`,
         method: 'get'
     })
 }
@@ -84,7 +86,7 @@ export function getActivityTypes() {
 // 获取通知类型列表
 export function getNoticeTypes() {
     return request({
-        url: COMMON_API.GET_NOTICE_TYPES,
+        url: `${API_BASE}${COMMON_API.GET_NOTICE_TYPES}`,
         method: 'get'
     })
 }
@@ -92,7 +94,7 @@ export function getNoticeTypes() {
 // 获取帖子分类列表
 export function getPostCategories() {
     return request({
-        url: COMMON_API.GET_POST_CATEGORIES,
+        url: `${API_BASE}${COMMON_API.GET_POST_CATEGORIES}`,
         method: 'get'
     })
 } 

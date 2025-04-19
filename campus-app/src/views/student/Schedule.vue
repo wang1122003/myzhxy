@@ -526,4 +526,6 @@ export default {
 
   .course-location {
     font-size: 10px;
+  }
+}
 </style> 

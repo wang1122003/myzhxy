@@ -344,7 +344,7 @@ import {
   ElTag
 } from 'element-plus'
 import {ChatDotRound, Menu, Plus} from '@element-plus/icons-vue'
-import {createPost, deletePost, getForumList, searchPosts, updatePost} from '@/api/forum'
+import {createPost, deletePost, getForumCategories, searchPosts, updatePost} from '@/api/forum'
 import {getToken} from '@/utils/auth'
 import '@wangeditor/editor/dist/css/style.css'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
@@ -436,8 +436,16 @@ const loadingCategories = ref(false);
 const fetchForumCategories = async () => {
   loadingCategories.value = true;
   try {
-    const res = await getForumList();
-    categories.value = res.data || res || [];
+    const res = await getForumCategories();
+    if (res.success && Array.isArray(res.data)) {
+      categories.value = res.data;
+    } else if (Array.isArray(res)) {
+      categories.value = res;
+    } else {
+      console.warn("获取板块列表返回的数据格式不符合预期:", res);
+      categories.value = [];
+      ElMessage.warning('获取板块列表数据格式有误');
+    }
   } catch (error) {
     console.error("获取板块列表失败:", error);
     ElMessage.error('获取板块列表失败');

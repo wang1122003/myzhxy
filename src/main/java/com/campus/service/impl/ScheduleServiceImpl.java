@@ -464,10 +464,24 @@ public class ScheduleServiceImpl implements ScheduleService {
      */
     @Override
     public List<Long> findScheduledCourseIds(List<Long> courseIds) {
-        // 调用 DAO 层查询在列表中的已排课课程ID
         if (courseIds == null || courseIds.isEmpty()) {
-            return new java.util.ArrayList<>(); // 返回空列表
+            return List.of();
         }
-        return scheduleDao.findScheduledCourseIdsInList(courseIds);
+        return scheduleDao.findScheduledCourseIds(courseIds);
+    }
+
+    /**
+     * 根据学生ID和学期字符串获取课表
+     * 注意: 由于数据库 schema 限制，目前实现会忽略 semester 参数，仅根据 studentId 查询
+     *
+     * @param studentId 学生ID
+     * @param semester  学期字符串 (格式如 2023-2024-1), 当前实现未使用
+     * @return 课表列表
+     */
+    @Override
+    public List<Schedule> getSchedulesByStudentIdAndSemester(Long studentId, String semester) {
+        // TODO: 实现根据 semester 过滤的功能 (需要修改数据库 schema 或进行复杂查询)
+        // 当前仅根据 studentId 查询
+        return scheduleDao.findByStudentId(studentId); // 调用 DAO 层方法
     }
 }

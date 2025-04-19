@@ -311,7 +311,7 @@ export function deleteCommentPermanent(commentId) {
  */
 export function getAllCategories(params) {
     return request({
-        url: `${API_BASE}${FORUM_API.GET_ALL_CATEGORIES}`,
+        url: `${API_BASE}${FORUM_API.GET_CATEGORIES}`,
         method: 'get',
         params
     });
@@ -387,7 +387,7 @@ export function uploadPostImage(file) {
 // Example: Increment post view count
 export function viewPost(postId) {
     return request({
-        url: `${API_BASE}${FORUM_API.INCREMENT_VIEWS.replace(':id', postId)}`,
+        url: `${API_BASE}/forum/posts/${postId}/view`,
         method: 'post'
     });
 }

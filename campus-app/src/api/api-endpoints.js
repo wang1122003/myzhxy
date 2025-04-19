@@ -61,7 +61,7 @@ export const SCHEDULE_API = {
 
 // 活动相关接口
 export const ACTIVITY_API = {
-    GET_ALL: '/activities',
+    GET_ALL: '/api/activities',
     GET_BY_ID: '/activities/:id',
     GET_BY_TYPE: '/activities/type/:activityType',
     GET_BY_STATUS: '/activities/status/:status',
@@ -171,9 +171,9 @@ export const FILE_API = {
     GET_FILE_INFO: '/file/info',
     DOWNLOAD_FILE: '/file/download',
     GET_TEMP_URL: '/file/temp-url',
-    LIST_DIRECTORY: '/file/manager/list',
-    BATCH_DELETE: '/file/manager/batch-delete',
-    GET_FILE_STATS: '/file/manager/stats'
+    LIST_DIRECTORY: '/api/file/manager/list',
+    BATCH_DELETE: '/manager/batch-delete',
+    GET_FILE_STATS: '/api/manager/stats'
 }
 
 // 通用接口
@@ -195,7 +195,7 @@ export const COMMON_API = {
 // --- 新增或调整的接口 ---
 // (根据需要添加，例如 Grades API)
 export const GRADE_API = {
-    GET_STUDENT_GRADES: '/scores/student/my',
+    GET_STUDENT_GRADES: '/scores/me',
     GET_COURSE_STUDENTS: '/scores/course-students',
     SAVE_BATCH: '/scores/save-batch',
     EXPORT: '/scores/export/:courseId',

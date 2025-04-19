@@ -1,17 +1,15 @@
 package com.campus.controller;
 
 import com.campus.entity.Score;
+import com.campus.entity.User;
+import com.campus.service.AuthService;
 import com.campus.service.ScoreService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,12 +17,16 @@ import java.util.Map;
  * 成绩管理控制器
  * 提供成绩查询、录入和统计分析的相关API
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/scores")
 public class ScoreController {
 
     @Autowired
     private ScoreService scoreService;
+
+    @Autowired
+    private AuthService authService;
 
     /**
      * 获取成绩详情
@@ -443,5 +445,34 @@ public class ScoreController {
     public Result getStudentScoreTrends(@PathVariable Long studentId) {
         List<Map<String, Object>> trends = scoreService.getStudentScoreTrends(studentId);
         return Result.success("获取成功", trends);
+    }
+
+    /**
+     * 获取当前登录学生的成绩
+     *
+     * @param request  HTTP请求
+     * @param semester 学期 (可选, 格式如 2023-2024-1)
+     * @return 学生的成绩列表
+     */
+    @GetMapping("/me")
+    public Result getMyScores(HttpServletRequest request, @RequestParam(required = false) String semester) {
+        User currentUser = authService.getCurrentUser(request);
+        if (currentUser == null) {
+            log.warn("getMyScores: 未找到当前登录用户");
+            return Result.error("未登录或无法获取用户信息");
+        }
+
+        Long studentId = currentUser.getId();
+        log.info("getMyScores: 开始获取学生ID {} 在学期 '{}' 的成绩", studentId, semester);
+
+        try {
+            List<Score> scores = scoreService.getStudentScores(studentId, semester);
+            log.info("getMyScores: 成功获取学生ID {} 在学期 '{}' 的成绩 {} 条", studentId, semester, scores == null ? 0 : scores.size());
+            return Result.success("获取成功", scores);
+        } catch (Exception e) {
+            log.error("getMyScores: 获取学生ID {} 在学期 '{}' 的成绩时发生错误", studentId, semester, e);
+            // 这里返回更通用的错误信息给前端，避免暴露内部细节
+            return Result.error("获取成绩失败，请稍后重试或联系管理员");
+        }
     }
 }

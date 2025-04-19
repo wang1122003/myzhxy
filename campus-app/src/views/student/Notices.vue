@@ -175,7 +175,7 @@
 import {onMounted, reactive, ref} from 'vue'
 import {ElMessage} from 'element-plus'
 import {Document, Search} from '@element-plus/icons-vue'
-import {getNoticeDetail, getNoticeList} from '@/api/notice'
+import {getNoticeById, getNoticeList} from '@/api/notice'
 import {downloadFile} from '@/api/file'
 
 // 公告类型选项
@@ -225,7 +225,7 @@ const fetchNotices = async () => {
 // 获取公告详情
 const fetchNoticeDetail = async (id) => {
   try {
-    const res = await getNoticeDetail(id)
+    const res = await getNoticeById(id)
     Object.assign(currentNotice, res.data)
   } catch (error) {
     console.error('获取公告详情失败', error)

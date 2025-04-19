@@ -129,9 +129,11 @@ VALUES (1, '感谢分享，资料很全面！', 2, NULL, 5, 1, NOW()),
        (3, '他们家的饺子也很好吃，推荐尝试', 5, 4, 2, 1, NOW());
 
 -- 插入活动数据
-INSERT INTO `activity` (`title`, `description`, `poster`, `organizer_id`, `location`, `start_time`, `end_time`,
+INSERT INTO `activity` (`title`, `description`, `activity_type`, `poster`, `organizer_id`, `location`, `start_time`,
+                        `end_time`,
                         `max_participants`, `participants`, `participant_count`, `status`, `create_time`)
-VALUES ('校园歌手大赛', '一年一度的校园歌手大赛来啦！欢迎各位有才艺的同学踊跃报名参加...', '/uploads/posters/singer.jpg',
+VALUES ('校园歌手大赛', '一年一度的校园歌手大赛来啦！欢迎各位有才艺的同学踊跃报名参加...', 1,
+        '/uploads/posters/singer.jpg',
         1, '大学生活动中心', '2023-05-15 18:30:00', '2023-05-15 22:00:00', 200,
         '[
           {
@@ -151,7 +153,7 @@ VALUES ('校园歌手大赛', '一年一度的校园歌手大赛来啦！欢迎�
         ]',
         2, 1, NOW()),
 
-       ('职业发展讲座：IT行业就业指南', '邀请知名IT企业HR和技术专家，分享IT行业就业经验和职业规划建议...',
+       ('职业发展讲座：IT行业就业指南', '邀请知名IT企业HR和技术专家，分享IT行业就业经验和职业规划建议...', 3,
         '/uploads/posters/it_job.jpg', 2, '教学楼A栋报告厅', '2023-05-20 14:00:00', '2023-05-20 16:30:00', 150,
         '[
           {
@@ -178,7 +180,8 @@ VALUES ('校园歌手大赛', '一年一度的校园歌手大赛来啦！欢迎�
         ]',
         3, 1, NOW()),
 
-       ('篮球友谊赛', '计算机学院vs经管学院篮球友谊赛，欢迎前来观赛助威...', '/uploads/posters/basketball.jpg', 3,
+       ('篮球友谊赛', '计算机学院vs经管学院篮球友谊赛，欢迎前来观赛助威...', 1,
+        '/uploads/posters/basketball.jpg', 3,
         '体育馆', '2023-05-25 15:00:00', '2023-05-25 17:00:00', 300, '[]', 0, 1, NOW());
 
 -- 插入通知数据

@@ -1,10 +1,12 @@
 import request from './request'
 import {NOTICE_API} from './api-endpoints'
 
+const API_BASE = '/api'; // Define the base path
+
 // 获取所有通知
 export function getAllNotices(params) {
     return request({
-        url: NOTICE_API.GET_ALL,
+        url: `${API_BASE}${NOTICE_API.GET_ALL}`,
         method: 'get',
         params
     })
@@ -13,7 +15,7 @@ export function getAllNotices(params) {
 // 获取通知详情
 export function getNoticeById(id) {
     return request({
-        url: NOTICE_API.GET_BY_ID.replace(':id', id),
+        url: `${API_BASE}${NOTICE_API.GET_BY_ID.replace(':id', id)}`,
         method: 'get'
     })
 }
@@ -21,7 +23,7 @@ export function getNoticeById(id) {
 // 添加通知
 export function addNotice(data) {
     return request({
-        url: NOTICE_API.ADD,
+        url: `${API_BASE}${NOTICE_API.ADD}`,
         method: 'post',
         data
     })
@@ -30,7 +32,7 @@ export function addNotice(data) {
 // 更新通知
 export function updateNotice(id, data) {
     return request({
-        url: NOTICE_API.UPDATE.replace(':id', id),
+        url: `${API_BASE}${NOTICE_API.UPDATE.replace(':id', id)}`,
         method: 'put',
         data
     })
@@ -39,7 +41,7 @@ export function updateNotice(id, data) {
 // 删除通知
 export function deleteNotice(id) {
     return request({
-        url: NOTICE_API.DELETE.replace(':id', id),
+        url: `${API_BASE}${NOTICE_API.DELETE.replace(':id', id)}`,
         method: 'delete'
     })
 }
@@ -47,7 +49,7 @@ export function deleteNotice(id) {
 // 获取通知列表（分页）
 export function getNoticeList(params) {
     return request({
-        url: NOTICE_API.GET_ALL,
+        url: `${API_BASE}${NOTICE_API.GET_ALL}`,
         method: 'get',
         params
     })
@@ -56,7 +58,7 @@ export function getNoticeList(params) {
 // 获取最近通知
 export function getRecentNotices() {
     return request({
-        url: NOTICE_API.GET_RECENT,
+        url: `${API_BASE}${NOTICE_API.GET_RECENT}`,
         method: 'get'
     })
 }
@@ -64,7 +66,7 @@ export function getRecentNotices() {
 // 获取置顶通知
 export function getTopNotices() {
     return request({
-        url: NOTICE_API.GET_TOP,
+        url: `${API_BASE}${NOTICE_API.GET_TOP}`,
         method: 'get'
     })
 }
@@ -72,7 +74,7 @@ export function getTopNotices() {
 // 更新通知状态
 export function updateNoticeStatus(id, status) {
     return request({
-        url: NOTICE_API.UPDATE_STATUS.replace(':id', id).replace(':status', status),
+        url: `${API_BASE}${NOTICE_API.UPDATE_STATUS.replace(':id', id).replace(':status', status)}`,
         method: 'put'
     })
 }
@@ -80,7 +82,7 @@ export function updateNoticeStatus(id, status) {
 // 上传通知附件
 export function uploadNoticeAttachment(data) {
     return request({
-        url: NOTICE_API.UPLOAD_ATTACHMENT,
+        url: `${API_BASE}${NOTICE_API.UPLOAD_ATTACHMENT}`,
         method: 'post',
         data,
         headers: {

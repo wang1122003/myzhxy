@@ -97,7 +97,7 @@
                     <span>{{ post.likeCount }}</span>
                   </div>
                 </div>
-                <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+                <div v-if="Array.isArray(post.tags) && post.tags.length > 0" class="post-tags">
                   <el-tag
                       v-for="tag in post.tags.slice(0, 3)"
                       :key="tag.id"
@@ -105,7 +105,7 @@
                       size="small">
                     {{ tag.name }}
                   </el-tag>
-                  <span v-if="post.tags.length > 3">...</span>
+                  <span v-if="Array.isArray(post.tags) && post.tags.length > 3">...</span>
                 </div>
               </div>
             </el-card>

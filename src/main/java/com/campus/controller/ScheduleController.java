@@ -1,13 +1,17 @@
 package com.campus.controller;
 
 import com.campus.entity.Schedule;
+import com.campus.entity.User;
+import com.campus.service.AuthService;
 import com.campus.service.ScheduleService;
 import com.campus.utils.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 课程表管理控制器
@@ -20,6 +24,9 @@ public class ScheduleController {
 
     @Autowired
     private ScheduleService scheduleService;
+
+    @Autowired
+    private AuthService authService;
 
     /**
      * 获取课表列表
@@ -330,6 +337,47 @@ public class ScheduleController {
         } catch (Exception e) {
             log.error("获取教室周课表失败", e);
             return Result.error("获取教室周课表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取当前登录学生的课表
+     *
+     * @param semester 学期 (可选, 格式如 2023-2024-1)
+     * @param request  HTTP请求
+     * @return 学生课表列表
+     */
+    @GetMapping("/student")
+    public Result getStudentSchedule(
+            @RequestParam(required = false) String semester, // 接收学期参数
+            HttpServletRequest request) {
+        try {
+            User currentUser = authService.getCurrentUser(request);
+            if (currentUser == null) {
+                log.warn("getStudentSchedule: 未找到当前登录用户");
+                return Result.error("未登录或无法获取用户信息");
+            }
+
+            // 确保是学生用户 (userType=1)
+            if (currentUser.getUserType() != 1) {
+                log.warn("getStudentSchedule: 用户 {} 不是学生，无法获取课表", currentUser.getUsername());
+                return Result.error("非学生用户无法获取课表");
+            }
+
+            Long studentId = currentUser.getId(); // 假设可以直接用 User ID
+            log.info("getStudentSchedule: 开始获取学生ID {} 在学期 '{}' 的课表", studentId, semester);
+
+            // 调用 Service 层方法获取课表
+            // !!! 重要: 确保 ScheduleService 中有 getSchedulesByStudentIdAndSemester 方法 !!!
+            List<Schedule> schedules = scheduleService.getSchedulesByStudentIdAndSemester(studentId, semester);
+
+            log.info("getStudentSchedule: 成功获取学生ID {} 在学期 '{}' 的课表 {} 条", studentId, semester, schedules == null ? 0 : schedules.size());
+            return Result.success(schedules);
+
+        } catch (Exception e) {
+            log.error("获取学生课表失败", e);
+            // 返回更友好的错误信息给前端
+            return Result.error("获取课表信息时发生错误，请稍后重试");
         }
     }
 }

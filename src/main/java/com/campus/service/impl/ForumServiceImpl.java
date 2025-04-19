@@ -1,26 +1,37 @@
 package com.campus.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.campus.dao.ForumDao;
-import com.campus.entity.Forum;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.campus.dao.PostDao;
+import com.campus.entity.Post;
 import com.campus.service.ForumService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 论坛板块服务实现类
  */
 @Service
-public class ForumServiceImpl extends ServiceImpl<ForumDao, Forum> implements ForumService {
+public class ForumServiceImpl implements ForumService {
+
+    @Autowired
+    private PostDao postDao;
 
     @Override
-    public List<Forum> listAvailableForums() {
-        LambdaQueryWrapper<Forum> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Forum::getStatus, 1); // 只查询状态为启用的
-        wrapper.orderByAsc(Forum::getSortOrder); // 按 sortOrder 升序
-        return this.list(wrapper);
+    public List<String> listAvailableForumTypes() {
+        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("DISTINCT forum_type");
+        queryWrapper.isNotNull("forum_type");
+        queryWrapper.ne("forum_type", "");
+
+        List<Post> posts = postDao.selectList(queryWrapper);
+
+        return posts.stream()
+                .map(Post::getForumType)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     // 实现其他自定义方法...

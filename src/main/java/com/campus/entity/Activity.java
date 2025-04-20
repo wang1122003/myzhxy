@@ -4,122 +4,132 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 /**
- * 校园活动实体类
+ * 活动实体类
  */
 @Data
-@TableName(value = "activity", autoResultMap = true)
+@TableName("activity")
 public class Activity implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
-     * 活动ID
+     * 活动ID (主键)
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 活动标题
      */
+    @TableField("title")
     private String title;
-    
+
     /**
      * 活动描述
      */
+    @TableField("description")
     private String description;
-    
+
     /**
-     * 活动类型：1-娱乐比赛，2-公益服务，3-学术讲座，4-社团活动，5-其他
+     * 活动类型 (例如: 1-讲座, 2-社团, 3-竞赛等)
      */
+    @TableField("activity_type")
     private Integer activityType;
-    
+
     /**
      * 活动地点
      */
+    @TableField("location")
     private String location;
-    
+
     /**
-     * 开始时间
+     * 活动开始时间
      */
+    @TableField("start_time")
     private Date startTime;
-    
+
     /**
-     * 结束时间
+     * 活动结束时间
      */
+    @TableField("end_time")
     private Date endTime;
-    
+
     /**
-     * 组织者ID
+     * 组织者ID (关联用户表)
      */
+    @TableField("organizer_id")
     private Long organizerId;
-    
+
     /**
-     * 组织者名称
+     * 组织者姓名 (冗余字段，方便显示)
      */
-    @TableField(exist = false)
+    @TableField("organizer_name")
     private String organizerName;
-    
+
     /**
-     * 联系方式
+     * 活动联系方式
      */
-    @TableField(exist = false)
+    @TableField("contact")
     private String contact;
-    
+
     /**
-     * 活动海报URL
+     * 活动海报图片URL
      */
+    @TableField("poster_url")
     private String posterUrl;
-    
+
     /**
-     * 报名人数上限
+     * 最大参与人数限制
      */
+    @TableField("max_participants")
     private Integer maxParticipants;
-    
+
     /**
-     * 当前报名人数
+     * 当前已报名人数
      */
+    @TableField("current_participants")
     private Integer currentParticipants;
-    
+
     /**
-     * 活动状态：0-未开始，1-进行中，2-已结束
+     * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等)
      */
+    @TableField("status")
     private Integer status;
-    
+
     /**
-     * 创建时间
+     * 记录创建时间
      */
+    @TableField("create_time")
     private Date createTime;
-    
+
     /**
-     * 更新时间
+     * 记录更新时间
      */
+    @TableField("update_time")
     private Date updateTime;
 
     /**
-     * 参与者列表，使用JSON数组存储
-     * 从ActivityParticipant实体集成而来
+     * 活动发布者ID (关联用户表)
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<Participant> participants;
+    @TableField("publisher_id")
+    private Long publisherId;
 
     /**
-     * 参与者内部类
+     * 设置活动海报URL (显式setter)
      */
-    @Data
-    public static class Participant implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
 
-        private Long userId;
-        private String name;
-        private String avatar;
-        private Date registerTime;
-        private Integer status; // 状态：1-已报名，2-已签到，3-已取消
+    /**
+     * 设置发布者ID (显式setter)
+     */
+    public void setPublisherId(Long publisherId) {
+        this.publisherId = publisherId;
     }
 }

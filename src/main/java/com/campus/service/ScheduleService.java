@@ -1,5 +1,6 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Schedule;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Map;
 /**
  * 课程表服务接口
  */
-public interface ScheduleService {
+public interface ScheduleService extends IService<Schedule> {
     
     /**
      * 根据ID查询课程表
@@ -170,34 +171,6 @@ public interface ScheduleService {
     int getScheduleCount();
     
     /**
-     * 根据时间段查询课表
-     * @param weekDay 星期几
-     * @param timeSlot 时间段
-     * @return 课表列表
-     */
-    List<Schedule> getSchedulesByTimeSlot(int weekDay, int timeSlot);
-    
-    /**
-     * 检查教师时间冲突
-     * @param teacherId 教师ID
-     * @param weekDay 星期几
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 是否冲突
-     */
-    boolean checkTeacherTimeConflict(Long teacherId, int weekDay, int startTime, int endTime);
-    
-    /**
-     * 检查班级时间冲突
-     * @param classId 班级ID
-     * @param weekDay 星期几
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 是否冲突
-     */
-    boolean checkClassTimeConflict(Long classId, int weekDay, int startTime, int endTime);
-    
-    /**
      * 获取教师课程数统计
      * @param teacherId 教师ID
      * @return 课程数
@@ -254,22 +227,6 @@ public interface ScheduleService {
     List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId);
     
     /**
-     * 更新课表状态
-     * @param id 课表ID
-     * @param status 状态
-     * @return 是否成功
-     */
-    boolean updateScheduleStatus(Long id, Integer status);
-
-    /**
-     * 检查教室是否在课表中使用
-     *
-     * @param classroomId 教室ID
-     * @return 如果使用返回 true，否则返回 false
-     */
-    boolean isClassroomInUse(Long classroomId);
-
-    /**
      * 检查课程是否已被排课
      *
      * @param courseId 课程ID
@@ -285,13 +242,9 @@ public interface ScheduleService {
      */
     List<Long> findScheduledCourseIds(List<Long> courseIds);
 
-    /**
-     * 根据学生ID和学期字符串获取课表
-     * 注意: 由于数据库 schema 限制，目前实现会忽略 semester 参数
-     *
-     * @param studentId 学生ID
-     * @param semester  学期字符串 (格式如 2023-2024-1), 当前实现未使用
-     * @return 课表列表
-     */
-    List<Schedule> getSchedulesByStudentIdAndSemester(Long studentId, String semester);
+    List<Schedule> getScheduleByClassIdAndTermId(Long classId, Long termId);
+
+    List<Schedule> getScheduleByTeacherIdAndTermId(Long teacherId, Long termId);
+
+    List<Schedule> getScheduleByCourseIdAndTermId(Long courseId, Long termId);
 }

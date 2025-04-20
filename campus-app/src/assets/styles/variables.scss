@@ -1,3 +1,5 @@
+@use 'sass:color'; // 导入 sass:color 模块
+
 // 主题色彩
 $primary-color: #3a7bd5;
 $secondary-color: #00d2ff;
@@ -61,4 +63,9 @@ $spacing-extra-large: 32px;
 $header-height: 60px;
 $sidebar-width: 240px;
 $sidebar-collapsed-width: 64px;
-$footer-height: 60px; 
+$footer-height: 60px;
+
+// 菜单相关颜色 (新增)
+$menu-hover-background: color.adjust($sidebar-background, $lightness: 10%); // 鼠标悬浮背景色
+$menu-active-background: $primary-color; // 激活项背景色
+$menu-active-text-color: #ffffff; // 激活项文字颜色 

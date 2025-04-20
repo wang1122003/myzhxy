@@ -107,7 +107,7 @@
             />
             <el-table-column
                 label="板块/分类"
-                prop="category"
+                prop="forumType"
                 width="120"
             />
             <el-table-column
@@ -132,11 +132,25 @@
                   加精
                 </el-tag>
                 <el-tag
-                    v-if="scope.row.isLocked"
+                    v-if="scope.row.status === 0" 
                     size="small"
                     type="info"
                 >
-                  锁定
+                  禁用/锁定
+                </el-tag>
+                <el-tag
+                    v-else-if="scope.row.status === 1"
+                    size="small"
+                    type="success"
+                >
+                  正常
+                </el-tag>
+                <el-tag
+                    v-else
+                    size="small"
+                    type="warning"
+                >
+                  未知({{ scope.row.status }})
                 </el-tag>
               </template>
             </el-table-column>
@@ -194,7 +208,7 @@
                     @click="toggleLock(scope.row)"
                 >
                   {{
-                    scope.row.isLocked ? '解锁' : '锁定'
+                    scope.row.status === 0 ? '解锁' : '锁定'
                   }}
                 </el-button>
                 <el-button
@@ -461,7 +475,7 @@ const fetchPosts = async () => {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchParams.keyword || null,
+      keyword: searchParams.keyword || undefined,
     };
     if (searchParams.status && searchParams.status.length > 0) {
       params.isTop = searchParams.status.includes('isTop') ? true : undefined;
@@ -469,12 +483,24 @@ const fetchPosts = async () => {
       params.isLocked = searchParams.status.includes('isLocked') ? true : undefined;
     }
 
-    const res = await searchPosts(params); 
-    forumList.value = res.data.list || [];
-    total.value = res.data.total || 0;
+    const res = await searchPosts(params);
+    if (res.code === 200 && res.data) {
+      forumList.value = res.data.rows || [];
+      total.value = res.data.total || 0;
+    } else if (res.success && res.data) {
+      forumList.value = res.data.list || [];
+      total.value = res.data.total || 0;
+    } else {
+      console.error("获取帖子列表响应格式错误:", res);
+      forumList.value = [];
+      total.value = 0;
+      ElMessage.error(res.message || '获取帖子列表失败');
+    }
   } catch (error) {
     console.error("获取论坛列表失败", error);
     ElMessage.error("获取论坛列表失败");
+    forumList.value = [];
+    total.value = 0;
   } finally {
     loading.value = false;
   }
@@ -540,11 +566,11 @@ const toggleEssence = async (row) => {
 };
 
 const toggleLock = async (row) => {
-  const targetStatus = !row.isLocked;
+  const targetStatus = !row.status;
   try {
-    await updatePost(row.id, {isLocked: targetStatus});
-    ElMessage.success(targetStatus ? (row.isLocked ? '解锁成功' : '锁定成功') : (row.isLocked ? '锁定失败' : '解锁失败'));
-    row.isLocked = targetStatus;
+    await updatePost(row.id, {status: targetStatus});
+    ElMessage.success(targetStatus ? '解锁成功' : '锁定成功');
+    row.status = targetStatus;
   } catch (error) {
     ElMessage.error('操作失败');
     }

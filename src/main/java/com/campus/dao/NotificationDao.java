@@ -1,6 +1,8 @@
 package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.entity.Notification;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -8,56 +10,107 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 通知数据访问接口
+ * 通知公告数据访问接口
  */
 @Repository
 public interface NotificationDao extends BaseMapper<Notification> {
     
     /**
-     * 获取所有通知
+     * 根据ID查询通知详情（可能包含附件等关联信息）
+     * @param id 通知ID
+     * @return 通知对象
+     */
+    Notification findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * 查询所有通知列表（可带排序）
      * @return 通知列表
      */
     List<Notification> getAllNotifications();
     
     /**
-     * 根据ID获取通知
+     * 根据类型查询通知列表
+     * @param noticeType 通知类型
+     * @return 通知列表
+     */
+    List<Notification> findByType(@Param("noticeType") Integer noticeType);
+    
+    /**
+     * 根据状态查询通知列表
+     * @param status 状态
+     * @return 通知列表
+     */
+    List<Notification> findByStatus(@Param("status") Integer status);
+    
+    /**
+     * 查询最新的N条通知
+     * @param limit 数量限制
+     * @return 通知列表
+     */
+    List<Notification> findRecent(@Param("limit") Integer limit);
+    
+    /**
+     * 查询置顶通知
+     * @return 通知列表
+     */
+    List<Notification> findTop();
+    
+    /**
+     * 根据发布者ID查询通知列表
+     * @param publisherId 发布者ID
+     * @return 通知列表
+     */
+    List<Notification> findByPublisherId(@Param("publisherId") Long publisherId);
+
+    /**
+     * 批量更新通知状态
+     *
+     * @param ids    通知ID列表
+     * @param status 新状态
+     * @return 影响行数
+     */
+    int updateStatusBatch(@Param("ids") List<Long> ids, @Param("status") Integer status);
+
+    /**
+     * 增加阅读次数
+     *
      * @param id 通知ID
-     * @return 通知对象
+     * @return 影响行数
      */
-    Notification getNotificationById(Long id);
-    
+    int incrementViewCount(@Param("id") Long id);
+
     /**
-     * 根据类型获取通知
-     * @param type 通知类型
-     * @return 通知列表
+     * 分页查询通知列表
+     *
+     * @param page         分页对象
+     * @param queryWrapper 查询条件包装器
+     * @return 分页结果
      */
-    List<Notification> getNotificationsByType(String type);
-    
+    IPage<Notification> findPage(Page<Notification> page, @Param("ew") com.baomidou.mybatisplus.core.conditions.Wrapper<Notification> queryWrapper);
+
     /**
-     * 根据优先级获取通知
-     * @param priority 优先级
-     * @return 通知列表
+     * 查询用户未读通知数量
+     *
+     * @param userId 用户ID
+     * @return 未读数量
      */
-    List<Notification> getNotificationsByPriority(Integer priority);
-    
+    int countUnread(@Param("userId") Long userId);
+
     /**
-     * 根据发送者ID获取通知
-     * @param senderId 发送者ID
-     * @return 通知列表
+     * 查询用户已读通知列表（分页）
+     *
+     * @param page   分页对象
+     * @param userId 用户ID
+     * @return 分页结果
      */
-    List<Notification> getNotificationsBySenderId(Long senderId);
-    
+    IPage<Notification> findReadNotifications(Page<Notification> page, @Param("userId") Long userId);
+
     /**
-     * 根据目标类型和ID获取通知
-     * @param targetType 目标类型
-     * @param targetId 目标ID
-     * @return 通知列表
+     * 查询用户未读通知列表（分页）
+     *
+     * @param page   分页对象
+     * @param userId 用户ID
+     * @return 分页结果
      */
-    List<Notification> getNotificationsByTarget(@Param("targetType") String targetType, @Param("targetId") Long targetId);
-    
-    /**
-     * 获取有效通知
-     * @return 通知列表
-     */
-    List<Notification> getActiveNotifications();
+    IPage<Notification> findUnreadNotifications(Page<Notification> page, @Param("userId") Long userId);
 }

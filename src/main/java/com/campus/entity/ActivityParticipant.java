@@ -1,74 +1,61 @@
 package com.campus.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 活动参与者实体类
+ * 活动参与者关联实体类
  */
 @Data
-@TableName("activity_participant")
+@NoArgsConstructor
+@AllArgsConstructor
+@TableName("activity_participant") // 假设数据库表名为 activity_participant
 public class ActivityParticipant implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 主键ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 活动ID
      */
+    @TableField("activity_id")
     private Long activityId;
-    
+
     /**
-     * 参与者用户ID
+     * 参与用户ID
      */
+    @TableField("user_id")
     private Long userId;
-    
-    /**
-     * 报名时间
-     */
-    private Date registerTime;
 
     /**
-     * 签到状态：0-未签到，1-已签到
+     * 加入时间
      */
-    private Integer checkInStatus;
-    
-    /**
-     * 签到时间
-     */
-    private Date checkInTime;
-    
-    /**
-     * 参与状态：0-待审核，1-已通过，2-已拒绝
-     */
-    private Integer status;
-    
-    /**
-     * 审核时间
-     */
-    private Date reviewTime;
+    @TableField("join_time")
+    private Date joinTime;
 
     /**
-     * 备注信息
+     * 状态 (可选, 例如 1-已报名, 0-已取消)
+     * 如果需要记录退出状态，可以添加此字段
      */
-    private String remark;
-    
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-    
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
+    // @TableField("status")
+    // private Integer status;
+
+    // 构造函数方便创建实例
+    public ActivityParticipant(Long activityId, Long userId, Date joinTime) {
+        this.activityId = activityId;
+        this.userId = userId;
+        this.joinTime = joinTime;
+    }
 } 

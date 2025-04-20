@@ -1,229 +1,412 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campus.dao.NotificationAttachmentDao;
 import com.campus.dao.NotificationDao;
 import com.campus.dao.NotificationReceiverDao;
+import com.campus.dao.UserDao;
 import com.campus.entity.Notification;
+import com.campus.entity.NotificationAttachment;
 import com.campus.entity.NotificationReceiver;
+import com.campus.enums.NotificationStatusEnum;
+import com.campus.exception.CustomException;
 import com.campus.service.NotificationService;
+import com.campus.utils.ThreadLocalUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * 通知服务实现类
- * 用于管理系统消息、通知等功能
+ * 通知公告服务实现类
  */
 @Service
-public class NotificationServiceImpl implements NotificationService {
+public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notification> implements NotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     @Autowired
     private NotificationDao notificationDao;
-    
+
     @Autowired
     private NotificationReceiverDao notificationReceiverDao;
-    
+
+    @Autowired
+    private UserDao userDao;
+
+    @Autowired
+    private NotificationAttachmentDao notificationAttachmentDao;
+
+    @Autowired
+    private NotificationReadDao notificationReadDao;
+
     @Override
-    public Notification getNotificationById(Long id) {
-        return notificationDao.getNotificationById(id);
+    public Notification getNotificationWithAttachments(Long id) {
+        // 这里可以根据需要实现查询通知详情，并关联查询附件信息
+        // 暂未实现附件功能，直接返回基础信息
+        return notificationDao.selectById(id);
     }
-    
+
     @Override
     public List<Notification> getAllNotifications() {
-        return notificationDao.getAllNotifications();
+        return notificationDao.getAllNotifications(); // 使用与Mapper XML中ID匹配的方法 findAllNotifications -> getAllNotifications
     }
-    
+
     @Override
-    public List<Notification> getNotificationsByUserId(Long userId) {
-        // 获取用户接收到的所有通知
-        List<NotificationReceiver> receivers = notificationReceiverDao.getUserNotifications(
-                userId, "USER");
-        
-        List<Notification> notifications = new ArrayList<>();
-        for (NotificationReceiver receiver : receivers) {
-            Notification notification = notificationDao.getNotificationById(receiver.getNotificationId());
-            if (notification != null) {
-                notifications.add(notification);
-            }
-        }
-        
-        return notifications;
+    public List<Notification> getNotificationsByType(Integer noticeType) {
+        return notificationDao.findByType(noticeType);
     }
-    
+
     @Override
-    public List<Notification> getUnreadNotifications(Long userId) {
-        // 获取用户未读的通知
-        List<NotificationReceiver> receivers = notificationReceiverDao.getUnreadNotifications(
-                userId, "USER");
-        
-        List<Notification> notifications = new ArrayList<>();
-        for (NotificationReceiver receiver : receivers) {
-            Notification notification = notificationDao.getNotificationById(receiver.getNotificationId());
-            if (notification != null) {
-                notifications.add(notification);
-            }
-        }
-        
-        return notifications;
+    public List<Notification> getNotificationsByStatus(Integer status) {
+        return notificationDao.findByStatus(status);
     }
-    
+
+    @Override
+    public List<Notification> getRecentNotifications(Integer limit) {
+        return notificationDao.findRecent(limit);
+    }
+
+    @Override
+    public List<Notification> getTopNotifications() {
+        return notificationDao.findTop();
+    }
+
+    @Override
+    public List<Notification> getNotificationsByPublisherId(Long publisherId) {
+        return notificationDao.findByPublisherId(publisherId);
+    }
+
     @Override
     @Transactional
-    public boolean createNotification(Notification notification) {
-        // 设置创建时间
+    public boolean addNotification(Notification notification) {
+        log.info("新增通知: {}", notification);
+        Account currentUser = ThreadLocalUtil.getCurrentUser();
+        if (currentUser == null) {
+            throw new CustomException("用户未登录");
+        }
+        notification.setPublisherId(currentUser.getUserId());
+        notification.setCreateTime(new Date());
+        notification.setUpdateTime(new Date());
+        if (notification.getStatus() == null) {
+            notification.setStatus(NotificationStatusEnum.DRAFT.getStatus()); // 默认为草稿
+        }
+
+        int inserted = notificationDao.insert(notification);
+        if (inserted > 0 && !CollectionUtils.isEmpty(notification.getAttachmentIds())) {
+            Long notificationId = notification.getId();
+            Date now = new Date();
+            List<NotificationAttachment> attachments = notification.getAttachmentIds().stream()
+                    .map(attachmentId -> {
+                        NotificationAttachment na = new NotificationAttachment();
+                        na.setNotificationId(notificationId);
+                        na.setAttachmentId(attachmentId);
+                        na.setCreateTime(now);
+                        return na;
+                    }).collect(Collectors.toList());
+            attachments.forEach(notificationAttachmentDao::insert); // 批量插入
+            log.info("为通知 {} 关联了 {} 个附件", notificationId, attachments.size());
+        }
+        return inserted > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean addNotification(Notification notification, List<Long> attachmentIds) {
         if (notification.getCreateTime() == null) {
             notification.setCreateTime(new Date());
         }
-        
-        return notificationDao.insert(notification) > 0;
+        notification.setUpdateTime(new Date());
+        // 确保publisherId和senderId同步
+        if (notification.getPublisherId() == null && notification.getSenderId() != null) {
+            notification.setPublisherId(notification.getSenderId());
+        } else if (notification.getSenderId() == null && notification.getPublisherId() != null) {
+            notification.setSenderId(notification.getPublisherId());
+        }
+        boolean success = save(notification);
+        if (!success) {
+            log.error("保存通知到数据库失败: {}", notification);
+            return false;
+        }
+        // TODO: 实现附件关联逻辑
+        if (attachmentIds != null && !attachmentIds.isEmpty()) {
+            for (Long attachmentId : attachmentIds) {
+                NotificationAttachment notificationAttachment = new NotificationAttachment();
+                notificationAttachment.setNotificationId(notification.getId());
+                notificationAttachment.setAttachmentId(attachmentId);
+                notificationAttachment.setCreateTime(new Date());
+                notificationAttachmentDao.insert(notificationAttachment);
+            }
+        }
+        return true;
     }
-    
+
     @Override
     @Transactional
     public boolean updateNotification(Notification notification) {
-        return notificationDao.updateById(notification) > 0;
+        log.info("更新通知: {}", notification);
+        Account currentUser = ThreadLocalUtil.getCurrentUser();
+        if (currentUser == null) {
+            throw new CustomException("用户未登录");
+        }
+        Notification existingNotification = notificationDao.selectById(notification.getId());
+        if (existingNotification == null) {
+            throw new CustomException("通知不存在");
+        }
+        notification.setUpdateTime(new Date());
+
+        // 先删除旧的关联
+        LambdaQueryWrapper<NotificationAttachment> deleteWrapper = new LambdaQueryWrapper<>();
+        deleteWrapper.eq(NotificationAttachment::getNotificationId, notification.getId());
+        int deletedAttachments = notificationAttachmentDao.delete(deleteWrapper);
+        log.info("更新通知 {} 时，删除了 {} 条旧附件关联", notification.getId(), deletedAttachments);
+
+        int updated = notificationDao.updateById(notification);
+
+        // 再添加新的关联
+        if (updated > 0 && !CollectionUtils.isEmpty(notification.getAttachmentIds())) {
+            Long notificationId = notification.getId();
+            Date now = new Date();
+            List<NotificationAttachment> attachments = notification.getAttachmentIds().stream()
+                    .map(attachmentId -> {
+                        NotificationAttachment na = new NotificationAttachment();
+                        na.setNotificationId(notificationId);
+                        na.setAttachmentId(attachmentId);
+                        na.setCreateTime(now);
+                        return na;
+                    }).collect(Collectors.toList());
+            attachments.forEach(notificationAttachmentDao::insert);
+            log.info("为通知 {} 新关联了 {} 个附件", notificationId, attachments.size());
+        }
+        return updated > 0;
     }
-    
+
+    @Override
+    @Transactional
+    public boolean updateNotification(Notification notification, List<Long> attachmentIds) {
+        notification.setUpdateTime(new Date());
+        // 确保publisherId和senderId同步
+        if (notification.getPublisherId() == null && notification.getSenderId() != null) {
+            notification.setPublisherId(notification.getSenderId());
+        } else if (notification.getSenderId() == null && notification.getPublisherId() != null) {
+            notification.setSenderId(notification.getPublisherId());
+        }
+        boolean success = updateById(notification);
+        if (!success) {
+            log.error("更新通知到数据库失败: {}", notification);
+            return false;
+        }
+        // TODO: 实现附件更新逻辑
+        if (true) {
+            // ... (删除旧附件，添加新附件逻辑) ...
+        }
+        return true;
+    }
+
     @Override
     @Transactional
     public boolean deleteNotification(Long id) {
-        // 获取相关的接收记录
-        List<NotificationReceiver> receivers = notificationReceiverDao.getByNotificationId(id);
-        
-        // 删除接收记录
-        for (NotificationReceiver receiver : receivers) {
-            notificationReceiverDao.deleteNotificationReceiver(receiver.getId());
+        log.info("删除通知 ID: {}", id);
+        // 1. 删除通知本身
+        boolean deleted = removeById(id);
+        // 2. 删除关联的附件记录 (如果存在)
+        if (deleted) {
+            deleteNotificationAttachmentsByNotificationId(id);
         }
-        
-        // 删除通知
-        return notificationDao.deleteById(id) > 0;
+        return deleted;
     }
-    
+
+    /**
+     * 根据通知 ID 删除关联的附件记录
+     *
+     * @param notificationId 通知 ID
+     */
+    private void deleteNotificationAttachmentsByNotificationId(Long notificationId) {
+        LambdaQueryWrapper<NotificationAttachment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NotificationAttachment::getNotificationId, notificationId);
+        notificationAttachmentDao.delete(wrapper);
+        // TODO: 删除附件
+    }
+
     @Override
     @Transactional
-    public boolean markAsRead(Long id, Long userId) {
-        // 根据通知ID和用户ID查找接收记录
-        List<NotificationReceiver> receivers = notificationReceiverDao.getUserNotifications(
-                userId, "USER");
-        
-        for (NotificationReceiver receiver : receivers) {
-            if (receiver.getNotificationId().equals(id)) {
-                receiver.setIsRead(1); // 标记为已读
-                receiver.setReadTime(new Date());
-                return notificationReceiverDao.updateById(receiver) > 0;
-            }
-        }
-        
-        return false;
-    }
-    
-    @Override
-    @Transactional
-    public boolean markAllAsRead(Long userId) {
-        return notificationReceiverDao.markAllAsRead(userId, "USER") > 0;
-    }
-    
-    @Override
-    @Transactional
-    public boolean sendNotificationToUser(String title, String content, Long userId) {
-        // 创建通知
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setCreateTime(new Date());
-        notification.setType("USER"); // 个人通知
-        notification.setPriority(1);  // 普通优先级
-        notification.setStatus(1);    // 已发送状态
-        notification.setSendTime(new Date());
-        
-        if (notificationDao.insert(notification) > 0) {
-            // 创建通知接收者
-            NotificationReceiver receiver = new NotificationReceiver();
-            receiver.setNotificationId(notification.getId());
-            receiver.setReceiverId(userId);
-            receiver.setIsRead(0); // 0-未读
-            receiver.setStatus(1); // 1-正常
-            receiver.setCreateTime(new Date());
-            
-            return notificationReceiverDao.insert(receiver) > 0;
-        }
-        
-        return false;
-    }
-    
-    @Override
-    @Transactional
-    public boolean sendNotificationToUsers(String title, String content, List<Long> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
+    public boolean batchDeleteNotifications(Long[] ids) {
+        if (ids == null || ids.length == 0) {
             return false;
         }
-        
-        // 创建通知
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setCreateTime(new Date());
-        notification.setType("GROUP"); // 群组通知
-        notification.setPriority(1);   // 普通优先级
-        notification.setStatus(1);     // 已发送状态
-        notification.setSendTime(new Date());
-        
-        if (notificationDao.insert(notification) > 0) {
-            // 创建通知接收者
-            boolean allSuccess = true;
-            for (Long userId : userIds) {
-                NotificationReceiver receiver = new NotificationReceiver();
-                receiver.setNotificationId(notification.getId());
-                receiver.setReceiverId(userId);
-                receiver.setIsRead(0); // 0-未读
-                receiver.setStatus(1); // 1-正常
-                receiver.setCreateTime(new Date());
-                
-                if (notificationReceiverDao.insert(receiver) <= 0) {
-                    allSuccess = false;
-                }
+        // 1. 批量删除通知
+        boolean deleted = removeByIds(Arrays.asList(ids));
+        // 2. 批量删除关联的附件记录
+        if (deleted) {
+            for (Long id : ids) {
+                deleteNotificationAttachmentsByNotificationId(id);
             }
-            
-            return allSuccess;
         }
-        
-        return false;
+        // TODO: 批量删除附件
+        return deleted;
     }
-    
+
+    @Override
+    public boolean updateNotificationStatus(Long id, Integer status) {
+        Notification notification = new Notification();
+        notification.setId(id);
+        notification.setStatus(status);
+        notification.setUpdateTime(new Date());
+        return updateById(notification);
+    }
+
+    @Override
+    public boolean incrementViewCount(Long id) {
+        return notificationDao.incrementViewCount(id) > 0;
+    }
+
+    @Override
+    public IPage<Notification> getNotificationPage(int pageNo, int pageSize, Notification notification) {
+        Page<Notification> page = new Page<>(pageNo, pageSize);
+        LambdaQueryWrapper<Notification> wrapper = buildQueryWrapper(notification);
+        wrapper.orderByDesc(Notification::getIsTop, Notification::getCreateTime);
+        return notificationDao.selectPage(page, wrapper);
+    }
+
     @Override
     @Transactional
-    public boolean sendNotificationToAllUsers(String title, String content) {
-        // 创建通知
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setCreateTime(new Date());
-        notification.setType("ALL"); // 全体通知
-        notification.setPriority(2);  // 较高优先级
-        notification.setStatus(1);    // 已发送状态
-        notification.setSendTime(new Date());
-        notification.setTargetType("ALL");
-        
-        return notificationDao.insert(notification) > 0;
+    public boolean sendNotificationToUsers(Notification notification, List<Long> userIds) {
+        saveNotificationIfNotExists(notification);
+        if (userIds == null || userIds.isEmpty()) {
+            return true;
+        }
+        List<NotificationReceiver> receivers = userIds.stream()
+                .map(userId -> createReceiver(notification.getId(), userId))
+                .collect(Collectors.toList());
+        return notificationReceiverDao.insertBatch(receivers) > 0;
     }
-    
+
     @Override
     @Transactional
-    public boolean sendSystemNotification(String title, String content) {
-        // 创建通知
-        Notification notification = new Notification();
-        notification.setTitle(title);
-        notification.setContent(content);
-        notification.setCreateTime(new Date());
-        notification.setType("SYSTEM"); // 系统通知
-        notification.setPriority(3);    // 高优先级
-        notification.setStatus(1);      // 已发送状态
-        notification.setSendTime(new Date());
-        notification.setTargetType("SYSTEM");
-        
-        return notificationDao.insert(notification) > 0;
+    public boolean sendNotificationToRoles(Notification notification, List<Long> roleIds) {
+        saveNotificationIfNotExists(notification);
+        if (roleIds == null || roleIds.isEmpty()) {
+            return true;
+        }
+        List<Long> userIds = userDao.findUserIdsByRoleIds(roleIds);
+        return sendNotificationToUsers(notification, userIds);
+    }
+
+    @Override
+    @Transactional
+    public boolean sendNotificationToDepartments(Notification notification, List<Long> departmentIds) {
+        saveNotificationIfNotExists(notification);
+        if (departmentIds == null || departmentIds.isEmpty()) {
+            return true;
+        }
+        // 实现根据部门查找用户ID
+        List<Long> userIds = userDao.findUserIdsByDepartmentIds(departmentIds);
+        return sendNotificationToUsers(notification, userIds);
+    }
+
+    @Override
+    @Transactional
+    public boolean sendNotificationToAll(Notification notification) {
+        saveNotificationIfNotExists(notification);
+        // 实现查询所有用户ID
+        List<Long> allUserIds = userDao.findAllUserIds();
+        return sendNotificationToUsers(notification, allUserIds);
+    }
+
+    @Override
+    public int getUnreadNotificationCount(Long userId) {
+        return notificationReceiverDao.count(new LambdaQueryWrapper<NotificationReceiver>()
+                .eq(NotificationReceiver::getReceiverId, userId)
+                .eq(NotificationReceiver::getIsRead, 0)
+                .eq(NotificationReceiver::getStatus, 1));
+    }
+
+    @Override
+    public IPage<Notification> getUnreadNotifications(int pageNo, int pageSize, Long userId) {
+        Page<Notification> page = new Page<>(pageNo, pageSize);
+        return notificationDao.findUnreadNotifications(page, userId);
+    }
+
+    @Override
+    public IPage<Notification> getReadNotifications(int pageNo, int pageSize, Long userId) {
+        Page<Notification> page = new Page<>(pageNo, pageSize);
+        return notificationDao.findReadNotifications(page, userId);
+    }
+
+    @Override
+    public boolean markNotificationAsRead(Long userId, Long notificationId) {
+        LambdaQueryWrapper<NotificationReceiver> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NotificationReceiver::getReceiverId, userId)
+                .eq(NotificationReceiver::getNotificationId, notificationId)
+                .eq(NotificationReceiver::getIsRead, 0);
+        return updateReceiverStatus(wrapper, 1);
+    }
+
+    @Override
+    public boolean markAllNotificationsAsRead(Long userId) {
+        LambdaQueryWrapper<NotificationReceiver> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NotificationReceiver::getReceiverId, userId)
+                .eq(NotificationReceiver::getIsRead, 0);
+        return updateReceiverStatus(wrapper, 1);
+    }
+
+    private NotificationReceiver createReceiver(Long notificationId, Long userId) {
+        NotificationReceiver receiver = new NotificationReceiver();
+        receiver.setNotificationId(notificationId);
+        receiver.setReceiverId(userId);
+        receiver.setIsRead(0);
+        receiver.setStatus(1);
+        receiver.setCreateTime(new Date());
+        receiver.setUpdateTime(new Date());
+        return receiver;
+    }
+
+    private void saveNotificationIfNotExists(Notification notification) {
+        if (notification.getId() == null) {
+            addNotification(notification);
+        }
+    }
+
+    private boolean updateReceiverStatus(LambdaQueryWrapper<NotificationReceiver> wrapper, Integer isRead) {
+        NotificationReceiver receiverUpdate = new NotificationReceiver();
+        receiverUpdate.setIsRead(isRead);
+        receiverUpdate.setReadTime(new Date());
+        receiverUpdate.setUpdateTime(new Date());
+        return notificationReceiverDao.update(receiverUpdate, wrapper) > 0;
+    }
+
+    private LambdaQueryWrapper<Notification> buildQueryWrapper(Notification notification) {
+        LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
+        if (notification != null) {
+            if (StringUtils.isNotBlank(notification.getTitle())) {
+                wrapper.like(Notification::getTitle, notification.getTitle());
+            }
+            if (notification.getNoticeType() != null) {
+                wrapper.eq(Notification::getNoticeType, notification.getNoticeType());
+            }
+            if (notification.getStatus() != null) {
+                wrapper.eq(Notification::getStatus, notification.getStatus());
+            }
+            if (StringUtils.isNotBlank(notification.getPublisherName())) {
+                wrapper.like(Notification::getPublisherName, notification.getPublisherName());
+            }
+            if (notification.getTargetType() != null) {
+                wrapper.eq(Notification::getTargetType, notification.getTargetType());
+            }
+            if (notification.getTargetId() != null) {
+                wrapper.eq(Notification::getTargetId, notification.getTargetId());
+            }
+            // 可以根据需要添加更多查询条件，比如时间范围等
+        }
+        return wrapper;
     }
 } 

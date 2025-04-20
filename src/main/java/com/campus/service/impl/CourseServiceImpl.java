@@ -30,7 +30,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
 
     @Override
     public Course getCourseByCourseNo(String courseNo) {
-        return this.getOne(new LambdaQueryWrapper<Course>().eq(Course::getCourseNo, courseNo));
+        return baseMapper.findByCourseNo(courseNo);
     }
 
     @Override

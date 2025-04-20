@@ -1,79 +1,7 @@
 <template>
   <div class="home-container">
     <el-row :gutter="20">
-      <!-- 通知公告 -->
-      <el-col :md="16" :sm="24" :xs="24" class="notice-col">
-        <el-card
-            v-loading="loadingNotices || loadingNoticeTypes"
-            class="notice-card home-card"
-        >
-          <template #header>
-            <div class="card-header">
-              <span>通知公告</span>
-              <!-- 跳转到专门的通知页面，如果存在 -->
-              <el-button
-                  link
-                  type="primary"
-                  @click="viewAllNotices"
-              >
-                查看全部
-              </el-button>
-            </div>
-          </template>
-          <el-table
-              :data="notices"
-              :height="tableHeight"
-              style="width: 100%"
-          >
-            <!-- 固定高度以便滚动 -->
-            <el-table-column
-                label="标题"
-                prop="title"
-                show-overflow-tooltip
-            />
-            <el-table-column
-                label="类型"
-                prop="type"
-                width="100"
-            >
-              <template #default="scope">
-                <el-tag :type="noticeTypeMapComputed[scope.row.type]?.tag || 'info'">
-                  {{ noticeTypeMapComputed[scope.row.type]?.name || '其他' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-                label="发布时间"
-                prop="publishTime"
-                width="180"
-            >
-              <template #default="scope">
-                {{ formatTime(scope.row.publishTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-                label="操作"
-                width="100"
-            >
-              <template #default="scope">
-                <el-button
-                    link
-                    type="primary"
-                    @click="viewNotice(scope.row)"
-                >
-                  查看
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <el-empty
-              v-if="notices.length === 0 && !loadingNotices"
-              description="暂无通知公告"
-          />
-        </el-card>
-      </el-col>
-
-      <!-- 登录表单 -->
+      <!-- 登录表单 (移动端优先显示) -->
       <el-col :md="8" :sm="24" :xs="24" class="login-col">
         <el-card class="login-card home-card">
           <div class="login-header card-header">
@@ -132,6 +60,77 @@
           </el-form>
         </el-card>
       </el-col>
+
+      <!-- 通知公告 -->
+      <el-col :md="16" :sm="24" :xs="24" class="notice-col">
+        <el-card
+            v-loading="loadingNotices || loadingNoticeTypes"
+            class="notice-card home-card"
+        >
+          <template #header>
+            <div class="card-header">
+              <span>通知公告</span>
+              <el-button
+                  link
+                  type="primary"
+                  @click="viewAllNotices"
+              >
+                查看全部
+              </el-button>
+            </div>
+          </template>
+          <el-table
+              :data="notices"
+              style="width: 100%"
+              empty-text=" " 
+          >
+            <el-table-column
+                label="标题"
+                prop="title"
+                show-overflow-tooltip
+            />
+            <el-table-column
+                label="类型"
+                prop="type"
+                width="100"
+            >
+              <template #default="scope">
+                <el-tag :type="noticeTypeMapComputed[scope.row.type]?.tag || 'info'">
+                  {{ noticeTypeMapComputed[scope.row.type]?.name || '其他' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+                label="发布时间"
+                prop="createTime"
+                width="180"
+            >
+              <template #default="scope">
+                {{ formatTime(scope.row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+                label="操作"
+                width="100"
+            >
+              <template #default="scope">
+                <el-button
+                    link
+                    type="primary"
+                    @click="viewNotice(scope.row)"
+                >
+                  查看
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty
+              v-if="notices.length === 0 && !loadingNotices"
+              description="暂无通知公告"
+          />
+        </el-card>
+      </el-col>
+
     </el-row>
 
     <!-- 公告详情对话框 -->
@@ -195,11 +194,12 @@
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElLink, ElMessage} from 'element-plus'
-import {getNoticeById, getRecentNotices} from '@/api/notice'
+import {Lock, User} from '@element-plus/icons-vue'
+import {login as authLogin} from '@/utils/auth'
+import {getNotificationById, getRecentNotifications} from '@/api/notice'
 import {login} from '@/api/user'
 import {downloadFile} from '@/api/file'
 import {getNoticeTypes} from '@/api/common'
-import {Lock, User} from '@element-plus/icons-vue'
 
 // defineOptions({
 //   name: 'HomePage'
@@ -260,10 +260,14 @@ onMounted(async () => {
 const fetchNotices = async () => {
   loadingNotices.value = true
   try {
-    const response = await getRecentNotices()
-    notices.value = response.data || []
+    const res = await getRecentNotifications()
+    if (res.code === 200 && res.data) {
+      notices.value = res.data.slice(0, 5)
+    } else {
+      console.error('获取最近通知失败:', res.message)
+    }
   } catch (error) {
-    console.error("获取通知列表失败", error)
+    console.error('获取最近通知异常:', error)
   } finally {
     loadingNotices.value = false
   }
@@ -298,29 +302,9 @@ const handleLogin = () => {
       loginLoading.value = true
       login(loginForm).then(response => {
         const {token, user} = response.data
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(user))
 
-        // **根据 userType 确定角色字符串并存储**
-        let roleString = '';
-        if (user && typeof user.userType === 'number') {
-          switch (user.userType) {
-            case 0:
-              roleString = 'admin';
-              break;
-            case 1: // 假设 1 是学生
-              roleString = 'student';
-              break;
-            case 2: // 假设 2 是教师
-              roleString = 'teacher';
-              break;
-            default:
-              roleString = 'unknown'; // 或者其他默认值
-          }
-          localStorage.setItem('role', roleString)
-        } else {
-          localStorage.removeItem('role') // 防止残留旧角色或无效角色
-        }
+        // 调用 auth.js 的 login 更新全局状态，并获取角色
+        const loggedInRole = authLogin({token, user})
 
         if (loginForm.remember) {
           localStorage.setItem('username', loginForm.username)
@@ -330,19 +314,25 @@ const handleLogin = () => {
 
         ElMessage.success('登录成功')
 
-        // **根据角色字符串重定向**
-        if (roleString === 'admin') {
+        // 根据 authLogin 返回的角色进行重定向
+        console.log('[HomePage] Redirecting based on role from authLogin:', loggedInRole);
+
+        if (loggedInRole === 'admin') {
           router.push('/admin')
-        } else if (roleString === 'teacher') {
+        } else if (loggedInRole === 'teacher') {
           router.push('/teacher')
-        } else if (roleString === 'student') {
+        } else if (loggedInRole === 'student') {
           router.push('/student')
         } else {
-          console.error('登录成功，但角色未知或无效:', user?.userType);
-          router.push('/') // 未知角色或无角色，回到首页
+          // 如果 authLogin 返回 null 或未知角色
+          console.error('[HomePage] Login successful, but role from authLogin is unknown/invalid:', loggedInRole);
+          router.push('/')
         }
-      }).catch(() => {
-        ElMessage.error('用户名或密码错误')
+      }).catch((error) => {
+        // 可以在这里处理登录接口本身返回的错误，例如网络问题或后端特定错误消息
+        const errorMsg = error?.response?.data?.message || '用户名或密码错误';
+        ElMessage.error(errorMsg);
+        console.error('登录请求失败:', error);
       }).finally(() => {
         loginLoading.value = false
       })
@@ -357,7 +347,7 @@ const viewNotice = async (row) => {
   noticeDialogVisible.value = true
   currentNotice.id = null
   try {
-    const res = await getNoticeById(row.id)
+    const res = await getNotificationById(row.id)
     // 假设附件信息在 notice 详情中，格式为 [{ id: 1, name: 'xxx.pdf', url: '...' }]
     Object.assign(currentNotice, res.data)
   } catch (err) {
@@ -452,42 +442,44 @@ export default {
 
 .home-card {
   margin-bottom: 20px;
-  height: 100%; /* 让卡片尝试填充其列的高度 */
+}
+
+.notice-card {
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 18px; /* 统一标题字体大小 */
+  font-size: 18px;
   font-weight: 600;
 }
 
 .login-header h2 {
-  margin: 0; /* 移除 h2 的默认 margin */
-  font-size: inherit; /* 继承 .card-header 的字体大小 */
-  font-weight: inherit; /* 继承 .card-header 的字重 */
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .el-table {
-  font-size: 14px; /* 调整表格字体大小 */
+  font-size: 14px;
 }
 
 .el-table .el-button {
-  font-size: 13px; /* 调整表格内按钮字体大小 */
+  font-size: 13px;
 }
 
 .el-form-item {
-  margin-bottom: 18px; /* 调整表单项间距 */
+  margin-bottom: 18px;
 }
 
 .el-input,
 .el-checkbox {
-  font-size: 14px; /* 统一输入框和复选框字体 */
+  font-size: 14px;
 }
 
 .el-button {
-  font-size: 14px; /* 统一按钮字体大小 */
+  font-size: 14px;
 }
 
 .notice-content {
@@ -526,19 +518,15 @@ export default {
   font-size: 14px;
 }
 
-/* 响应式调整 - 确保在小屏幕上堆叠 */
+/* 响应式调整 */
 @media (max-width: 991px) {
-  /* Element Plus 的 md 断点 */
   .notice-col,
   .login-col {
-    width: 100%; /* 宽度占满 */
+    width: 100%;
   }
 
-  .login-col {
-    margin-top: 20px; /* 在登录框上方增加间距 */
+  .notice-col {
+    margin-top: 20px;
   }
-
-  /* 可以考虑在小屏幕上减小表格高度 */
-  /* tableHeight ref 的计算逻辑已包含窗口大小变化 */
 }
 </style> 

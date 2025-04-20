@@ -4,72 +4,115 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 通知实体类
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @TableName("notification")
-public class Notification {
-    
+public class Notification implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     /**
-     * 主键ID
+     * 通知ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 通知标题
      */
+    @TableField("title")
     private String title;
     
     /**
      * 通知内容
      */
+    @TableField("content")
     private String content;
     
     /**
-     * 通知类型
+     * 通知类型：1-系统通知，2-教学通知，3-学工通知，4-生活通知，99-其他通知
      */
+    @TableField("notice_type")
+    private Integer noticeType;
+
+    /**
+     * 通知类型字符串版本
+     */
+    @TableField("type")
     private String type;
-    
+
     /**
      * 优先级
      */
+    @TableField("priority")
     private Integer priority;
+
+    /**
+     * 通知状态：0-草稿, 1-已发布, 2-已撤回
+     */
+    @TableField("status")
+    private Integer status;
+
+    /**
+     * 是否置顶：0-否, 1-是
+     */
+    @TableField("is_top")
+    private Integer isTop;
+
+    /**
+     * 阅读次数
+     */
+    @TableField("view_count")
+    private Integer viewCount;
     
     /**
-     * 发送者ID
+     * 发送者ID 
      */
     @TableField("sender_id")
     private Long senderId;
-    
+
+    /**
+     * 发布者ID (同步sender_id字段)
+     */
+    @TableField("publisher_id")
+    private Long publisherId;
+
+    /**
+     * 发布者姓名
+     */
+    @TableField("publisher_name")
+    private String publisherName;
+
     /**
      * 目标类型（如：全体、学院、班级、个人）
      */
     @TableField("target_type")
     private String targetType;
-    
+
     /**
      * 目标ID
      */
     @TableField("target_id")
     private Long targetId;
-    
-    /**
-     * 状态（0-草稿，1-已发送，2-已撤回）
-     */
-    private Integer status;
-    
+
     /**
      * 发送时间
      */
     @TableField("send_time")
     private Date sendTime;
-    
+
     /**
      * 过期时间
      */
@@ -87,9 +130,53 @@ public class Notification {
      */
     @TableField("update_time")
     private Date updateTime;
-    
+
     /**
-     * 发送者信息
+     * 附件信息 (JSON 字符串)
+     * 存储 List<AttachmentInfo> 的 JSON 格式，例如:
+     * "[{\"name\": \"file1.pdf\", \"url\": \"/uploads/uuid1.pdf\"}, {\"name\": \"image.png\", \"url\": \"/uploads/uuid2.png\"}]"
+     */
+    @TableField("attachments_json")
+    private String attachmentsJson;
+
+    /**
+     * 接收者类型：1-全体，2-指定用户，3-指定角色，4-指定部门
+     */
+    @TableField(exist = false)
+    private Integer receiverType;
+
+    /**
+     * 接收者ID列表 (根据 receiverType 类型确定含义)
+     */
+    @TableField(exist = false)
+    private List<Long> receiverIds;
+
+    /**
+     * 已读状态 (非数据库字段，根据当前用户查询)
+     */
+    @TableField(exist = false)
+    private Boolean isRead;
+
+    /**
+     * 附件文件信息列表 (非数据库字段，从 attachments JSON 解析得到)
+     */
+    @TableField(exist = false)
+    private List<Map<String, String>> attachmentFiles;
+
+    /**
+     * 接收者姓名列表 (非数据库字段，用于前端展示)
+     */
+    @TableField(exist = false)
+    private List<String> receiverNames;
+
+    /**
+     * 消息类型名称 (非数据库字段)
+     */
+    @TableField(exist = false)
+    private String noticeTypeName;
+
+    /**
+     * 发送者用户信息 (通过关联查询得到，非数据库字段)
      */
     @TableField(exist = false)
     private User sender;

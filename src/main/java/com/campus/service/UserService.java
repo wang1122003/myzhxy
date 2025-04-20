@@ -1,5 +1,6 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,20 +36,20 @@ public interface UserService extends IService<User> {
     
     /**
      * 根据用户类型查询用户
-     * @param userType 用户类型
+     * @param userType 用户类型 (使用 String: "Admin", "Student", "Teacher")
      * @return 用户列表
      */
-    List<User> getUsersByType(Integer userType);
+    List<User> getUsersByType(String userType);
     
     /**
-     * 添加用户
+     * 添加用户 (通常指学生或教师)
      * @param user 用户对象
      * @return 是否成功
      */
     boolean addUser(User user);
     
     /**
-     * 更新用户
+     * 更新用户 (通用更新)
      * @param user 用户对象
      * @return 是否成功
      */
@@ -71,10 +72,10 @@ public interface UserService extends IService<User> {
     /**
      * 修改用户状态
      * @param id 用户ID
-     * @param status 状态值
+     * @param status 状态字符串 ("Active", "Inactive")
      * @return 是否成功
      */
-    boolean updateUserStatus(Long id, Integer status);
+    boolean updateUserStatus(Long id, String status);
     
     /**
      * 修改密码
@@ -94,7 +95,7 @@ public interface UserService extends IService<User> {
     User login(String username, String password);
     
     /**
-     * 搜索用户
+     * 搜索用户 (旧接口，可能被 findUsersPage 替代)
      * @param keyword 关键词
      * @return 匹配的用户列表
      */
@@ -116,17 +117,17 @@ public interface UserService extends IService<User> {
     
     /**
      * 根据用户类型获取用户数量
-     * @param userType 用户类型
+     * @param userType 用户类型 (String)
      * @return 用户数量
      */
-    long getUserCountByType(int userType);
+    long getUserCountByType(String userType);
     
     /**
      * 根据状态获取用户数量
-     * @param status 状态
+     * @param status 状态 (String)
      * @return 用户数量
      */
-    long getUserCountByStatus(int status);
+    long getUserCountByStatus(String status);
 
     /**
      * 获取所有学生用户
@@ -150,12 +151,12 @@ public interface UserService extends IService<User> {
     Map<String, Object> getUserStats();
 
     /**
-     * 更新用户个人资料
+     * 更新用户个人资料 (由用户自己操作)
      *
-     * @param user 用户对象
+     * @param user 用户对象 (只包含允许用户修改的字段)
      * @return 是否成功
      */
-    boolean updateProfile(User user);
+    boolean updateUserProfile(User user);
 
     /**
      * 上传用户头像
@@ -167,26 +168,42 @@ public interface UserService extends IService<User> {
     boolean uploadAvatar(Long id, String avatarUrl);
 
     /**
-     * 批量导入用户
-     *
-     * @param file     Excel文件
-     * @param userType 用户类型
-     * @return 导入结果
+     * 分页查询用户列表
+     * @param page 当前页码
+     * @param size 每页数量
+     * @param keyword 搜索关键词 (可选, 搜索用户名、真实姓名或邮箱)
+     * @param userType 用户类型 (可选, 0: Admin, 1: Student, 2: Teacher)
+     * @return 分页结果对象
      */
-    Map<String, Object> importUsers(MultipartFile file, Integer userType);
+    IPage<User> findUsersPage(int page, int size, String keyword, Integer userType);
 
     /**
-     * 批量导入用户
-     *
+     * 解析用户导入文件
+     * @param file 上传的Excel文件
+     * @param userType 要导入的用户类型 (0, 1, 2)
+     * @return 解析出的用户列表
+     * @throws Exception 文件解析错误
+     */
+    List<User> parseUserImportFile(MultipartFile file, Integer userType) throws Exception;
+
+    /**
+     * 批量添加用户 (用于导入)
      * @param users 用户列表
-     * @return 导入结果
+     * @return 是否成功
      */
-    Map<String, Object> batchImportUsers(List<User> users);
+    boolean batchAddUsers(List<User> users);
 
     /**
-     * 生成用户导入模板
-     *
-     * @return 模板文件URL
+     * 检查管理员账号是否存在
+     * @return 是否存在
      */
-    String generateImportTemplate();
+    boolean checkAdminExists();
+
+    /**
+     * 添加管理员用户 (特殊处理，如密码加密)
+     *
+     * @param admin 管理员用户对象
+     * @return 是否成功
+     */
+    boolean addAdminUser(User admin);
 }

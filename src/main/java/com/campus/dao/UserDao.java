@@ -2,15 +2,15 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.User;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
  * 用户数据访问接口
  */
-@Mapper
+@Repository
 public interface UserDao extends BaseMapper<User> {
     /**
      * 根据用户名查询用户
@@ -115,4 +115,29 @@ public interface UserDao extends BaseMapper<User> {
      * @return 删除数量
      */
     int deleteBatchIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 根据角色ID列表查询用户ID列表
+     *
+     * @param roleIds 角色ID列表
+     * @return 用户ID列表
+     */
+    List<Long> findUserIdsByRoleIds(@Param("roleIds") List<Long> roleIds);
+
+    /**
+     * 根据部门ID列表查询用户ID列表
+     * (假设 User 表或关联表中有 department_id 字段)
+     *
+     * @param departmentIds 部门ID列表
+     * @return 用户ID列表
+     */
+    List<Long> findUserIdsByDepartmentIds(@Param("departmentIds") List<Long> departmentIds);
+
+    /**
+     * 查询所有有效的用户ID列表
+     * (可以根据需要添加过滤条件，例如只查询 status='Active' 的用户)
+     *
+     * @return 用户ID列表
+     */
+    List<Long> findAllUserIds();
 }

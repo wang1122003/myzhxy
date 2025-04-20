@@ -10,58 +10,59 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 通知接收者实体类，用于记录用户阅读通知的状态
+ * 行政班级实体类
  */
 @Data
-@TableName("notification_receiver")
-public class NotificationReceiver implements Serializable {
+@TableName("clazz")
+public class Clazz implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
-     * ID
+     * 班级ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
-    /**
-     * 通知ID
-     */
-    @TableField("notification_id")
-    private Long notificationId;
-    
-    /**
-     * 接收用户ID
-     */
-    @TableField("receiver_id")
-    private Long receiverId;
-    
-    /**
-     * 是否已读：0-未读，1-已读
-     */
-    @TableField("is_read")
-    private Integer isRead;
-    
-    /**
-     * 阅读时间
-     */
-    @TableField("read_time")
-    private Date readTime;
 
     /**
-     * 状态：0-删除，1-正常
+     * 班级名称
      */
-    @TableField("status")
-    private Integer status;
-    
+    @TableField("name")
+    private String name;
+
+    /**
+     * 年级
+     */
+    @TableField("grade")
+    private String grade;
+
+    /**
+     * 所属院系ID
+     */
+    @TableField("department_id")
+    private Long departmentId;
+
+    /**
+     * 辅导员/班主任教师ID
+     */
+    @TableField("instructor_id")
+    private Long instructorId;
+
     /**
      * 创建时间
      */
     @TableField("create_time")
     private Date createTime;
-    
+
     /**
      * 更新时间
      */
     @TableField("update_time")
     private Date updateTime;
+
+    // 非数据库字段，用于关联查询显示
+    @TableField(exist = false)
+    private String departmentName;
+
+    @TableField(exist = false)
+    private String instructorName;
 } 

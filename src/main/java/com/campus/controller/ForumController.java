@@ -7,6 +7,7 @@ import com.campus.service.CommentService;
 import com.campus.service.ForumService;
 import com.campus.service.PostService;
 import com.campus.utils.Result;
+import com.campus.vo.CommentVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -64,33 +65,6 @@ public class ForumController {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body("This endpoint is deprecated, use /categories instead.");
     }
 
-    // 创建、更新、删除分类的接口已注释掉，因为它们基于不存在的 Forum 表/实体
-    /*
-    @PostMapping("/categories")
-    public Result createForumCategory(@RequestBody Forum forum) {
-        // forum.setCreateTime(new Date());
-        // forum.setUpdateTime(new Date());
-        // boolean success = forumService.save(forum); // Error: save undefined
-        // return success ? Result.success() : Result.error("创建分类失败");
-         return Result.error("Category creation not implemented based on forum_type");
-    }
-
-    @PutMapping("/categories/{id}")
-    public Result updateForumCategory(@PathVariable Long id, @RequestBody Forum forum) {
-        // forum.setId(id);
-        // forum.setUpdateTime(new Date());
-        // boolean success = forumService.updateById(forum); // Error: updateById undefined
-        // return success ? Result.success() : Result.error("更新分类失败");
-         return Result.error("Category update not implemented based on forum_type");
-    }
-
-    @DeleteMapping("/categories/{id}")
-    public Result deleteForumCategory(@PathVariable Long id) {
-        // boolean success = forumService.removeById(id); // Error: removeById undefined
-        // return success ? Result.success() : Result.error("删除分类失败");
-         return Result.error("Category deletion not implemented based on forum_type");
-    }
-    */
 
     // =============== 帖子相关 API ===============
 
@@ -115,6 +89,10 @@ public class ForumController {
      *
      * @param page 页码
      * @param size 每页数量
+     * @param keyword 关键词 (可选)
+     * @param forumType 板块类型 (可选)
+     * @param tag 标签 (可选)
+     * @param sortBy 排序依据 (可选, 默认为 createTime)
      * @return 帖子列表分页数据
      */
     @GetMapping("/posts")
@@ -166,9 +144,16 @@ public class ForumController {
      */
     @PutMapping("/posts/{id}")
     public Result updatePost(@PathVariable Long id, @RequestBody Post post) {
-        post.setId(id);
-        boolean success = postService.updatePost(post);
-        return success ? Result.success() : Result.error("更新帖子失败");
+        Post existingPost = postService.getPostById(id);
+        if (existingPost == null) {
+            return Result.error("帖子不存在");
+        }
+
+
+        post.setId(id); // 保留从路径设置ID
+
+        boolean result = postService.updatePost(post);
+        return result ? Result.success("更新成功") : Result.error("更新失败");
     }
 
     /**
@@ -225,7 +210,7 @@ public class ForumController {
      */
     @GetMapping("/posts/search")
     public Result searchPosts(
-            @RequestParam String keyword,
+            @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         Map<String, Object> result = postService.searchPosts(keyword, page, size);
@@ -271,6 +256,7 @@ public class ForumController {
     /**
      * 获取热门帖子
      *
+     * @param limit 返回数量限制，默认10
      * @return 热门帖子列表
      */
     @GetMapping("/posts/hot")
@@ -300,9 +286,23 @@ public class ForumController {
      */
     @PostMapping("/posts/{postId}/comments")
     public Result addComment(@PathVariable Long postId, @RequestBody Comment comment) {
-        comment.setPostId(postId);
-        boolean success = commentService.addComment(comment);
-        return success ? Result.success() : Result.error("评论失败");
+        // User currentUser = authService.getCurrentUserFromRequest(request); // 已移除: 用户应在Service层设置
+        // if (currentUser == null) {
+        //     return Result.error(401, "请先登录");
+        // }
+
+        comment.setPostId(postId); // 保留设置 postId
+        // 让Service层处理设置 authorId 和时间戳
+        // comment.setAuthorId(currentUser.getId());
+        // comment.setCreateTime(new Date());
+        // comment.setUpdateTime(new Date());
+        // comment.setLikeCount(0);
+        // if (comment.getStatus() == null) {
+        //     comment.setStatus(1); // 默认为正常状态
+        // }
+
+        boolean result = commentService.addComment(comment);
+        return result ? Result.success("评论成功", comment) : Result.error("评论失败");
     }
 
     /**
@@ -339,5 +339,22 @@ public class ForumController {
     public Result unlikeComment(@PathVariable Long commentId) {
         boolean success = commentService.cancelLikeComment(commentId);
         return success ? Result.success() : Result.error("取消点赞失败");
+    }
+
+    // =============== 评论相关 API ===============
+
+    /**
+     * 获取所有评论（分页，管理端使用）
+     */
+    @GetMapping("/comments/all")
+    public Result<PageResult<CommentVO>> getAllComments( // 修改返回类型
+                                                         @RequestParam(defaultValue = "1") int page,
+                                                         @RequestParam(defaultValue = "10") int size,
+                                                         @RequestParam(required = false) Long postId,
+                                                         @RequestParam(required = false) Long authorId,
+                                                         @RequestParam(required = false) String keyword) {
+        // 调用返回 PageResult<CommentVO> 的服务方法
+        PageResult<CommentVO> pageResult = commentService.getAllCommentsPaginated(page, size, postId, authorId, keyword);
+        return Result.success("查询成功", pageResult); // 返回成功结果
     }
 } 

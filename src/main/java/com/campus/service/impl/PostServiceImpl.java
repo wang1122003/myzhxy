@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.PostDao;
+import com.campus.dao.UserDao;
 import com.campus.dto.PageResult;
 import com.campus.entity.Post;
+import com.campus.entity.User;
 import com.campus.exception.AuthenticationException;
 import com.campus.service.PostService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,11 +38,18 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     private PostDao postDao;
 
     @Autowired
+    private UserDao userDao;
+
+    @Autowired
     private HttpServletRequest request;
 
     @Override
     public Post getPostById(Long id) {
-        return postDao.findById(id);
+        Post post = getById(id);
+        if (post != null) {
+            loadAuthorInfo(post);
+        }
+        return post;
     }
 
     @Override
@@ -81,49 +90,28 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @Transactional
     public boolean addPost(Post post) {
-        // 1. Set Author Info
-        Long currentUserId = getCurrentUserIdFromRequest();
-        String currentUsername = getCurrentUsernameFromRequest();
-        if (currentUserId == null || currentUsername == null) {
-            throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
-        }
-        post.setAuthorId(currentUserId);
-
-        // 2. Check Forum Type (forumId was removed)
-        if (!StringUtils.hasText(post.getForumType())) {
-            log.error("Forum type is required to create a post.");
-            return false; // Cannot create post without forumType
-        }
-        post.setForumName(null); // forumName is @TableField(exist = false)
-
-        // 3. Set initial values & timestamps
-        Date now = new Date();
-        post.setCreateTime(now);
-        post.setUpdateTime(now);
-        post.setViewCount(post.getViewCount() == null ? 0 : post.getViewCount());
-        post.setCommentCount(post.getCommentCount() == null ? 0 : post.getCommentCount());
-        post.setLikeCount(post.getLikeCount() == null ? 0 : post.getLikeCount());
-        post.setStatus(post.getStatus() == null ? 1 : post.getStatus()); // Default to published
-        post.setIsTop(post.getIsTop() == null ? 0 : post.getIsTop());
-        post.setIsEssence(post.getIsEssence() == null ? 0 : post.getIsEssence());
-
-        // 4. Insert into DB
-        return postDao.insert(post) > 0;
+        post.setCreateTime(new Date());
+        post.setUpdateTime(new Date());
+        if (post.getViewCount() == null) post.setViewCount(0);
+        if (post.getCommentCount() == null) post.setCommentCount(0);
+        if (post.getLikeCount() == null) post.setLikeCount(0);
+        if (post.getStatus() == null) post.setStatus(1);
+        if (post.getIsTop() == null) post.setIsTop(0);
+        if (post.getIsEssence() == null) post.setIsEssence(0);
+        return save(post);
     }
 
     @Override
     @Transactional
     public boolean updatePost(Post post) {
-        // 设置更新时间
         post.setUpdateTime(new Date());
-        
-        return postDao.update(post) > 0;
+        return updateById(post);
     }
 
     @Override
     @Transactional
     public boolean deletePost(Long id) {
-        return postDao.delete(id) > 0;
+        return removeById(id);
     }
 
     @Override
@@ -365,56 +353,65 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @SuppressWarnings("unchecked") // Suppress warning for potential raw type usage with Mybatis-Plus Page/IPage
     public PageResult<Post> findPage(Map<String, Object> params, int page, int size) {
-        Page<Post> postPage = new Page<>(page, size);
-        QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
+        // 1. 创建分页对象
+        Page<Post> pageRequest = new Page<>(page, size);
 
-        // Construct query conditions based on params
-        String keyword = (String) params.get("keyword");
-        String forumType = (String) params.get("forumType"); // Use forumType from params
-        String tag = (String) params.get("tag");
-        String sortBy = (String) params.getOrDefault("sortBy", "create_time"); // Default sort
-        String sortOrder = (String) params.getOrDefault("sortOrder", "desc"); // Default order
+        // 2. 构建查询条件 (使用LambdaQueryWrapper更安全)
+        LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<>();
 
-        if (StringUtils.hasText(keyword)) {
-            queryWrapper.and(qw -> qw.like("title", keyword).or().like("content", keyword));
+        // 处理查询参数 (示例)
+        String title = (String) params.get("title");
+        if (StringUtils.hasText(title)) {
+            queryWrapper.like(Post::getTitle, title);
         }
+
+        Long authorId = (Long) params.get("authorId");
+        if (authorId != null) {
+            queryWrapper.eq(Post::getAuthorId, authorId);
+        }
+
+        String forumType = (String) params.get("forumType");
         if (StringUtils.hasText(forumType)) {
-            queryWrapper.eq("forum_type", forumType); // Filter by forum_type instead
-        }
-        if (StringUtils.hasText(tag)) {
-            // Assuming tags are stored as a JSON array of strings
-            queryWrapper.apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag);
+            queryWrapper.eq(Post::getForumType, forumType);
         }
 
-        // Add sorting
-        boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
-        String validSortBy = switch (sortBy) {
-            case "viewCount" -> "view_count";
-            case "likeCount" -> "like_count";
-            case "commentCount" -> "comment_count";
-            default -> "create_time"; // Default to create_time
-        };
-        queryWrapper.orderBy(true, isAsc, validSortBy);
+        Integer status = (Integer) params.get("status");
+        if (status != null) {
+            queryWrapper.eq(Post::getStatus, status);
+        }
 
-        // Always filter by status = 1 (normal posts)
-        queryWrapper.eq("status", 1);
+        // 3. 添加排序 (示例：按创建时间降序)
+        queryWrapper.orderByDesc(Post::getCreateTime);
 
-        IPage<Post> pageData = this.page(postPage, queryWrapper);
+        // 4. 执行分页查询
+        IPage<Post> postPage = this.page(pageRequest, queryWrapper);
 
-        // 处理作者信息
-        if (pageData.getRecords() != null) {
-            pageData.getRecords().forEach(p -> {
-                if (p.getAuthor() != null) {
-                    p.setAuthorName(StringUtils.hasText(p.getAuthor().getRealName()) ? p.getAuthor().getRealName() : p.getAuthor().getUsername());
-                    p.setAuthorAvatar(p.getAuthor().getAvatar());
+        // 5. 加载作者信息
+        if (postPage.getRecords() != null && !postPage.getRecords().isEmpty()) {
+            // 批量获取作者ID
+            List<Long> authorIds = postPage.getRecords().stream()
+                    .map(Post::getAuthorId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            // 批量查询用户信息
+            Map<Long, User> userMap = userDao.selectBatchIds(authorIds).stream()
+                    .collect(Collectors.toMap(User::getId, user -> user));
+
+            // 填充作者姓名和头像
+            postPage.getRecords().forEach(post -> {
+                User author = userMap.get(post.getAuthorId());
+                if (author != null) {
+                    post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
+                    post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法
+                } else {
+                    post.setAuthorName("未知用户"); // 或者其他默认值
                 }
+                // 可以在这里添加填充 forumTypeName 的逻辑，如果需要的话
             });
         }
 
-        // 使用构造函数创建 PageResult
-        PageResult<Post> pageResult = new PageResult<>(pageData.getTotal(), pageData.getRecords(), pageData.getCurrent(), pageData.getSize());
-
-        return pageResult;
+        // 6. 封装并返回结果 - 使用正确的构造函数参数
+        return new PageResult<>(postPage.getTotal(), postPage.getRecords(), postPage.getCurrent(), postPage.getSize());
     }
 
     @Override
@@ -509,5 +506,18 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
                 .stream()
                 .map(map -> map.get("tag").toString())
                 .collect(Collectors.toList());
+    }
+
+    // 辅助方法：加载作者信息
+    private void loadAuthorInfo(Post post) {
+        if (post != null && post.getAuthorId() != null) {
+            User author = userDao.selectById(post.getAuthorId());
+            if (author != null) {
+                post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
+                post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法
+            } else {
+                post.setAuthorName("未知用户");
+            }
+        }
     }
 }

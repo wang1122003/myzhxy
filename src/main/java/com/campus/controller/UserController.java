@@ -1,5 +1,6 @@
 package com.campus.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.User;
 import com.campus.service.AuthService;
 import com.campus.service.UserService;
@@ -10,11 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 @RequestMapping("/api/users")
 public class UserController {
 
-    // Explicitly declare the logger
+    // 显式声明 logger
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
@@ -37,27 +36,24 @@ public class UserController {
     private AuthService authService;
 
     /**
-     * 用户登录
-     * @param loginUser 用户登录信息
-     * @param response HTTP响应
-     * @return 登录结果
+     * 用户登录 (使用明文密码)
      */
     @PostMapping("/login")
     public Result login(
             @RequestBody User loginUser,
             HttpServletResponse response) {
-        User user = userService.login(loginUser.getUsername(), loginUser.getPassword());
+
+        // 直接使用用户输入的明文密码进行登录验证
+        User user = userService.login(loginUser.getUsername(), loginUser.getPassword()); 
+        
         if (user != null) {
             // 生成token
             String token = authService.generateToken(user);
             
-            // 设置token到Cookie
-            // authService.setTokenToCookie(response, token);
-            
             // 返回结果
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
-            user.setPassword(null); // 清除密码
+            user.setPassword(null); // 仍然清除密码，避免返回给前端
             data.put("user", user);
             
             return Result.success("登录成功", data);
@@ -73,14 +69,14 @@ public class UserController {
      */
     @GetMapping("/check-session")
     public Result checkSession(HttpServletRequest request) {
-        User user = authService.getCurrentUser(request);
+        User user = authService.getCurrentUserFromRequest(request); // 使用修正的方法名
         
         if (user != null) {
             Map<String, Object> data = new HashMap<>();
             data.put("userId", user.getId());
             data.put("username", user.getUsername());
             data.put("userType", user.getUserType());
-            data.put("role", user.getUserType() == 0 ? "ADMIN" : (user.getUserType() == 1 ? "STUDENT" : "TEACHER"));
+            data.put("role", "Admin".equals(user.getUserType()) ? "ADMIN" : ("Student".equals(user.getUserType()) ? "STUDENT" : "TEACHER"));
             
             return Result.success("会话有效", data);
         } else {
@@ -206,24 +202,19 @@ public class UserController {
     }
     
     /**
-     * 注册新用户
-     * @param user 用户信息
-     * @return 注册结果
+     * 注册新用户 (使用明文密码)
      */
     @PostMapping("/register")
     public Result register(@RequestBody User user) {
-        // 检查用户名是否已存在
         User existingUser = userService.getUserByUsername(user.getUsername());
         if (existingUser != null) {
             return Result.error("用户名已存在");
         }
-        
-        // 设置默认值
-        user.setStatus(1); // 默认启用
+
+        user.setStatus("Active"); 
         user.setCreateTime(new Date());
         user.setUpdateTime(new Date());
-        
-        // 保存用户
+        // 密码直接使用 user 对象中的明文密码
         boolean success = userService.addUser(user);
         
         if (success) {
@@ -251,35 +242,6 @@ public class UserController {
     }
     
     /**
-     * 获取当前登录用户信息
-     * @param request HTTP请求
-     * @return 用户信息
-     */
-    @GetMapping("/current")
-    public Result getCurrentUser(HttpServletRequest request) {
-        // 使用 AuthService 获取当前登录用户 (从 Token 解析)
-        User basicUserInfo = authService.getCurrentUser(request);
-
-        if (basicUserInfo != null && basicUserInfo.getId() != null) {
-            // 根据 ID 从数据库获取完整的用户信息
-            User fullUserInfo = userService.getUserById(basicUserInfo.getId());
-            if (fullUserInfo != null) {
-                // 清除敏感信息
-                fullUserInfo.setPassword(null);
-                return Result.success("获取成功", fullUserInfo);
-            } else {
-                // 如果根据ID找不到用户（理论上不应发生，除非用户刚被删除）
-                log.warn("无法根据 AuthService 提供的有效 userId {} 找到用户", basicUserInfo.getId());
-                return Result.error("无法获取当前用户信息，用户数据可能不存在");
-            }
-        } else {
-            // 如果 AuthService 返回 null 或 ID 为 null，说明 Token 无效或解析失败
-            log.info("无法获取当前用户信息，Token 无效或解析失败");
-            return Result.error("无法获取当前用户信息，请重新登录");
-        }
-    }
-    
-    /**
      * 根据用户名获取用户
      * @param username 用户名
      * @return 用户信息
@@ -295,68 +257,79 @@ public class UserController {
             return Result.error("用户不存在");
         }
     }
-    
+
     /**
-     * 获取所有用户
-     * @return 用户列表
+     * 获取用户列表（分页、过滤、搜索）
+     * @param page 当前页码
+     * @param size 每页数量
+     * @param keyword 搜索关键词 (可选, 搜索用户名、真实姓名或邮箱)
+     * @param userType 用户类型 (可选, 0: Admin, 1: Student, 2: Teacher)
+     * @return 分页后的用户列表
      */
-    @GetMapping("/list")
-    public Result getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        // 清除敏感信息
-        users.forEach(user -> user.setPassword(null));
-        return Result.success("获取成功", users);
+    @GetMapping("") // 映射到 /api/users
+    public Result getUserList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer userType) {
+
+        try {
+            IPage<User> userPage = userService.findUsersPage(page, size, keyword, userType);
+
+            // 清除密码等敏感信息
+            if (userPage.getRecords() != null) {
+                userPage.getRecords().forEach(u -> u.setPassword(null));
+            }
+
+            // 包装成前端需要的格式
+            Map<String, Object> data = new HashMap<>();
+            data.put("rows", userPage.getRecords());
+            data.put("total", userPage.getTotal());
+
+            return Result.success("获取用户列表成功", data);
+        } catch (Exception e) {
+            log.error("Error fetching user list", e);
+            return Result.error("获取用户列表失败: " + e.getMessage());
+        }
     }
-    
-    /**
-     * 搜索用户
-     * @param keyword 关键词
-     * @return 匹配的用户列表
-     */
-    @GetMapping("/search")
-    public Result searchUsers(@RequestParam String keyword) {
-        List<User> users = userService.searchUsers(keyword);
-        // 清除敏感信息
-        users.forEach(user -> user.setPassword(null));
-        return Result.success("获取成功", users);
-    }
-    
+
     /**
      * 更新用户信息
      * @param id 用户ID
-     * @param user 更新的用户信息
+     * @param user 用户信息
      * @return 更新结果
      */
     @PutMapping("/{id}")
     public Result updateUser(@PathVariable Long id, @RequestBody User user) {
-        // 设置ID和更新时间
+        // 确保不更新密码字段，密码修改有专门的接口
+        user.setPassword(null); 
         user.setId(id);
         user.setUpdateTime(new Date());
         
-        // 更新用户信息
         boolean success = userService.updateUser(user);
         
         if (success) {
-            return Result.success("更新成功");
+            User updatedUser = userService.getUserById(id); // 获取更新后的信息
+            if (updatedUser != null) updatedUser.setPassword(null);
+            return Result.success("更新成功", updatedUser);
         } else {
-            return Result.error("更新失败，请稍后再试");
+            return Result.error("更新失败");
         }
     }
-    
+
     /**
-     * 修改用户状态
+     * 更新用户状态
      * @param id 用户ID
-     * @param status 状态值（0-禁用，1-启用）
-     * @return 修改结果
+     * @param status 新状态 (e.g., 0 for inactive, 1 for active)
+     * @return 更新结果
      */
     @PutMapping("/{id}/status")
-    public Result updateUserStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public Result updateUserStatus(@PathVariable Long id, @RequestParam String status) { // 前端传的是字符串 'Active'/'Inactive'
         boolean success = userService.updateUserStatus(id, status);
-        
         if (success) {
-            return Result.success("状态修改成功");
+            return Result.success("用户状态更新成功");
         } else {
-            return Result.error("状态修改失败，请稍后再试");
+            return Result.error("用户状态更新失败");
         }
     }
     
@@ -367,21 +340,17 @@ public class UserController {
      */
     @PostMapping("/{id}/reset-password")
     public Result resetPassword(@PathVariable Long id) {
-        // 默认密码为123456
-        String defaultPassword = "123456";
-        String encryptedPassword = DigestUtils.md5DigestAsHex(defaultPassword.getBytes(StandardCharsets.UTF_8));
-        
-        boolean success = userService.resetPassword(id, encryptedPassword);
+        // 实现密码重置逻辑，例如设置为默认密码
+        String defaultPassword = "password123"; // 实际应从配置读取或生成
+        boolean success = userService.resetPassword(id, defaultPassword);
         
         if (success) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("defaultPassword", defaultPassword);
-            return Result.success("密码重置成功", data);
+            return Result.success("密码重置成功，新密码为：" + defaultPassword); // 生产环境不应返回密码
         } else {
-            return Result.error("密码重置失败，请稍后再试");
+            return Result.error("密码重置失败");
         }
     }
-    
+
     /**
      * 删除用户
      * @param id 用户ID
@@ -390,143 +359,111 @@ public class UserController {
     @DeleteMapping("/{id}")
     public Result deleteUser(@PathVariable Long id) {
         boolean success = userService.deleteUser(id);
-        
         if (success) {
-            return Result.success("删除成功");
+            return Result.success("用户删除成功");
         } else {
-            return Result.error("删除失败，请稍后再试");
+            return Result.error("用户删除失败");
         }
     }
-    
+
     /**
      * 获取用户统计信息
-     * @return 用户统计信息
+     * @return 用户统计数据
      */
     @GetMapping("/stats")
     public Result getUserStats() {
         Map<String, Object> stats = userService.getUserStats();
-        return Result.success("获取成功", stats);
+        return Result.success("获取用户统计信息成功", stats);
     }
 
     /**
-     * 批量导入用户
-     *
-     * @param file     Excel文件
-     * @param userType 用户类型 (1-学生, 2-教师)
+     * 导入用户数据 (功能已移除)
+     * @param file Excel 文件
+     * @param userType 用户类型 (0: Admin, 1: Student, 2: Teacher)
      * @return 导入结果
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Result importUsers(@RequestParam("file") MultipartFile file,
                               @RequestParam("userType") Integer userType) {
-        try {
-            if (file.isEmpty()) {
-                return Result.error("请选择要上传的文件");
-            }
-
-            // 校验文件类型
-            String fileName = file.getOriginalFilename();
-            if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
-                return Result.error("文件格式不正确，请上传Excel文件");
-            }
-
-            // 调用服务层处理导入
-            Map<String, Object> result = userService.importUsers(file, userType);
-
-            return Result.success("导入成功", result);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.error("导入失败：" + e.getMessage());
-        }
+        log.warn("用户文件导入接口 (/import) 已被移除");
+        return Result.error("用户文件导入功能已移除");
     }
 
     /**
-     * 批量导入用户数据
-     *
+     * 批量导入用户 (功能关联性移除)
      * @param users 用户列表
      * @return 导入结果
      */
     @PostMapping("/batch-import")
     public Result batchImportUsers(@RequestBody List<User> users) {
-        try {
-            Map<String, Object> result = userService.batchImportUsers(users);
-            return Result.success("批量导入成功", result);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.error("批量导入失败：" + e.getMessage());
-        }
+        log.warn("批量用户导入接口 (/batch-import) 已移除");
+        return Result.error("批量用户导入功能已移除 (关联文件导入)");
     }
 
     /**
-     * 下载用户导入模板
-     *
-     * @return 导入模板
+     * 下载用户导入模板 (功能已移除)
+     * @param response HTTP响应对象，用于写入文件流
      */
     @GetMapping("/import-template")
-    public Result downloadImportTemplate() {
-        try {
-            // 生成并返回模板数据
-            String templateUrl = userService.generateImportTemplate();
-            Map<String, Object> data = new HashMap<>();
-            data.put("templateUrl", templateUrl);
-            return Result.success("模板生成成功", data);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.error("模板生成失败：" + e.getMessage());
-        }
+    public Result downloadImportTemplate(HttpServletResponse response) {
+        log.warn("下载用户导入模板接口 (/import-template) 已移除");
+        return Result.error("下载用户导入模板功能已移除");
     }
-    
+
     /**
-     * 创建默认管理员账号
-     * @param securityKey 安全密钥
-     * @return 创建结果
-     */
-    @PostMapping("/create-admin")
-    public Result createDefaultAdmin(@RequestParam(defaultValue = "") String securityKey) {
-        // 出于安全考虑，需要提供一个密钥才能创建管理员账号
-        if (!"campus_security_key".equals(securityKey)) {
-            return Result.error("安全密钥错误，无权创建管理员账号");
-        }
-        
-        // 检查是否已存在admin用户
-        User existingAdmin = userService.getUserByUsername("admin");
-        if (existingAdmin != null) {
-            return Result.error("管理员账号已存在，无需重复创建");
-        }
-        
-        // 创建管理员账号
-        User admin = new User();
-        admin.setUsername("admin");
-        // 密码为admin123，使用MD5加密
-        String encryptedPassword = DigestUtils.md5DigestAsHex("admin123".getBytes(StandardCharsets.UTF_8));
-        admin.setPassword(encryptedPassword);
-        admin.setRealName("系统管理员");
-        admin.setUserType(0); // 0表示管理员
-        admin.setStatus(1);   // 1表示启用
-        admin.setCreateTime(new Date());
-        admin.setUpdateTime(new Date());
-        
-        boolean success = userService.addUser(admin);
-        
-        if (success) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("username", "admin");
-            data.put("password", "admin123");
-            return Result.success("管理员账号创建成功", data);
-        } else {
-            return Result.error("管理员账号创建失败");
-        }
-    }
-    
-    /**
-     * 登出
+     * 用户登出
      * @param request HTTP请求
      * @param response HTTP响应
      * @return 登出结果
      */
     @PostMapping("/logout")
     public Result logout(HttpServletRequest request, HttpServletResponse response) {
-        // 清除Cookie中的token
-        authService.clearTokenCookie(response);
+        // 实现登出逻辑，例如使Token失效
+        // 简单的实现可以是让前端删除Token
+        // 如果使用服务端Session或需要记录登出，可以在这里添加逻辑
+        // authService.invalidateToken(request); // 假设有此方法
         return Result.success("登出成功");
     }
-}
+
+    /**
+     * 更新用户个人资料
+     *
+     * @param user    包含更新信息的用户对象
+     * @param request HTTP请求 (用于获取当前用户ID)
+     * @return 更新结果
+     */
+    @PutMapping("/profile")
+    public Result updateProfile(@RequestBody User user, HttpServletRequest request) {
+        Long currentUserId = (Long) request.getAttribute("userId");
+        if (currentUserId == null) {
+            return Result.error("未授权的操作");
+        }
+
+        // 验证是否在更新自己的资料
+        // if (!currentUserId.equals(user.getId())) { // 如果请求体中也包含id
+        //     return Result.error("只能修改自己的资料");
+        // }
+
+        // 设置要更新的用户ID，防止意外更新他人资料
+        user.setId(currentUserId);
+
+        // 不允许通过此接口修改密码、用户名、用户类型或状态
+        user.setPassword(null);
+        user.setUsername(null);
+        user.setUserType(null);
+        user.setStatus(null);
+        user.setCreateTime(null); // 不应修改创建时间
+        user.setUpdateTime(new Date()); // 更新修改时间
+
+        boolean success = userService.updateUserProfile(user); // 可能需要一个只更新允许字段的方法
+
+        if (success) {
+            User updatedUser = userService.getUserById(currentUserId); // 获取更新后的信息
+            if (updatedUser != null) updatedUser.setPassword(null);
+            return Result.success("个人资料更新成功", updatedUser);
+        } else {
+            return Result.error("个人资料更新失败");
+        }
+    }
+
+} // End of UserController class

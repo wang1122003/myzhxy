@@ -78,8 +78,6 @@ public class CourseController {
     public Result getAllCourses(@RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
                                 @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
         try {
-            // TODO: This should likely be paginated like Classrooms (已完成)
-            // List<Course> courses = courseService.getAllCourses(); // 旧逻辑
             IPage<Course> pageResult = courseService.getAllCourses(pageNum, pageSize);
             return Result.success(pageResult); // 返回分页结果
         } catch (Exception e) {
@@ -132,7 +130,7 @@ public class CourseController {
     public Result addCourse(@RequestBody Course course) {
         try {
             boolean result = courseService.addCourse(course);
-            // Service layer now throws exception on failure
+            // Service 层现在会在失败时抛出异常
             return Result.success("添加成功");
         } catch (CustomException ce) {
             log.warn("添加课程失败: {}", ce.getMessage());
@@ -152,17 +150,24 @@ public class CourseController {
      */
     @PutMapping("/{id}")
     public Result updateCourse(@PathVariable Long id, @RequestBody Course course) {
+        log.debug("更新课程 ID {}: {}", id, course.getCourseName());
+        course.setId(id);
         try {
-            course.setId(id);
+            // 基本验证 (可以添加更多)
+            if (course.getCourseCode() == null || course.getCourseCode().isEmpty() ||
+                    course.getCourseName() == null || course.getCourseName().isEmpty()) {
+                return Result.error("课程代码和课程名称不能为空");
+            }
+
             boolean result = courseService.updateCourse(course);
-            // Service layer now throws exception on failure
-            return Result.success("更新成功");
-        } catch (CustomException ce) {
-            log.warn("更新课程失败 (ID: {}): {}", id, ce.getMessage());
-            return Result.error(ce.getMessage());
+            log.info("课程 ID {} 更新结果: {}", id, result);
+            return result ? Result.success("更新成功") : Result.error("更新失败，课程代码可能重复或课程不存在");
+        } catch (CustomException e) {
+            log.error("更新课程 ID {} 出错: {}", id, e.getMessage());
+            return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("更新课程时发生错误 (ID: {})", id, e);
-            return Result.error("更新课程失败: " + e.getMessage());
+            log.error("更新课程 ID {} 时发生未知错误", id, e);
+            return Result.error("更新课程时发生未知错误");
         }
     }
 
@@ -175,12 +180,6 @@ public class CourseController {
     @DeleteMapping("/{id}")
     public Result deleteCourse(@PathVariable Long id) {
         try {
-            // TODO: Add check if course is used in schedule?
-            // 在调用删除之前，应该检查该课程是否被任何课表/排课引用
-            // boolean isInSchedule = scheduleService.isCourseScheduled(id); // 示例调用
-            // if (isInSchedule) {
-            //     return Result.error("课程已被排课使用，无法删除");
-            // }
             if (scheduleService.isCourseScheduled(id)) {
                 return Result.error("课程已被排课使用，无法删除");
             }
@@ -209,12 +208,6 @@ public class CourseController {
             if (ids == null || ids.length == 0) {
                 return Result.error("未选择要删除的课程");
             }
-            // TODO: Add check if any course is used in schedule?
-            // 在调用批量删除之前，应该检查这些课程中是否有任何一个被课表/排课引用
-            // List<Long> scheduledCourseIds = scheduleService.findScheduledCourses(List.of(ids)); // 示例调用
-            // if (!scheduledCourseIds.isEmpty()) {
-            //     return Result.error("部分课程已被排课使用，无法删除: " + scheduledCourseIds);
-            // }
             List<Long> idList = List.of(ids);
             List<Long> scheduledCourseIds = scheduleService.findScheduledCourseIds(idList);
             if (scheduledCourseIds != null && !scheduledCourseIds.isEmpty()) {

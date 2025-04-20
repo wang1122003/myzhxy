@@ -1,183 +1,174 @@
 <template>
   <div class="grades-container">
-    <div class="page-header">
-      <h2>我的成绩</h2>
-      <div class="filter-container">
-        <el-select
-            v-model="semesterFilter"
-            :loading="loadingSemesters"
-            clearable
-            filterable
-            placeholder="选择学期"
-            style="width: 200px;"
-            @change="fetchGrades"
-        >
-          <el-option
-              v-for="item in semesters"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-          />
-        </el-select>
-      </div>
-    </div>
+    <el-card class="grades-card">
+      <template #header>
+        <div class="page-header">
+          <span>我的成绩</span>
+          <!-- Removed semester filter as termId is likely handled differently or implicitly -->
+        </div>
+      </template>
 
-    <el-card
-        v-loading="loadingGrades"
-        class="grades-card"
-    >
       <el-table
+          v-loading="loadingGrades"
           :data="grades"
-          border
           style="width: 100%"
+          empty-text="暂无成绩记录"
       >
+        <!-- 课程编号 -->
         <el-table-column
-            label="课程代码"
-            prop="courseCode"
+            label="课程编号"
+            prop="course.courseCode" 
             width="150"
         />
+        <!-- 课程名称 -->
         <el-table-column
             label="课程名称"
+            prop="course.courseName"
             min-width="200"
-            prop="courseName"
         />
+        <!-- 学分 -->
         <el-table-column
             label="学分"
-            prop="credit"
+            align="center"
             width="80"
+            prop="course.credit"
         />
-        <el-table-column
-            label="成绩类型"
-            prop="gradeType"
-            width="120"
-        >
-          <template #default="scope">
-            {{ scope.row.gradeType === 'score' ? '百分制' : '等级制' }}
-          </template>
-        </el-table-column>
+        <!-- 成绩 -->
         <el-table-column
             label="成绩"
-            prop="gradeValue"
+            align="center"
             width="100"
+            prop="totalScore"
         >
-          <template #default="scope">
-            <el-tag :type="getTagType(scope.row.gradeValue, scope.row.gradeType)">
-              {{ formatGrade(scope.row.gradeValue, scope.row.gradeType) }}
+          <template #default="{ row }">
+            <el-tag :type="getTagType(row.totalScore)">
+              {{ formatScore(row.totalScore) }}
             </el-tag>
           </template>
         </el-table-column>
+        <!-- 录入时间 -->
         <el-table-column
-            label="绩点"
-            prop="gpa"
-            width="80"
-        />
-        <el-table-column
-            label="所属学期"
-            prop="semester"
+            align="center"
+            label="录入时间"
             width="180"
-        />
+            prop="updateTime"
+        >
+          <template #default="{ row }">
+            {{ formatDateTime(row.updateTime) }}
+          </template>
+        </el-table-column>
+        <!-- Removed obsolete columns like 'grade', 'totalScore', 'semester' -->
       </el-table>
-      <el-empty
-          v-if="grades.length === 0 && !loadingGrades"
-          description="暂无成绩记录"
-      />
 
-      <!-- 可以在这里添加总学分、平均绩点等统计信息 -->
+      <!-- Optional: Summary Info -->
       <div
           v-if="grades.length > 0"
           class="summary-info"
       >
-        <!-- 待添加 -->
+        <!-- GPA Calculation -->
+        <span><strong>平均绩点 (GPA):</strong> {{ calculatedGPA }}</span>
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
-import {ElCard, ElEmpty, ElMessage, ElOption, ElSelect, ElTable, ElTableColumn, ElTag} from 'element-plus';
-import {getStudentGrades} from '@/api/grade'; // 假设 API 在这里
-import {getTerms} from '@/api/common'; // 复用获取学期的 API
+import {computed, onMounted, ref} from 'vue';
+import {ElCard, ElMessage, ElTable, ElTableColumn, ElTag} from 'element-plus';
+import {getMyGrades} from '@/api/grade'; // Updated API function
+// Removed getTerms API import if semester filter is gone
+import {formatDateTime} from '@/utils/formatters'; // Assuming a utility for date formatting
 
 const loadingGrades = ref(false);
-const loadingSemesters = ref(false);
 const grades = ref([]);
-const semesters = ref([]);
-const semesterFilter = ref(null);
+// Removed semesters and semesterFilter refs
 
-// 获取学期列表
-const fetchSemesters = async () => {
-  loadingSemesters.value = true;
-  try {
-    const res = await getTerms();
-    semesters.value = res.data || [];
-    // 默认选择最新的学期 (如果列表有序)
-    // if (semesters.value.length > 0) {
-    //   semesterFilter.value = semesters.value[0].value;
-    // }
-  } catch (error) {
-    console.error("获取学期列表失败", error);
-    // 不阻塞主流程，允许用户手动选择
-  } finally {
-    loadingSemesters.value = false;
-  }
-};
-
-// 获取成绩
+// Fetch grades for the logged-in student
 const fetchGrades = async () => {
   loadingGrades.value = true;
   try {
-    const params = {
-      semester: semesterFilter.value // 根据选择的学期筛选
-    };
-    const res = await getStudentGrades(params);
+    // Removed semester parameter if no longer needed
+    const params = {};
+    const res = await getMyGrades(params);
+    // Assuming the backend now returns course details nested within each score object
+    // Adjust if the structure is different (e.g., need separate call to get course details)
     grades.value = res.data || [];
   } catch (error) {
     console.error("获取成绩失败", error);
     ElMessage.error("获取成绩失败");
-    grades.value = []; // 清空列表
+    grades.value = []; // Clear list on error
   } finally {
     loadingGrades.value = false;
   }
 };
 
-// 格式化成绩显示
-const formatGrade = (value, type) => {
-  if (value === null || value === undefined) return '-';
-  if (type === 'level') return value; // 等级制直接显示
-  return value.toFixed(1); // 百分制保留一位小数
+// Convert numeric score to grade point (4.0 scale)
+const scoreToGP = (score) => {
+  if (score === null || score === undefined) return 0;
+  if (score >= 90) return 4.0;
+  if (score >= 80) return 3.0;
+  if (score >= 70) return 2.0;
+  if (score >= 60) return 1.0;
+  return 0.0;
 }
 
-// 根据成绩获取 Tag 类型
-const getTagType = (value, type) => {
-  if (value === null || value === undefined) return 'info';
-  if (type === 'level') {
-    const level = value.toUpperCase();
-    if (['A', 'A+', 'A-'].includes(level)) return 'success';
-    if (['B', 'B+', 'B-'].includes(level)) return 'primary';
-    if (['C', 'C+', 'C-'].includes(level)) return 'warning';
-    return 'danger'; // D, F 等
-  } else {
-    if (value >= 90) return 'success';
-    if (value >= 80) return 'primary';
-    if (value >= 70) return 'warning';
-    if (value >= 60) return 'info';
-    return 'danger';
+// Calculate GPA using computed property
+const calculatedGPA = computed(() => {
+  let totalCredits = 0;
+  let totalWeightedGP = 0;
+
+  grades.value.forEach(grade => {
+    const credit = grade.course?.credit; // Use optional chaining
+    const score = grade.totalScore;
+
+    if (credit !== null && credit !== undefined && credit > 0 && score !== null && score !== undefined) {
+      const gradePoint = scoreToGP(score);
+      totalCredits += credit;
+      totalWeightedGP += gradePoint * credit;
+    }
+  });
+
+  if (totalCredits === 0) {
+    return 'N/A'; // Avoid division by zero
   }
+
+  const gpa = totalWeightedGP / totalCredits;
+  return gpa.toFixed(2); // Format to 2 decimal places
+});
+
+// Format score display
+const formatScore = (value) => {
+  if (value === null || value === undefined) return '-';
+  // Ensure value is treated as a number for toFixed
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return '-';
+  return numericValue.toFixed(1); // Keep one decimal place for score
 }
 
-// 组件挂载后加载数据
+// Get tag type based on score value
+const getTagType = (value) => {
+  if (value === null || value === undefined) return 'info';
+  const numericValue = Number(value); // Ensure comparison is done with number
+  if (isNaN(numericValue)) return 'info';
+  if (numericValue >= 90) return 'success';
+  if (numericValue >= 80) return 'primary'; // Changed from 'default' or assumed type to 'primary'
+  if (numericValue >= 70) return 'warning';
+  if (numericValue >= 60) return 'info'; // Changed from 'gray' or assumed type to 'info'
+  return 'danger'; // Below 60
+}
+
+// Component mounted: fetch initial data
 onMounted(async () => {
-  await fetchSemesters();
-  // 初始加载所有成绩或最新学期成绩（取决于产品设计）
+  // Removed fetchSemesters call
   await fetchGrades();
 });
+
 </script>
 
 <script>
-// 添加标准的 export default
+// Keep standard export default
 export default {
-  name: 'StudentGrades' // 使用更明确的多词名称
+  name: 'StudentGrades'
 }
 </script>
 
@@ -190,11 +181,10 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
 }
 
 .grades-card {
-  min-height: 300px; /* 防止加载时内容塌陷 */
+  min-height: 300px;
 }
 
 .summary-info {
@@ -202,6 +192,7 @@ export default {
   padding: 15px;
   background-color: #f5f7fa;
   border-radius: 4px;
-  /* 添加更多样式展示总学分、绩点等 */
+  text-align: right; /* Align GPA to the right */
+  font-size: 14px;
 }
 </style> 

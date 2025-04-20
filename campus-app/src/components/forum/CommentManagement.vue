@@ -162,13 +162,14 @@ export default {
     // 截断内容
     const truncateContent = (content) => {
       if (!content) return ''
-      return content.length > 50 ? content.substring(0, 50) + '...' : content
+      const maxLength = 50
+      return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
     }
 
     // 审核通过评论
     const handleApproveComment = async (comment) => {
       try {
-        await updateCommentStatus(comment.id, 1)
+        await updateCommentStatus(comment.id, {status: 1})
         ElMessage.success('评论已通过审核')
         comment.status = 1
       } catch (error) {
@@ -185,7 +186,7 @@ export default {
         type: 'warning'
       }).then(async () => {
         try {
-          await updateCommentStatus(comment.id, -1)
+          await updateCommentStatus(comment.id, {status: -1})
           ElMessage.success('评论已删除')
           comment.status = -1
         } catch (error) {
@@ -200,7 +201,7 @@ export default {
     // 恢复评论
     const handleRestoreComment = async (comment) => {
       try {
-        await updateCommentStatus(comment.id, 1)
+        await updateCommentStatus(comment.id, {status: 1})
         ElMessage.success('评论已恢复')
         comment.status = 1
       } catch (error) {
@@ -250,6 +251,7 @@ export default {
         const date = new Date(timeStr)
         return formatDistanceToNow(date, {locale: zhCN})
       } catch (e) {
+        console.error('时间格式化错误:', e)
         return timeStr
       }
     }

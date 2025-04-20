@@ -21,6 +21,7 @@
 <script>
 import AppHeader from './components/AppHeader.vue'
 import {computed, onMounted} from 'vue'
+import {fetchUserInfo} from '@/utils/auth'
 
 export default {
   name: 'App',
@@ -30,9 +31,21 @@ export default {
   setup() {
     const currentYear = computed(() => new Date().getFullYear())
 
-    onMounted(() => {
+    onMounted(async () => {
       // 添加页面加载完成后的类，用于页面过渡动画
       document.body.classList.add('app-loaded')
+      // 尝试从 localStorage 恢复用户信息到响应式变量中
+      // auth.js 文件本身在加载时就会执行这个初始化
+      // 但如果需要确保在 App 组件挂载时 userInfo 是最新的，可以调用 fetchUserInfo
+      // 注意：这里的 fetchUserInfo 不会发 API 请求，只是检查本地状态
+      try {
+        await fetchUserInfo()
+      } catch (error) {
+        console.error('App mounted: Error during initial user info fetch/check:', error)
+        // 如果检查出错，可能需要强制登出
+        // logout()
+        // router.push('/login')
+      }
     })
 
     return {

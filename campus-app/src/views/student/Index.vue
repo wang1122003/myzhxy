@@ -31,6 +31,10 @@
       </el-scrollbar>
     </el-aside>
     <el-container>
+      <el-header class="header-container">
+        <div class="header-title">学生端</div>
+        <el-button type="danger" @click="handleLogout">退出登录</el-button>
+      </el-header>
       <el-main>
         <router-view/>
       </el-main>
@@ -41,19 +45,19 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {Bell, Calendar, ChatLineRound, Document, Expand, Files, Fold, HomeFilled, User} from '@element-plus/icons-vue'
-import {getCurrentUser} from '@/api/user'
+import {ElMessageBox} from 'element-plus'
+import {Bell, Calendar, Document, Expand, Files, Fold, HomeFilled, User} from '@element-plus/icons-vue'
+import {logout, userAvatar, userRealName} from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()
-const userInfo = ref({})
+
 const isCollapsed = ref(false)
 const isMobile = ref(false)
 
 const menuItems = shallowRef([
   {index: '/student', icon: HomeFilled, title: '首页'},
-  {index: '/student/notices', icon: ChatLineRound, title: '通知公告'},
+  // {index: '/student/notices', icon: ChatLineRound, title: '通知公告'},
   {index: '/student/profile', icon: User, title: '个人资料'},
   {index: '/student/schedule', icon: Calendar, title: '课程表'},
   {index: '/student/grades', icon: Document, title: '成绩查询'},
@@ -70,9 +74,13 @@ const currentPageTitle = computed(() => {
 });
 
 onMounted(() => {
-  fetchUserInfo()
   checkScreenWidth();
   window.addEventListener('resize', checkScreenWidth);
+
+  if (!userRealName || !userAvatar) {
+    console.warn("Store 中无用户信息，强制登出");
+    logout();
+  }
 })
 
 onBeforeUnmount(() => {
@@ -94,22 +102,27 @@ const handleMenuSelect = () => {
   }
 }
 
-const fetchUserInfo = () => {
-  getCurrentUser().then(response => {
-    userInfo.value = response.data
+const handleLogout = async () => {
+  await ElMessageBox.confirm(
+      '您确定要退出登录吗?',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+  ).then(async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error("登出时出错:", error);
+      logout();
+      router.push('/login');
+    }
   }).catch(() => {
-    logout()
-  })
-}
-
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('role')
-  router.push('/login')
-  ElMessage({
-    message: '退出登录成功',
-    type: 'success'
-  })
+    // 用户取消，无需操作
+  });
 }
 </script>
 

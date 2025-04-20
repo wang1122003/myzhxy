@@ -275,14 +275,13 @@ export function deleteComment(commentId) {
     });
 }
 
-// 获取所有评论 (管理端?)
-export function getAllComments(params) {
-    // No specific endpoint in FORUM_API, maybe admin-specific?
+// 获取所有评论
+export const getAllComments = (params) => {
     return request({
-        url: `${API_BASE}/forum/comments/all`, // Example endpoint
+        url: '/api/forum/comments/all',
         method: 'get',
         params
-    });
+    })
 }
 
 // 更新评论状态 (管理端?)

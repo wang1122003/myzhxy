@@ -26,11 +26,14 @@ public class ForumServiceImpl implements ForumService {
         queryWrapper.isNotNull("forum_type");
         queryWrapper.ne("forum_type", "");
 
-        List<Post> posts = postDao.selectList(queryWrapper);
+        // 使用 selectObjs 直接获取 forum_type 列表 (类型为 Object)
+        List<Object> forumTypeObjects = postDao.selectObjs(queryWrapper);
 
-        return posts.stream()
-                .map(Post::getForumType)
-                .distinct()
+        // 将 Object 列表转换为 String 列表
+        return forumTypeObjects.stream()
+                .filter(obj -> obj != null) // 过滤 null 值
+                .map(String::valueOf) // 转换为 String
+                .distinct() // 确保去重
                 .collect(Collectors.toList());
     }
 

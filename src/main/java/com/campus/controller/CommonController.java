@@ -1,5 +1,6 @@
 package com.campus.controller;
 
+// import com.campus.dto.CommonStatusDTO; // 移除未使用
 import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletResponse;
@@ -99,12 +100,15 @@ public class CommonController {
     public Result getNoticeTypes() {
         try {
             // 实际应用中，这些类型可能来自数据库或枚举
+            // 修改键名以匹配前端 ElOption 的期望 (typeCode, typeName)
             List<Map<String, Object>> noticeTypes = new ArrayList<>();
-            noticeTypes.add(Map.of("id", 1, "name", "系统通知", "description", "关于系统维护、升级等重要通知"));
-            noticeTypes.add(Map.of("id", 2, "name", "教学通知", "description", "关于选课、考试、成绩等教学相关通知"));
-            noticeTypes.add(Map.of("id", 3, "name", "学工通知", "description", "关于奖助学金、评优、活动等学生工作通知"));
-            noticeTypes.add(Map.of("id", 4, "name", "生活通知", "description", "关于宿舍、食堂、水电等生活相关通知"));
-            noticeTypes.add(Map.of("id", 99, "name", "其他通知", "description", "未分类的其他通知"));
+            noticeTypes.add(Map.of("typeCode", "1", "typeName", "系统通知", "description", "关于系统维护、升级等重要通知")); // id -> typeCode, name -> typeName
+            noticeTypes.add(Map.of("typeCode", "2", "typeName", "教学通知", "description", "关于选课、考试、成绩等教学相关通知"));
+            noticeTypes.add(Map.of("typeCode", "3", "typeName", "学工通知", "description", "关于奖助学金、评优、活动等学生工作通知"));
+            noticeTypes.add(Map.of("typeCode", "4", "typeName", "生活通知", "description", "关于宿舍、食堂、水电等生活相关通知"));
+            noticeTypes.add(Map.of("typeCode", "99", "typeName", "其他通知", "description", "未分类的其他通知"));
+
+            // 确保 typeCode 是字符串或其他 Element Plus 支持的类型，这里使用字符串
 
             return Result.success("获取通知类型成功", noticeTypes);
         } catch (Exception e) {

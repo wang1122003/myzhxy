@@ -95,75 +95,56 @@ public class ClassroomController {
     
     /**
      * 添加教室
+     *
      * @param classroom 教室信息
      * @return 添加结果
      */
     @PostMapping
     public Result addClassroom(@RequestBody Classroom classroom) {
+        log.debug("添加教室: {}", classroom.getName());
         try {
-            // 参数验证
-            if (classroom.getRoomNo() == null || classroom.getRoomNo().trim().isEmpty()) {
-                return Result.error("教室编号不能为空");
-            }
-            
-            if (classroom.getRoomName() == null || classroom.getRoomName().trim().isEmpty()) {
+            // 基本验证 (可以扩展)
+            if (classroom.getName() == null || classroom.getName().isEmpty()) {
                 return Result.error("教室名称不能为空");
             }
-            
-            // 检查是否已存在相同编号的教室
-            Classroom existingClassroom = classroomService.getClassroomByRoomNo(classroom.getRoomNo());
-            if (existingClassroom != null) {
-                return Result.error("教室编号已存在");
-            }
-            
-            boolean success = classroomService.addClassroom(classroom);
-            if (success) {
-                return Result.success("添加教室成功");
-            } else {
-                return Result.error("添加教室失败");
-            }
+            boolean result = classroomService.addClassroom(classroom);
+            log.info("教室添加结果: {}", result);
+            return result ? Result.success("添加成功", classroom) : Result.error("添加失败，教室名称可能已存在");
+        } catch (CustomException e) {
+            log.error("添加教室 '{}' 出错: {}", classroom.getName(), e.getMessage());
+            return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("添加教室失败", e);
-            return Result.error("添加教室失败: " + e.getMessage());
+            log.error("添加教室 '{}' 时发生未知错误", classroom.getName(), e);
+            return Result.error("添加教室时发生未知错误");
         }
     }
     
     /**
-     * 更新教室
-     * @param id 教室ID
+     * 更新教室信息
+     *
+     * @param id        教室ID
      * @param classroom 教室信息
      * @return 更新结果
      */
     @PutMapping("/{id}")
     public Result updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
+        log.debug("更新教室 ID {}: {}", id, classroom.getName());
+        // 确保路径中的ID设置到对象上
+        classroom.setId(id);
         try {
-            // 参数验证
-            if (classroom.getRoomNo() == null || classroom.getRoomNo().trim().isEmpty()) {
-                return Result.error("教室编号不能为空");
-            }
-            
-            if (classroom.getRoomName() == null || classroom.getRoomName().trim().isEmpty()) {
+            // 基本验证
+            if (classroom.getName() == null || classroom.getName().isEmpty()) {
                 return Result.error("教室名称不能为空");
             }
-            
-            // 检查是否已存在相同编号的教室（排除自身）
-            Classroom existingClassroom = classroomService.getClassroomByRoomNo(classroom.getRoomNo());
-            if (existingClassroom != null && !existingClassroom.getId().equals(id)) {
-                return Result.error("教室编号已存在");
-            }
-            
-            // 设置ID
-            classroom.setId(id);
-            
-            boolean success = classroomService.updateClassroom(classroom);
-            if (success) {
-                return Result.success("更新教室成功");
-            } else {
-                return Result.error("更新教室失败");
-            }
+            boolean result = classroomService.updateClassroom(classroom);
+            log.info("教室 ID {} 更新结果: {}", id, result);
+            return result ? Result.success("更新成功") : Result.error("更新失败，教室名称可能重复或教室不存在");
+        } catch (CustomException e) {
+            log.error("更新教室 ID {} 出错: {}", id, e.getMessage());
+            return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("更新教室失败", e);
-            return Result.error("更新教室失败: " + e.getMessage());
+            log.error("更新教室 ID {} 时发生未知错误", id, e);
+            return Result.error("更新教室时发生未知错误");
         }
     }
     
@@ -192,55 +173,96 @@ public class ClassroomController {
     
     /**
      * 批量删除教室
+     *
      * @param ids 教室ID数组
      * @return 删除结果
      */
     @DeleteMapping("/batch")
-    public Result batchDeleteClassrooms(@RequestBody Long[] ids) {
+    public Result batchDeleteClassrooms(@RequestBody List<Long> ids) {
+        log.debug("批量删除教室，IDs: {}", ids);
+        if (ids == null || ids.isEmpty()) {
+            return Result.error("请提供要删除的教室ID");
+        }
         try {
-            if (ids == null || ids.length == 0) {
-                return Result.error("未选择要删除的教室");
+            // 使用循环调用 deleteClassroom 替换 batchDeleteClassrooms
+            int successCount = 0;
+            int failCount = 0;
+            for (Long id : ids) {
+                try {
+                    if (classroomService.deleteClassroom(id)) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        log.warn("删除教室 ID: {} 失败", id);
+                    }
+                } catch (Exception e) {
+                    failCount++;
+                    log.error("删除教室 ID: {} 时出错", id, e);
+                }
             }
-            boolean success = classroomService.batchDeleteClassrooms(ids);
-            if (success) {
-                return Result.success("批量删除成功");
+            log.info("批量删除结果: {} 个成功, {} 个失败.", successCount, failCount);
+            if (failCount > 0) {
+                return Result.success(String.format("批量删除完成，%d个成功，%d个失败", successCount, failCount));
             } else {
-                return Result.error("批量删除失败");
+                return Result.success("批量删除成功");
             }
-        } catch (CustomException ce) {
-            log.warn("批量删除教室失败: {}", ce.getMessage());
-            return Result.error(ce.getMessage());
         } catch (Exception e) {
-            log.error("批量删除教室失败", e);
-            return Result.error("批量删除教室失败: " + e.getMessage());
+            log.error("批量删除教室时发生未知错误: {}", ids, e);
+            return Result.error("批量删除教室时发生未知错误");
         }
     }
     
     /**
      * 更新教室状态
-     * @param id 教室ID
+     *
+     * @param id     教室ID
      * @param status 状态值
      * @return 更新结果
      */
     @PutMapping("/{id}/status/{status}")
     public Result updateClassroomStatus(@PathVariable Long id, @PathVariable Integer status) {
+        log.debug("更新教室 ID {} 的状态为 {}", id, status);
+        if (status == null) {
+            return Result.error("状态值不能为空");
+        }
+        // 对单个更新也使用 batchUpdateStatus，传入包含单个ID的列表
         try {
-            if (status != 0 && status != 1) {
-                return Result.error("状态值无效");
-            }
-            
-            boolean success = classroomService.updateClassroomStatus(id, status);
-            if (success) {
-                return Result.success("更新状态成功");
-            } else {
-                return Result.error("更新状态失败");
-            }
+            List<Long> idList = List.of(id);
+            classroomService.batchUpdateStatus(idList, status);
+            log.info("教室 ID {} 状态更新成功", id);
+            return Result.success("更新状态成功");
         } catch (Exception e) {
-            log.error("更新教室状态失败", e);
-            return Result.error("更新教室状态失败: " + e.getMessage());
+            log.error("更新教室 ID {} 状态出错: {}", id, e.getMessage(), e);
+            return Result.error("更新状态失败: " + e.getMessage());
         }
     }
-    
+
+    /**
+     * 批量更新教室状态
+     *
+     * @param statusUpdateRequest 包含ids和status的对象
+     * @return 更新结果
+     */
+    @PutMapping("/batch/status")
+    public Result batchUpdateClassroomStatus(@RequestBody Map<String, Object> statusUpdateRequest) {
+        @SuppressWarnings("unchecked") // 类型转换警告
+        List<Long> ids = (List<Long>) statusUpdateRequest.get("ids");
+        Integer status = (Integer) statusUpdateRequest.get("status");
+
+        log.debug("批量更新教室状态，IDs {}，状态 {}", ids, status);
+        if (ids == null || ids.isEmpty() || status == null) {
+            return Result.error("参数错误：缺少ids或status");
+        }
+        try {
+            classroomService.batchUpdateStatus(ids, status);
+            log.info("批量状态更新成功，IDs: {}", ids);
+            return Result.success("批量更新状态成功");
+        } catch (Exception e) {
+            log.error("批量状态更新时出错，IDs {}: {}", ids, e.getMessage(), e);
+            return Result.error("批量更新状态失败: " + e.getMessage());
+        }
+    }
+
     /**
      * 获取可用教室
      * @return 可用教室列表
@@ -253,57 +275,6 @@ public class ClassroomController {
         } catch (Exception e) {
             log.error("获取可用教室列表失败", e);
             return Result.error("获取可用教室列表失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 根据教学楼查询教室
-     * @param building 教学楼
-     * @return 教室列表
-     */
-    @GetMapping("/building/{building}")
-    public Result getClassroomsByBuilding(@PathVariable String building) {
-        try {
-            List<Classroom> classrooms = classroomService.getClassroomsByBuilding(building);
-            return Result.success(classrooms);
-        } catch (Exception e) {
-            log.error("根据教学楼查询教室失败", e);
-            return Result.error("根据教学楼查询教室失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 根据教室类型查询教室
-     * @param roomType 教室类型
-     * @return 教室列表
-     */
-    @GetMapping("/type/{roomType}")
-    public Result getClassroomsByRoomType(@PathVariable Integer roomType) {
-        try {
-            List<Classroom> classrooms = classroomService.getClassroomsByRoomType(roomType);
-            return Result.success(classrooms);
-        } catch (Exception e) {
-            log.error("根据教室类型查询教室失败", e);
-            return Result.error("根据教室类型查询教室失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 根据容量范围查询教室
-     * @param minCapacity 最小容量
-     * @param maxCapacity 最大容量
-     * @return 教室列表
-     */
-    @GetMapping("/capacity")
-    public Result getClassroomsByCapacityRange(
-            @RequestParam(required = false, defaultValue = "0") Integer minCapacity,
-            @RequestParam(required = false, defaultValue = "1000") Integer maxCapacity) {
-        try {
-            List<Classroom> classrooms = classroomService.getClassroomsByCapacityRange(minCapacity, maxCapacity);
-            return Result.success(classrooms);
-        } catch (Exception e) {
-            log.error("根据容量范围查询教室失败", e);
-            return Result.error("根据容量范围查询教室失败: " + e.getMessage());
         }
     }
 }

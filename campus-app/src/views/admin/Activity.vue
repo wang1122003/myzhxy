@@ -103,7 +103,7 @@
         </el-table-column>
         <el-table-column
             label="报名人数"
-            prop="enrollmentCount"
+            prop="currentParticipants"
             width="100"
         />
         <el-table-column
@@ -119,11 +119,11 @@
         </el-table-column>
         <el-table-column
             label="发布时间"
-            prop="publishTime"
+            prop="createTime"
             width="180"
         >
           <template #default="scope">
-            {{ formatTime(scope.row.publishTime) }}
+            {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
         <el-table-column

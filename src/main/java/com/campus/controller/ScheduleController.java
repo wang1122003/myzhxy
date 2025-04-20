@@ -1,7 +1,9 @@
 package com.campus.controller;
 
+// import com.campus.dto.ScheduleDTO; // 移除未使用
 import com.campus.entity.Schedule;
 import com.campus.entity.User;
+import com.campus.exception.CustomException;
 import com.campus.service.AuthService;
 import com.campus.service.ScheduleService;
 import com.campus.utils.Result;
@@ -34,6 +36,7 @@ public class ScheduleController {
      * @param courseId 课程ID
      * @param teacherId 教师ID
      * @param classroomId 教室ID
+     * @param classId 班级ID
      * @return 课表列表
      */
     @GetMapping
@@ -142,38 +145,20 @@ public class ScheduleController {
      */
     @PutMapping("/{id}")
     public Result updateSchedule(@PathVariable Long id, @RequestBody Schedule schedule) {
+        log.debug("更新课表 ID {}: 课程 {}, 教师 {}, 教室 {}, 星期 {}",
+                id, schedule.getCourseId(), schedule.getTeacherId(), schedule.getClassroomId(), schedule.getWeekDay());
+        schedule.setId(id);
         try {
-            // 参数校验
-            if (schedule.getCourseId() == null) {
-                return Result.error("课程不能为空");
-            }
-            if (schedule.getTeacherId() == null) {
-                return Result.error("教师不能为空");
-            }
-            if (schedule.getClassroomId() == null) {
-                return Result.error("教室不能为空");
-            }
-            if (schedule.getWeekDay() == null) {
-                return Result.error("星期几不能为空");
-            }
-            
-            // 设置ID
-            schedule.setId(id);
-            
-            // 检查时间冲突
-            if (scheduleService.checkTimeConflict(schedule)) {
-                return Result.error("所选时间段已被占用，请选择其他时间");
-            }
-            
-            boolean success = scheduleService.updateSchedule(schedule);
-            if (success) {
-                return Result.success("课表更新成功");
-            } else {
-                return Result.error("课表更新失败");
-            }
+            // 可在此处添加验证 (例如，检查必填字段)
+            boolean result = scheduleService.updateSchedule(schedule);
+            log.info("课表 ID {} 更新结果: {}", id, result);
+            return result ? Result.success("更新成功") : Result.error("更新失败，可能存在时间冲突或记录不存在");
+        } catch (CustomException e) {
+            log.error("更新课表 ID {} 出错: {}", id, e.getMessage());
+            return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("更新课表失败", e);
-            return Result.error("更新课表失败: " + e.getMessage());
+            log.error("更新课表 ID {} 时发生未知错误", id, e);
+            return Result.error("更新课表时发生未知错误");
         }
     }
     
@@ -240,8 +225,8 @@ public class ScheduleController {
             } catch (NumberFormatException e) {
                 return Result.error("学期ID格式错误");
             }
-            
-            @SuppressWarnings("unchecked")
+
+            @SuppressWarnings("unchecked") // 类型转换警告
             Map<String, Boolean> options = (Map<String, Boolean>) params.get("options");
             
             // 验证参数
@@ -352,28 +337,29 @@ public class ScheduleController {
             @RequestParam(required = false) String semester, // 接收学期参数
             HttpServletRequest request) {
         try {
-            User currentUser = authService.getCurrentUser(request);
+            User currentUser = authService.getCurrentUserFromRequest(request);
             if (currentUser == null) {
-                log.warn("getStudentSchedule: 未找到当前登录用户");
-                return Result.error("未登录或无法获取用户信息");
+                log.warn("获取学生周课表失败: 用户未认证.");
+                return Result.error(401, "用户未认证");
             }
 
-            // 确保是学生用户 (userType=1)
-            if (currentUser.getUserType() != 1) {
-                log.warn("getStudentSchedule: 用户 {} 不是学生，无法获取课表", currentUser.getUsername());
-                return Result.error("非学生用户无法获取课表");
+            // 假设学生的用户类型现在是 "Student"
+            if (!"Student".equals(currentUser.getUserType())) { // 使用 equals 进行字符串比较
+                log.warn("用户 {} (类型 {}) 尝试访问学生课表.", currentUser.getUsername(), currentUser.getUserType());
+                return Result.error(403, "权限不足，只有学生可以查看个人课表");
             }
 
-            Long studentId = currentUser.getId(); // 假设可以直接用 User ID
-            log.info("getStudentSchedule: 开始获取学生ID {} 在学期 '{}' 的课表", studentId, semester);
-
-            // 调用 Service 层方法获取课表
-            // !!! 重要: 确保 ScheduleService 中有 getSchedulesByStudentIdAndSemester 方法 !!!
-            List<Schedule> schedules = scheduleService.getSchedulesByStudentIdAndSemester(studentId, semester);
-
-            log.info("getStudentSchedule: 成功获取学生ID {} 在学期 '{}' 的课表 {} 条", studentId, semester, schedules == null ? 0 : schedules.size());
-            return Result.success(schedules);
-
+            Long studentId = currentUser.getId(); // 已修正: getId()
+            Long termId = Long.parseLong(semester.split("-")[0]); // 从 semester 提取 termId
+            log.info("获取学生 ID: {} 在学期 ID: {} 的周课表", studentId, termId);
+            try {
+                Map<String, Object> weeklySchedule = scheduleService.getStudentWeeklySchedule(studentId, termId);
+                log.debug("成功获取学生 ID: {} 的周课表", studentId);
+                return Result.success("获取学生周课表成功", weeklySchedule);
+            } catch (Exception e) {
+                log.error("获取学生周课表失败", e);
+                return Result.error("获取学生周课表失败: " + e.getMessage());
+            }
         } catch (Exception e) {
             log.error("获取学生课表失败", e);
             // 返回更友好的错误信息给前端

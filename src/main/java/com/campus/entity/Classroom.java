@@ -1,6 +1,7 @@
 package com.campus.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -25,55 +26,42 @@ public class Classroom implements Serializable {
     /**
      * 教室编号
      */
-    private String roomNo;
+    @TableField("name")
+    private String name;
     
     /**
-     * 教室名称
+     * 教学楼
      */
-    private String roomName;
+    @TableField("building")
+    private String building;
     
     /**
-     * 教学楼ID
+     * 教室容量
      */
-    private Long buildingId;
-    
-    /**
-     * 教学楼名称
-     */
-    private String buildingName;
-    
-    /**
-     * 楼层
-     */
-    private Integer floor;
-    
-    /**
-     * 教室类型：1-普通教室，2-多媒体教室，3-实验室，4-会议室
-     */
-    private Integer roomType;
-    
-    /**
-     * 容量
-     */
+    @TableField("capacity")
     private Integer capacity;
     
     /**
-     * 设备描述
+     * 状态：0-禁用，1-正常
      */
-    private String equipment;
-    
-    /**
-     * 状态：0-不可用，1-可用
-     */
+    @TableField("status")
     private Integer status;
+
+    /**
+     * 教室类型：1-普通教室，2-多媒体教室，3-实验室
+     */
+    @TableField("room_type")
+    private Integer roomType;
     
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private Date createTime;
     
     /**
      * 更新时间
      */
+    @TableField("update_time")
     private Date updateTime;
 }

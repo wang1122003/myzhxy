@@ -1,5 +1,8 @@
 import {createRouter, createWebHistory} from 'vue-router'
 
+// 从 @/utils/auth 导入
+import {isLoggedIn, token, userRole} from '@/utils/auth'
+
 // 公共页面路由
 const routes = [
     {
@@ -46,9 +49,10 @@ const routes = [
     // 学生页面路由
     {
         path: '/student',
-        name: 'StudentHome',
+        name: 'StudentLayout',
         component: () => import('../views/student/Index.vue'),
         meta: {requiresAuth: true, role: 'student'},
+        redirect: '/student/notices',
         children: [
             {
                 path: 'profile',
@@ -91,9 +95,10 @@ const routes = [
     // 教师页面路由
     {
         path: '/teacher',
-        name: 'TeacherHome',
+        name: 'TeacherLayout',
         component: () => import('../views/teacher/Index.vue'),
         meta: {requiresAuth: true, role: 'teacher'},
+        redirect: '/teacher/notices',
         children: [
             {
                 path: 'profile',
@@ -133,9 +138,10 @@ const routes = [
     // 管理员页面路由
     {
         path: '/admin',
-        name: 'AdminHome',
+        name: 'AdminLayout',
         component: () => import('../views/admin/Index.vue'),
         meta: {requiresAuth: true, role: 'admin'},
+        redirect: '/admin/notice',
         children: [
             {
                 path: 'profile',
@@ -203,10 +209,19 @@ const router = createRouter({
     routes
 })
 
+// 应用初始化时尝试恢复用户状态 (逻辑已移至 App.vue)
+// 移除旧的 tryRestoreUserSession 函数
+
 // 路由守卫
 router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem('token')
-    const userRole = localStorage.getItem('role')
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    const requiredRole = to.meta.role;
+    const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
+
+    // 直接使用导入的响应式变量和计算属性
+    const _isLoggedIn = isLoggedIn.value;
+    const _userRole = userRole.value; // 获取当前用户角色
+    const _token = token.value; // 获取 token
 
     // 设置页面标题
     if (to.meta.title) {
@@ -219,18 +234,44 @@ router.beforeEach((to, from, next) => {
     localStorage.setItem('prevPath', from.path)
 
     // 访问权限控制
-    if (to.meta.requiresAuth && !token) {
-        // 未登录访问受保护页面，重定向到首页 /
-        next({path: '/', query: {redirect: to.fullPath}}) // 带上原目标路径
-    } else if (to.meta.role && to.meta.role !== userRole) {
-        // 角色不匹配，重定向到错误页
-        next('/error')
-    } else {
-        // 控制台输出路由跳转信息（仅在开发环境）
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`路由跳转：${from.path} -> ${to.path}`)
+    if (requiresAuth) {
+        if (!_isLoggedIn || !_token) {
+            // 未登录访问受保护页面，重定向到首页 /
+            // 让响应拦截器统一处理登出提示
+            next({path: '/', query: {redirect: to.fullPath}})
+        } else {
+            if (requiredRole && _userRole !== requiredRole) {
+                // 角色不匹配，重定向到错误页
+                console.warn(`角色不匹配: 需要 ${requiredRole}, 当前 ${_userRole}`);
+                next('/error')
+            } else {
+                // 控制台输出路由跳转信息（仅在开发环境）
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(`路由跳转：${from.path} -> ${to.path}`)
+                }
+
+                next()
+            }
         }
-        
+    } else if (requiresGuest && _isLoggedIn) {
+        // 如果目标页面只允许未登录用户访问（如登录页），但用户已登录
+        // 根据角色重定向到各自的首页
+        console.log('访问游客页面，但已登录，重定向到首页');
+        switch (_userRole) {
+            case 'admin':
+                next('/admin');
+                break;
+            case 'teacher':
+                next('/teacher');
+                break;
+            case 'student':
+                next('/student');
+                break;
+            default:
+                next('/'); // 默认跳转到公共首页
+        }
+    } else {
+        // 不需要认证的页面，或者已登录访问非 requiresGuest 页面，直接放行
         next()
     }
 })

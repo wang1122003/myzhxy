@@ -20,8 +20,8 @@
             <id column="sender_id" property="id"/>
             <result column="sender_username" property="username"/>
             <result column="sender_real_name" property="realName"/>
-            <result column="sender_avatar" property="avatar"/>
-            <result column="sender_role" property="role"/>
+            <result column="sender_avatar" property="avatarUrl"/>
+            <result column="sender_user_type" property="userType"/>
         </association>
     </resultMap>
 
@@ -31,7 +31,7 @@
         n.sender_id, n.target_type, n.target_id, n.status,
         n.send_time, n.expire_time, n.create_time, n.update_time,
         u.username as sender_username, u.real_name as sender_real_name,
-        u.avatar as sender_avatar, u.role as sender_role
+        u.avatar_url as sender_avatar, u.user_type as sender_user_type
     </sql>
 
     <!-- 获取所有通知 -->
@@ -102,6 +102,17 @@
         WHERE n.status = 1
         AND (n.expire_time IS NULL OR n.expire_time > NOW())
         ORDER BY n.priority DESC, n.send_time DESC
+    </select>
+
+    <!-- 查询最新的N条通知 -->
+    <select id="findRecent" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification n
+        LEFT JOIN user u ON n.sender_id = u.id
+        WHERE n.status = 1 -- 只查询已发布的通知
+        ORDER BY n.send_time DESC
+        LIMIT #{limit}
     </select>
 
     <!-- 搜索通知 -->
@@ -213,7 +224,7 @@
         SELECT
             u.username as sender_username,
             u.real_name as sender_real_name,
-            u.role as sender_role,
+            u.user_type as sender_user_type,
             COUNT(n.id) as notification_count,
             COUNT(CASE WHEN n.status = 1 THEN 1 END) as active_count,
             COUNT(CASE WHEN n.status = 0 THEN 1 END) as inactive_count,
@@ -223,7 +234,7 @@
             COUNT(CASE WHEN n.expire_time &lt;= NOW() THEN 1 END) as expired_count
         FROM notification n
         LEFT JOIN user u ON n.sender_id = u.id
-        GROUP BY n.sender_id, u.username, u.real_name, u.role
+        GROUP BY n.sender_id, u.username, u.real_name, u.user_type
         ORDER BY notification_count DESC
     </select>
 

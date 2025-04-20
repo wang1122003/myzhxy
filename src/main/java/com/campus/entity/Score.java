@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -26,122 +27,64 @@ public class Score implements Serializable {
     /**
      * 学生ID
      */
+    @TableField("student_id")
     private Long studentId;
-    
-    /**
-     * 学生姓名
-     */
-    @TableField(exist = false)
-    private String studentName;
-    
-    /**
-     * 学号
-     */
-    @TableField(exist = false)
-    private String studentNo;
     
     /**
      * 课程ID
      */
+    @TableField("course_id")
     private Long courseId;
     
     /**
-     * 课程名称
+     * 学期
      */
-    @TableField(exist = false)
-    private String courseName;
-    
-    /**
-     * 教师ID
-     */
-    @TableField(exist = false)
-    private Long teacherId;
-    
-    /**
-     * 教师姓名
-     */
-    @TableField(exist = false)
-    private String teacherName;
-    
-    /**
-     * 学期ID
-     */
-    @TableField(exist = false)
-    private Long termId;
-    
-    /**
-     * 学期名称
-     */
-    @TableField(exist = false)
-    private String termName;
+    private String term;
     
     /**
      * 平时成绩
      */
-    @TableField(exist = false)
-    private Float regularScore;
+    @TableField("regular_score")
+    private BigDecimal regularScore;
     
     /**
      * 期中成绩
      */
-    @TableField(exist = false)
-    private Float midtermScore;
+    @TableField("midterm_score")
+    private BigDecimal midtermScore;
     
     /**
      * 期末成绩
      */
-    @TableField(exist = false)
-    private Float finalScore;
+    @TableField("final_score")
+    private BigDecimal finalScore;
     
     /**
-     * 总评成绩 (映射到数据库的 score 列)
+     * 总成绩
      */
-    @TableField("score") // 显式指定映射到数据库的 score 列
-    private Float totalScore; 
+    @TableField("total_score")
+    private BigDecimal totalScore;
     
     /**
-     * 成绩等级：A、B、C、D、E、F
+     * 绩点
      */
-    @TableField(exist = false)
-    private String grade;
-    
-    /**
-     * 备注
-     */
-    @TableField(exist = false)
-    private String remark;
+    private BigDecimal gpa;
     
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private Date createTime;
     
     /**
      * 更新时间
      */
+    @TableField("update_time")
     private Date updateTime;
-    
-    /**
-     * 关联课程
-     */
+
+    // 非数据库字段
     @TableField(exist = false)
-    private Course course;
-    
-    /**
-     * 关联学生
-     */
+    private String courseName; // 课程名称
     @TableField(exist = false)
-    private Student student;
-    
-    /**
-     * 关联教师
-     */
-    @TableField(exist = false)
-    private Teacher teacher;
-    
-    /**
-     * 关联学期
-     */
-    @TableField(exist = false)
-    private Term term;
+    private String studentName; // 学生名称
 }

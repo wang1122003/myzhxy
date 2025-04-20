@@ -1,73 +1,64 @@
 package com.campus.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Classroom;
 
+import java.util.Date;
 import java.util.List;
 
 /**
  * 教室服务接口
  */
-public interface ClassroomService {
+public interface ClassroomService extends IService<Classroom> {
     
     /**
-     * 根据ID查询教室
+     * 根据ID获取教室信息
      * @param id 教室ID
-     * @return 教室对象
+     * @return 教室实体
      */
     Classroom getClassroomById(Long id);
-    
+
     /**
-     * 根据教室编号查询教室
-     * @param roomNo 教室编号
-     * @return 教室对象
+     * 根据教室名称查询教室信息
+     * @param name 教室名称
+     * @return 教室实体
      */
-    Classroom getClassroomByRoomNo(String roomNo);
+    Classroom getClassroomByName(String name);
     
     /**
-     * 查询所有教室
+     * 获取所有教室列表
      * @return 教室列表
      */
     List<Classroom> getAllClassrooms();
     
     /**
-     * 根据教学楼查询教室
-     * @param building 教学楼
-     * @return 教室列表
+     * 分页并按条件查询教室列表
+     * @param page 页码
+     * @param size 每页数量
+     * @param keyword 关键词 (搜索教室编号/名称)
+     * @param building 教学楼 (可选)
+     * @param status 状态 (可选, 0:禁用, 1:正常)
+     * @return 分页后的教室列表
      */
-    List<Classroom> getClassroomsByBuilding(String building);
+    IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status);
     
     /**
-     * 根据教室类型查询教室
-     * @param roomType 教室类型
-     * @return 教室列表
-     */
-    List<Classroom> getClassroomsByRoomType(Integer roomType);
-    
-    /**
-     * 根据容量范围查询教室
-     * @param minCapacity 最小容量
-     * @param maxCapacity 最大容量
-     * @return 教室列表
-     */
-    List<Classroom> getClassroomsByCapacityRange(Integer minCapacity, Integer maxCapacity);
-    
-    /**
-     * 查询可用教室
-     * @return 教室列表
+     * 获取可用教室列表
+     * @return 可用教室列表
      */
     List<Classroom> getAvailableClassrooms();
     
     /**
      * 添加教室
-     * @param classroom 教室对象
+     * @param classroom 教室实体
      * @return 是否成功
      */
     boolean addClassroom(Classroom classroom);
     
     /**
-     * 更新教室
-     * @param classroom 教室对象
+     * 更新教室信息
+     * @param classroom 教室实体
      * @return 是否成功
      */
     boolean updateClassroom(Classroom classroom);
@@ -80,29 +71,19 @@ public interface ClassroomService {
     boolean deleteClassroom(Long id);
     
     /**
-     * 批量删除教室
-     * @param ids 教室ID数组
-     * @return 是否成功
+     * 检查教室在指定时间段是否可用
+     * @param classroomId 教室ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param weekDay 星期几
+     * @return 是否可用
      */
-    boolean batchDeleteClassrooms(Long[] ids);
-    
-    /**
-     * 更新教室状态
-     * @param id 教室ID
-     * @param status 状态值
-     * @return 是否成功
-     */
-    boolean updateClassroomStatus(Long id, Integer status);
+    boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, Integer weekDay);
 
     /**
-     * 分页并按条件查询教室
-     *
-     * @param page     当前页码
-     * @param size     每页数量
-     * @param keyword  关键词 (教室编号/名称)
-     * @param building 教学楼
-     * @param status   状态
-     * @return 分页教室列表 (MyBatis-Plus IPage)
+     * 批量更新教室状态
+     * @param ids 教室ID列表
+     * @param status 状态值
      */
-    IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status);
+    void batchUpdateStatus(List<Long> ids, Integer status);
 }

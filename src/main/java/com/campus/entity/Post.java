@@ -28,111 +28,105 @@ public class Post implements Serializable {
     /**
      * 帖子标题
      */
+    @TableField("title")
     private String title;
     
     /**
      * 帖子内容
      */
+    @TableField("content")
     private String content;
     
     /**
      * 作者ID
      */
+    @TableField("author_id")
     private Long authorId;
     
     /**
-     * 作者名称
-     */
-    @TableField(exist = false)
-    private String authorName;
-    
-    /**
-     * 作者头像
-     */
-    @TableField(exist = false)
-    private String authorAvatar;
-    
-    /**
-     * 论坛板块ID (数据库中不存在此列，已移除)
-     */
-    // @TableField("forum_id")
-    // private Long forumId;
-    
-    /**
-     * 板块名称，从Forum实体填充而来
-     */
-    @TableField(exist = false)
-    private String forumName;
-
-    /**
      * 板块类型
      * 例如：学习交流、校园生活、招聘信息等
-     * 从Forum实体集成
      */
+    @TableField("forum_type")
     private String forumType;
 
     /**
      * 板块颜色代码
-     * 用于前端显示，从Forum实体集成
+     * 用于前端显示
      */
+    @TableField("forum_color")
     private String forumColor;
 
     /**
      * 标签列表
-     * 使用JSON数组形式存储，从Tag实体集成而来
+     * 使用JSON数组形式存储
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "tags", typeHandler = JacksonTypeHandler.class)
     private List<String> tags;
     
     /**
      * 浏览次数
      */
+    @TableField("view_count")
     private Integer viewCount;
     
     /**
      * 评论次数
      */
+    @TableField("comment_count")
     private Integer commentCount;
     
     /**
      * 点赞次数
      */
+    @TableField("like_count")
     private Integer likeCount;
     
     /**
      * 是否置顶：0-否，1-是
      */
+    @TableField("is_top")
     private Integer isTop;
     
     /**
      * 是否精华：0-否，1-是
      */
+    @TableField("is_essence")
     private Integer isEssence;
     
     /**
      * 状态：1-正常，0-禁用
      */
+    @TableField("status")
     private Integer status;
     
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private Date createTime;
     
     /**
      * 更新时间
      */
+    @TableField("update_time")
     private Date updateTime;
 
     /**
-     * 当前用户是否已点赞，用于前端显示
+     * 作者姓名（非数据库字段，需要Service层填充）
      */
     @TableField(exist = false)
-    private Boolean liked = false;
+    private String authorName;
 
     /**
-     * 关联的作者信息
+     * 作者头像（非数据库字段）
      */
     @TableField(exist = false)
-    private User author;
+    private String authorAvatar;
+
+    /**
+     * 论坛版块名称（非数据库字段）
+     */
+    @TableField(exist = false)
+    private String forumTypeName;
 }

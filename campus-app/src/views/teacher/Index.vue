@@ -42,7 +42,7 @@
 import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {Calendar, ChatLineRound, Document, Expand, Fold, HomeFilled, User} from '@element-plus/icons-vue'
+import {Calendar, Document, Expand, Fold, HomeFilled, User} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
 
 const router = useRouter()
@@ -54,7 +54,7 @@ const isMobile = ref(false)
 // 定义菜单项
 const menuItems = shallowRef([
   {index: '/teacher', icon: HomeFilled, title: '首页'},
-  {index: '/teacher/notices', icon: ChatLineRound, title: '通知公告'},
+  // {index: '/teacher/notices', icon: ChatLineRound, title: '通知公告'}, // 移除通知公告
   {index: '/teacher/profile', icon: User, title: '个人资料'},
   {index: '/teacher/schedule', icon: Calendar, title: '我的课表'},
   {index: '/teacher/courses', icon: Document, title: '课程管理'},

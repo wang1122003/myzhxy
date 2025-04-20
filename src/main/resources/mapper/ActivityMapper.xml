@@ -13,7 +13,7 @@
         <result column="organizer_id" property="organizerId" jdbcType="BIGINT"/>
         <result column="organizer_name" property="organizerName" jdbcType="VARCHAR"/>
         <result column="contact" property="contact" jdbcType="VARCHAR"/>
-        <result column="poster_url" property="posterUrl" jdbcType="VARCHAR"/>
+        <result column="poster" property="posterUrl" jdbcType="VARCHAR"/>
         <result column="max_participants" property="maxParticipants" jdbcType="INTEGER"/>
         <result column="current_participants" property="currentParticipants" jdbcType="INTEGER"/>
         <result column="status" property="status" jdbcType="INTEGER"/>
@@ -24,7 +24,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         id, title, description, activity_type, location, start_time, end_time,
-        organizer_id, organizer_name, contact, poster_url, max_participants,
+        organizer_id, organizer_name, contact, poster, max_participants,
         current_participants, status, create_time, update_time
     </sql>
 
@@ -103,7 +103,7 @@
     <!-- 添加活动 -->
     <insert id="insert" parameterType="com.campus.entity.Activity" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO activity (title, description, activity_type, location, start_time, end_time,
-            organizer_id, organizer_name, contact, poster_url, max_participants,
+                              organizer_id, organizer_name, contact, poster, max_participants,
             current_participants, status, create_time, update_time
         )
         VALUES (#{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{activityType,jdbcType=INTEGER},
@@ -127,7 +127,7 @@
             <if test="organizerId != null">organizer_id = #{organizerId,jdbcType=BIGINT},</if>
             <if test="organizerName != null">organizer_name = #{organizerName,jdbcType=VARCHAR},</if>
             <if test="contact != null">contact = #{contact,jdbcType=VARCHAR},</if>
-            <if test="posterUrl != null">poster_url = #{posterUrl,jdbcType=VARCHAR},</if>
+            <if test="posterUrl != null">poster = #{posterUrl,jdbcType=VARCHAR},</if>
             <if test="maxParticipants != null">max_participants = #{maxParticipants,jdbcType=INTEGER},</if>
             <if test="currentParticipants != null">current_participants = #{currentParticipants,jdbcType=INTEGER},</if>
             <if test="status != null">status = #{status,jdbcType=INTEGER},</if>

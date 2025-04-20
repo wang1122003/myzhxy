@@ -58,10 +58,10 @@
 </template>
 
 <script>
-import {computed, ref} from 'vue'
+import {computed} from 'vue'
 import {useRouter} from 'vue-router'
-import {ElMessage, ElMessageBox} from 'element-plus'
 import {ArrowDown, ChatDotRound, HomeFilled, Right, SwitchButton, User} from '@element-plus/icons-vue'
+import {logout, userAvatar, userRealName, userRole} from '@/utils/auth'
 
 export default {
   name: 'AppHeader',
@@ -75,33 +75,11 @@ export default {
   },
   setup() {
     const router = useRouter()
-    const userAvatar = ref('')
 
-    const isLoggedIn = computed(() => {
-      return !!localStorage.getItem('token')
-    })
-
-    const getUserInfoFromStorage = () => {
-      try {
-        const userString = localStorage.getItem('user')
-        return userString ? JSON.parse(userString) : null
-      } catch (e) {
-        return null
-      }
-    }
-
-    const userName = computed(() => {
-      const user = getUserInfoFromStorage()
-      return user?.username || '用户'
-    })
-
-    const userRole = computed(() => {
-      const user = getUserInfoFromStorage()
-      return user?.role || ''
-    })
-
+    const isLoggedIn = computed(() => userRealName.value !== null)
+    const userName = computed(() => userRealName.value)
     const userRoleName = computed(() => {
-      const role = localStorage.getItem('role')
+      const role = userRole.value
       const names = {
         student: '学生',
         teacher: '教师',
@@ -120,26 +98,13 @@ export default {
 
     const handleCommand = (command) => {
       if (command === 'logout') {
-        ElMessageBox.confirm('确定要退出登录吗?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          localStorage.removeItem('role')
-          ElMessage.success('已退出登录')
-          router.push('/')
-        }).catch(() => {
-        })
+        handleLogout()
       } else if (command === 'profile') {
-        if (userRole.value === 'student') {
-          router.push('/student/profile')
-        } else if (userRole.value === 'teacher') {
-          router.push('/teacher/profile')
-        } else if (userRole.value === 'admin') {
-          router.push('/admin/profile')
+        const rolePath = userRole.value
+        if (rolePath) {
+          router.push(`/${rolePath}/profile`)
         } else {
+          console.error('无法确定用户角色以跳转到个人中心')
           router.push('/')
         }
       } else if (command === 'dashboard') {
@@ -154,6 +119,17 @@ export default {
         }
       } else if (command === 'forum') {
         goToForum()
+      }
+    }
+
+    const handleLogout = async () => {
+      try {
+        await logout()
+        router.push('/login')
+      } catch (error) {
+        console.error("登出时出错:", error)
+        logout()
+        router.push('/login')
       }
     }
 

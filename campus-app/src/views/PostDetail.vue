@@ -1,7 +1,7 @@
 <template>
   <div class="post-detail-container">
     <div class="page-header">
-      <el-button type="text" @click="goBack">
+      <el-button type="link" @click="goBack">
         <el-icon>
           <ArrowLeft/>
         </el-icon>
@@ -53,7 +53,7 @@
                   <span>{{ post.viewCount || 0 }}</span>
                 </el-button>
 
-                <el-button type="text" @click="scrollToComments">
+                <el-button type="link" @click="scrollToComments">
                   <el-icon>
                     <ChatDotRound/>
                   </el-icon>
@@ -136,7 +136,7 @@
                     @click="handleLikeComment(comment)"
                 >
                   <el-icon>
-                    <ThumbUp/>
+                    <Star/>
                   </el-icon>
                   <span>{{ comment.likeCount || 0 }}</span>
                 </el-button>
@@ -199,7 +199,7 @@
                         @click="handleLikeComment(subComment)"
                     >
                       <el-icon>
-                        <ThumbUp/>
+                        <Star/>
                       </el-icon>
                       <span>{{ subComment.likeCount || 0 }}</span>
                     </el-button>
@@ -296,7 +296,7 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, ThumbUp, View} from '@element-plus/icons-vue'
+import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, View} from '@element-plus/icons-vue'
 import {getPostById as getPostDetail, likePost} from '@/api/forum'
 import {
   addComment as createComment,
@@ -317,7 +317,6 @@ export default {
     Star,
     View,
     ChatDotRound,
-    ThumbUp,
     MoreFilled,
     ChatLineRound
   },
@@ -836,12 +835,6 @@ export default {
 
 .active-like {
   color: #e6a23c;
-}
-
-:deep(.el-button--text) {
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
 
 @media (max-width: 768px) {

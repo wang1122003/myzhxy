@@ -6,10 +6,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Notice Data Transfer Object
+ * Notification Data Transfer Object
  */
 @Data
-public class NoticeDTO {
+public class NotificationDTO {
     private Long id;
     private String title;
     private String content;

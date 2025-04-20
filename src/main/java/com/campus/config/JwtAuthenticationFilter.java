@@ -1,7 +1,6 @@
 package com.campus.config;
 
 import com.campus.entity.User;
-import com.campus.service.AuthService;
 import com.campus.utils.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,17 +11,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * JWT 认证过滤器
@@ -37,59 +34,72 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private AuthService authService; // 暂时使用 AuthService 获取 Token 和用户信息
+    private UserDetailsService userDetailsService; // 注入 UserDetailsService
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+        String jwt = getTokenFromRequest(request); // 从请求中提取Token
+
         try {
-            String jwt = authService.getTokenFromRequest(request);
-
             if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
-                // 从 Token 中获取用户信息 (这里暂时依赖 AuthService 的实现)
-                // 更好的做法是直接从 jwtUtil 解析必要信息，或者创建一个 UserDetailsService 来加载用户信息
-                User userDetails = authService.getCurrentUser(request);
+                String username = jwtUtil.getUsernameFromToken(jwt); // 从Token获取用户名
 
-                if (userDetails != null) {
-                    // 创建权限列表 (Spring Security 需要 GrantedAuthority)
-                    List<GrantedAuthority> authorities = new ArrayList<>();
-                    // 假设 userType 0=ADMIN, 1=STUDENT, 2=TEACHER
-                    String role = switch (userDetails.getUserType()) {
-                        case 0 -> "ROLE_ADMIN";
-                        case 1 -> "ROLE_STUDENT";
-                        case 2 -> "ROLE_TEACHER";
-                        default -> null;
-                    };
-                    if (role != null) {
-                        authorities.add(new SimpleGrantedAuthority(role));
+                // 检查 SecurityContext 中是否已有认证信息 (避免重复认证)
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // 使用 UserDetailsService 加载用户信息
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+                    // 验证Token对于该用户是否有效 (虽然validateToken已做部分检查，这里可以再确认下)
+                    if (jwtUtil.validateToken(jwt, userDetails)) { // 假设 JwtUtil 有此方法
+                        // 创建 Authentication 对象 (使用 UserDetails 及其权限)
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                        // 设置认证请求的详情
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        // 将 Authentication 对象设置到 SecurityContextHolder
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("用户 '{}' 已通过JWT认证，权限: {}", username, userDetails.getAuthorities());
+
+                        // 尝试将 User 实体存入请求属性 (如果 UserDetails 是 User 的实例)
+                        if (userDetails instanceof User userEntity) {
+                            request.setAttribute("username", userEntity.getUsername());
+                            request.setAttribute("userId", userEntity.getId());
+                            request.setAttribute("userType", userEntity.getUserType());
+                        }
+                    } else {
+                        logger.warn("JWT Token 对用户 '{}' 无效", username);
                     }
-
-                    // 创建 Authentication 对象
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-
-                    // 设置认证请求的详情
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    // 将 Authentication 对象设置到 SecurityContextHolder
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    logger.debug("用户 '{}' (ID: {}) 已通过JWT认证，角色: {}", userDetails.getUsername(), userDetails.getId(), role);
-                } else {
-                    logger.warn("无法从有效的JWT中获取用户信息, Token: {}", jwt);
+                } else if (username == null) {
+                    logger.warn("无法从 JWT Token 中提取用户名");
                 }
             } else {
-                // 如果没有 token 或 token 无效，则不设置 SecurityContext，后续的 Filter 会处理（例如抛出未授权异常）
+                // 如果没有 token 或 token 无效
                 if (StringUtils.hasText(jwt)) {
-                    logger.debug("JWT Token 无效或已过期: {}", jwt);
+                    logger.debug("JWT Token 无效或已过期");
                 }
             }
         } catch (Exception ex) {
-            logger.error("JWT认证过滤器处理失败: {}", ex.getMessage());
-            // 不要在过滤器中抛出异常，让后续处理或全局异常处理器捕获
+            logger.error("JWT认证过滤器处理失败: {}", ex.getMessage(), ex); // 打印完整异常
         }
 
         // 继续执行过滤器链中的下一个过滤器
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * 从请求头或Cookie中提取JWT Token
+     * (这个方法从 AuthService 移过来或重写，因为 AuthService 不再被注入)
+     */
+    private String getTokenFromRequest(HttpServletRequest request) {
+        // 从请求头获取
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 } 

@@ -55,7 +55,7 @@
               {{ userInfo.name }}
             </el-descriptions-item>
             <el-descriptions-item label="性别">
-              {{ userInfo.gender === 'male' ? '男' : '女' }}
+              {{ formatGender(userInfo.gender) }}
             </el-descriptions-item>
             <el-descriptions-item label="院系">
               {{ userInfo.department }}
@@ -107,10 +107,10 @@
             prop="gender"
         >
           <el-radio-group v-model="form.gender">
-            <el-radio label="male">
+            <el-radio value="male">
               男
             </el-radio>
-            <el-radio label="female">
+            <el-radio value="female">
               女
             </el-radio>
           </el-radio-group>
@@ -157,7 +157,7 @@
 </template>
 
 <script>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {onMounted, ref} from 'vue';
 import {
   ElAvatar,
   ElButton,
@@ -165,6 +165,7 @@ import {
   ElDescriptions,
   ElDescriptionsItem,
   ElDialog,
+  ElDivider,
   ElForm,
   ElFormItem,
   ElIcon,
@@ -175,10 +176,12 @@ import {
   ElUpload
 } from 'element-plus';
 import {Upload} from '@element-plus/icons-vue';
-import {getTeacherProfile, updateTeacherProfile} from '@/api/user'; // 使用教师 API
+import {getUserProfile, updateUserProfile} from '@/api/user';
+import {logout, setUserInfo, userId, userInfo} from '@/utils/auth';
+import {useRouter} from 'vue-router';
 
 export default {
-  name: 'TeacherProfile', // 修改组件名
+  name: 'TeacherProfile',
   components: {
     Upload,
     // 注册 Element Plus 组件 (如果需要按需导入)
@@ -194,90 +197,96 @@ export default {
     ElFormItem,
     ElInput,
     ElRadioGroup,
-    ElRadio
+    ElRadio,
+    ElDivider
   },
   setup() {
-    const userInfo = ref({});
-    const userAvatar = ref('');
+    const router = useRouter();
     const dialogVisible = ref(false);
     const formRef = ref(null);
     const uploadingAvatar = ref(false);
+    const profile = ref({});
+    const loading = ref(false);
+    const isEditing = ref(false);
 
-    const uploadAvatarUrl = `/api/user/avatar/upload`; // 通用上传接口
-    const headers = computed(() => {
-      return {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    // 表单数据，根据教师信息调整
-    const form = reactive({
-      id: '',
-      name: '',
-      gender: 'male',
-      department: '',
-      title: '', // 添加职称字段
-      email: '',
-      phone: '',
-      avatar: ''
+    const uploadAvatarUrl = ref('/api/upload/avatar');
+    const headers = ref({
+      Authorization: localStorage.getItem('Authorization-Token') || ''
     });
 
     const rules = {
       email: [
         {required: true, message: '请输入邮箱', trigger: 'blur'},
-        {type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur'}
+        {type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change']}
       ],
       phone: [
         {required: true, message: '请输入手机号', trigger: 'blur'},
-        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur'}
+        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: ['blur', 'change']}
       ]
     };
 
-    const fetchUserInfo = async () => {
+    const fetchProfile = async () => {
+      loading.value = true;
       try {
-        const response = await getTeacherProfile(); // 调用教师 API
-        userInfo.value = response.data;
-        userAvatar.value = response.data.avatar || '';
-        // 填充表单时也需要更新
-        Object.keys(form).forEach(key => {
-          form[key] = userInfo.value[key] || '';
-        });
+        if (!userId.value) {
+          ElMessage.error('无法获取用户ID，请重新登录');
+          await handleLogout();
+          return;
+        }
+        const response = await getUserProfile(userId.value);
+        if (response.code === 200 && response.data) {
+          profile.value = {...response.data};
+        } else {
+          ElMessage.error(response.message || '获取用户信息失败');
+        }
       } catch (error) {
-        console.error('获取教师信息失败', error);
-        ElMessage.error('获取教师信息失败');
+        console.error('获取用户信息异常:', error);
+        ElMessage.error('获取用户信息异常');
+      } finally {
+        loading.value = false;
       }
     };
 
+    onMounted(fetchProfile);
+
     const handleEdit = () => {
-      dialogVisible.value = true;
-      // 重新从最新的 userInfo 填充表单
-      Object.keys(form).forEach(key => {
-        form[key] = userInfo.value[key] || '';
-      });
+      isEditing.value = true;
+      if (userInfo.value) {
+        profile.value = {...userInfo.value};
+      }
     };
 
     const handleSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {
-          updateTeacherProfile(form).then(() => { // 调用教师 API
-            ElMessage.success('更新成功');
-            dialogVisible.value = false;
-            fetchUserInfo(); // 重新获取信息
+          const dataToUpdate = {...profile.value};
+          updateUserProfile(dataToUpdate).then(response => {
+            if (response.code === 0 || response.code === 200) {
+              ElMessage.success('更新成功');
+              dialogVisible.value = false;
+              setUserInfo(response.data || dataToUpdate);
+            } else {
+              ElMessage.error(response.message || '更新失败');
+            }
           }).catch(error => {
             console.error('更新教师信息失败', error);
-            ElMessage.error('更新教师信息失败');
+            const errorMessage = error.response?.data?.message || error.message || '更新教师信息失败';
+            ElMessage.error(errorMessage);
           });
         }
       });
     };
 
-    const handleAvatarSuccess = (response) => {
+    const handleAvatarSuccess = (response, uploadFile) => {
       uploadingAvatar.value = false;
-      if (response.code === 200 && response.data) {
-        userAvatar.value = response.data;
-        userInfo.value.avatar = response.data;
-        form.avatar = response.data;
-        ElMessage.success('头像更新成功');
+      if (response.code === 0 || response.code === 200) {
+        if (response.data && response.data.url) {
+          ElMessage.success('头像上传成功');
+          const currentUserInfo = {...userInfo.value, avatarUrl: response.data.url};
+          setUserInfo(currentUserInfo);
+        } else {
+          ElMessage.error(response.message || '头像上传成功但未返回URL');
+        }
       } else {
         ElMessage.error(response.message || '头像上传失败');
       }
@@ -285,8 +294,14 @@ export default {
 
     const handleAvatarError = (error) => {
       uploadingAvatar.value = false;
-      console.error("头像上传失败", error);
-      ElMessage.error('头像上传失败，请稍后重试');
+      let message = '头像上传失败';
+      try {
+        const responseData = JSON.parse(error.message || '{}');
+        message = responseData.message || message;
+      } catch (e) {
+      }
+      ElMessage.error(message);
+      console.error('头像上传错误:', error);
     };
 
     const beforeAvatarUpload = (rawFile) => {
@@ -306,25 +321,37 @@ export default {
       return true;
     };
 
-    onMounted(() => {
-      fetchUserInfo();
-    });
+    const handleLogout = async () => {
+      try {
+        await logout();
+        router.push('/login');
+      } catch (error) {
+        console.error("登出时出错:", error);
+        logout();
+        router.push('/login');
+      }
+    };
+
+    const formatGender = (gender) => {
+      if (gender === 1) return '男';
+      if (gender === 0) return '女';
+      return '未知';
+    };
 
     return {
-      userInfo,
-      userAvatar,
       dialogVisible,
       formRef,
-      form,
+      form: profile,
       rules,
-      headers,
-      uploadAvatarUrl,
-      uploadingAvatar,
       handleEdit,
       handleSubmit,
+      uploadAvatarUrl,
+      headers,
       handleAvatarSuccess,
       handleAvatarError,
-      beforeAvatarUpload
+      beforeAvatarUpload,
+      uploadingAvatar,
+      formatGender
     };
   }
 }

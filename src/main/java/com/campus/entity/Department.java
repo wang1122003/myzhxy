@@ -1,208 +1,166 @@
 package com.campus.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 /**
- * 部门实体类
+ * 院系实体类
+ * 用于表示学校的院系信息
  */
+@Data
+@TableName("department")
 public class Department implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     /**
-     * 部门ID
+     * 院系ID
      */
-    private Integer id;
-    
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
     /**
-     * 部门名称
+     * 院系名称
      */
+    @TableField("name")
     private String name;
-    
+
     /**
-     * 部门编码
+     * 院系简介
      */
-    private String code;
-    
+    @TableField("introduction")
+    private String introduction;
+
     /**
-     * 父部门ID
+     * 院系主任ID
      */
-    private Integer parentId;
-    
+    @TableField("director_id")
+    private Long directorId;
+
     /**
-     * 部门层级
+     * 院系办公室地址
      */
-    private Integer level;
-    
+    @TableField("office_location")
+    private String officeLocation;
+
     /**
-     * 排序
+     * 院系联系电话
      */
-    private Integer sort;
-    
-    /**
-     * 负责人ID
-     */
-    private Integer leaderId;
-    
-    /**
-     * 联系电话
-     */
+    @TableField("contact_phone")
     private String contactPhone;
-    
+
     /**
-     * 联系邮箱
+     * 院系联系邮箱
      */
+    @TableField("contact_email")
     private String contactEmail;
-    
+
     /**
-     * 部门描述
+     * 院系官网URL
      */
-    private String description;
-    
-    /**
-     * 状态（0：禁用；1：启用）
-     */
-    private Integer status;
-    
+    @TableField("website_url")
+    private String websiteUrl;
+
     /**
      * 创建时间
      */
-    private LocalDateTime createTime;
-    
+    @TableField("create_time")
+    private Date createTime;
+
     /**
      * 更新时间
      */
-    private LocalDateTime updateTime;
-    
+    @TableField("update_time")
+    private Date updateTime;
+
+    // --- 非数据库字段 --- 
+
     /**
-     * 部门负责人
+     * 院系主任姓名 (非数据库字段，通过关联查询获取)
      */
-    private User leader;
-    
+    @TableField(exist = false)
+    private String directorName;
+
     /**
-     * 父部门
+     * 院系包含的专业列表 (非数据库字段，通过关联查询获取)
      */
-    private Department parent;
-    
-    // Getters and Setters
-    
-    public Integer getId() {
-        return id;
+    @TableField(exist = false)
+    private List<Major> majors;
+
+    /**
+     * 院系下的教师列表 (非数据库字段，通过关联查询获取)
+     */
+    @TableField(exist = false)
+    private List<Teacher> teachers;
+
+    /**
+     * 院系下的学生人数 (非数据库字段，通过统计查询获取)
+     */
+    @TableField(exist = false)
+    private Integer studentCount;
+
+    /**
+     * 院系下的课程数量 (非数据库字段，通过统计查询获取)
+     */
+    @TableField(exist = false)
+    private Integer courseCount;
+
+    // --- 可能需要的其他辅助字段 --- 
+
+    /**
+     * 临时存储字段，用于特定业务场景
+     */
+    @TableField(exist = false)
+    private String tempInfo;
+
+    /**
+     * 标记字段，例如用于标记是否选中等
+     */
+    @TableField(exist = false)
+    private Boolean selected;
+
+    /**
+     * 排序字段
+     */
+    @TableField(exist = false)
+    private Integer sortOrder;
+
+    /**
+     * 扩展属性，用于存储JSON或其他格式的附加信息
+     */
+    @TableField(exist = false)
+    private String extendedProperties;
+
+    // Major 和 Teacher 类需要单独定义
+
+    /**
+     * 专业实体类 (内部类示例，实际项目中建议单独创建文件)
+     */
+    @Data
+    public static class Major implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private Long id;
+        private String name;
+        private String description;
+        private Long departmentId;
     }
-    
-    public void setId(Integer id) {
-        this.id = id;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getCode() {
-        return code;
-    }
-    
-    public void setCode(String code) {
-        this.code = code;
-    }
-    
-    public Integer getParentId() {
-        return parentId;
-    }
-    
-    public void setParentId(Integer parentId) {
-        this.parentId = parentId;
-    }
-    
-    public Integer getLevel() {
-        return level;
-    }
-    
-    public void setLevel(Integer level) {
-        this.level = level;
-    }
-    
-    public Integer getSort() {
-        return sort;
-    }
-    
-    public void setSort(Integer sort) {
-        this.sort = sort;
-    }
-    
-    public Integer getLeaderId() {
-        return leaderId;
-    }
-    
-    public void setLeaderId(Integer leaderId) {
-        this.leaderId = leaderId;
-    }
-    
-    public String getContactPhone() {
-        return contactPhone;
-    }
-    
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
-    }
-    
-    public String getContactEmail() {
-        return contactEmail;
-    }
-    
-    public void setContactEmail(String contactEmail) {
-        this.contactEmail = contactEmail;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public Integer getStatus() {
-        return status;
-    }
-    
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-    
-    public LocalDateTime getCreateTime() {
-        return createTime;
-    }
-    
-    public void setCreateTime(LocalDateTime createTime) {
-        this.createTime = createTime;
-    }
-    
-    public LocalDateTime getUpdateTime() {
-        return updateTime;
-    }
-    
-    public void setUpdateTime(LocalDateTime updateTime) {
-        this.updateTime = updateTime;
-    }
-    
-    public User getLeader() {
-        return leader;
-    }
-    
-    public void setLeader(User leader) {
-        this.leader = leader;
-    }
-    
-    public Department getParent() {
-        return parent;
-    }
-    
-    public void setParent(Department parent) {
-        this.parent = parent;
+
+    /**
+     * 教师实体类 (内部类示例，实际项目中建议单独创建文件)
+     */
+    @Data
+    public static class Teacher implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private Long id;
+        private String name;
+        private String title;
+        private Long departmentId;
     }
 } 

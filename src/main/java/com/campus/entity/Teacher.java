@@ -1,58 +1,114 @@
 package com.campus.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 教师实体类
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class Teacher extends User {
+@TableName("teacher")
+public class Teacher implements Serializable {
     private static final long serialVersionUID = 1L;
     
     /**
-     * 教师工号
+     * 教师ID
      */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    /**
+     * 用户ID
+     */
+    @TableField("user_id")
+    private Long userId;
+
+    /**
+     * 教师编号
+     */
+    @TableField("teacher_no")
     private String teacherNo;
     
     /**
-     * 职称ID
+     * 姓名
      */
-    private Long titleId;
+    private String name;
+
+    /**
+     * 性别
+     */
+    private String gender;
+
+    /**
+     * 出生日期
+     */
+    @TableField("date_of_birth")
+    private Date dateOfBirth;
     
     /**
-     * 职称名称
+     * 电话
      */
-    private String titleName;
+    private String phone;
     
     /**
-     * 所属部门ID
+     * 邮箱
      */
+    private String email;
+
+    /**
+     * 地址
+     */
+    private String address;
+
+    /**
+     * 入职日期
+     */
+    @TableField("hire_date")
+    private Date hireDate;
+
+    /**
+     * 院系ID
+     */
+    @TableField("department_id")
     private Long departmentId;
     
     /**
-     * 所属部门名称
+     * 职称
      */
-    private String departmentName;
+    private String title;
     
     /**
-     * 办公室位置
+     * 研究方向
      */
-    private String officeLocation;
+    @TableField("research_area")
+    private String researchArea;
     
     /**
-     * 办公电话
+     * 状态
      */
-    private String officePhone;
+    private String status;
     
     /**
-     * 入职时间
+     * 创建时间
      */
-    private String hireDate;
+    @TableField("create_time")
+    private Date createTime;
     
     /**
-     * 教师简介
+     * 更新时间
      */
-    private String introduction;
+    @TableField("update_time")
+    private Date updateTime;
+
+    // 非数据库字段
+    @TableField(exist = false)
+    private String departmentName; // 院系名称
+    @TableField(exist = false)
+    private String username; // 用户名 (用于显示或关联查询)
 }

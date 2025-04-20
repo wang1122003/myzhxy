@@ -20,16 +20,6 @@
       <el-table-column label="排序" prop="sort" width="80"/>
       <el-table-column label="描述" min-width="200" prop="description" show-overflow-tooltip/>
       <el-table-column label="帖子数量" prop="postCount" width="100"/>
-      <el-table-column label="状态" width="100">
-        <template #default="scope">
-          <el-switch
-              v-model="scope.row.status"
-              :active-value="1"
-              :inactive-value="0"
-              @change="handleStatusChange(scope.row)"
-          />
-        </template>
-      </el-table-column>
       <el-table-column label="创建时间" width="180">
         <template #default="scope">
           {{ formatTime(scope.row.createTime) }}
@@ -69,15 +59,6 @@
               type="textarea"
           />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-switch
-              v-model="categoryForm.status"
-              :active-value="1"
-              :inactive-value="0"
-              active-text="启用"
-              inactive-text="禁用"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -93,13 +74,7 @@
 import {onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Plus} from '@element-plus/icons-vue'
-import {
-  createForumCategory,
-  deleteForumCategory,
-  getForumCategories,
-  updateForumCategory,
-  updateForumCategoryStatus
-} from '@/api/forum'
+import {createForumCategory, deleteForumCategory, getForumCategories, updateForumCategory} from '@/api/forum'
 
 export default {
   name: 'CategoryManagement',
@@ -182,20 +157,6 @@ export default {
       })
     }
 
-    // 更改板块状态
-    const handleStatusChange = async (row) => {
-      try {
-        await updateForumCategoryStatus(row.id, row.status)
-        ElMessage.success(`${row.status === 1 ? '启用' : '禁用'}成功`)
-        emit('refresh')
-      } catch (error) {
-        console.error('更新板块状态失败:', error)
-        ElMessage.error('更新状态失败')
-        // 恢复原状态
-        row.status = row.status === 1 ? 0 : 1
-      }
-    }
-
     // 提交表单
     const submitCategoryForm = async () => {
       if (!categoryFormRef.value) return
@@ -235,7 +196,6 @@ export default {
       categoryForm.name = ''
       categoryForm.sort = 0
       categoryForm.description = ''
-      categoryForm.status = 1
     }
 
     // 格式化时间
@@ -265,7 +225,6 @@ export default {
       handleAddCategory,
       handleEditCategory,
       handleDeleteCategory,
-      handleStatusChange,
       submitCategoryForm,
       formatTime
     }

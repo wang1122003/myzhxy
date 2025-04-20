@@ -12,16 +12,16 @@ import java.util.Map;
 public interface CourseService {
     
     /**
-     * 根据ID查询课程
+     * 根据ID查询课程信息
      * @param id 课程ID
-     * @return 课程对象
+     * @return 课程实体
      */
     Course getCourseById(Long id);
     
     /**
-     * 根据课程编号查询课程
+     * 根据课程编号查询课程信息
      * @param courseNo 课程编号
-     * @return 课程对象
+     * @return 课程实体
      */
     Course getCourseByCourseNo(String courseNo);
     
@@ -34,14 +34,14 @@ public interface CourseService {
     IPage<Course> getAllCourses(int pageNum, int pageSize);
     
     /**
-     * 根据课程类型查询课程
+     * 根据课程类型查询课程列表
      * @param courseType 课程类型
      * @return 课程列表
      */
     List<Course> getCoursesByCourseType(Integer courseType);
     
     /**
-     * 根据学院ID查询课程
+     * 根据学院ID查询课程列表
      * @param collegeId 学院ID
      * @return 课程列表
      */
@@ -49,14 +49,14 @@ public interface CourseService {
     
     /**
      * 添加课程
-     * @param course 课程对象
+     * @param course 课程实体
      * @return 是否成功
      */
     boolean addCourse(Course course);
     
     /**
-     * 更新课程
-     * @param course 课程对象
+     * 更新课程信息
+     * @param course 课程实体
      * @return 是否成功
      */
     boolean updateCourse(Course course);
@@ -84,7 +84,7 @@ public interface CourseService {
     boolean updateCourseStatus(Long id, Integer status);
     
     /**
-     * 分页查询课程 (此方法可能与 getAllCourses(pageNum, pageSize) 重复，考虑是否保留)
+     * 分页查询课程列表
      * @param pageNum 页码
      * @param pageSize 每页大小
      * @return 课程分页结果 (IPage)
@@ -113,31 +113,31 @@ public interface CourseService {
     
     /**
      * 获取课程统计信息
-     * @return 统计信息
+     * @return 统计信息 Map
      */
     Map<String, Object> getCourseStats();
     
     /**
      * 获取课程类型统计
-     * @return 课程类型统计列表
+     * @return 课程类型统计列表 (List<Map<String, Object>>)
      */
     List<Map<String, Object>> getCourseTypeStats();
     
     /**
      * 获取学院课程统计
-     * @return 学院课程统计列表
+     * @return 学院课程统计列表 (List<Map<String, Object>>)
      */
     List<Map<String, Object>> getCollegeCourseStats();
     
     /**
      * 获取学分分布统计
-     * @return 学分分布统计列表
+     * @return 学分分布统计列表 (List<Map<String, Object>>)
      */
     List<Map<String, Object>> getCreditDistribution();
     
     /**
      * 获取课程状态统计
-     * @return 课程状态统计列表
+     * @return 课程状态统计列表 (List<Map<String, Object>>)
      */
     List<Map<String, Object>> getCourseStatusStats();
 }

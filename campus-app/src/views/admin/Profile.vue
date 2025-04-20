@@ -115,62 +115,162 @@
 </template>
 
 <script>
-import {computed, onMounted, reactive, ref} from 'vue';
-import {
-  ElAvatar,
-  ElButton,
-  ElCard,
-  ElDescriptions,
-  ElDescriptionsItem,
-  ElDialog,
-  ElForm,
-  ElFormItem,
-  ElIcon,
-  ElInput,
-  ElMessage,
-  ElUpload
-} from 'element-plus'; // 移除 Radio 相关
+import {onMounted, reactive, ref} from 'vue';
+import {getUserProfile, updateUserProfile} from '@/api/user'; // 假设API路径
+import {ElMessage} from 'element-plus';
+// 从 auth.js 导入需要的状态和方法
+import {logout, setUserInfo, userId, userInfo} from '@/utils/auth'; // 导入 logout 函数
+import {useRouter} from 'vue-router';
 import {Upload} from '@element-plus/icons-vue';
-import {getAdminProfile, updateAdminProfile} from '@/api/user'; // 使用管理员 API
+
+// 不再需要 useUserStore
+// import { useUserStore } from '@/store/user'; // 导入 user store
+
+const router = useRouter();
+// const userStore = useUserStore(); // 不再需要 store 实例
+
+const profile = ref({}); // 本地状态用于表单绑定
+const loading = ref(false);
+const isEditing = ref(false);
+
+// 头像上传相关
+const uploadUrl = ref('/api/upload/avatar'); // 替换为你的上传 API 地址
+const headers = ref({
+  Authorization: localStorage.getItem('Authorization-Token') || '' // 从 localStorage 获取 token
+});
+
+const fetchProfile = async () => {
+  loading.value = true;
+  try {
+    // 使用响应式的 userId ref
+    if (!userId.value) {
+      ElMessage.error('无法获取用户ID，请重新登录');
+      await handleLogout();
+      return;
+    }
+    const response = await getUserProfile(userId.value);
+    if (response.code === 200 && response.data) {
+      profile.value = {...response.data};
+    } else {
+      ElMessage.error(response.message || '获取用户信息失败');
+    }
+  } catch (error) {
+    console.error('获取用户信息异常:', error);
+    ElMessage.error('获取用户信息异常');
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchProfile);
+
+const handleEdit = () => {
+  isEditing.value = true;
+  // 使用 auth.js 中的 userInfo 初始化编辑表单
+  if (userInfo.value) {
+    profile.value = {...userInfo.value};
+  }
+};
+
+const handleSave = async () => {
+  loading.value = true;
+  try {
+    // 确保 profile.value 包含 id
+    if (!profile.value.id) {
+      profile.value.id = userId.value;
+    }
+    const response = await updateUserProfile(profile.value);
+    if (response.code === 200) {
+      ElMessage.success('个人信息更新成功');
+      setUserInfo(response.data); // 更新 auth.js 中的用户信息
+      isEditing.value = false;
+      // fetchProfile(); // 可选：重新获取
+    } else {
+      ElMessage.error(response.message || '更新失败');
+    }
+  } catch (error) {
+    console.error('更新用户信息异常:', error);
+    ElMessage.error('更新用户信息异常');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleCancel = () => {
+  isEditing.value = false;
+  // 从 auth.js 中的 userInfo 恢复数据
+  if (userInfo.value) {
+    profile.value = {...userInfo.value};
+  }
+  // fetchProfile(); // 或者重新获取
+};
+
+// 头像上传成功处理
+const handleAvatarSuccess = (response, uploadFile) => {
+  if (response.code === 200 && response.data) {
+    profile.value.avatarUrl = response.data.url; // 更新本地表单
+    // 同时更新 auth.js 中的用户信息
+    const currentUserInfo = {...userInfo.value, avatarUrl: response.data.url};
+    setUserInfo(currentUserInfo);
+    ElMessage.success('头像上传成功');
+  } else {
+    ElMessage.error(response.message || '头像上传失败');
+  }
+};
+
+// 上传前校验
+const beforeAvatarUpload = (rawFile) => {
+  const isJPG = rawFile.type === 'image/jpeg';
+  const isPNG = rawFile.type === 'image/png';
+  const isLt2M = rawFile.size / 1024 / 1024 < 2;
+
+  if (!isJPG && !isPNG) {
+    ElMessage.error('头像图片只能是 JPG 或 PNG 格式!');
+    return false;
+  }
+  if (!isLt2M) {
+    ElMessage.error('头像图片大小不能超过 2MB!');
+    return false;
+  }
+  return true;
+};
+
+// 统一的登出处理
+const handleLogout = async () => {
+  try {
+    await logout(); // 调用 auth.js 中的 logout
+    router.push('/login');
+  } catch (error) {
+    console.error("登出时出错:", error);
+    logout(); // 确保前端状态被清理
+    router.push('/login');
+  }
+};
+
+// 辅助函数：将性别数字转为文字
+const formatGender = (gender) => {
+  if (gender === 1) return '男';
+  if (gender === 0) return '女';
+  return '未知';
+};
 
 export default {
-  name: 'AdminProfile', // 修改组件名
+  name: 'AdminProfile',
   components: {
     Upload,
-    ElDescriptions,
-    ElDescriptionsItem,
-    ElCard,
-    ElAvatar,
-    ElUpload,
-    ElButton,
-    ElIcon,
-    ElDialog,
-    ElForm,
-    ElFormItem,
-    ElInput
+    ElMessage
   },
   setup() {
-    const userInfo = ref({});
-    const userAvatar = ref('');
     const dialogVisible = ref(false);
     const formRef = ref(null);
     const uploadingAvatar = ref(false);
 
-    const uploadAvatarUrl = `/api/user/avatar/upload`; // 通用上传接口
-    const headers = computed(() => {
-      return {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    // 表单数据，根据管理员信息调整
     const form = reactive({
       id: '',
       name: '',
       email: '',
       phone: '',
       avatar: ''
-      // 移除 gender, department, title 等字段
     });
 
     const rules = {
@@ -179,114 +279,49 @@ export default {
       ],
       email: [
         {required: true, message: '请输入邮箱', trigger: 'blur'},
-        {type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur'}
+        {type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change']}
       ],
       phone: [
         {required: true, message: '请输入手机号', trigger: 'blur'},
-        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur'}
+        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: ['blur', 'change']}
       ]
-    };
-
-    const fetchUserInfo = async () => {
-      try {
-        const response = await getAdminProfile();
-        userInfo.value = response.data;
-        userAvatar.value = response.data.avatar || '';
-        // 填充表单
-        Object.keys(form).forEach(key => {
-          if (Object.prototype.hasOwnProperty.call(response.data, key)) {
-            form[key] = response.data[key] || '';
-          }
-        });
-      } catch (error) {
-        console.error('获取管理员信息失败', error);
-        ElMessage.error('获取管理员信息失败');
-      }
-    };
-
-    const handleEdit = () => {
-      dialogVisible.value = true;
-      // 重新从最新的 userInfo 填充表单
-      Object.keys(form).forEach(key => {
-        if (Object.prototype.hasOwnProperty.call(userInfo.value, key)) {
-          form[key] = userInfo.value[key] || '';
-        }
-      });
     };
 
     const handleSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {
-          updateAdminProfile(form).then(() => { // 调用管理员 API
-            ElMessage.success('更新成功');
+          const dataToUpdate = {...form};
+          handleSave().then(() => {
             dialogVisible.value = false;
-            fetchUserInfo(); // 重新获取信息
-          }).catch(error => {
-            console.error('更新管理员信息失败', error);
-            ElMessage.error('更新管理员信息失败');
           });
         }
       });
     };
 
-    // 头像上传逻辑与之前相同
-    const handleAvatarSuccess = (response) => {
-      uploadingAvatar.value = false;
-      if (response.code === 200 && response.data) {
-        userAvatar.value = response.data;
-        userInfo.value.avatar = response.data;
-        form.avatar = response.data;
-        ElMessage.success('头像更新成功');
-      } else {
-        ElMessage.error(response.message || '头像上传失败');
-      }
-    };
-
     const handleAvatarError = (error) => {
       uploadingAvatar.value = false;
-      console.error("头像上传失败", error);
-      ElMessage.error('头像上传失败，请稍后重试');
-    };
-
-    const beforeAvatarUpload = (rawFile) => {
-      const isJPG = rawFile.type === 'image/jpeg';
-      const isPNG = rawFile.type === 'image/png';
-      const isLt2M = rawFile.size / 1024 / 1024 < 2;
-
-      if (!isJPG && !isPNG) {
-        ElMessage.error('头像图片只能是 JPG 或 PNG 格式!');
-        return false;
+      let message = '头像上传失败';
+      try {
+        const responseData = JSON.parse(error.message || '{}');
+        message = responseData.message || message;
+      } catch (e) {
       }
-      if (!isLt2M) {
-        ElMessage.error('头像图片大小不能超过 2MB!');
-        return false;
-      }
-      uploadingAvatar.value = true;
-      return true;
+      ElMessage.error(message);
+      console.error('头像上传错误:', error);
     };
-
-    onMounted(() => {
-      fetchUserInfo();
-    });
 
     return {
-      userInfo,
-      userAvatar,
       dialogVisible,
       formRef,
       form,
       rules,
-      headers,
-      uploadAvatarUrl,
-      uploadingAvatar,
       handleEdit,
       handleSubmit,
-      handleAvatarSuccess,
       handleAvatarError,
-      beforeAvatarUpload
+      uploadingAvatar
     };
   }
-}
+};
 </script>
 
 <style scoped>

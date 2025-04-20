@@ -1,92 +1,67 @@
 package com.campus.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 选课记录模型
+ * 选课实体类
  */
-public class CourseSelection {
+@Data
+@TableName("course_selection")
+public class CourseSelection implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 选课ID
+     */
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+
+    /**
+     * 学生ID
+     */
+    @TableField("student_id")
     private Long studentId;
+
+    /**
+     * 课程ID
+     */
+    @TableField("course_id")
     private Long courseId;
+
+    /**
+     * 学期ID
+     */
+    @TableField("term_id")
+    private Long termId;
+
+    /**
+     * 选课时间
+     */
+    @TableField("selection_time")
     private Date selectionTime;
-    private Integer status; // 0-待审核, 1-已选, 2-已退选
-    private String remark;
-    
-    // 扩展属性，非数据库字段
-    private String studentName;
-    private String courseName;
-    private String courseNo;
-    
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public Long getStudentId() {
-        return studentId;
-    }
-    
-    public void setStudentId(Long studentId) {
-        this.studentId = studentId;
-    }
-    
-    public Long getCourseId() {
-        return courseId;
-    }
-    
-    public void setCourseId(Long courseId) {
-        this.courseId = courseId;
-    }
-    
-    public Date getSelectionTime() {
-        return selectionTime;
-    }
-    
-    public void setSelectionTime(Date selectionTime) {
-        this.selectionTime = selectionTime;
-    }
-    
-    public Integer getStatus() {
-        return status;
-    }
-    
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-    
-    public String getRemark() {
-        return remark;
-    }
-    
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
-    
-    public String getStudentName() {
-        return studentName;
-    }
-    
-    public void setStudentName(String studentName) {
-        this.studentName = studentName;
-    }
-    
-    public String getCourseName() {
-        return courseName;
-    }
-    
-    public void setCourseName(String courseName) {
-        this.courseName = courseName;
-    }
-    
-    public String getCourseNo() {
-        return courseNo;
-    }
-    
-    public void setCourseNo(String courseNo) {
-        this.courseNo = courseNo;
-    }
+
+    /**
+     * 状态：1-已选，0-已退选
+     */
+    @TableField("status")
+    private Integer status;
+
+    /**
+     * 创建时间
+     */
+    @TableField("create_time")
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    @TableField("update_time")
+    private Date updateTime;
 } 

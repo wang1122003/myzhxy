@@ -2,24 +2,32 @@ package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.UserDao;
 import com.campus.entity.User;
+import com.campus.exception.CustomException;
 import com.campus.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * 用户服务实现类
- * 提供用户管理相关的业务逻辑实现
+ * 用户服务实现类 (使用明文密码)
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Autowired
     private UserDao userDao;
@@ -56,62 +64,37 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     /**
-     * 根据用户类型查询用户
-     * @param userType 用户类型
-     * @return 用户列表
-     */
-    @Override
-    public List<User> getUsersByType(Integer userType) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserType, userType);
-        return list(queryWrapper);
-    }
-
-    /**
      * 添加用户
-     * @param user 用户对象
-     * @return 是否成功
      */
     @Override
+    @Transactional
     public boolean addUser(User user) {
-        // 设置创建时间和更新时间
+        if (getUserByUsername(user.getUsername()) != null) {
+            log.error("尝试添加已存在的用户名: {}", user.getUsername());
+            throw new CustomException("用户名已存在");
+        }
         Date now = new Date();
         user.setCreateTime(now);
         user.setUpdateTime(now);
-        
-        // 默认启用状态
         if (user.getStatus() == null) {
-            user.setStatus(1);
+            user.setStatus("Active");
         }
-        
-        // 对密码进行MD5加密
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String encryptedPassword = encryptPassword(user.getPassword());
-            user.setPassword(encryptedPassword);
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            log.error("尝试添加用户 {} 时密码为空", user.getUsername());
+            throw new CustomException("密码不能为空");
         }
-        
         return save(user);
     }
 
     /**
-     * 更新用户
-     * @param user 用户对象
-     * @return 是否成功
+     * 更新用户 (保存明文密码，如果提供了)
      */
     @Override
     public boolean updateUser(User user) {
-        // 设置更新时间
         user.setUpdateTime(new Date());
-        
-        // 如果密码不为空，则加密
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String encryptedPassword = encryptPassword(user.getPassword());
-            user.setPassword(encryptedPassword);
-        } else {
-            // 不更新密码
+        if (user.getPassword() != null && user.getPassword().isEmpty()) {
             user.setPassword(null);
         }
-        
         return updateById(user);
     }
 
@@ -136,73 +119,67 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     /**
-     * 修改用户状态
-     * @param id 用户ID
-     * @param status 状态值
-     * @return 是否成功
+     * 修改用户状态 (使用 String)
      */
     @Override
-    public boolean updateUserStatus(Long id, Integer status) {
+    @Transactional
+    public boolean updateUserStatus(Long id, String status) {
+        if (!"Active".equalsIgnoreCase(status) && !"Inactive".equalsIgnoreCase(status)) {
+            log.warn("无效的用户状态值: {}", status);
+            return false; // Or throw exception
+        }
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, id).set(User::getStatus, status);
+        updateWrapper.eq(User::getId, id)
+                .set(User::getStatus, status)
+                .set(User::getUpdateTime, new Date()); // Also update updateTime
         return update(updateWrapper);
     }
 
     /**
-     * 修改密码
-     * @param id 用户ID
-     * @param oldPassword 旧密码
-     * @param newPassword 新密码
-     * @return 是否成功
+     * 修改密码 
      */
     @Override
     public boolean updatePassword(Long id, String oldPassword, String newPassword) {
-        // 验证旧密码是否正确
         User user = getById(id);
         if (user == null) {
+            log.error("更新密码失败: 用户 {} 不存在", id);
             return false;
         }
-        
-        // 加密旧密码并验证
-        String encryptedOldPassword = encryptPassword(oldPassword);
-        if (encryptedOldPassword.equals(user.getPassword())) {
-            // 加密新密码
-            String encryptedNewPassword = encryptPassword(newPassword);
-            
-            LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(User::getId, id).set(User::getPassword, encryptedNewPassword);
-            return update(updateWrapper);
+        if (!Objects.equals(oldPassword, user.getPassword())) {
+            log.warn("用户 {} 尝试更新密码失败: 旧密码不匹配", id);
+            return false;
         }
-        return false;
+        user.setPassword(newPassword);
+        user.setUpdateTime(new Date());
+        boolean success = updateById(user);
+        if (!success) {
+            log.error("更新用户 {} 密码到数据库失败", id);
+        }
+        return success;
     }
 
     /**
      * 用户登录
-     * @param username 用户名
-     * @param password 密码
-     * @return 用户对象，登录失败返回null
      */
     @Override
     public User login(String username, String password) {
-        // 加密密码
-        String encryptedPassword = encryptPassword(password);
-        
-        // 根据用户名和加密后的密码查询用户
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUsername, username)
-                    .eq(User::getPassword, encryptedPassword)
-                    .eq(User::getStatus, 1);  // 只查询启用状态的用户
-        return getOne(queryWrapper);
-    }
-    
-    /**
-     * 对密码进行MD5加密
-     * @param password 原始密码
-     * @return 加密后的密码
-     */
-    private String encryptPassword(String password) {
-        // 使用MD5加密
-        return DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8));
+        queryWrapper.eq(User::getUsername, username);
+        User user = getOne(queryWrapper);
+
+        if (user == null) {
+            log.warn("登录失败：用户 {} 不存在", username);
+            return null;
+        }
+        if (!Objects.equals(password, user.getPassword())) {
+            log.warn("用户 {} 登录失败：密码不匹配", username);
+            return null;
+        }
+        if (!"Active".equalsIgnoreCase(user.getStatus())) {
+            log.warn("用户 {} 登录失败，账户状态为: {}", username, user.getStatus());
+            return null;
+        }
+        return user;
     }
     
     /**
@@ -229,23 +206,22 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
     
     /**
-     * 重置用户密码
-     * @param id 用户ID
-     * @param newPassword 加密后的新密码 (通常由 Controller 生成)
-     * @return 是否成功
+     * 重置用户密码 
      */
     @Override
     public boolean resetPassword(Long id, String newPassword) {
-        // 验证用户是否存在
         User user = getById(id);
         if (user == null) {
-            // log.warn("Attempted to reset password for non-existent user ID: {}", id);
+            log.error("重置密码失败: 用户 {} 不存在", id);
             return false;
         }
-
-        // 直接调用 DAO 更新密码
-        int updatedRows = userDao.updatePassword(id, newPassword);
-        return updatedRows > 0;
+        user.setPassword(newPassword);
+        user.setUpdateTime(new Date());
+        boolean success = updateById(user);
+        if (!success) {
+            log.error("重置用户 {} 密码到数据库失败", id);
+        }
+        return success;
     }
     
     /**
@@ -258,129 +234,214 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
     
     /**
-     * 根据用户类型获取用户数量
-     * @param userType 用户类型
-     * @return 用户数量
+     * 根据用户类型获取用户数量 (使用 String)
      */
     @Override
-    public long getUserCountByType(int userType) {
+    public long getUserCountByType(String userType) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserType, userType);
+        if (StringUtils.hasText(userType)) {
+            queryWrapper.eq(User::getUserType, userType);
+        }
         return count(queryWrapper);
     }
     
     /**
-     * 根据用户状态获取用户数量
-     * @param status 用户状态
-     * @return 用户数量
+     * 根据状态获取用户数量 (使用 String)
      */
     @Override
-    public long getUserCountByStatus(int status) {
+    public long getUserCountByStatus(String status) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getStatus, status);
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(User::getStatus, status);
+        }
         return count(queryWrapper);
+    }
+
+    /**
+     * 根据用户类型查询用户 (使用 String)
+     */
+    @Override
+    public List<User> getUsersByType(String userType) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(userType)) {
+            queryWrapper.eq(User::getUserType, userType);
+        }
+        return list(queryWrapper);
     }
 
     @Override
     public List<User> getAllStudents() {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserType, 1); // 1表示学生
-        return list(queryWrapper);
+        return getUsersByType("Student"); // Use String version
     }
 
     @Override
     public List<User> getAllTeachers() {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserType, 2); // 2表示教师
-        return list(queryWrapper);
+        return getUsersByType("Teacher"); // Use String version
     }
 
     @Override
     public Map<String, Object> getUserStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalUsers", getUserCount());
-        stats.put("totalStudents", getUserCountByType(1));
-        stats.put("totalTeachers", getUserCountByType(2));
-        stats.put("activeUsers", getUserCountByStatus(1));
-        stats.put("inactiveUsers", getUserCountByStatus(0));
+        stats.put("total", getUserCount());
+        stats.put("admins", getUserCountByType("Admin")); // Use String version
+        stats.put("students", getUserCountByType("Student")); // Use String version
+        stats.put("teachers", getUserCountByType("Teacher")); // Use String version
+        stats.put("active", getUserCountByStatus("Active")); // Use String version
+        stats.put("inactive", getUserCountByStatus("Inactive")); // Use String version
         return stats;
     }
 
+    /**
+     * 更新用户个人资料 (由用户自己操作)
+     */
     @Override
-    public boolean updateProfile(User user) {
+    @Transactional
+    public boolean updateUserProfile(User user) {
         if (user == null || user.getId() == null) {
+            log.warn("尝试更新个人资料时用户或用户ID为空");
             return false;
         }
-
-        // 只更新个人资料相关字段
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, user.getId())
-                .set(User::getRealName, user.getRealName())
-                .set(User::getGender, user.getGender())
-                .set(User::getPhone, user.getPhone())
-                .set(User::getEmail, user.getEmail())
-                .set(User::getUpdateTime, new Date());
+        updateWrapper.eq(User::getId, user.getId());
+
+        // 只更新允许修改的字段
+        if (user.getRealName() != null) {
+            updateWrapper.set(User::getRealName, user.getRealName());
+        }
+        if (user.getGender() != null) {
+            updateWrapper.set(User::getGender, user.getGender());
+        }
+        if (user.getPhone() != null) {
+            updateWrapper.set(User::getPhone, user.getPhone());
+        }
+        if (user.getEmail() != null) {
+            updateWrapper.set(User::getEmail, user.getEmail());
+        }
+        // AvatarURL is often handled by a separate upload endpoint + updateAvatar method
+
+        // 总是更新 updateTime
+        updateWrapper.set(User::getUpdateTime, new Date());
 
         return update(updateWrapper);
     }
 
     @Override
-    public boolean uploadAvatar(Long id, String avatarUrl) {
-        if (id == null || avatarUrl == null) {
-            return false;
-        }
-
+    @Transactional
+    public boolean uploadAvatar(Long userId, String avatarUrl) {
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, id)
-                .set(User::getAvatar, avatarUrl)
+        updateWrapper.eq(User::getId, userId)
+                .set(User::getAvatarUrl, avatarUrl)
                 .set(User::getUpdateTime, new Date());
-
         return update(updateWrapper);
     }
 
-    @Override
-    public Map<String, Object> importUsers(MultipartFile file, Integer userType) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", false);
-        result.put("message", "Excel导入功能暂未实现");
-        return result;
+    public Map<String, String> getUserAvatars(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<User> users = list(new LambdaQueryWrapper<User>()
+                .in(User::getId, userIds)
+                .select(User::getId, User::getAvatarUrl));
+        return users.stream()
+                .collect(Collectors.toMap(user -> String.valueOf(user.getId()),
+                        u -> u.getAvatarUrl() != null ? u.getAvatarUrl() : ""));
     }
 
+    /**
+     * 分页查询用户列表
+     */
     @Override
-    public Map<String, Object> batchImportUsers(List<User> users) {
-        Map<String, Object> result = new HashMap<>();
+    public IPage<User> findUsersPage(int page, int size, String keyword, Integer userTypeCode) {
+        Page<User> pageRequest = new Page<>(page, size);
+        LambdaQueryWrapper<User> queryWrapper = Wrappers.lambdaQuery();
+
+        // 处理用户类型转换: Integer (0,1,2) to String ("Admin", "Student", "Teacher")
+        String userTypeString = null;
+        if (userTypeCode != null) {
+            if (userTypeCode == 0) userTypeString = "Admin";
+            else if (userTypeCode == 1) userTypeString = "Student";
+            else if (userTypeCode == 2) userTypeString = "Teacher";
+            else log.warn("无效的用户类型代码: {}", userTypeCode);
+        }
+
+        if (StringUtils.hasText(userTypeString)) {
+            queryWrapper.eq(User::getUserType, userTypeString);
+        }
+
+        // 处理关键词搜索
+        if (StringUtils.hasText(keyword)) {
+            queryWrapper.and(qw -> qw.like(User::getUsername, keyword)
+                    .or().like(User::getRealName, keyword)
+                    .or().like(User::getEmail, keyword)
+                    .or().like(User::getPhone, keyword));
+        }
+
+        // 添加排序（例如，按创建时间降序）
+        queryWrapper.orderByDesc(User::getCreateTime);
+
+        return this.page(pageRequest, queryWrapper);
+    }
+
+    /**
+     * 解析用户导入文件
+     */
+    @Override
+    public List<User> parseUserImportFile(MultipartFile file, Integer userType) throws Exception {
+        log.warn("用户文件导入功能已移除");
+        throw new UnsupportedOperationException("用户文件导入功能已移除");
+    }
+
+    /**
+     * 批量添加用户 (用于导入)
+     */
+    @Override
+    @Transactional
+    public boolean batchAddUsers(List<User> users) {
         if (users == null || users.isEmpty()) {
-            result.put("success", false);
-            result.put("message", "用户列表为空");
-            return result;
+            return true; // Nothing to add
         }
-
-        try {
-            // 设置创建时间和更新时间
-            Date now = new Date();
-            for (User user : users) {
-                user.setCreateTime(now);
-                user.setUpdateTime(now);
-                // 加密密码
-                if (user.getPassword() != null) {
-                    user.setPassword(encryptPassword(user.getPassword()));
-                }
+        Date now = new Date();
+        users.forEach(user -> {
+            user.setCreateTime(now);
+            user.setUpdateTime(now);
+            if (user.getStatus() == null) user.setStatus("Active");
+            if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                log.warn("批量添加时，用户 {} 密码为空，操作可能失败或跳过", user.getUsername());
             }
-
-            boolean success = saveBatch(users);
-            result.put("success", success);
-            result.put("count", users.size());
-            result.put("message", success ? "导入成功" : "导入失败");
-
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", "导入失败：" + e.getMessage());
-        }
-        return result;
+        });
+        return saveBatch(users);
     }
 
+    /**
+     * 检查管理员账号是否存在
+     */
     @Override
-    public String generateImportTemplate() {
-        return "/templates/user_import_template.xlsx";
+    public boolean checkAdminExists() {
+        return count(Wrappers.<User>lambdaQuery().eq(User::getUserType, "Admin")) > 0;
+    }
+
+    /**
+     * 添加管理员用户
+     */
+    @Override
+    @Transactional
+    public boolean addAdminUser(User admin) {
+        if (!"Admin".equals(admin.getUserType())) {
+            log.error("尝试使用 addAdminUser 方法添加非管理员用户: {}", admin.getUsername());
+            return false;
+        }
+        if (getUserByUsername(admin.getUsername()) != null) {
+            log.error("尝试添加已存在的管理员用户名: {}", admin.getUsername());
+            return false;
+        }
+        Date now = new Date();
+        admin.setCreateTime(now);
+        admin.setUpdateTime(now);
+        if (admin.getStatus() == null) admin.setStatus("Active");
+        if (admin.getPassword() == null || admin.getPassword().isEmpty()) {
+            log.error("尝试添加管理员 {} 时密码为空", admin.getUsername());
+            throw new CustomException("管理员密码不能为空");
+        }
+        return save(admin);
     }
 }

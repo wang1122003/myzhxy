@@ -1,10 +1,10 @@
 import request from './request'
-import {CLASSROOM_API} from './api-endpoints'
+// import {CLASSROOM_API} from './api-endpoints'
 
 // 获取教室列表（分页）
 export function getClassroomList(params) {
     return request({
-        url: CLASSROOM_API.GET_ALL,
+        url: '/api/classrooms',
         method: 'get',
         params
     })
@@ -13,7 +13,7 @@ export function getClassroomList(params) {
 // 获取教室详情
 export function getClassroomById(id) {
     return request({
-        url: CLASSROOM_API.GET_BY_ID.replace(':id', id),
+        url: `/api/classrooms/${id}`,
         method: 'get'
     })
 }
@@ -21,7 +21,7 @@ export function getClassroomById(id) {
 // 添加教室
 export function addClassroom(data) {
     return request({
-        url: CLASSROOM_API.ADD,
+        url: '/api/classrooms',
         method: 'post',
         data
     })
@@ -30,7 +30,7 @@ export function addClassroom(data) {
 // 更新教室
 export function updateClassroom(id, data) {
     return request({
-        url: CLASSROOM_API.UPDATE.replace(':id', id),
+        url: `/api/classrooms/${id}`,
         method: 'put',
         data
     })
@@ -39,7 +39,7 @@ export function updateClassroom(id, data) {
 // 删除教室
 export function deleteClassroom(id) {
     return request({
-        url: CLASSROOM_API.DELETE.replace(':id', id),
+        url: `/api/classrooms/${id}`,
         method: 'delete'
     })
 }
@@ -47,7 +47,7 @@ export function deleteClassroom(id) {
 // 获取可用教室列表
 export function getAvailableClassrooms(params) {
     return request({
-        url: CLASSROOM_API.GET_AVAILABLE,
+        url: '/api/classrooms/available',
         method: 'get',
         params
     })

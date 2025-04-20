@@ -180,21 +180,27 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {Calendar, Collection, Location, Reading, Star} from '@element-plus/icons-vue'
-import {getCurrentUser} from '@/api/user'
 import {getStudentSchedule} from '@/api/schedule' // 假设有获取学生课表API
 import {getNoticeList} from '@/api/notice' // 修正导入
 import {getActivityList} from '@/api/activity' // 假设获取活动列表API
 import NoticeDetailDialog from '@/components/NoticeDetailDialog.vue' // 引入通知详情组件
+import {userAvatar, userId, userRealName} from '@/utils/auth'
 
 const router = useRouter()
 
 // --- State ---
-const userInfo = ref({})
-const userAvatar = ref('')
+// 直接从 auth.js 获取 userInfo 和 avatar
+const userInfo = computed(() => ({
+  name: userRealName.value,
+  username: userId.value,
+  department: '',
+  major: ''
+}))
+
 const stats = reactive({
   courseCount: 0,
   totalCredit: 0,
@@ -216,21 +222,6 @@ const currentNoticeId = ref(null)
 // （如果需要的话）
 
 // --- Methods ---
-const fetchUserInfo = async () => {
-  try {
-    const res = await getCurrentUser()
-    userInfo.value = res.data || {}
-    userAvatar.value = userInfo.value.avatar || '' // 处理头像
-    // Mock student specific data if needed
-    userInfo.value.department = userInfo.value.department || '计算机学院'
-    userInfo.value.major = userInfo.value.major || '软件工程'
-
-  } catch (error) {
-    console.error('获取用户信息失败:', error)
-    // ElMessage.error('获取用户信息失败')
-  }
-}
-
 const fetchDashboardData = async () => {
   loadingCourses.value = true
   loadingNotices.value = true
@@ -338,8 +329,13 @@ const getNoticeTypeTag = (type) => (noticeTypeMap[type] || noticeTypeMap.default
 
 // --- Lifecycle Hooks ---
 onMounted(() => {
-  fetchUserInfo()
-  fetchDashboardData()
+  fetchDashboardData() // 获取看板数据
+  // 添加检查，如果 auth.js 中没有用户信息，则强制登出
+  if (!userId.value) {
+    console.warn("学生ID不存在，强制登出");
+    // 可能需要调用登出逻辑
+    // 可以考虑提示用户或执行登出
+  }
 })
 
 </script>

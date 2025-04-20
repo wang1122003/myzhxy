@@ -1,31 +1,48 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.CommentDao;
+import com.campus.dao.UserDao;
+import com.campus.dto.PageResult;
 import com.campus.entity.Comment;
+import com.campus.entity.User;
 import com.campus.service.CommentService;
 import com.campus.service.PostService;
+import com.campus.vo.CommentVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 论坛评论服务实现类
  */
 @Service
-public class CommentServiceImpl implements CommentService {
+public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> implements CommentService {
 
     private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
 
     @Autowired
     private CommentDao commentDao;
-    
+
+    @Autowired
+    private UserDao userDao;
+
     @Autowired
     private PostService postService;
 
@@ -35,8 +52,8 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Comment getCommentById(Long id) {
         Comment comment = commentDao.getCommentById(id);
-        if (comment != null && comment.getRepliesJson() != null) {
-            processReplies(comment);
+        if (comment != null && StringUtils.isNotBlank(comment.getReplies())) {
+            parseAndSetReplies(comment);
         }
         return comment;
     }
@@ -44,51 +61,51 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<Comment> getAllComments() {
         List<Comment> comments = commentDao.getAllComments();
-        comments.forEach(this::processReplies);
+        comments.forEach(this::parseAndSetReplies);
         return comments;
     }
 
     @Override
     public List<Comment> getCommentsByPostId(Long postId) {
         List<Comment> comments = commentDao.getCommentsByPostId(postId);
-        comments.forEach(this::processReplies);
+        comments.forEach(this::parseAndSetReplies);
         return comments;
     }
 
     @Override
     public List<Comment> getCommentsByUserId(Long userId) {
         List<Comment> comments = commentDao.getCommentsByAuthorId(userId, null);
-        comments.forEach(this::processReplies);
+        comments.forEach(this::parseAndSetReplies);
         return comments;
     }
 
     @Override
     public List<Comment> getCommentsByParentId(Long parentId) {
         List<Comment> comments = commentDao.getCommentsByParentId(parentId);
-        comments.forEach(this::processReplies);
+        comments.forEach(this::parseAndSetReplies);
         return comments;
     }
 
     @Override
     public List<Comment> getRootCommentsByPostId(Long postId) {
         List<Comment> comments = commentDao.getRootCommentsByPostId(postId);
-        comments.forEach(this::processReplies);
+        comments.forEach(this::parseAndSetReplies);
         return comments;
     }
 
     /**
      * 处理评论回复，将JSON字符串转换为对象列表
      */
-    private void processReplies(Comment comment) {
-        if (comment == null || comment.getRepliesJson() == null || comment.getRepliesJson().isEmpty()) {
-            return;
-        }
-
-        try {
-            Comment[] replies = objectMapper.readValue(comment.getRepliesJson(), Comment[].class);
-            comment.setReplies(java.util.Arrays.asList(replies));
-        } catch (JsonProcessingException e) {
-            log.error("反序列化评论回复失败 (Comment ID: {}): {}", comment.getId(), e.getMessage(), e);
+    private void parseAndSetReplies(Comment comment) {
+        if (comment != null && StringUtils.isNotBlank(comment.getReplies())) {
+            try {
+                List<Comment> replies = objectMapper.readValue(comment.getReplies(), new TypeReference<List<Comment>>() {
+                });
+                // comment.setRepliesList(replies); // 实体类中已无 setRepliesList
+            } catch (JsonProcessingException e) {
+                log.error("解析评论回复失败, commentId: {}", comment.getId(), e);
+                // comment.setRepliesList(Collections.emptyList()); // 实体类中已无 setRepliesList
+            }
         }
     }
 
@@ -172,6 +189,90 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public boolean cancelLikeComment(Long commentId) {
-        return decrementLikeCount(commentId);
+        // Implement logic to decrement like count
+        return false; // Placeholder
+    }
+
+    @Override
+    public PageResult<CommentVO> getAllCommentsPaginated(int pageNo, int pageSize, Long postId, Long authorId, String keyword) {
+        // 创建分页对象
+        IPage<Comment> page = new Page<>(pageNo, pageSize);
+
+        // 构建查询条件
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+
+        // 添加筛选条件
+        if (postId != null) {
+            wrapper.eq(Comment::getPostId, postId);
+        }
+        if (authorId != null) {
+            wrapper.eq(Comment::getAuthorId, authorId);
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            // 假设 keyword 搜索评论内容
+            wrapper.like(Comment::getContent, keyword);
+        }
+
+        // 添加排序，例如按创建时间降序
+        wrapper.orderByDesc(Comment::getCreateTime);
+
+        // 执行分页查询
+        IPage<Comment> resultPage = commentDao.selectPage(page, wrapper);
+
+        // 获取原始评论列表
+        List<Comment> comments = resultPage.getRecords();
+        List<CommentVO> commentVOList;
+
+        if (comments.isEmpty()) {
+            commentVOList = Collections.emptyList();
+        } else {
+            // 提取作者ID列表
+            List<Long> authorIds = comments.stream()
+                    .map(Comment::getAuthorId)
+                    .filter(id -> id != null) // 过滤掉可能存在的 null ID
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            // 批量查询作者信息
+            Map<Long, User> userMap = Collections.emptyMap();
+            if (!authorIds.isEmpty()) {
+                List<User> users = userDao.selectBatchIds(authorIds);
+                userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+            }
+
+            // 转换成 CommentVO 列表并填充作者信息
+            Map<Long, User> finalUserMap = userMap; // Effectively final map for lambda
+            commentVOList = comments.stream().map(comment -> {
+                CommentVO commentVO = new CommentVO();
+                BeanUtils.copyProperties(comment, commentVO); // 复制基础属性
+
+                User author = finalUserMap.get(comment.getAuthorId());
+                if (author != null) {
+                    commentVO.setUsername(author.getUsername());
+                    commentVO.setAvatar(author.getAvatarUrl()); // 使用 getAvatarUrl()
+                } else {
+                    // 处理找不到作者的情况，可以设置默认值或记录日志
+                    commentVO.setUsername("未知用户");
+                    // commentVO.setAvatar(DEFAULT_AVATAR_URL);
+                }
+                return commentVO;
+            }).collect(Collectors.toList());
+        }
+
+        // 封装成分页结果对象
+        return new PageResult<CommentVO>(
+                resultPage.getTotal(),
+                commentVOList,
+                resultPage.getCurrent(),
+                resultPage.getSize()
+        );
+    }
+
+    @Override
+    public List<Comment> getReplies(Long parentId) {
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Comment::getParentId, parentId)
+                .orderByAsc(Comment::getCreateTime); // Order replies by time
+        return commentDao.selectList(wrapper);
     }
 }

@@ -5,7 +5,7 @@ export const USER_API = {
     GET_CURRENT_USER: '/users/current',
     UPDATE_CURRENT_USER: '/users/profile',
     CHANGE_PASSWORD: '/users/change-password',
-    GET_USER_LIST: '/users/list',
+    GET_USER_LIST: '/users',
     ADD_USER: '/users',
     UPDATE_USER: '/users/:id',
     DELETE_USER: '/users/:id',
@@ -84,18 +84,18 @@ export const ACTIVITY_API = {
 
 // 通知相关接口
 export const NOTICE_API = {
-    GET_ALL: '/notices',
-    GET_BY_ID: '/notices/:id',
-    GET_BY_TYPE: '/notices/type/:noticeType',
-    GET_BY_STATUS: '/notices/status/:status',
-    GET_RECENT: '/notices/recent',
-    GET_TOP: '/notices/top',
-    GET_BY_PUBLISHER: '/notices/publisher/:publisherId',
-    ADD: '/notices',
-    UPDATE: '/notices/:id',
-    DELETE: '/notices/:id',
-    BATCH_DELETE: '/notices/batch',
-    UPDATE_STATUS: '/notices/:id/status/:status'
+    GET_ALL: '/notifications/all',
+    GET_BY_ID: '/notifications/:id',
+    GET_BY_TYPE: '/notifications/type/:noticeType',
+    GET_BY_STATUS: '/notifications/status/:status',
+    GET_RECENT: '/notifications/recent',
+    GET_TOP: '/notifications/top',
+    GET_BY_PUBLISHER: '/notifications/publisher/:publisherId',
+    ADD: '/notifications',
+    UPDATE: '/notifications/:id',
+    DELETE: '/notifications/:id',
+    BATCH_DELETE: '/notifications/batch',
+    UPDATE_STATUS: '/notifications/status/:id'
 }
 
 // 论坛相关接口
@@ -195,11 +195,20 @@ export const COMMON_API = {
 // --- 新增或调整的接口 ---
 // (根据需要添加，例如 Grades API)
 export const GRADE_API = {
-    GET_STUDENT_GRADES: '/scores/me',
-    GET_COURSE_STUDENTS: '/scores/course-students',
-    SAVE_BATCH: '/scores/save-batch',
-    EXPORT: '/scores/export/:courseId',
-    IMPORT: '/scores/import'
+    // GET_STUDENT_GRADES: '/scores/me', // Use GET_MY_SCORES instead
+    GET_MY_SCORES: '/api/scores/me', // For student view
+    GET_COURSE_SCORES: '/api/scores/course/:courseId', // For teacher view (gets all scores for a course)
+    GET_STUDENT_COURSE_SCORE: '/api/scores/student/:studentId/course/:courseId', // Get single score record
+    RECORD_SCORE: '/api/scores', // POST for new, PUT for update (using recordScore method in service)
+    BATCH_DELETE: '/api/scores/batch', // DELETE
+    // Obsolete endpoints (removed or handled differently)
+    // GET_COURSE_STUDENTS: '/scores/course-students', // Use GET_COURSE_SCORES
+    // SAVE_BATCH: '/scores/save-batch', // Use RECORD_SCORE or specific update endpoint
+    // EXPORT: '/scores/export/:courseId',
+    // IMPORT: '/scores/import'
+    // Keep stats/analysis endpoints if they are still needed and implemented in backend
+    GET_STATS: '/api/scores/stats',
+    GET_COURSE_STATS: '/api/scores/stats/course/:courseId' // Example if needed
 }
 
 // (根据需要添加其他 API 定义，例如 Student Activities)

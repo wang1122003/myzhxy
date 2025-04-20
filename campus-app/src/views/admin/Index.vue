@@ -41,7 +41,7 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
+import {ElMessageBox} from 'element-plus'
 import {
   Bell,
   Calendar,
@@ -51,15 +51,14 @@ import {
   Files,
   Fold,
   HomeFilled,
-  Message,
   School,
   User
 } from '@element-plus/icons-vue'
-import {getCurrentUser} from '@/api/user'
+import {logout} from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()
-const userInfo = ref({})
+
 const isCollapsed = ref(false)
 const isMobile = ref(false)
 
@@ -71,7 +70,7 @@ const menuItems = shallowRef([
   {index: '/admin/classroom', icon: School, title: '教室管理'},
   {index: '/admin/schedule', icon: Calendar, title: '课表管理'},
   {index: '/admin/activity', icon: Bell, title: '活动管理'},
-  {index: '/admin/notice', icon: Message, title: '公告管理'},
+  // {index: '/admin/notice', icon: Message, title: '公告管理'}, // 移除公告管理
   {index: '/admin/forum', icon: ChatDotRound, title: '论坛管理'},
   {index: '/admin/file', icon: Files, title: '文件管理'},
 ]);
@@ -87,7 +86,6 @@ const currentPageTitle = computed(() => {
 });
 
 onMounted(() => {
-  fetchUserInfo()
   checkScreenWidth();
   window.addEventListener('resize', checkScreenWidth);
 })
@@ -111,26 +109,28 @@ const handleMenuSelect = () => {
   }
 }
 
-const fetchUserInfo = () => {
-  getCurrentUser().then(response => {
-    userInfo.value = response.data
+const handleLogout = async () => {
+  await ElMessageBox.confirm(
+      '您确定要退出登录吗?',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+  ).then(async () => {
+    try {
+      await logout(); // 调用 auth.js 的 logout
+      router.push('/login');
+    } catch (error) {
+      console.error("登出时出错:", error);
+      // 即使API失败也清理前端并跳转
+      logout();
+      router.push('/login');
+    }
   }).catch(() => {
-    logout()
-  })
-}
-
-const goToProfile = () => {
-  router.push('/admin/profile')
-}
-
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('role')
-  router.push('/login')
-  ElMessage({
-    message: '退出登录成功',
-    type: 'success'
-  })
+    // 用户取消，无需操作
+  });
 }
 </script>
 

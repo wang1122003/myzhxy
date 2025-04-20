@@ -43,7 +43,7 @@
     <!-- <mvc:resources mapping="/swagger-ui/**" location="classpath:/META-INF/resources/webjars/swagger-ui/" /> -->
 
     <!-- 应用自身的静态资源 -->
-    <mvc:resources mapping="/static/**" location="/static/" cache-period="3600" />
+    <!-- <mvc:resources mapping="/static/**" location="/static/" cache-period="3600" /> -->
     <mvc:resources mapping="/uploads/**" location="file:${file.upload.path}/" cache-period="3600" />
     <!-- <mvc:resources mapping="/**" location="/" /> --> <!-- 保持注释 -->
 

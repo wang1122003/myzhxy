@@ -1,5 +1,6 @@
 package com.campus.dao;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.NotificationReceiver;
 import org.apache.ibatis.annotations.Param;
@@ -67,4 +68,20 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @return 影响行数
      */
     int deleteNotificationReceiver(Long id);
+
+    /**
+     * 批量插入通知接收记录
+     *
+     * @param receivers 接收记录列表
+     * @return 影响行数
+     */
+    int insertBatch(@Param("receivers") List<NotificationReceiver> receivers);
+
+    /**
+     * 根据条件统计数量
+     *
+     * @param queryWrapper 查询条件
+     * @return 数量
+     */
+    Integer count(@Param("ew") Wrapper<NotificationReceiver> queryWrapper);
 }

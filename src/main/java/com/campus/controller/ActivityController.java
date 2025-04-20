@@ -3,15 +3,19 @@ package com.campus.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Activity;
 import com.campus.entity.User;
+import com.campus.exception.CustomException;
 import com.campus.service.ActivityService;
 import com.campus.service.AuthService;
+import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +23,7 @@ import java.util.Map;
 /**
  * 校园活动控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/activities")
 public class ActivityController {
@@ -27,7 +32,7 @@ public class ActivityController {
     private ActivityService activityService;
     
     @Autowired
-    private FileController fileController;
+    private FileService fileService;
 
     @Autowired
     private AuthService authService;
@@ -135,41 +140,69 @@ public class ActivityController {
     }
     
     /**
-     * 上传活动海报
-     * @param file 海报图片文件
-     * @return 上传结果
+     * 单独上传活动海报文件
+     * @param file 文件
+     * @return 文件访问URL
      */
     @PostMapping("/poster/upload")
     public Result<String> uploadPoster(@RequestParam("file") MultipartFile file) {
-        return fileController.uploadActivityPoster(file);
+        try {
+            String url = fileService.uploadActivityPoster(file);
+            if (url != null) {
+                return Result.success("上传成功", url);
+            } else {
+                return Result.error("上传失败，无法获取URL");
+            }
+        } catch (IOException e) {
+            log.error("海报上传失败", e);
+            return Result.error("上传失败: " + e.getMessage());
+        }
     }
     
     /**
      * 创建活动（包含海报上传）
      * @param activity 活动信息
-     * @param poster 海报图片
+     * @param posterFile 海报图片
+     * @param request HTTP请求
      * @return 创建结果
      */
     @PostMapping("/with-poster")
-    public Result<Activity> addActivityWithPoster(
-            @RequestPart("activity") Activity activity,
-            @RequestPart("poster") MultipartFile poster) {
-        
-        // 先上传海报
-        Result<String> posterResult = fileController.uploadActivityPoster(poster);
-        
-        if (posterResult.isSuccess()) {
-            // 设置海报URL
-            activity.setPosterUrl(posterResult.getData());
-            
-            // 保存活动信息
-            if (activityService.addActivity(activity)) {
-                return Result.success("活动创建成功", activity);
-            } else {
-                return Result.error("活动创建失败");
+    public Result addActivityWithPoster(@RequestPart("activity") Activity activity,
+                                        @RequestPart(value = "posterFile", required = false) MultipartFile posterFile,
+                                        HttpServletRequest request) {
+        try {
+            // 1. Upload poster if provided
+            if (posterFile != null && !posterFile.isEmpty()) {
+                // Assume fileService.uploadActivityPoster returns String directly
+                String posterUrl = fileService.uploadActivityPoster(posterFile);
+                if (posterUrl != null) {
+                    activity.setPosterUrl(posterUrl); // Assuming setPosterUrl exists
+                } else {
+                    log.error("海报上传失败:未能获取URL");
+                    return Result.error("海报上传失败: 未能获取URL");
+                }
             }
-        } else {
-            return Result.error("海报上传失败: " + posterResult.getMessage());
+
+            // 2. Set publisher ID from authenticated user
+            User currentUser = authService.getCurrentUserFromRequest(request); // Assuming method exists
+            if (currentUser != null) {
+                activity.setPublisherId(currentUser.getId()); // Assuming setPublisherId exists
+            } else {
+                return Result.error("无法获取发布者信息，请登录");
+            }
+
+            // 3. Add activity
+            boolean result = activityService.addActivity(activity);
+            return result ? Result.success("活动添加成功", activity) : Result.error("活动添加失败");
+        } catch (IOException e) {
+            log.error("处理文件或添加活动时出错", e);
+            return Result.error("处理文件或添加活动时发生错误: " + e.getMessage());
+        } catch (CustomException e) {
+            log.error("活动添加失败: {}", e.getMessage());
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("活动添加时发生未知错误", e);
+            return Result.error("添加活动时发生未知错误");
         }
     }
     
@@ -180,13 +213,10 @@ public class ActivityController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateActivity(@PathVariable Long id, @RequestBody Activity activity) {
+    public Result updateActivity(@PathVariable Long id, @RequestBody Activity activity) {
         activity.setId(id);
-        if (activityService.updateActivity(activity)) {
-            return ResponseEntity.ok("活动更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("活动更新失败");
-        }
+        boolean result = activityService.updateActivity(activity);
+        return result ? Result.success("更新成功") : Result.error("更新失败");
     }
     
     /**
@@ -240,7 +270,7 @@ public class ActivityController {
      */
     @GetMapping("/student/my")
     public Result getStudentActivities(HttpServletRequest request) {
-        User currentUser = authService.getCurrentUser(request);
+        User currentUser = authService.getCurrentUserFromRequest(request);
         if (currentUser == null) {
             return Result.error("未登录或无法获取用户信息");
         }
@@ -258,6 +288,59 @@ public class ActivityController {
         } catch (Exception e) {
             // logger.error("获取学生参加的活动列表失败, studentId: {}", currentUser.getId(), e);
             return Result.error("获取活动列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 学生报名参加活动
+     *
+     * @param activityId 活动ID
+     * @param request    HTTP请求
+     * @return 报名结果
+     */
+    @PostMapping("/join/{activityId}")
+    public Result joinActivity(@PathVariable Long activityId, HttpServletRequest request) {
+        User currentUser = authService.getCurrentUserFromRequest(request);
+        if (currentUser == null) {
+            return Result.error(401, "用户未登录或认证失败");
+        }
+        try {
+            boolean success = activityService.joinActivity(activityId, currentUser.getId());
+            return success ? Result.success("报名成功") : Result.error("报名失败，可能已报名或活动不存在");
+        } catch (CustomException e) {
+            log.error("Join activity error for activity {} and user {}: {}", activityId, currentUser.getId(), e.getMessage());
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error joining activity {} for user {}: {}", activityId, currentUser.getId(), e.getMessage(), e);
+            return Result.error("报名时发生未知错误");
+        }
+    }
+
+    /**
+     * 学生退出活动
+     *
+     * @param id      活动ID
+     * @param request HTTP请求
+     * @return 退出结果
+     */
+    @PostMapping("/quit/{id}")
+    public Result quitActivity(@PathVariable Long id, HttpServletRequest request) {
+        User currentUser = null; // 将声明移到 try 块外部
+        try {
+            // 获取当前用户信息
+            currentUser = authService.getCurrentUserFromRequest(request);
+            if (currentUser == null) {
+                return Result.error(401, "用户未登录");
+            }
+
+            boolean success = activityService.quitActivity(id, currentUser.getId());
+            return success ? Result.success("退出成功") : Result.error("退出失败，可能未报名或活动不存在");
+        } catch (CustomException e) {
+            log.error("Quit activity error for activity {} and user {}: {}", id, currentUser.getId(), e.getMessage());
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error quitting activity {} for user {}: {}", id, currentUser.getId(), e.getMessage(), e);
+            return Result.error("退出时发生未知错误");
         }
     }
 }

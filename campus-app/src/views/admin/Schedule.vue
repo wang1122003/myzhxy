@@ -75,10 +75,10 @@
         </el-form-item>
         <el-form-item label="视图">
           <el-radio-group v-model="viewType">
-            <el-radio-button label="week">
+            <el-radio-button value="week">
               周视图
             </el-radio-button>
-            <el-radio-button label="list">
+            <el-radio-button value="list">
               列表视图
             </el-radio-button>
           </el-radio-group>
@@ -136,7 +136,7 @@
                 {{ course.courseName }}
               </div>
               <div class="course-detail">
-                {{ course.teacherName }} / {{ course.classroom }}
+                {{ course.teacherName }} / {{ course.classroomName }}
               </div>
               <div class="course-detail">
                 {{ course.className }}
@@ -196,7 +196,7 @@
           />
           <el-table-column
               label="教室"
-              prop="classroom"
+              prop="classroomName"
           />
           <el-table-column
               label="操作"
@@ -351,7 +351,7 @@
                 <el-option
                     v-for="room in classroomOptions"
                     :key="room.id"
-                    :label="`${room.buildingName || room.building} - ${room.roomNo || room.roomNumber}`"
+                    :label="`${room.building} - ${room.name}`"
                     :value="room.id"
                 />
               </el-select>
@@ -815,8 +815,23 @@ const timeToMinutes = (timeStr) => {
 const findCoursesForCell = (dayValue, timeSlot) => {
   if (!timeSlot || !timeSlot.startTime) return [];
   const slotStartMinutes = timeToMinutes(timeSlot.startTime);
+
   return scheduleList.value.filter(schedule => {
-    return schedule.weekday === dayValue && timeToMinutes(schedule.startTime) === slotStartMinutes;
+    if (!schedule.startTime) return false; // 跳过 startTime 为空的记录
+    let scheduleStartTimeStr = '';
+    try {
+      // 将 Date 对象格式化为 HH:mm
+      const date = new Date(schedule.startTime);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      scheduleStartTimeStr = `${hours}:${minutes}`;
+    } catch (e) {
+      console.error("格式化课表开始时间失败:", schedule.startTime, e);
+      return false; // 格式化失败则不匹配
+    }
+    // 用格式化后的字符串计算分钟数
+    const scheduleStartMinutes = timeToMinutes(scheduleStartTimeStr);
+    return schedule.weekday === dayValue && scheduleStartMinutes === slotStartMinutes;
   });
 };
 

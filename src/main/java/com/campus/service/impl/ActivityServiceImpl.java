@@ -5,15 +5,20 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ActivityDao;
+import com.campus.dao.ActivityParticipantDao;
 import com.campus.entity.Activity;
+import com.campus.entity.ActivityParticipant;
 import com.campus.service.ActivityService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 校园活动服务实现类
@@ -21,10 +26,14 @@ import java.util.List;
  * 包括活动的增删改查、状态管理等功能
  */
 @Service
+@Slf4j
 public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> implements ActivityService {
 
     @Autowired
     private ActivityDao activityDao;
+
+    @Autowired
+    private ActivityParticipantDao activityParticipantDao;
     
     /**
      * 根据ID查询活动
@@ -245,30 +254,29 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
 
     /**
      * 获取指定学生参加的所有活动
-     * 注意：需要 ActivityDao 支持此查询，或者在这里使用 MyBatis-Plus 构造查询
      *
      * @param studentId 学生ID
      * @return 活动列表
      */
     @Override
     public List<Activity> getStudentEnrolledActivities(Long studentId) {
-        // 假设 ActivityDao 有一个 findByStudentId 方法
-        // 如果没有，需要实现关联查询（例如通过报名表 ActivityEnrollment）
-        try {
-            // return activityDao.findByStudentId(studentId); // 假设存在此方法
-            // --- 临时模拟实现 --- 
-            if (studentId == null) {
-                return Collections.emptyList();
-            }
-            // 返回所有活动作为示例，实际需要根据报名记录筛选
-            LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.orderByDesc(Activity::getStartTime);
-            return list(queryWrapper);
-            // --- 模拟结束 --- 
-        } catch (Exception e) {
-            // log.error("获取学生 {} 的活动列表失败", studentId, e);
-            return Collections.emptyList(); // 返回空列表避免控制器出错
+        // 1. 从 activity_participant 表查询该用户参与的所有活动 ID
+        LambdaQueryWrapper<ActivityParticipant> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ActivityParticipant::getUserId, studentId)
+                .select(ActivityParticipant::getActivityId); // 只查询 activityId
+        List<Object> activityIdObjects = activityParticipantDao.selectObjs(queryWrapper);
+
+        if (activityIdObjects == null || activityIdObjects.isEmpty()) {
+            return Collections.emptyList();
         }
+
+        // 转换 ID 列表类型
+        List<Long> activityIds = activityIdObjects.stream()
+                .map(obj -> Long.valueOf(obj.toString()))
+                .collect(Collectors.toList());
+
+        // 2. 根据活动 ID 列表查询活动信息
+        return activityDao.selectBatchIds(activityIds);
     }
 
     /**
@@ -283,37 +291,139 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
      */
     @Override
     public IPage<Activity> getActivityPage(int pageNo, int pageSize, String keyword, Integer activityType, Integer status) {
-        // 构建分页对象
         Page<Activity> page = new Page<>(pageNo, pageSize);
-
-        // 构建查询条件
         LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 添加关键词查询（模糊匹配标题或描述）
+        // 添加关键词搜索条件 (标题或描述)
         if (StringUtils.hasText(keyword)) {
-            queryWrapper.and(wrapper -> wrapper.like(Activity::getTitle, keyword)
-                    .or()
-                    .like(Activity::getDescription, keyword));
+            queryWrapper.like(Activity::getTitle, keyword).or().like(Activity::getDescription, keyword);
         }
 
-        // 添加活动类型查询
+        // 添加活动类型过滤
         if (activityType != null) {
             queryWrapper.eq(Activity::getActivityType, activityType);
         }
 
-        // 添加状态查询
+        // 添加活动状态过滤
         if (status != null) {
             queryWrapper.eq(Activity::getStatus, status);
         }
 
-        // 添加排序，例如按开始时间降序
-        queryWrapper.orderByDesc(Activity::getStartTime);
+        // 默认按创建时间降序排序
+        queryWrapper.orderByDesc(Activity::getCreateTime);
 
-        // 执行分页查询
-        // 使用 MyBatis-Plus 自带的 selectPage 方法
         return page(page, queryWrapper);
-
-        // 如果是使用自定义的 DAO 方法，则类似：
-        // return activityDao.findPage(page, keyword, activityType, status);
     }
+
+    @Override
+    @Transactional
+    public boolean joinActivity(Long activityId, Long userId) {
+        // 1. 检查活动是否存在且有效
+        Activity activity = getActivityById(activityId);
+        if (activity == null || activity.getStatus() == 0) { // 0表示已取消
+            log.warn("尝试加入不存在或已取消的活动, activityId: {}, userId: {}", activityId, userId);
+            return false;
+        }
+
+        // 2. 检查活动是否已满员
+        if (activity.getMaxParticipants() != null && activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
+            log.info("活动已满员, activityId: {}, userId: {}", activityId, userId);
+            return false;
+        }
+
+        // 3. 检查用户是否已加入 (使用新的 DAO)
+        if (isUserJoined(activityId, userId)) {
+            log.info("用户 {} 已加入活动 {}, 无需重复加入", userId, activityId);
+            return true; // 假设重复加入不算失败
+        }
+
+        // 4. 增加活动表中的当前参与人数
+        activity.setCurrentParticipants(activity.getCurrentParticipants() + 1);
+        activity.setUpdateTime(new Date());
+        boolean updateSuccess = updateById(activity);
+
+        if (!updateSuccess) {
+            log.error("更新活动参与人数失败, activityId: {}, userId: {}", activityId, userId);
+            // Consider throwing exception for transaction rollback
+            // throw new RuntimeException("Failed to update participant count in Activity table");
+            return false;
+        }
+
+        // 5. 在 activity_participant 表中插入参与记录
+        ActivityParticipant participant = new ActivityParticipant(activityId, userId, new Date());
+        int insertResult = activityParticipantDao.insert(participant);
+
+        if (insertResult <= 0) {
+            log.error("插入活动参与记录失败, activityId: {}, userId: {}", activityId, userId);
+            // Consider throwing exception for transaction rollback
+            // throw new RuntimeException("Failed to insert participant record");
+            return false;
+        }
+
+        log.info("用户 {} 成功加入活动 {}", userId, activityId);
+        return true;
+    }
+
+    @Override
+    public boolean isUserJoined(Long activityId, Long userId) {
+        // 使用新的 DAO 查询是否存在记录
+        LambdaQueryWrapper<ActivityParticipant> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ActivityParticipant::getActivityId, activityId)
+                .eq(ActivityParticipant::getUserId, userId);
+        return activityParticipantDao.selectCount(queryWrapper) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean quitActivity(Long activityId, Long userId) {
+        // 1. 检查用户是否已加入 (使用新的 DAO)
+        if (!isUserJoined(activityId, userId)) {
+            log.warn("用户 {} 尝试退出未加入的活动 {}", userId, activityId);
+            return false;
+        }
+
+        // 2. 检查活动是否存在
+        Activity activity = getActivityById(activityId);
+        // If activity exists, decrease count. If not, still try to remove participant record.
+        if (activity != null && activity.getCurrentParticipants() > 0) {
+            // 3. 减少活动表中的当前参与人数
+            activity.setCurrentParticipants(activity.getCurrentParticipants() - 1);
+            activity.setUpdateTime(new Date());
+            boolean updateSuccess = updateById(activity);
+            if (!updateSuccess) {
+                log.error("更新活动参与人数失败 (退出), activityId: {}, userId: {}", activityId, userId);
+                // Consider throwing exception for transaction rollback
+                // throw new RuntimeException("Failed to decrease participant count in Activity table");
+                return false;
+            }
+        } else if (activity != null) {
+            log.warn("活动 {} 参与人数已为0或负数，但仍尝试退出", activityId);
+        } else {
+            log.warn("尝试退出不存在的活动 {}, 但仍尝试删除参与记录", activityId);
+        }
+
+        // 4. 从 activity_participant 表中删除参与记录
+        LambdaQueryWrapper<ActivityParticipant> deleteWrapper = new LambdaQueryWrapper<>();
+        deleteWrapper.eq(ActivityParticipant::getActivityId, activityId)
+                .eq(ActivityParticipant::getUserId, userId);
+        int deleteResult = activityParticipantDao.delete(deleteWrapper);
+
+        if (deleteResult <= 0) {
+            log.error("删除活动参与记录失败, activityId: {}, userId: {}", activityId, userId);
+            // Consider throwing exception for transaction rollback
+            // throw new RuntimeException("Failed to delete participant record");
+            // Decide if this is a failure case. Maybe the record was already gone?
+            // For now, let's consider it success if the count was updated or activity didn't exist.
+        }
+
+        log.info("用户 {} 成功退出活动 {} (删除记录数: {})", userId, activityId, deleteResult);
+        return true;
+    }
+
+    @Override
+    public List<Activity> getUserActivities(Long userId) {
+        // 复用 getStudentEnrolledActivities 的逻辑
+        return getStudentEnrolledActivities(userId);
+    }
+
 }

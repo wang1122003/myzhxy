@@ -1,24 +1,25 @@
 package com.campus.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Activity;
 
 import java.util.List;
 
 /**
- * 校园活动服务接口
+ * 活动服务接口
  */
-public interface ActivityService {
+public interface ActivityService extends IService<Activity> {
     
     /**
-     * 根据ID查询活动
+     * 根据ID获取活动信息
      * @param id 活动ID
-     * @return 活动对象
+     * @return 活动实体
      */
     Activity getActivityById(Long id);
     
     /**
-     * 查询所有活动
+     * 获取所有活动列表
      * @return 活动列表
      */
     List<Activity> getAllActivities();
@@ -52,14 +53,14 @@ public interface ActivityService {
     
     /**
      * 添加活动
-     * @param activity 活动对象
+     * @param activity 活动实体
      * @return 是否成功
      */
     boolean addActivity(Activity activity);
     
     /**
-     * 更新活动
-     * @param activity 活动对象
+     * 更新活动信息
+     * @param activity 活动实体
      * @return 是否成功
      */
     boolean updateActivity(Activity activity);
@@ -105,4 +106,39 @@ public interface ActivityService {
      * @return 活动列表
      */
     List<Activity> getStudentEnrolledActivities(Long studentId);
+
+    /**
+     * 用户加入活动
+     *
+     * @param activityId 活动ID
+     * @param userId     用户ID
+     * @return 是否成功
+     */
+    boolean joinActivity(Long activityId, Long userId);
+
+    /**
+     * 用户退出活动
+     *
+     * @param activityId 活动ID
+     * @param userId     用户ID
+     * @return 是否成功
+     */
+    boolean quitActivity(Long activityId, Long userId);
+
+    /**
+     * 获取用户参加的活动列表
+     *
+     * @param userId 用户ID
+     * @return 活动列表
+     */
+    List<Activity> getUserActivities(Long userId);
+
+    /**
+     * 判断用户是否已参加活动
+     *
+     * @param activityId 活动ID
+     * @param userId     用户ID
+     * @return 是否参加
+     */
+    boolean isUserJoined(Long activityId, Long userId);
 }

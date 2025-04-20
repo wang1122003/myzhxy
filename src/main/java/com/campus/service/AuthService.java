@@ -5,7 +5,14 @@ import com.campus.utils.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 /**
@@ -15,8 +22,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     // Token在Cookie中的名称
     private static final String TOKEN_COOKIE_NAME = "campus_token";
@@ -73,30 +85,39 @@ public class AuthService {
     }
     
     /**
-     * 获取当前认证用户 (从请求中解析Token)
-     * 注意：此方法仍被 JwtAuthenticationFilter 使用，但后续可优化为直接从 SecurityContext 获取
+     * 从HttpServletRequest中获取用户信息
+     *
      * @param request HTTP请求
-     * @return 用户对象，如果未认证或Token无效则返回null
+     * @return 当前用户对象，如果未认证则返回null
      */
-    public User getCurrentUser(HttpServletRequest request) {
-        String token = getTokenFromRequest(request);
-        if (token != null && jwtUtil.validateToken(token)) {
-            try {
-                Long userId = jwtUtil.getUserIdFromToken(token);
-                String username = jwtUtil.getClaimsFromToken(token).get("name", String.class);
-                Integer userType = jwtUtil.getClaimsFromToken(token).get("role", Integer.class);
-                
-                User user = new User();
-                user.setId(userId);
-                user.setUsername(username);
-                user.setUserType(userType);
-                return user;
-            } catch (Exception e) {
-                // 可以记录日志
-                // logger.error("从Token解析用户信息时出错: {}", e.getMessage());
-                return null;
+    public User getCurrentUserFromRequest(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                return (User) principal;
+            } else if (principal instanceof String) {
+                // Fallback: 如果 Principal 是用户名字符串，尝试从数据库加载
+                try {
+                    return (User) userDetailsService.loadUserByUsername((String) principal);
+                } catch (UsernameNotFoundException e) {
+                    log.warn("Could not find user details for username: {}", principal);
+                }
             }
         }
+        // Consider checking request attributes as a fallback if JWT filter puts info there
+        // String username = (String) request.getAttribute("username");
+        // Long userId = (Long) request.getAttribute("userId");
+        // Integer userType = (Integer) request.getAttribute("userType");
+        // if (username != null && userId != null && userType != null) {
+        //     User user = new User();
+        //     user.setId(userId); // Corrected: setId()
+        //     user.setUsername(username); // Corrected: setUsername()
+        //     user.setUserType(userType); // Corrected: setUserType()
+        //     // Note: This user object might lack other essential details like password or authorities
+        //     return user;
+        // }
+
         return null;
     }
     

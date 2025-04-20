@@ -21,22 +21,6 @@ export function register(data) {
     })
 }
 
-// 获取当前用户信息 (通用)
-export function getCurrentUser() {
-    return request({
-        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 使用已定义的 '/users/current'
-        method: 'get'
-    })
-}
-
-// 获取学生个人信息 (使用通用接口)
-export function getStudentProfile() {
-    return request({
-        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
-        method: 'get'
-    })
-}
-
 // 更新学生个人信息 (使用通用接口)
 export function updateStudentProfile(data) {
     return request({
@@ -46,28 +30,12 @@ export function updateStudentProfile(data) {
     })
 }
 
-// 获取教师个人信息 (使用通用接口)
-export function getTeacherProfile() {
-    return request({
-        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
-        method: 'get'
-    })
-}
-
 // 更新教师个人信息 (使用通用接口)
 export function updateTeacherProfile(data) {
     return request({
         url: `${API_BASE}${USER_API.UPDATE_CURRENT_USER}`, // 改为使用通用更新接口
         method: 'put',
         data
-    })
-}
-
-// 获取管理员个人信息 (使用通用接口)
-export function getAdminProfile() {
-    return request({
-        url: `${API_BASE}${USER_API.GET_CURRENT_USER}`, // 改为使用通用获取接口
-        method: 'get'
     })
 }
 
@@ -171,15 +139,6 @@ export function logout() {
         url: `${API_BASE}${USER_API.LOGOUT}`,
         method: 'post'
     })
-}
-
-// 获取用户个人信息 (通用 profile 接口) - 改用 getCurrentUser
-export function getUserProfile() {
-    // return request({
-    //     url: USER_API.GET_USER_PROFILE, // 移除，使用 GET_CURRENT_USER
-    //     method: 'get'
-    // })
-    return getCurrentUser();
 }
 
 // 更新用户个人信息 (通用 profile 接口) - 改用 updateCurrentUser

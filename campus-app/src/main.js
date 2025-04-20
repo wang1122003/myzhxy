@@ -36,6 +36,7 @@ app.component('FormPanel', FormPanel)
 app.component('NavMenu', NavMenu)
 app.component('DataDisplay', DataDisplay)
 
+// app.use(pinia) // 移除使用 Pinia
 app.use(router)
 app.use(ElementPlus, {
     locale: zhCn

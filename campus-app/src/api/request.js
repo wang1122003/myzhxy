@@ -1,6 +1,9 @@
 import axios from 'axios'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import router from '@/router'
+// import {useUserStore} from '@/store/user' // 导入 user store
+// 从 @/utils/auth 导入 token
+import {token as authToken} from '@/utils/auth'; // 移除 logout
 
 // 创建axios实例
 const request = axios.create({
@@ -11,17 +14,9 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
     config => {
-        // 获取token并添加到请求头
-        const token = localStorage.getItem('token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-
-        // 在开发环境下添加请求日志
-        if (process.env.NODE_ENV === 'development') {
-            console.log('发送请求:', config.url)
-            console.log('请求方法:', config.method)
-            console.log('请求参数:', config.params || config.data)
+        if (authToken.value) { // 直接检查导入的 token ref 的值
+            // 获取token并添加到请求头
+            config.headers.Authorization = `Bearer ${authToken.value}`
         }
         
         return config
@@ -36,20 +31,23 @@ request.interceptors.request.use(
 request.interceptors.response.use(
     response => {
         const res = response.data
+        const config = response.config // Get request config
 
-        // 在开发环境下添加响应日志
-        if (process.env.NODE_ENV === 'development') {
-            console.log('响应数据:', res)
-        }
+        // 在开发环境下添加响应日志 (注释掉)
+        // if (process.env.NODE_ENV === 'development') {
+        //     console.log(`响应数据 for ${config.url}:`, res)
+        // }
 
-        // 如果响应成功，直接返回数据
-        if (res.code === 0 || res.code === 200 || !res.code) {
+        // 如果响应成功 (业务码表示成功)，直接返回数据
+        if (res.code === 0 || res.code === 200) { // 仅检查明确的成功码
             return res
         }
 
-        // 根据业务状态码处理不同的错误情况
+        // 处理业务错误码
+        console.warn(`业务错误 for ${config.url}: code=${res.code}, message=${res.message}`); // 添加警告日志
         switch (res.code) {
-            case 401: // 未授权
+            case 401: // 未授权 (业务码)
+                console.error(`触发 handleUnauthorized due to res.code === 401 for ${config.url}`); // 明确日志来源
                 handleUnauthorized()
                 break
             case 403: // 禁止访问
@@ -65,15 +63,18 @@ request.interceptors.response.use(
         return Promise.reject(new Error(res.message || '请求失败'))
     },
     error => {
-        console.error('请求失败:', error.message)
+        const config = error.config // Get request config
+        // console.error('请求失败:', error.message) // 可以保留或注释
 
         if (error.response) {
-            console.error('状态码:', error.response.status)
-            console.error('响应数据:', error.response.data)
+            // console.error('状态码:', error.response.status) // 可以保留或注释
+            // console.error('响应数据:', error.response.data) // 可以保留或注释
+            console.warn(`HTTP错误 for ${config?.url}: status=${error.response.status}`); // 添加警告日志
 
             // 根据HTTP状态码处理不同错误
             switch (error.response.status) {
-                case 401: // 未授权
+                case 401: // 未授权 (HTTP状态码)
+                    console.error(`触发 handleUnauthorized due to error.response.status === 401 for ${config?.url}`); // 明确日志来源
                     handleUnauthorized()
                     break
                 case 403: // 禁止访问
@@ -104,11 +105,13 @@ request.interceptors.response.use(
 )
 
 // 处理未授权情况
+let isHandlingUnauthorized = false; // 添加标志位防止重复处理
 const handleUnauthorized = () => {
-    // 避免多次弹出提示
-    if (localStorage.getItem('isShowingAuthError')) return
+    // 避免多次弹出提示 或 在已处理时再次处理
+    if (isHandlingUnauthorized) return;
+    isHandlingUnauthorized = true;
 
-    localStorage.setItem('isShowingAuthError', 'true')
+    const userStore = useUserStore(); // 获取 store 实例
 
     ElMessageBox.confirm(
         '登录状态已过期，您可以取消继续留在该页面，或者重新登录',
@@ -119,10 +122,12 @@ const handleUnauthorized = () => {
             type: 'warning'
         }
     ).then(() => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        localStorage.removeItem('role')
-        localStorage.removeItem('isShowingAuthError')
+        userStore.logout() // 调用 store 的 logout action 清理状态
+        // 移除直接操作 localStorage 的代码
+        // localStorage.removeItem('token')
+        // localStorage.removeItem('user')
+        // localStorage.removeItem('role')
+        // localStorage.removeItem('isShowingAuthError')
 
         // 跳转到登录页，并携带当前页面路径
         router.push({
@@ -132,7 +137,11 @@ const handleUnauthorized = () => {
             }
         })
     }).catch(() => {
-        localStorage.removeItem('isShowingAuthError')
+        // 用户点击取消，可以不执行任何操作，或者根据需要处理
+        console.log('用户取消了重新登录');
+    }).finally(() => {
+        isHandlingUnauthorized = false; // 重置标志位
+        // localStorage.removeItem('isShowingAuthError') // 移除旧的标志位逻辑
     })
 }
 

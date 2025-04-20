@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
+import java.util.function.Function;
 
 /**
  * JWT工具类，用于生成和验证JWT令牌
@@ -63,7 +65,17 @@ public class JwtUtil {
     }
 
     /**
-     * 验证JWT令牌是否有效
+     * 从JWT令牌中获取用户名
+     *
+     * @param token JWT令牌
+     * @return 用户名
+     */
+    public String getUsernameFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("name", String.class));
+    }
+
+    /**
+     * 验证JWT令牌是否有效 (基本验证)
      *
      * @param token JWT令牌
      * @return 是否有效
@@ -74,10 +86,24 @@ public class JwtUtil {
                 .setSigningKey(getSecretKey())
                 .build()
                 .parseClaimsJws(token);
-            return true;
+            return !isTokenExpired(token); // 增加过期检查
         } catch (Exception e) {
+            // 可以根据具体异常类型打印更详细的日志
+            // e.g., MalformedJwtException, ExpiredJwtException, UnsupportedJwtException, IllegalArgumentException
             return false;
         }
+    }
+
+    /**
+     * 验证JWT令牌是否对特定用户有效
+     *
+     * @param token       JWT令牌
+     * @param userDetails 用户信息
+     * @return 是否有效
+     */
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String username = getUsernameFromToken(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
     /**
@@ -92,6 +118,30 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    /**
+     * 从JWT令牌中获取特定Claim
+     *
+     * @param token          JWT令牌
+     * @param claimsResolver Function to extract the claim
+     * @param <T>            Claim 类型
+     * @return Claim
+     */
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = getClaimsFromToken(token);
+        return claimsResolver.apply(claims);
+    }
+
+    /**
+     * 检查Token是否过期
+     *
+     * @param token JWT令牌
+     * @return 是否过期
+     */
+    private Boolean isTokenExpired(String token) {
+        final Date expirationDate = getClaimFromToken(token, Claims::getExpiration);
+        return expirationDate.before(new Date());
     }
     
     /**

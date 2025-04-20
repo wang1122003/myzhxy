@@ -14,13 +14,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Spring Security 配置类
+ * Spring Security 配置类 (已完全禁用认证和拦截)
  */
 @Configuration
 @EnableWebSecurity // 启用Spring Security的Web安全支持
 public class SecurityConfig {
 
-    // 移除或注释掉 Autowired 字段，因为它们暂时不用
+    // 注释掉 Autowired 字段
     /*
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter; // 注入自定义的 JWT 过滤器
@@ -37,15 +37,15 @@ public class SecurityConfig {
         http
                 // 启用并配置 CORS
                 .cors(Customizer.withDefaults()) // 使用名为 corsConfigurationSource 的 Bean
-                // 禁用 CSRF，因为我们使用 JWT
+                // 禁用 CSRF
                 .csrf(csrf -> csrf.disable())
-                // 配置 Session 管理策略为无状态 (STATELESS)，因为我们使用 JWT
+                // 配置 Session 管理策略为无状态 (STATELESS)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 配置授权规则 (!!! 再次简化为全部允许 !!!)
+                // 配置授权规则 (完全允许所有请求)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // 暂时允许所有请求
+                        .anyRequest().permitAll() // 允许所有请求
                 );
-            /* // !!! 暂时注释掉异常处理配置 !!!
+            /* // 注释掉异常处理配置
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(restAuthenticationEntryPoint) // 配置认证入口点
                 .accessDeniedHandler(restAccessDeniedHandler) // 配置访问拒绝处理器
@@ -53,7 +53,7 @@ public class SecurityConfig {
             */
         // .httpBasic(withDefaults()); // 如果需要 HTTP Basic 认证，可以开启
 
-        // !!! 暂时注释掉添加自定义 Filter !!!
+        // 注释掉添加自定义 Filter
         // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -87,7 +87,7 @@ public class SecurityConfig {
     }
 
     /**
-     * 配置密码编码器，用于密码存储和验证
+     * 配置密码编码器，用于密码存储和验证 (保留)
      *
      * @return PasswordEncoder
      */

@@ -4,96 +4,46 @@
     </el-page-header>
 
     <el-card v-loading="loading" class="grades-card">
-      <div class="card-header">
-        <h3>学生成绩列表</h3>
-        <div class="header-actions">
-          <el-button :disabled="!hasUnsavedChanges" type="success" @click="handleBatchSave">
-            <el-icon>
-              <Check/>
-            </el-icon>
-            保存成绩
-          </el-button>
-          <el-button type="warning" @click="handleExport">
-            <el-icon>
-              <Download/>
-            </el-icon>
-            导出成绩
-          </el-button>
-          <el-button type="primary" @click="handleImport">
-            <el-icon>
-              <Upload/>
-            </el-icon>
-            导入成绩
+      <template #header>
+        <div class="clearfix">
+          <span>{{ courseName }} - 成绩录入</span>
+          <el-button link style="float: right; padding: 3px 0" type="primary" @click="saveAllChanges">保存所有修改
           </el-button>
         </div>
-      </div>
+      </template>
 
-      <el-table :data="students" border style="width: 100%">
-        <el-table-column type="index" width="50"/>
-        <el-table-column label="学号" prop="studentNo" width="120"/>
-        <el-table-column label="姓名" prop="studentName" width="100"/>
-        <el-table-column label="班级" prop="className" width="150"/>
-        <el-table-column label="考勤得分 (20%)" width="150">
-          <template #default="scope">
+      <el-table
+          v-loading="loading"
+          :data="students"
+          empty-text="暂无学生或成绩记录"
+          style="width: 100%"
+      >
+        <el-table-column label="学号" prop="student.studentId" width="120"/>
+        <el-table-column label="姓名" prop="student.realName" width="100"/>
+        <el-table-column label="班级" prop="student.className" width="150"/>
+        <el-table-column label="成绩" width="150">
+          <template #default="{ row }">
             <el-input-number
-                v-model="scope.row.attendanceScore"
-                :max="100"
+                v-model="row.score" 
                 :min="0"
-                size="small"
-                @change="handleScoreChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="作业得分 (30%)" width="150">
-          <template #default="scope">
-            <el-input-number
-                v-model="scope.row.homeworkScore"
                 :max="100"
-                :min="0"
+                :precision="1"
+                :step="1"
                 size="small"
-                @change="handleScoreChange(scope.row)"
+                style="width: 100px;"
+                @change="markChanged(row)" 
             />
           </template>
         </el-table-column>
-        <el-table-column label="考试得分 (50%)" width="150">
-          <template #default="scope">
-            <el-input-number
-                v-model="scope.row.examScore"
-                :max="100"
-                :min="0"
-                size="small"
-                @change="handleScoreChange(scope.row)"
-            />
+        <el-table-column label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.changed" size="small" type="warning">已修改</el-tag>
+            <el-tag v-else size="small" type="info">未修改</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="总评得分" width="100">
-          <template #default="scope">
-            <span :class="getTotalScoreClass(scope.row.totalScore)">
-              {{ calculateTotalScore(scope.row) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="最终评级" width="100">
-          <template #default="scope">
-            <el-tag :type="getGradeType(scope.row.totalScore)">
-              {{ calculateGrade(scope.row.totalScore) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="备注" min-width="200">
-          <template #default="scope">
-            <el-input
-                v-model="scope.row.remark"
-                placeholder="输入备注"
-                @change="handleScoreChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="scope">
-            <el-tag v-if="scope.row.changed" type="warning">未保存</el-tag>
-            <el-tag v-else-if="scope.row.totalScore" type="success">已录入</el-tag>
-            <el-tag v-else type="info">未录入</el-tag>
+        <el-table-column label="上次更新时间" min-width="150">
+          <template #default="{ row }">
+            {{ formatDateTime(row.updateTime) }}
           </template>
         </el-table-column>
       </el-table>
@@ -152,8 +102,6 @@ import {
   ElCard,
   ElDialog,
   ElEmpty,
-  ElIcon,
-  ElInput,
   ElInputNumber,
   ElMessage,
   ElMessageBox,
@@ -164,8 +112,8 @@ import {
   ElTag,
   ElUpload
 } from 'element-plus';
-import {Check, Download, Upload} from '@element-plus/icons-vue';
-import {exportGrades, getCourseStudents, importGrades, saveStudentGrades} from '@/api/grade';
+import {exportGrades, getCourseScores, importGrades, recordStudentScore} from '@/api/grade';
+import {formatDateTime} from '@/utils/formatters';
 
 const route = useRoute();
 const router = useRouter();
@@ -187,110 +135,67 @@ const importFile = ref(null);
 const fetchStudentGrades = async () => {
   loading.value = true;
   try {
-    const res = await getCourseStudents({
-      courseId: courseId.value,
+    const res = await getCourseScores(courseId.value, {
       page: currentPage.value,
       size: pageSize.value
     });
 
     // 为每个学生添加changed标志，用于跟踪是否有修改
-    students.value = (res.data?.list || []).map(student => ({
-      ...student,
-      attendanceScore: student.attendanceScore || 0,
-      homeworkScore: student.homeworkScore || 0,
-      examScore: student.examScore || 0,
-      totalScore: student.totalScore || 0,
+    students.value = (res.data?.list || []).map(scoreRecord => ({
+      ...scoreRecord,
       changed: false
     }));
 
     total.value = res.data?.total || 0;
   } catch (error) {
-    console.error('获取学生名单和成绩失败', error);
-    ElMessage.error('获取学生名单和成绩失败');
+    console.error('获取学生成绩失败', error);
+    ElMessage.error('获取学生成绩失败');
+    students.value = [];
+    total.value = 0;
   } finally {
     loading.value = false;
   }
-};
-
-// 计算总分
-const calculateTotalScore = (student) => {
-  if (!student) return 0;
-  const attendance = student.attendanceScore || 0;
-  const homework = student.homeworkScore || 0;
-  const exam = student.examScore || 0;
-
-  // 根据权重计算总分
-  const totalScore = (attendance * 0.2) + (homework * 0.3) + (exam * 0.5);
-  return Math.round(totalScore * 10) / 10; // 保留一位小数
-};
-
-// 计算评级
-const calculateGrade = (score) => {
-  if (score >= 90) return 'A';
-  if (score >= 80) return 'B';
-  if (score >= 70) return 'C';
-  if (score >= 60) return 'D';
-  return 'F';
-};
-
-// 获取总分颜色类
-const getTotalScoreClass = (score) => {
-  if (score >= 90) return 'score-a';
-  if (score >= 80) return 'score-b';
-  if (score >= 70) return 'score-c';
-  if (score >= 60) return 'score-d';
-  return 'score-f';
-};
-
-// 获取评级标签类型
-const getGradeType = (score) => {
-  if (score >= 90) return 'success';
-  if (score >= 80) return 'primary';
-  if (score >= 70) return 'warning';
-  if (score >= 60) return 'info';
-  return 'danger';
 };
 
 // 处理分数修改
-const handleScoreChange = (student) => {
-  student.changed = true;
-  student.totalScore = calculateTotalScore(student);
+const markChanged = (row) => {
+  row.changed = true;
 };
 
 // 处理批量保存
-const handleBatchSave = async () => {
-  const changedStudents = students.value.filter(student => student.changed);
+const saveAllChanges = async () => {
+  const changedStudents = students.value.filter(s => s.changed);
   if (changedStudents.length === 0) {
-    ElMessage.info('没有需要保存的成绩修改');
+    ElMessage.info('没有需要保存的修改');
     return;
   }
 
-  try {
-    loading.value = true;
-    await saveStudentGrades({
-      courseId: courseId.value,
-      students: changedStudents.map(student => ({
+  loading.value = true;
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const student of changedStudents) {
+    try {
+      const payload = {
+        id: student.id,
         studentId: student.studentId,
-        attendanceScore: student.attendanceScore,
-        homeworkScore: student.homeworkScore,
-        examScore: student.examScore,
-        totalScore: student.totalScore,
-        remark: student.remark
-      }))
-    });
-
-    ElMessage.success('成绩保存成功');
-
-    // 清除修改标记
-    students.value.forEach(student => {
+        courseId: student.courseId,
+        score: student.score
+      };
+      await recordStudentScore(payload);
       student.changed = false;
-    });
+      successCount++;
+    } catch (error) {
+      console.error(`保存学生 ${student.student?.realName || student.studentId} 成绩失败`, error);
+      failCount++;
+    }
+  }
 
-  } catch (error) {
-    console.error('保存成绩失败', error);
-    ElMessage.error('保存成绩失败');
-  } finally {
-    loading.value = false;
+  loading.value = false;
+  if (failCount > 0) {
+    ElMessage.error(`${successCount}条成绩保存成功，${failCount}条保存失败`);
+  } else {
+    ElMessage.success(`${successCount}条成绩保存成功`);
   }
 };
 

@@ -4,18 +4,16 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 /**
- * 论坛评论实体类
+ * 评论实体类
  */
 @Data
-@TableName(value = "comment", autoResultMap = true)
+@TableName("comment")
 public class Comment implements Serializable {
     private static final long serialVersionUID = 1L;
     
@@ -28,65 +26,54 @@ public class Comment implements Serializable {
     /**
      * 帖子ID
      */
+    @TableField("post_id")
     private Long postId;
 
     /**
-     * 评论作者ID
-     */
-    private Long authorId;
-    
-    /**
      * 评论内容
      */
+    @TableField("content")
     private String content;
     
     /**
-     * 父评论ID (用于回复功能)
+     * 作者ID
      */
+    @TableField("author_id")
+    private Long authorId;
+
+    /**
+     * 父评论ID (用于嵌套评论)
+     */
+    @TableField("parent_id")
     private Long parentId;
-    
-    /**
-     * 点赞数
-     */
-    private Integer likeCount;
-    
-    /**
-     * 状态：0-禁用，1-正常
-     */
-    private Integer status;
     
     /**
      * 创建时间
      */
+    @TableField("create_time")
     private Date createTime;
     
     /**
      * 更新时间
      */
+    @TableField("update_time")
     private Date updateTime;
 
     /**
+     * 点赞数
+     */
+    @TableField("like_count")
+    private Integer likeCount;
+
+    /**
+     * 状态：1-正常，0-已删除
+     */
+    @TableField("status")
+    private Integer status;
+    
+    /**
      * 回复JSON字符串
      */
-    @JsonIgnore
-    @TableField(value = "replies")
-    private String repliesJson;
-
-    /**
-     * 回复列表 (反序列化后的对象)
-     */
-    @TableField(exist = false)
-    private List<Comment> replies;
-
-    /**
-     * 评论作者信息
-     */
-    @TableField(exist = false)
-    private User author;
-
-    /**
-     * 帖子信息
-     */
-    @TableField(exist = false)
-    private Post post;
+    @TableField("replies")
+    private String replies;
 }

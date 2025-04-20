@@ -195,30 +195,34 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/variables.scss';
+@use '@/assets/styles/variables.scss' as *;
 
 .nav-menu-container {
-  width: var(--sidebar-width, 240px);
+  width: var(--sidebar-width, $sidebar-width);
   transition: width 0.3s;
-  background-color: var(--sidebar-background, #304156);
+  background-color: var(--sidebar-background, $sidebar-background);
   height: 100%;
   overflow: hidden;
 }
 
 .nav-menu-container.is-collapsed {
-  width: var(--sidebar-collapsed-width, 64px);
+  width: var(--sidebar-collapsed-width, $sidebar-collapsed-width);
 }
 
 .nav-menu-container.is-mobile {
   width: 100%;
   height: auto;
+
+  .nav-menu {
+    height: auto;
+  }
 }
 
 .menu-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: $header-height;
   padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -245,11 +249,11 @@ export default {
 
 .nav-menu {
   border-right: none;
-  height: calc(100% - 50px);
+  height: calc(100% - #{$header-height});
 }
 
 .nav-menu:not(.el-menu--collapse) {
-  width: var(--sidebar-width, 240px);
+  width: var(--sidebar-width, $sidebar-width);
 }
 
 .el-sub-menu__title {
@@ -273,5 +277,23 @@ export default {
 .is-mobile .nav-menu {
   width: 100%;
   height: auto;
+}
+
+/* Element Plus 菜单样式覆盖 (如果需要) */
+:deep(.el-menu-item) {
+  &:hover {
+    background-color: $menu-hover-background !important;
+  }
+
+  &.is-active {
+    background-color: $menu-active-background !important;
+    color: $menu-active-text-color !important;
+  }
+}
+
+:deep(.el-sub-menu__title) {
+  &:hover {
+    background-color: $menu-hover-background !important;
+  }
 }
 </style> 

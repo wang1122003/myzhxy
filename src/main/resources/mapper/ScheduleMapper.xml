@@ -26,9 +26,9 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        s.id, s.course_id, s.course_name, s.teacher_id, s.teacher_name,
-        s.classroom_id, s.classroom_name, s.week_day, s.start_time, s.end_time,
-        s.start_week, s.end_week, s.term_id, s.term_name, s.class_id, s.class_name,
+        s.id, s.course_id, c.course_name as course_name, s.teacher_id, u.real_name as teacher_name,
+        s.classroom_id, cr.name as classroom_name, s.week_day, s.start_time, s.end_time,
+        s.start_week, s.end_week, s.term_id, tm.term_name as term_name, s.class_id, cl.name as class_name,
         s.status, s.create_time, s.update_time
     </sql>
 
@@ -37,6 +37,11 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM schedule s
+        LEFT JOIN course c ON s.course_id = c.id
+        LEFT JOIN user u ON s.teacher_id = u.id
+        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        LEFT JOIN term tm ON s.term_id = tm.id
+        LEFT JOIN clazz cl ON s.class_id = cl.id
         ORDER BY s.term_id DESC, s.week_day, s.start_time
     </select>
 
@@ -45,6 +50,11 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM schedule s
+        LEFT JOIN course c ON s.course_id = c.id
+        LEFT JOIN user u ON s.teacher_id = u.id
+        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        LEFT JOIN term tm ON s.term_id = tm.id
+        LEFT JOIN clazz cl ON s.class_id = cl.id
         ORDER BY s.term_id DESC, s.week_day, s.start_time
         limit #{offset}, #{limit}
     </select>
@@ -59,6 +69,11 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM schedule s
+        LEFT JOIN course c ON s.course_id = c.id
+        LEFT JOIN user u ON s.teacher_id = u.id
+        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        LEFT JOIN term tm ON s.term_id = tm.id
+        LEFT JOIN clazz cl ON s.class_id = cl.id
         WHERE s.week_day = #{weekDay}
         AND s.start_time = #{timeSlot}
         ORDER BY s.term_id DESC
@@ -178,7 +193,12 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM schedule s
-        WHERE teacher_id = #{teacherId} AND term_id = #{termId}
+        LEFT JOIN course c ON s.course_id = c.id
+        LEFT JOIN user u ON s.teacher_id = u.id
+        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        LEFT JOIN term tm ON s.term_id = tm.id
+        LEFT JOIN clazz cl ON s.class_id = cl.id
+        WHERE s.teacher_id = #{teacherId} AND s.term_id = #{termId}
     </select>
 
     <!-- 根据课程ID统计课表数量 -->

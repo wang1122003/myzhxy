@@ -1,23 +1,24 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ScheduleDao;
 import com.campus.entity.Schedule;
+import com.campus.exception.CustomException;
 import com.campus.service.ScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Time;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * 课表服务实现类
  */
 @Service
-public class ScheduleServiceImpl implements ScheduleService {
+public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> implements ScheduleService {
 
     @Autowired
     private ScheduleDao scheduleDao;
@@ -59,12 +60,22 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public List<Schedule> getSchedulesByTeacherIdAndTermId(Long teacherId, Long termId) {
-        return scheduleDao.findByTeacherIdAndTermId(teacherId, termId);
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getTeacherId, teacherId)
+                .eq(Schedule::getTermId, termId)
+                .eq(Schedule::getStatus, 1);
+        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        return list(queryWrapper);
     }
 
     @Override
     public List<Schedule> getSchedulesByClassIdAndTermId(Long classId, Long termId) {
-        return scheduleDao.findByClassIdAndTermId(classId, termId);
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getClassId, classId)
+                .eq(Schedule::getTermId, termId)
+                .eq(Schedule::getStatus, 1);
+        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        return list(queryWrapper);
     }
 
     @Override
@@ -75,37 +86,29 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional
     public boolean addSchedule(Schedule schedule) {
-        // 检查时间冲突
-        if (checkTimeConflict(schedule)) {
-            return false;
+        if (isTimeConflict(schedule)) {
+            throw new CustomException("排课时间冲突: 教室或时间段已被占用");
         }
-        
-        // 设置创建时间和更新时间
-        Date now = new Date();
-        schedule.setCreateTime(now);
-        schedule.setUpdateTime(now);
-        
-        return scheduleDao.insert(schedule) > 0;
+        schedule.setStatus(1);
+        schedule.setCreateTime(new Date());
+        schedule.setUpdateTime(new Date());
+        return save(schedule);
     }
 
     @Override
     @Transactional
     public boolean updateSchedule(Schedule schedule) {
-        // 检查时间冲突
-        if (checkTimeConflict(schedule)) {
-            return false;
+        if (isTimeConflict(schedule)) {
+            throw new CustomException("排课时间冲突: 教室或时间段已被占用");
         }
-        
-        // 设置更新时间
         schedule.setUpdateTime(new Date());
-        
-        return scheduleDao.update(schedule) > 0;
+        return updateById(schedule);
     }
 
     @Override
     @Transactional
     public boolean deleteSchedule(Long id) {
-        return scheduleDao.delete(id) > 0;
+        return removeById(id);
     }
 
     @Override
@@ -116,15 +119,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public boolean checkTimeConflict(Schedule schedule) {
-        // 检查教师时间冲突
-        if (checkTeacherTimeConflict(schedule.getTeacherId(), schedule.getWeekDay(), 
-            schedule.getStartTime(), schedule.getEndTime())) {
-            return true;
-        }
-        
-        // 检查班级时间冲突
-        return checkClassTimeConflict(schedule.getClassId(), schedule.getWeekDay(),
-                schedule.getStartTime(), schedule.getEndTime());
+        return isTimeConflict(schedule);
     }
 
     @Override
@@ -138,19 +133,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleDao.getCount();
     }
     
-    @Override
     public List<Schedule> getSchedulesByTimeSlot(int weekDay, int timeSlot) {
         return scheduleDao.findByTimeSlot(weekDay, timeSlot);
-    }
-    
-    @Override
-    public boolean checkTeacherTimeConflict(Long teacherId, int weekDay, int startTime, int endTime) {
-        return scheduleDao.checkTeacherTimeConflict(teacherId, weekDay, startTime, endTime);
-    }
-    
-    @Override
-    public boolean checkClassTimeConflict(Long classId, int weekDay, int startTime, int endTime) {
-        return scheduleDao.checkClassTimeConflict(classId, weekDay, startTime, endTime);
     }
     
     @Override
@@ -193,7 +177,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleDao.getClassroomScheduleTimeDistribution(classroomId);
     }
     
-    @Override
     @Transactional
     public boolean updateScheduleStatus(Long id, Integer status) {
         return scheduleDao.updateStatus(id, status) > 0;
@@ -201,185 +184,26 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public Map<String, Object> getClassroomWeeklySchedule(Long classroomId, Long termId) {
-        // 获取该教室在该学期的所有课表
         List<Schedule> schedules = scheduleDao.findByClassroomIdAndTermId(classroomId, termId);
-        
-        // 构建周课表数据
-        Map<String, Object> weeklySchedule = new HashMap<>();
-        
-        // 初始化每天的课表
-        for (int i = 1; i <= 7; i++) {
-            weeklySchedule.put("day" + i, new HashMap<String, Object>());
-        }
-        
-        // 填充课表数据
-        for (Schedule schedule : schedules) {
-            int weekDay = schedule.getWeekDay();
-            int startTime = schedule.getStartTime();
-            int endTime = schedule.getEndTime();
-            
-            // 获取当天的课表
-            @SuppressWarnings("unchecked")
-            Map<String, Object> daySchedule = (Map<String, Object>) weeklySchedule.get("day" + weekDay);
-            
-            // 构建课程信息
-            Map<String, Object> courseInfo = new HashMap<>();
-            courseInfo.put("id", schedule.getId());
-            courseInfo.put("courseId", schedule.getCourseId());
-            courseInfo.put("courseName", schedule.getCourseName());
-            courseInfo.put("teacherId", schedule.getTeacherId());
-            courseInfo.put("teacherName", schedule.getTeacherName());
-            courseInfo.put("classId", schedule.getClassId());
-            courseInfo.put("className", schedule.getClassName());
-            courseInfo.put("startTime", startTime);
-            courseInfo.put("endTime", endTime);
-            
-            // 将课程信息添加到对应时间段
-            String timeSlotKey = startTime + "-" + endTime;
-            daySchedule.put(timeSlotKey, courseInfo);
-        }
-        
-        // 添加教室信息
-        weeklySchedule.put("classroomId", classroomId);
-        // Assuming classroomDao is available to getClassroomById
-        // Classroom classroom = classroomDao.getClassroomById(classroomId);
-        // weeklySchedule.put("classroomName", classroom.getName());
-        weeklySchedule.put("classroomName", "教室" + classroomId);
-        
-        // 添加学期信息
-        weeklySchedule.put("termId", termId);
-        // Assuming termDao is available to getTermById
-        // Term term = termDao.getTermById(termId);
-        // weeklySchedule.put("termName", term.getName());
-        weeklySchedule.put("termName", "学期" + termId);
-        
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, classroomId, termId, "classroom");
         return weeklySchedule;
     }
     
     @Override
     public Map<String, Object> getTeacherWeeklySchedule(Long teacherId, Long termId) {
-        // 获取该教师在该学期的所有课表
         List<Schedule> schedules = scheduleDao.findByTeacherIdAndTermId(teacherId, termId);
-        
-        // 构建周课表数据
-        Map<String, Object> weeklySchedule = new HashMap<>();
-        
-        // 初始化每天的课表
-        for (int i = 1; i <= 7; i++) {
-            weeklySchedule.put("day" + i, new HashMap<String, Object>());
-        }
-        
-        // 填充课表数据
-        for (Schedule schedule : schedules) {
-            int weekDay = schedule.getWeekDay();
-            int startTime = schedule.getStartTime();
-            int endTime = schedule.getEndTime();
-            
-            // 获取当天的课表
-            @SuppressWarnings("unchecked")
-            Map<String, Object> daySchedule = (Map<String, Object>) weeklySchedule.get("day" + weekDay);
-            
-            // 构建课程信息
-            Map<String, Object> courseInfo = new HashMap<>();
-            courseInfo.put("id", schedule.getId());
-            courseInfo.put("courseId", schedule.getCourseId());
-            courseInfo.put("courseName", schedule.getCourseName());
-            courseInfo.put("classroomId", schedule.getClassroomId());
-            courseInfo.put("classroomName", schedule.getClassroomName());
-            courseInfo.put("classId", schedule.getClassId());
-            courseInfo.put("className", schedule.getClassName());
-            courseInfo.put("startTime", startTime);
-            courseInfo.put("endTime", endTime);
-            
-            // 将课程信息添加到对应时间段
-            String timeSlotKey = startTime + "-" + endTime;
-            daySchedule.put(timeSlotKey, courseInfo);
-        }
-        
-        // 添加教师信息
-        weeklySchedule.put("teacherId", teacherId);
-        // Assuming teacherDao is available to getTeacherById
-        // Teacher teacher = teacherDao.getTeacherById(teacherId);
-        // weeklySchedule.put("teacherName", teacher.getName());
-        weeklySchedule.put("teacherName", "教师" + teacherId);
-        
-        // 添加学期信息
-        weeklySchedule.put("termId", termId);
-        // Assuming termDao is available to getTermById
-        // Term term = termDao.getTermById(termId);
-        // weeklySchedule.put("termName", term.getName());
-        weeklySchedule.put("termName", "学期" + termId);
-        
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, teacherId, termId, "teacher");
         return weeklySchedule;
     }
     
     @Override
     public Map<String, Object> getStudentWeeklySchedule(Long studentId, Long termId) {
-        // 获取该学生的班级ID
-        // Assuming studentDao is available to getStudentById
-        // Student student = studentDao.getStudentById(studentId);
-        // Long classId = student.getClassId();
-        Long classId = 1L; // 临时使用固定值，实际应从数据库获取
-        
-        // 获取该班级在该学期的所有课表
+        Long classId = 1L;
+        if (classId == null) return new HashMap<>();
+
         List<Schedule> schedules = scheduleDao.findByClassIdAndTermId(classId, termId);
-        
-        // 构建周课表数据
-        Map<String, Object> weeklySchedule = new HashMap<>();
-        
-        // 初始化每天的课表
-        for (int i = 1; i <= 7; i++) {
-            weeklySchedule.put("day" + i, new HashMap<String, Object>());
-        }
-        
-        // 填充课表数据
-        for (Schedule schedule : schedules) {
-            int weekDay = schedule.getWeekDay();
-            int startTime = schedule.getStartTime();
-            int endTime = schedule.getEndTime();
-            
-            // 获取当天的课表
-            @SuppressWarnings("unchecked")
-            Map<String, Object> daySchedule = (Map<String, Object>) weeklySchedule.get("day" + weekDay);
-            
-            // 构建课程信息
-            Map<String, Object> courseInfo = new HashMap<>();
-            courseInfo.put("id", schedule.getId());
-            courseInfo.put("courseId", schedule.getCourseId());
-            courseInfo.put("courseName", schedule.getCourseName());
-            courseInfo.put("teacherId", schedule.getTeacherId());
-            courseInfo.put("teacherName", schedule.getTeacherName());
-            courseInfo.put("classroomId", schedule.getClassroomId());
-            courseInfo.put("classroomName", schedule.getClassroomName());
-            courseInfo.put("startTime", startTime);
-            courseInfo.put("endTime", endTime);
-            
-            // 将课程信息添加到对应时间段
-            String timeSlotKey = startTime + "-" + endTime;
-            daySchedule.put(timeSlotKey, courseInfo);
-        }
-        
-        // 添加学生信息
-        weeklySchedule.put("studentId", studentId);
-        // Assuming studentDao is available to getStudentById
-        // Student student = studentDao.getStudentById(studentId);
-        // weeklySchedule.put("studentName", student.getName());
-        weeklySchedule.put("studentName", "学生" + studentId);
-        
-        // 添加班级信息
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, studentId, termId, "student");
         weeklySchedule.put("classId", classId);
-        // Assuming classDao is available to getClassById
-        // Class clazz = classDao.getClassById(classId);
-        // weeklySchedule.put("className", clazz.getName());
-        weeklySchedule.put("className", "班级" + classId);
-        
-        // 添加学期信息
-        weeklySchedule.put("termId", termId);
-        // Assuming termDao is available to getTermById
-        // Term term = termDao.getTermById(termId);
-        // weeklySchedule.put("termName", term.getName());
-        weeklySchedule.put("termName", "学期" + termId);
-        
         return weeklySchedule;
     }
     
@@ -387,27 +211,8 @@ public class ScheduleServiceImpl implements ScheduleService {
     public Map<String, Object> checkScheduleConflict(Schedule schedule) {
         Map<String, Object> result = new HashMap<>();
         result.put("conflict", false);
-        
-        // 检查教师时间冲突
-        if (checkTeacherTimeConflict(schedule.getTeacherId(), schedule.getWeekDay(), 
-            schedule.getStartTime(), schedule.getEndTime())) {
-            result.put("conflict", true);
-            result.put("type", "teacher");
-            result.put("message", "该时间段教师已有其他课程安排");
-            return result;
-        }
-        
-        // 检查班级时间冲突
-        if (checkClassTimeConflict(schedule.getClassId(), schedule.getWeekDay(), 
-            schedule.getStartTime(), schedule.getEndTime())) {
-            result.put("conflict", true);
-            result.put("type", "class");
-            result.put("message", "该时间段班级已有其他课程安排");
-            return result;
-        }
-        
-        // 检查教室时间冲突
-        // 此处通过LambdaQueryWrapper查询，而不是使用不存在的方法
+
+        // Check only classroom conflict for now
         LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Schedule::getClassroomId, schedule.getClassroomId())
                   .eq(Schedule::getWeekDay, schedule.getWeekDay())
@@ -428,40 +233,16 @@ public class ScheduleServiceImpl implements ScheduleService {
     
     @Override
     public List<Schedule> getSchedulesByStudentId(Long studentId) {
-        // 获取该学生的班级ID
-        // Assuming studentDao is available to getStudentById
-        // Student student = studentDao.getStudentById(studentId);
-        // Long classId = student.getClassId();
-        Long classId = 1L; // 临时使用固定值，实际应从数据库获取
+        Long classId = 1L;
         
-        // 获取该班级的所有课表
         return scheduleDao.findByClassId(classId);
     }
 
     @Override
-    public boolean isClassroomInUse(Long classroomId) {
-        // 调用 DAO 层查询使用该教室的课表数量
-        return scheduleDao.countByClassroomId(classroomId) > 0;
-    }
-
-    /**
-     * 检查课程是否已被排课
-     *
-     * @param courseId 课程ID
-     * @return 如果已排课返回 true，否则返回 false
-     */
-    @Override
     public boolean isCourseScheduled(Long courseId) {
-        // 调用 DAO 层查询该课程的排课数量
         return scheduleDao.countByCourseId(courseId) > 0;
     }
 
-    /**
-     * 查找给定课程ID列表中已被排课的课程ID
-     *
-     * @param courseIds 课程ID列表
-     * @return 已被排课的课程ID列表
-     */
     @Override
     public List<Long> findScheduledCourseIds(List<Long> courseIds) {
         if (courseIds == null || courseIds.isEmpty()) {
@@ -470,18 +251,99 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleDao.findScheduledCourseIds(courseIds);
     }
 
-    /**
-     * 根据学生ID和学期字符串获取课表
-     * 注意: 由于数据库 schema 限制，目前实现会忽略 semester 参数，仅根据 studentId 查询
-     *
-     * @param studentId 学生ID
-     * @param semester  学期字符串 (格式如 2023-2024-1), 当前实现未使用
-     * @return 课表列表
-     */
     @Override
-    public List<Schedule> getSchedulesByStudentIdAndSemester(Long studentId, String semester) {
-        // TODO: 实现根据 semester 过滤的功能 (需要修改数据库 schema 或进行复杂查询)
-        // 当前仅根据 studentId 查询
-        return scheduleDao.findByStudentId(studentId); // 调用 DAO 层方法
+    public List<Schedule> getScheduleByClassIdAndTermId(Long classId, Long termId) {
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getClassId, classId)
+                .eq(Schedule::getTermId, termId)
+                .eq(Schedule::getStatus, 1);
+        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        return list(queryWrapper);
+    }
+
+    @Override
+    public List<Schedule> getScheduleByTeacherIdAndTermId(Long teacherId, Long termId) {
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getTeacherId, teacherId)
+                .eq(Schedule::getTermId, termId)
+                .eq(Schedule::getStatus, 1);
+        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        return list(queryWrapper);
+    }
+
+    @Override
+    public List<Schedule> getScheduleByCourseIdAndTermId(Long courseId, Long termId) {
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getCourseId, courseId)
+                .eq(Schedule::getTermId, termId)
+                .eq(Schedule::getStatus, 1);
+        return list(queryWrapper);
+    }
+
+    private boolean isTimeConflict(Schedule schedule) {
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Schedule::getClassroomId, schedule.getClassroomId())
+                .eq(Schedule::getWeekDay, schedule.getWeekDay())
+                .eq(Schedule::getTermId, schedule.getTermId())
+                .eq(Schedule::getStatus, 1)
+                .ne(schedule.getId() != null, Schedule::getId, schedule.getId());
+
+        Time scheduleStartTime = convertToSqlTime(schedule.getStartTime());
+        Time scheduleEndTime = convertToSqlTime(schedule.getEndTime());
+        if (scheduleStartTime == null || scheduleEndTime == null) {
+            return false;
+        }
+
+        queryWrapper.lt(Schedule::getStartTime, scheduleEndTime)
+                .gt(Schedule::getEndTime, scheduleStartTime);
+
+        queryWrapper.le(Schedule::getStartWeek, schedule.getEndWeek())
+                .ge(Schedule::getEndWeek, schedule.getStartWeek());
+
+        return count(queryWrapper) > 0;
+    }
+
+    private Time convertToSqlTime(Date date) {
+        if (date == null) return null;
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        return new Time(date.getTime());
+    }
+
+    private Map<String, Object> buildWeeklyScheduleMap(List<Schedule> schedules, Long primaryId, Long termId, String type) {
+        Map<String, Object> weeklySchedule = new HashMap<>();
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+
+        for (int i = 1; i <= 7; i++) {
+            weeklySchedule.put("day" + i, new HashMap<String, Object>());
+        }
+
+        for (Schedule schedule : schedules) {
+            int weekDay = schedule.getWeekDay();
+            Date startTime = schedule.getStartTime();
+            Date endTime = schedule.getEndTime();
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> daySchedule = (Map<String, Object>) weeklySchedule.get("day" + weekDay);
+
+            Map<String, Object> courseInfo = new HashMap<>();
+            courseInfo.put("scheduleId", schedule.getId());
+            courseInfo.put("courseId", schedule.getCourseId());
+            courseInfo.put("weekDay", weekDay);
+            courseInfo.put("startTime", startTime != null ? timeFormat.format(startTime) : "");
+            courseInfo.put("endTime", endTime != null ? timeFormat.format(endTime) : "");
+            courseInfo.put("startWeek", schedule.getStartWeek());
+            courseInfo.put("endWeek", schedule.getEndWeek());
+            courseInfo.put("location", "教室ID:" + schedule.getClassroomId());
+
+            String timeSlotKey = (startTime != null ? timeFormat.format(startTime) : "N/A") + "-" +
+                    (endTime != null ? timeFormat.format(endTime) : "N/A");
+            daySchedule.put(timeSlotKey, courseInfo);
+        }
+
+        weeklySchedule.put(type + "Id", primaryId);
+        weeklySchedule.put("termId", termId);
+
+        return weeklySchedule;
     }
 }

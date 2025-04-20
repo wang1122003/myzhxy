@@ -55,7 +55,7 @@
               {{ userInfo.name }}
             </el-descriptions-item>
             <el-descriptions-item label="性别">
-              {{ userInfo.gender === 'male' ? '男' : '女' }}
+              {{ formatGender(userInfo.gender) }}
             </el-descriptions-item>
             <el-descriptions-item label="院系">
               {{ userInfo.department }}
@@ -103,10 +103,10 @@
             prop="gender"
         >
           <el-radio-group v-model="form.gender">
-            <el-radio label="male">
+            <el-radio value="male">
               男
             </el-radio>
-            <el-radio label="female">
+            <el-radio value="female">
               女
             </el-radio>
           </el-radio-group>
@@ -165,10 +165,12 @@
 </template>
 
 <script>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {onMounted, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {Upload} from '@element-plus/icons-vue';
-import {getStudentProfile, updateStudentProfile} from '@/api/user';
+import {getUserProfile, updateUserProfile} from '@/api/user';
+import {logout, setUserInfo, userAvatar, userId, userInfo} from '@/utils/auth';
+import {useRouter} from 'vue-router';
 
 export default {
   name: 'StudentProfile',
@@ -176,132 +178,164 @@ export default {
     Upload
   },
   setup() {
-    const userInfo = ref({})
-    const userAvatar = ref('')
-    const dialogVisible = ref(false)
-    const formRef = ref(null)
-    const uploadingAvatar = ref(false)
+    const router = useRouter();
+    const dialogVisible = ref(false);
+    const formRef = ref(null);
+    const uploadingAvatar = ref(false);
+    const profile = ref({});
+    const loading = ref(false);
+    const isEditing = ref(false);
 
-    const uploadAvatarUrl = `/api/user/avatar/upload`
-    const headers = computed(() => {
-      return {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-
-    const form = reactive({
-      id: '',
-      name: '',
-      gender: 'male',
-      department: '',
-      major: '',
-      className: '',
-      email: '',
-      phone: '',
-      avatar: ''
-    })
+    const uploadAvatarUrl = ref('/api/upload/avatar');
+    const headers = ref({
+      Authorization: localStorage.getItem('Authorization-Token') || ''
+    });
 
     const rules = {
       email: [
         {required: true, message: '请输入邮箱', trigger: 'blur'},
-        {type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur'}
+        {type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change']}
       ],
       phone: [
         {required: true, message: '请输入手机号', trigger: 'blur'},
-        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur'}
+        {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: ['blur', 'change']}
       ]
-    }
+    };
 
-    const fetchUserInfo = async () => {
+    const fetchProfile = async () => {
+      loading.value = true;
       try {
-        const response = await getStudentProfile()
-        userInfo.value = response.data
-        userAvatar.value = response.data.avatar || ''
+        if (!userId.value) {
+          ElMessage.error('无法获取用户ID，请重新登录');
+          await handleLogout();
+          return;
+        }
+        const response = await getUserProfile(userId.value);
+        if (response.code === 200 && response.data) {
+          profile.value = {...response.data};
+        } else {
+          ElMessage.error(response.message || '获取用户信息失败');
+        }
       } catch (error) {
-        console.error('获取用户信息失败', error)
-        ElMessage.error('获取用户信息失败')
+        console.error('获取用户信息异常:', error);
+        ElMessage.error('获取用户信息异常');
+      } finally {
+        loading.value = false;
       }
-    }
+    };
+
+    onMounted(fetchProfile);
 
     const handleEdit = () => {
-      dialogVisible.value = true
-      Object.keys(form).forEach(key => {
-        form[key] = userInfo.value[key] || ''
-      })
-    }
+      isEditing.value = true;
+      if (userInfo.value) {
+        profile.value = {...userInfo.value};
+      }
+    };
 
     const handleSubmit = () => {
       formRef.value.validate((valid) => {
         if (valid) {
-          updateStudentProfile(form).then(() => {
-            ElMessage.success('更新成功')
-            dialogVisible.value = false
-            fetchUserInfo()
+          const dataToUpdate = {...profile.value};
+          updateUserProfile(dataToUpdate).then(response => {
+            if (response.code === 0 || response.code === 200) {
+              ElMessage.success('更新成功');
+              dialogVisible.value = false;
+              setUserInfo(response.data || dataToUpdate);
+            } else {
+              ElMessage.error(response.message || '更新失败');
+            }
+            
           }).catch(error => {
-            console.error('更新用户信息失败', error)
-            ElMessage.error('更新用户信息失败')
-          })
+            console.error('更新用户信息失败', error);
+            const errorMessage = error.response?.data?.message || error.message || '更新用户信息失败';
+            ElMessage.error(errorMessage);
+          });
         }
-      })
-    }
+      });
+    };
 
-    const handleAvatarSuccess = (response) => {
-      uploadingAvatar.value = false
-      if (response.code === 200 && response.data) {
-        userAvatar.value = response.data
-        userInfo.value.avatar = response.data
-        form.avatar = response.data
-        ElMessage.success('头像更新成功')
+    const handleAvatarSuccess = (response, uploadFile) => {
+      uploadingAvatar.value = false;
+      if (response.code === 0 || response.code === 200) {
+        if (response.data && response.data.url) {
+          ElMessage.success('头像上传成功');
+          const currentUserInfo = {...userInfo.value, avatarUrl: response.data.url};
+          setUserInfo(currentUserInfo);
+        } else {
+          ElMessage.error(response.message || '头像上传成功但未返回URL');
+        }
       } else {
-        ElMessage.error(response.message || '头像上传失败')
+        ElMessage.error(response.message || '头像上传失败');
       }
-    }
-
+    };
+    
     const handleAvatarError = (error) => {
-      uploadingAvatar.value = false
-      console.error("头像上传失败", error)
-      ElMessage.error('头像上传失败，请稍后重试')
-    }
+      uploadingAvatar.value = false;
+      let message = '头像上传失败';
+      try {
+        const responseData = JSON.parse(error.message || '{}');
+        message = responseData.message || message;
+      } catch (e) {
+        // 解析失败，使用通用错误信息
+      }
+      ElMessage.error(message);
+      console.error('头像上传错误:', error);
+    };
 
     const beforeAvatarUpload = (rawFile) => {
-      const isJPG = rawFile.type === 'image/jpeg'
-      const isPNG = rawFile.type === 'image/png'
-      const isLt2M = rawFile.size / 1024 / 1024 < 2
+      const isJPG = rawFile.type === 'image/jpeg';
+      const isPNG = rawFile.type === 'image/png';
+      const isLt2M = rawFile.size / 1024 / 1024 < 2;
 
       if (!isJPG && !isPNG) {
-        ElMessage.error('头像图片只能是 JPG 或 PNG 格式!')
-        return false
+        ElMessage.error('头像图片只能是 JPG 或 PNG 格式!');
+        return false;
       }
       if (!isLt2M) {
-        ElMessage.error('头像图片大小不能超过 2MB!')
-        return false
+        ElMessage.error('头像图片大小不能超过 2MB!');
+        return false;
       }
-      uploadingAvatar.value = true
-      return true
-    }
+      uploadingAvatar.value = true;
+      return true;
+    };
 
-    onMounted(() => {
-      fetchUserInfo()
-    })
+    const handleLogout = async () => {
+      try {
+        await logout();
+        router.push('/login');
+      } catch (error) {
+        console.error("登出时出错:", error);
+        logout();
+        router.push('/login');
+      }
+    };
+
+    const formatGender = (gender) => {
+      if (gender === 1) return '男';
+      if (gender === 0) return '女';
+      return '未知';
+    };
 
     return {
       userInfo,
       userAvatar,
       dialogVisible,
       formRef,
-      form,
+      form: profile,
       rules,
-      headers,
-      uploadAvatarUrl,
-      uploadingAvatar,
       handleEdit,
       handleSubmit,
+      uploadAvatarUrl,
+      headers,
       handleAvatarSuccess,
       handleAvatarError,
-      beforeAvatarUpload
-    }
+      beforeAvatarUpload,
+      uploadingAvatar,
+      formatGender
+    };
   }
-}
+}; 
 </script>
 
 <style scoped>

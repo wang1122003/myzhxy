@@ -72,14 +72,9 @@
           style="width: 100%"
       >
         <el-table-column
-            label="教室编号"
-            prop="roomNumber"
-            width="150"
-        />
-        <el-table-column
-            label="教室名称"
+            label="教室编号/名称"
+            prop="name"
             min-width="180"
-            prop="roomName"
         />
         <el-table-column
             label="教学楼"
@@ -91,6 +86,15 @@
             prop="capacity"
             width="100"
         />
+        <el-table-column
+            label="类型"
+            prop="roomType"
+            width="120"
+        >
+          <template #default="scope">
+            {{ formatRoomType(scope.row.roomType) }}
+          </template>
+        </el-table-column>
         <el-table-column
             label="状态"
             prop="status"
@@ -166,22 +170,21 @@
           label-width="100px"
       >
         <el-form-item
-            label="教室编号"
-            prop="roomNumber"
+            label="教室编号/名称"
+            prop="name"
         >
           <el-input
-              v-model="classroomForm.roomNumber"
-              :disabled="isEditMode"
-              placeholder="请输入教室编号"
+              v-model="classroomForm.name"
+              placeholder="请输入教室编号/名称"
           />
         </el-form-item>
         <el-form-item
-            label="教室名称"
-            prop="roomName"
+            label="教学楼"
+            prop="building"
         >
           <el-input
-              v-model="classroomForm.roomName"
-              placeholder="请输入教室名称"
+              v-model="classroomForm.building"
+              placeholder="请输入教学楼"
           />
         </el-form-item>
         <el-form-item
@@ -196,32 +199,15 @@
         </el-form-item>
         <el-form-item
             label="类型"
-            prop="type"
+            prop="roomType"
         >
           <el-select
-              v-model="classroomForm.type"
+              v-model="classroomForm.roomType"
               placeholder="请选择教室类型"
           >
-            <el-option
-                label="普通教室"
-                value="normal"
-            />
-            <el-option
-                label="多媒体教室"
-                value="multimedia"
-            />
-            <el-option
-                label="实验室"
-                value="lab"
-            />
-            <el-option
-                label="会议室"
-                value="meeting"
-            />
-            <el-option
-                label="其他"
-                value="other"
-            />
+            <el-option :value="1" label="普通教室"/>
+            <el-option :value="2" label="多媒体教室"/>
+            <el-option :value="3" label="实验室"/>
           </el-select>
         </el-form-item>
         <el-form-item
@@ -232,35 +218,9 @@
               v-model="classroomForm.status"
               placeholder="请选择教室状态"
           >
-            <el-option
-                :value="1"
-                label="可用"
-            />
-            <el-option
-                :value="0"
-                label="维修中"
-            />
+            <el-option :value="1" label="可用"/>
+            <el-option :value="0" label="维修中"/>
           </el-select>
-        </el-form-item>
-        <el-form-item
-            label="位置"
-            prop="location"
-        >
-          <el-input
-              v-model="classroomForm.location"
-              placeholder="请输入教室位置(可选)"
-          />
-        </el-form-item>
-        <el-form-item
-            label="设备描述"
-            prop="equipment"
-        >
-          <el-input
-              v-model="classroomForm.equipment"
-              :rows="3"
-              placeholder="请输入设备描述(可选)"
-              type="textarea"
-          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -320,31 +280,28 @@ const dialogTitle = ref('添加教室');
 const classroomFormRef = ref(null);
 const classroomForm = ref({
   id: null,
+  name: '',
   building: '',
-  roomNumber: '',
-  floor: null,
-  capacity: 0,
-  type: 'normal',
-  equipment: '',
+  capacity: null,
+  roomType: null,
   status: 1,
 });
 
 const classroomFormRules = reactive({
+  name: [
+    {required: true, message: '请输入教室编号/名称', trigger: 'blur'}
+  ],
   building: [
     {required: true, message: '请输入教学楼', trigger: 'blur'}
   ],
-  roomNumber: [
-    {required: true, message: '请输入教室编号', trigger: 'blur'}
-  ],
   capacity: [
-    {required: true, message: '请输入教室容量', trigger: 'blur'},
-    {type: 'number', message: '容量必须为数字值'}
+    {required: true, type: 'number', message: '请输入教室容量', trigger: 'blur'},
   ],
-  type: [
-    {required: true, message: '请选择教室类型', trigger: 'change'}
+  roomType: [
+    {required: true, type: 'number', message: '请选择教室类型', trigger: 'change'}
   ],
   status: [
-    {required: true, message: '请选择教室状态', trigger: 'change'}
+    {required: true, type: 'number', message: '请选择教室状态', trigger: 'change'}
   ]
 });
 
@@ -393,12 +350,10 @@ const resetForm = () => {
   }
   classroomForm.value = {
     id: null,
+    name: '',
     building: '',
-    roomNumber: '',
-    floor: null,
-    capacity: 0,
-    type: 'normal',
-    equipment: '',
+    capacity: null,
+    roomType: null,
     status: 1,
   };
 };
@@ -417,14 +372,14 @@ const handleEditClassroom = (row) => {
 };
 
 const handleDeleteClassroom = (row) => {
-  ElMessageBox.confirm(`确定要删除教室 ${row.building}-${row.roomNumber} 吗?`, '提示', {
-    confirmButtonText: '确定',
+  ElMessageBox.confirm(`确定要删除教室 ${row.name} 吗?`, '警告', {
+    confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     try {
       await deleteClassroom(row.id);
-      ElMessage.success('删除成功');
+      ElMessage.success('教室删除成功');
       fetchClassrooms();
     } catch (error) {
       console.error("删除教室失败", error);
@@ -487,6 +442,16 @@ const formatTime = (timeStr) => {
   } catch (e) {
     return timeStr;
   }
+};
+
+// 格式化教室类型
+const formatRoomType = (type) => {
+  const typeMap = {
+    1: '普通教室',
+    2: '多媒体教室',
+    3: '实验室',
+  };
+  return typeMap[type] !== undefined ? typeMap[type] : '未知';
 };
 
 // 组件挂载后加载数据

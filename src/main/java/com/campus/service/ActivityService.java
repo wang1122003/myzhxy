@@ -3,6 +3,7 @@ package com.campus.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Activity;
+import com.campus.vo.ActivityRegistrationVO;
 
 import java.util.List;
 
@@ -141,4 +142,12 @@ public interface ActivityService extends IService<Activity> {
      * @return 是否参加
      */
     boolean isUserJoined(Long activityId, Long userId);
+
+    /**
+     * 获取活动报名列表 (包含报名者信息)
+     *
+     * @param activityId 活动ID
+     * @return 报名视图对象列表
+     */
+    List<ActivityRegistrationVO> getRegistrationsByActivityId(Long activityId);
 }

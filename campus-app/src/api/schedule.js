@@ -1,11 +1,12 @@
 import request from '@/api/request'
 
-const API_BASE = '/api'; // Define the base path
+// 统一API前缀，与course.js保持一致
+const API_PREFIX = '/api';
 
 // 获取所有课表
 export function getAllSchedules(params) {
     return request({
-        url: `${API_BASE}/schedules`,
+        url: `${API_PREFIX}/schedules`,
         method: 'get',
         params
     })
@@ -14,7 +15,7 @@ export function getAllSchedules(params) {
 // 获取课表详情
 export function getScheduleById(id) {
     return request({
-        url: `${API_BASE}/schedules/${id}`,
+        url: `${API_PREFIX}/schedules/${id}`,
         method: 'get'
     })
 }
@@ -22,7 +23,7 @@ export function getScheduleById(id) {
 // 添加课表
 export function addSchedule(data) {
     return request({
-        url: `${API_BASE}/schedules`,
+        url: `${API_PREFIX}/schedules`,
         method: 'post',
         data
     })
@@ -31,7 +32,7 @@ export function addSchedule(data) {
 // 更新课表
 export function updateSchedule(id, data) {
     return request({
-        url: `${API_BASE}/schedules/${id}`,
+        url: `${API_PREFIX}/schedules/${id}`,
         method: 'put',
         data
     })
@@ -40,7 +41,7 @@ export function updateSchedule(id, data) {
 // 删除课表
 export function deleteSchedule(id) {
     return request({
-        url: `${API_BASE}/schedules/${id}`,
+        url: `${API_PREFIX}/schedules/${id}`,
         method: 'delete'
     })
 }
@@ -48,7 +49,7 @@ export function deleteSchedule(id) {
 // 获取课表列表（分页）
 export function getScheduleList(params) {
     return request({
-        url: `${API_BASE}/schedules`,
+        url: `${API_PREFIX}/schedules`,
         method: 'get',
         params
     })
@@ -57,7 +58,7 @@ export function getScheduleList(params) {
 // 获取教师课表
 export function getTeacherSchedule(params) {
     return request({
-        url: `${API_BASE}/schedules/teacher`,
+        url: `${API_PREFIX}/schedules/teacher`,
         method: 'get',
         params
     })
@@ -66,7 +67,7 @@ export function getTeacherSchedule(params) {
 // 获取学生课表
 export function getStudentSchedule(params) {
     return request({
-        url: `${API_BASE}/schedules/student`,
+        url: `${API_PREFIX}/schedules/student`,
         method: 'get',
         params
     })
@@ -75,7 +76,7 @@ export function getStudentSchedule(params) {
 // 获取教室课表
 export function getClassroomSchedule(params) {
     return request({
-        url: `${API_BASE}/schedules/classroom`,
+        url: `${API_PREFIX}/schedules/classroom`,
         method: 'get',
         params
     })
@@ -84,7 +85,7 @@ export function getClassroomSchedule(params) {
 // 管理员自动生成课表
 export function generateSchedule(data) {
     return request({
-        url: `${API_BASE}/admin/schedule/generate`,
+        url: `${API_PREFIX}/admin/schedule/generate`,
         method: 'post',
         data
     })
@@ -93,7 +94,7 @@ export function generateSchedule(data) {
 // 管理员创建课表
 export function createSchedule(data) {
     return request({
-        url: `${API_BASE}/schedules`,
+        url: `${API_PREFIX}/schedules`,
         method: 'post',
         data
     })
@@ -102,7 +103,7 @@ export function createSchedule(data) {
 // 批量生成课表
 export function batchGenerateSchedule(data) {
     return request({
-        url: `${API_BASE}/schedules/batch-generate`,
+        url: `${API_PREFIX}/schedules/batch-generate`,
         method: 'post',
         data
     })
@@ -111,7 +112,7 @@ export function batchGenerateSchedule(data) {
 // 批量删除课表
 export function batchDeleteSchedule(ids) {
     return request({
-        url: `${API_BASE}/schedules/batch`,
+        url: `${API_PREFIX}/schedules/batch`,
         method: 'delete',
         data: {ids}
     })

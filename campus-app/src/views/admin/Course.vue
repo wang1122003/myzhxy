@@ -85,20 +85,6 @@
         />
         <!-- 可以添加院系、类型等字段 -->
         <el-table-column
-            label="状态"
-            prop="status"
-            width="80"
-        >
-          <template #default="scope">
-            <el-switch
-                v-model="scope.row.status"
-                :active-value="1"
-                :inactive-value="0"
-                @change="handleStatusChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
             label="创建时间"
             prop="createTime"
             width="180"
@@ -286,7 +272,7 @@ import {
   ElTableColumn
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {addCourse, deleteCourse, getCourseList, updateCourse, updateCourseStatus} from '@/api/course';
+import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 
 const loading = ref(false);
 const courseList = ref([]);
@@ -347,7 +333,7 @@ const fetchCourses = async () => {
       status: searchParams.status
     };
     const res = await getCourseList(params);
-    courseList.value = res.data.list || [];
+    courseList.value = res.data.records || [];
     total.value = res.data.total || 0;
   } catch (error) {
     console.error("获取课程列表失败", error);
@@ -420,19 +406,6 @@ const handleDeleteCourse = (row) => {
   }).catch(() => {
     ElMessage.info('已取消删除');
   });
-};
-
-const handleStatusChange = async (row) => {
-  const originalStatus = row.status === 1 ? 0 : 1;
-  const actionText = row.status === 1 ? '启用' : '禁用';
-  try {
-    await updateCourseStatus(row.id, row.status);
-    ElMessage.success(`课程 ${row.courseName} 已${actionText}`);
-  } catch (error) {
-    console.error("更新课程状态失败", error);
-    ElMessage.error(`更新课程 ${row.courseName} 状态失败`);
-    row.status = originalStatus;
-  }
 };
 
 const submitCourseForm = () => {

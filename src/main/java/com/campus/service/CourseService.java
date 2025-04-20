@@ -76,14 +76,6 @@ public interface CourseService {
     boolean batchDeleteCourses(Long[] ids);
     
     /**
-     * 修改课程状态
-     * @param id 课程ID
-     * @param status 状态值
-     * @return 是否成功
-     */
-    boolean updateCourseStatus(Long id, Integer status);
-    
-    /**
      * 分页查询课程列表
      * @param pageNum 页码
      * @param pageSize 每页大小

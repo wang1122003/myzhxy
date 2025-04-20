@@ -548,6 +548,7 @@ const fetchActivities = async () => {
       status: searchParams.status
     };
     const res = await getActivityList(params);
+    // 直接使用返回的对象列表格式
     activityList.value = res.data.list || [];
     total.value = res.data.total || 0;
   } catch (error) {

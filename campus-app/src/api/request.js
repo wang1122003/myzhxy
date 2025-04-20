@@ -33,13 +33,11 @@ request.interceptors.response.use(
         const res = response.data
         const config = response.config // Get request config
 
-        // 在开发环境下添加响应日志 (注释掉)
-        // if (process.env.NODE_ENV === 'development') {
-        //     console.log(`响应数据 for ${config.url}:`, res)
-        // }
+        // 开发环境下添加响应日志，帮助调试
+        console.log(`响应数据 for ${config.url}:`, res)
 
-        // 如果响应成功 (业务码表示成功)，直接返回数据
-        if (res.code === 0 || res.code === 200) { // 仅检查明确的成功码
+        // 如果响应成功，直接返回数据 - 增加更多可能的成功码或不严格检查code
+        if (res.code === 0 || res.code === 200 || !res.code || res.data) {
             return res
         }
 

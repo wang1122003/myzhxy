@@ -1,6 +1,8 @@
 package com.campus.controller;
 
 // import com.campus.dto.ScheduleDTO; // 移除未使用
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Schedule;
 import com.campus.entity.User;
 import com.campus.exception.CustomException;
@@ -12,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,47 +33,42 @@ public class ScheduleController {
     private AuthService authService;
 
     /**
-     * 获取课表列表
+     * 获取课表列表 (支持分页和筛选)
      * @param termId 学期ID
-     * @param courseId 课程ID
-     * @param teacherId 教师ID
-     * @param classroomId 教室ID
-     * @param classId 班级ID
-     * @return 课表列表
+     * @param courseName 课程名称 (用于模糊查询)
+     * @param teacherName 教师名称 (用于模糊查询)
+     * @param className 班级名称 (用于模糊查询)
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页后的课表列表
      */
     @GetMapping
     public Result getSchedules(
-            @RequestParam(value = "termId", required = false) Long termId,
-            @RequestParam(value = "courseId", required = false) Long courseId,
-            @RequestParam(value = "teacherId", required = false) Long teacherId,
-            @RequestParam(value = "classroomId", required = false) Long classroomId,
-            @RequestParam(value = "classId", required = false) Long classId) {
-        
+            @RequestParam(required = false) Long termId,
+            @RequestParam(required = false) String courseName,
+            @RequestParam(required = false) String teacherName,
+            @RequestParam(required = false) String className,
+            @RequestParam(required = false) Long classroomId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
         try {
-            List<Schedule> schedules;
-            
-            // 根据不同的查询条件组合返回不同的结果
-            if (termId != null && teacherId != null) {
-                schedules = scheduleService.getSchedulesByTeacherIdAndTermId(teacherId, termId);
-            } else if (termId != null && classId != null) {
-                schedules = scheduleService.getSchedulesByClassIdAndTermId(classId, termId);
-            } else if (termId != null && classroomId != null) {
-                schedules = scheduleService.getSchedulesByClassroomIdAndTermId(classroomId, termId);
-            } else if (termId != null) {
-                schedules = scheduleService.getSchedulesByTermId(termId);
-            } else if (teacherId != null) {
-                schedules = scheduleService.getSchedulesByTeacherId(teacherId);
-            } else if (courseId != null) {
-                schedules = scheduleService.getSchedulesByCourseId(courseId);
-            } else if (classroomId != null) {
-                schedules = scheduleService.getSchedulesByClassroomId(classroomId);
-            } else if (classId != null) {
-                schedules = scheduleService.getSchedulesByClassId(classId);
-            } else {
-                schedules = scheduleService.getAllSchedules();
+            Map<String, Object> params = new HashMap<>();
+            if (termId != null) params.put("termId", termId);
+            if (courseName != null && !courseName.isEmpty()) params.put("courseName", courseName);
+            if (teacherName != null && !teacherName.isEmpty()) params.put("teacherName", teacherName);
+            if (className != null && !className.isEmpty()) params.put("className", className);
+            if (classroomId != null) params.put("classroomId", classroomId);
+
+            IPage<Schedule> schedulePage = scheduleService.getSchedulesPage(params, page, size);
+
+            // 添加判断，如果列表为空，可以返回更具体的消息
+            if (schedulePage.getRecords() == null || schedulePage.getRecords().isEmpty()) {
+                return Result.success("未查询到符合条件的课表记录", schedulePage);
             }
-            
-            return Result.success(schedules);
+
+            return Result.success(schedulePage);
+
         } catch (Exception e) {
             log.error("获取课表列表失败", e);
             return Result.error("获取课表列表失败: " + e.getMessage());
@@ -203,52 +200,6 @@ public class ScheduleController {
         } catch (Exception e) {
             log.error("批量删除课表失败", e);
             return Result.error("批量删除课表失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 批量生成课表
-     * @param params 参数
-     * @return 生成结果
-     */
-    @PostMapping("/batch-generate")
-    public Result batchGenerateSchedules(@RequestBody Map<String, Object> params) {
-        try {
-            // 添加类型检查和转换
-            if (!params.containsKey("termId") || !params.containsKey("options")) {
-                return Result.error("参数不完整");
-            }
-            
-            Long termId;
-            try {
-                termId = Long.parseLong(params.get("termId").toString());
-            } catch (NumberFormatException e) {
-                return Result.error("学期ID格式错误");
-            }
-
-            @SuppressWarnings("unchecked") // 类型转换警告
-            Map<String, Boolean> options = (Map<String, Boolean>) params.get("options");
-            
-            // 验证参数
-            if (termId == null) {
-                return Result.error("学期不能为空");
-            }
-            
-            if (options == null) {
-                return Result.error("选项不能为空");
-            }
-            
-            // TODO: 实现批量生成课表的逻辑
-            // 这里需要根据项目实际情况实现较复杂的排课算法
-            // 1. 获取所有课程、教师、教室、班级等数据
-            // 2. 根据各种约束条件（如教师和教室不能冲突、均衡负担等）进行排课
-            // 3. 生成课表数据并保存到数据库
-            
-            // 模拟批量生成成功
-            return Result.success("课表批量生成成功");
-        } catch (Exception e) {
-            log.error("批量生成课表失败", e);
-            return Result.error("批量生成课表失败: " + e.getMessage());
         }
     }
     

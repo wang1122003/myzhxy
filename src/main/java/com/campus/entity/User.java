@@ -110,6 +110,11 @@ public class User implements Serializable, UserDetails {
     // --- UserDetails 实现 --- 
 
     @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 根据 userType 返回对应的角色权限
         String roleName = null;

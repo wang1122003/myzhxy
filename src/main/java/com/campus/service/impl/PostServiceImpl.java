@@ -96,8 +96,8 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         if (post.getCommentCount() == null) post.setCommentCount(0);
         if (post.getLikeCount() == null) post.setLikeCount(0);
         if (post.getStatus() == null) post.setStatus(1);
-        if (post.getIsTop() == null) post.setIsTop(0);
-        if (post.getIsEssence() == null) post.setIsEssence(0);
+        if (post.getIsTop() == null) post.setIsTop(false);
+        if (post.getIsEssence() == null) post.setIsEssence(false);
         return save(post);
     }
 
@@ -131,7 +131,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean setPostTop(Long id, Integer isTop) {
         Post post = new Post();
         post.setId(id);
-        post.setIsTop(isTop);
+        post.setIsTop(isTop == 1);
         post.setUpdateTime(new Date());
         
         return postDao.update(post) > 0;
@@ -142,7 +142,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean setPostEssence(Long id, Integer isEssence) {
         Post post = new Post();
         post.setId(id);
-        post.setIsEssence(isEssence);
+        post.setIsEssence(isEssence == 1);
         post.setUpdateTime(new Date());
         
         return postDao.update(post) > 0;
@@ -457,24 +457,41 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @Transactional
     public boolean createPost(Post post) {
-        // 设置默认值
-        post.setViewCount(0);
-        post.setLikeCount(0);
-        post.setCommentCount(0);
-        post.setStatus(1);
-        post.setIsTop(0);
-        post.setIsEssence(0);
-        post.setCreateTime(new Date());
-        post.setUpdateTime(new Date());
+        log.info("Creating post with title: {}", post.getTitle());
 
-        // 设置作者ID
-        Long currentUserId = getCurrentUserIdFromRequest();
-        if (currentUserId == null) {
-            throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
+        // 设置默认值并验证必填字段
+        if (post.getAuthorId() == null && request != null) {
+            post.setAuthorId(getCurrentUserIdFromRequest()); // 从当前请求获取用户ID
         }
-        post.setAuthorId(currentUserId);
 
-        return this.save(post);
+        if (post.getAuthorId() == null) {
+            log.warn("Cannot create post without author ID");
+            return false;
+        }
+
+        // 设置创建和更新时间
+        Date now = new Date();
+        post.setCreateTime(now);
+        post.setUpdateTime(now);
+        
+        // 设置默认值
+        post.setViewCount(post.getViewCount() == null ? 0 : post.getViewCount());
+        post.setLikeCount(post.getLikeCount() == null ? 0 : post.getLikeCount());
+        post.setCommentCount(post.getCommentCount() == null ? 0 : post.getCommentCount());
+        post.setStatus(post.getStatus() == null ? 1 : post.getStatus());
+        post.setIsTop(post.getIsTop() != null && post.getIsTop());
+        post.setIsEssence(post.getIsEssence() != null && post.getIsEssence());
+
+        // 修复类型不匹配问题
+        boolean result = save(post);
+
+        if (result) {
+            log.info("Post created successfully with ID: {}", post.getId());
+        } else {
+            log.warn("Failed to create post");
+        }
+
+        return result;
     }
 
     @Override

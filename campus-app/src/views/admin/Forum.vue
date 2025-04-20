@@ -484,11 +484,9 @@ const fetchPosts = async () => {
     }
 
     const res = await searchPosts(params);
-    if (res.code === 200 && res.data) {
-      forumList.value = res.data.rows || [];
-      total.value = res.data.total || 0;
-    } else if (res.success && res.data) {
-      forumList.value = res.data.list || [];
+    // 直接使用返回的数据格式
+    if (res.data && res.data.rows) {
+      forumList.value = res.data.rows;
       total.value = res.data.total || 0;
     } else {
       console.error("获取帖子列表响应格式错误:", res);

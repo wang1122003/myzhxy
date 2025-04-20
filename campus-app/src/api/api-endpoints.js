@@ -85,6 +85,7 @@ export const ACTIVITY_API = {
 // 通知相关接口
 export const NOTICE_API = {
     GET_ALL: '/notifications/all',
+    GET_PAGE: '/notifications/page',
     GET_BY_ID: '/notifications/:id',
     GET_BY_TYPE: '/notifications/type/:noticeType',
     GET_BY_STATUS: '/notifications/status/:status',

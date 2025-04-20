@@ -40,27 +40,22 @@
     <el-card class="user-list-card">
       <el-table v-loading="loading" :data="userList" style="width: 100%">
         <el-table-column label="用户名" min-width="120" prop="username"/>
-        <el-table-column label="姓名" prop="name" width="120"/>
-        <el-table-column label="角色" prop="role" width="100">
+        <el-table-column label="姓名" prop="realName" width="120"/>
+        <el-table-column label="角色" prop="userType" width="100">
           <template #default="scope">
-            <el-tag :type="getRoleTagType(scope.row.role)">{{ formatRole(scope.row.role) }}</el-tag>
+            <el-tag :type="getRoleTagType(scope.row.userType)">{{ formatRole(scope.row.userType) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="邮箱" min-width="180" prop="email"/>
         <el-table-column label="手机号" prop="phone" width="150"/>
-        <el-table-column label="状态" prop="status" width="80">
+        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
             <el-switch
                 v-model="scope.row.status"
-                :active-value="1"
-                :inactive-value="0"
+                active-value="Active"
+                inactive-value="Inactive"
                 @change="handleStatusChange(scope.row)"
             />
-          </template>
-        </el-table-column>
-        <el-table-column label="最后登录时间" prop="lastLoginTime" width="180">
-          <template #default="scope">
-            {{ formatTime(scope.row.lastLoginTime) }}
           </template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="200">
@@ -98,14 +93,14 @@
         <el-form-item v-if="!isEditMode" label="密码" prop="password">
           <el-input v-model="userForm.password" placeholder="请输入初始密码" show-password type="password"/>
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="userForm.name" placeholder="请输入姓名"/>
+        <el-form-item label="姓名" prop="realName">
+          <el-input v-model="userForm.realName" placeholder="请输入姓名"/>
         </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" placeholder="请选择角色">
-            <el-option label="管理员" value="admin"/>
-            <el-option label="教师" value="teacher"/>
-            <el-option label="学生" value="student"/>
+        <el-form-item label="角色" prop="userType">
+          <el-select v-model="userForm.userType" placeholder="请选择角色">
+            <el-option label="管理员" value="Admin"/>
+            <el-option label="教师" value="Teacher"/>
+            <el-option label="学生" value="Student"/>
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -117,8 +112,8 @@
         <el-form-item label="状态" prop="status">
           <el-switch
               v-model="userForm.status"
-              :active-value="1"
-              :inactive-value="0"
+              active-value="Active"
+              inactive-value="Inactive"
               active-text="正常"
               inactive-text="禁用"
           />
@@ -172,33 +167,37 @@ const dialogVisible = ref(false);
 const dialogTitle = ref('添加用户');
 const userFormRef = ref(null); // 表单引用
 const userForm = ref({
+  id: null,
   username: '',
+  password: '',
+  realName: '',
+  userType: '',
   email: '',
-  role: '',
-  status: 1
+  phone: '',
+  status: 'Active'
 });
+
+// 计算属性判断是添加还是编辑模式
+const isEditMode = computed(() => !!userForm.value.id);
+
 const userFormRules = reactive({ // 表单验证规则
   username: [
     {required: true, message: '请输入用户名', trigger: 'blur'},
     {min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur'}
   ],
   password: [
-    {required: true, message: '请输入初始密码', trigger: 'blur'},
+    {required: !isEditMode.value, message: '请输入初始密码', trigger: 'blur'},
     {min: 6, message: '密码长度至少为 6 位', trigger: 'blur'}
   ],
-  name: [{required: true, message: '请输入姓名', trigger: 'blur'}],
-  role: [{required: true, message: '请选择角色', trigger: 'change'}],
+  realName: [{required: true, message: '请输入姓名', trigger: 'blur'}],
+  userType: [{required: true, message: '请选择角色', trigger: 'change'}],
   email: [
     {type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change']}
   ],
   phone: [
-    // 简单校验，可根据需要加强
     {pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur'}
   ]
 });
-
-// 计算属性判断是添加还是编辑模式
-const isEditMode = computed(() => !!userForm.value.id);
 
 // 获取用户列表
 const fetchUsers = async () => {
@@ -212,7 +211,7 @@ const fetchUsers = async () => {
       status: searchParams.status
     };
     const res = await getUserList(params);
-    userList.value = res.data.list || [];
+    userList.value = res.data.rows || [];
     total.value = res.data.total || 0;
   } catch (error) {
     console.error("获取用户列表失败", error);
@@ -244,36 +243,32 @@ const handleCurrentChange = (val) => {
 // 重置表单
 const resetForm = () => {
   if (userFormRef.value) {
-    userFormRef.value.resetFields(); // 重置表单项为初始值
+    userFormRef.value.resetFields();
   }
-  // 手动重置不在 resetFields 范围内的字段或需要特定初始值的字段
   userForm.value = {
-    id: null, // 确保 id 被清空
+    id: null,
     username: '',
-    password: '', // 清空密码字段
-    name: '',
-    role: '',
+    password: '',
+    realName: '',
+    userType: '',
     email: '',
     phone: '',
-    status: 1 // 默认状态为 1 (正常)
+    status: 'Active'
   };
 };
 
 // 添加用户（打开对话框）
 const handleAddUser = () => {
-  resetForm(); // 先重置表单
   dialogTitle.value = '添加用户';
+  resetForm(); // Use resetForm to initialize
   dialogVisible.value = true;
 };
 
 // 编辑用户（打开对话框）
 const handleEditUser = (row) => {
-  resetForm(); // 先重置，防止数据污染
   dialogTitle.value = '编辑用户';
-  // 使用 Object.assign 或扩展运算符复制数据，避免直接引用
-  userForm.value = {...row};
-  // 编辑时通常不直接修改密码，password 字段留空或在 userForm 中移除
-  delete userForm.value.password; // 从表单数据中移除密码字段
+  // Shallow copy might be enough, or deep copy if needed
+  userForm.value = {...row, password: ''}; // Don't populate password for edit
   dialogVisible.value = true;
 };
 
@@ -283,7 +278,7 @@ const handleDeleteUser = (row) => {
     ElMessage.warning('不能删除超级管理员账号');
     return;
   }
-  ElMessageBox.confirm(`确定要删除用户 ${row.name} (${row.username}) 吗? 此操作不可恢复。`, '警告', {
+  ElMessageBox.confirm(`确定要删除用户 ${row.realName} (${row.username}) 吗? 此操作不可恢复。`, '警告', {
     confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'warning'
@@ -303,7 +298,7 @@ const handleDeleteUser = (row) => {
 
 // 重置密码
 const handleResetPassword = (row) => {
-  ElMessageBox.confirm(`确定要重置用户 ${row.name} (${row.username}) 的密码吗? 新密码将是默认密码（例如 '123456'）。`, '提示', {
+  ElMessageBox.confirm(`确定要重置用户 ${row.realName} (${row.username}) 的密码吗? 新密码将是默认密码（例如 '123456'）。`, '提示', {
         confirmButtonText: '确定重置',
         cancelButtonText: '取消',
         type: 'warning',
@@ -325,16 +320,17 @@ const handleResetPassword = (row) => {
 
 // 更改用户状态
 const handleStatusChange = async (row) => {
-  const originalStatus = row.status === 1 ? 0 : 1; // 记录原始状态的反状态，用于失败时回滚
-  const actionText = row.status === 1 ? '启用' : '禁用';
+  const newStatus = row.status;
+  const statusText = newStatus === 'Active' ? '启用' : '禁用';
   try {
-    await updateUserStatus(row.id, row.status); // 假设 API 是 updateUserStatus(userId, status)
-    ElMessage.success(`用户 ${row.username} 已${actionText}`);
+    await updateUserStatus(row.id, newStatus);
+    ElMessage.success(`${statusText}成功`);
+    // No need to refetch, v-model already updated the local state
   } catch (error) {
-    console.error(`更新用户状态失败 for ${row.username}`, error);
-    ElMessage.error(`更新用户 ${row.username} 状态失败`);
-    // 状态改回去
-    row.status = originalStatus;
+    console.error(`更新用户状态失败 (ID: ${row.id})`, error);
+    ElMessage.error(`${statusText}失败`);
+    // Revert switch state on error
+    row.status = newStatus === 'Active' ? 'Inactive' : 'Active';
   }
 };
 
@@ -369,34 +365,19 @@ const submitUserForm = () => {
 };
 
 // 格式化角色显示
-const formatRole = (role) => {
-  const roleMap = {
-    admin: '管理员',
-    teacher: '教师',
-    student: '学生'
-  };
-  return roleMap[role] || role;
+const formatRole = (userType) => {
+  if (userType === 'Admin') return '管理员';
+  if (userType === 'Teacher') return '教师';
+  if (userType === 'Student') return '学生';
+  return userType || '未知';
 };
 
 // 获取角色标签类型
-const getRoleTagType = (role) => {
-  const typeMap = {
-    admin: 'danger',
-    teacher: 'success',
-    student: 'primary'
-  };
-  return typeMap[role] || 'info';
-};
-
-// 格式化时间
-const formatTime = (timeStr) => {
-  if (!timeStr) return '-';
-  try {
-    const date = new Date(timeStr);
-    return date.toLocaleString('zh-CN', {hour12: false});
-  } catch (e) {
-    return timeStr;
-  }
+const getRoleTagType = (userType) => {
+  if (userType === 'Admin') return 'danger';
+  if (userType === 'Teacher') return 'success';
+  if (userType === 'Student') return ''; // Default type
+  return 'info';
 };
 
 // 组件挂载后加载数据

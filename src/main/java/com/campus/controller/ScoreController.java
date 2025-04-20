@@ -6,6 +6,7 @@ import com.campus.entity.User;
 import com.campus.service.AuthService;
 import com.campus.service.ScoreService;
 import com.campus.utils.Result;
+import com.campus.vo.ScoreVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,7 +107,7 @@ public class ScoreController {
      */
     @GetMapping("/student/{studentId}")
     public Result getStudentScores(@PathVariable Long studentId) {
-        List<Score> scores = scoreService.getStudentScores(studentId);
+        List<ScoreVO> scores = scoreService.getStudentScores(studentId);
         return Result.success(scores);
     }
 
@@ -136,7 +137,7 @@ public class ScoreController {
         // 假设学生有特定的 userType 或根据登录用户ID检索
         // if (currentUser.getUserType() != 3) { ... return Result.error(403, ...); }
 
-        List<Score> scores = scoreService.getStudentScores(currentUser.getId());
+        List<ScoreVO> scores = scoreService.getStudentScores(currentUser.getId());
         return Result.success(scores);
     }
 

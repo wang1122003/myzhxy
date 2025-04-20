@@ -37,7 +37,7 @@
                 <el-button
                     :class="{'active-like': post.liked}"
                     :loading="likeLoading"
-                    type="text"
+                    type="link"
                     @click="handleLike"
                 >
                   <el-icon>
@@ -46,7 +46,7 @@
                   <span>{{ post.likeCount || 0 }}</span>
                 </el-button>
 
-                <el-button type="text">
+                <el-button type="link">
                   <el-icon>
                     <View/>
                   </el-icon>
@@ -132,7 +132,7 @@
                     :class="{'active-like': comment.liked}"
                     :loading="comment.likeLoading"
                     size="small"
-                    type="text"
+                    type="link"
                     @click="handleLikeComment(comment)"
                 >
                   <el-icon>
@@ -143,7 +143,7 @@
 
                 <el-button
                     size="small"
-                    type="text"
+                    type="link"
                     @click="handleReply(comment)"
                 >
                   <el-icon>
@@ -195,7 +195,7 @@
                         :class="{'active-like': subComment.liked}"
                         :loading="subComment.likeLoading"
                         size="small"
-                        type="text"
+                        type="link"
                         @click="handleLikeComment(subComment)"
                     >
                       <el-icon>
@@ -206,7 +206,7 @@
 
                     <el-button
                         size="small"
-                        type="text"
+                        type="link"
                         @click="handleReply(comment, subComment)"
                     >
                       <el-icon>

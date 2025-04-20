@@ -49,7 +49,7 @@ export function deleteNotification(id) {
 // 获取通知列表（分页）
 export function getNotificationList(params) {
     return request({
-        url: `${API_BASE}${NOTICE_API.GET_ALL}`,
+        url: `${API_BASE}${NOTICE_API.GET_PAGE}`,
         method: 'get',
         params
     })

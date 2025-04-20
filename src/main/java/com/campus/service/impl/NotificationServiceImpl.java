@@ -10,12 +10,9 @@ import com.campus.dao.NotificationDao;
 import com.campus.dao.NotificationReceiverDao;
 import com.campus.dao.UserDao;
 import com.campus.entity.Notification;
-import com.campus.entity.NotificationAttachment;
 import com.campus.entity.NotificationReceiver;
-import com.campus.enums.NotificationStatusEnum;
 import com.campus.exception.CustomException;
 import com.campus.service.NotificationService;
-import com.campus.utils.ThreadLocalUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +42,6 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
 
     @Autowired
     private NotificationAttachmentDao notificationAttachmentDao;
-
-    @Autowired
-    private NotificationReadDao notificationReadDao;
 
     @Override
     public Notification getNotificationWithAttachments(Long id) {
@@ -90,32 +84,10 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
     @Transactional
     public boolean addNotification(Notification notification) {
         log.info("新增通知: {}", notification);
-        Account currentUser = ThreadLocalUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new CustomException("用户未登录");
-        }
-        notification.setPublisherId(currentUser.getUserId());
         notification.setCreateTime(new Date());
         notification.setUpdateTime(new Date());
-        if (notification.getStatus() == null) {
-            notification.setStatus(NotificationStatusEnum.DRAFT.getStatus()); // 默认为草稿
-        }
 
         int inserted = notificationDao.insert(notification);
-        if (inserted > 0 && !CollectionUtils.isEmpty(notification.getAttachmentIds())) {
-            Long notificationId = notification.getId();
-            Date now = new Date();
-            List<NotificationAttachment> attachments = notification.getAttachmentIds().stream()
-                    .map(attachmentId -> {
-                        NotificationAttachment na = new NotificationAttachment();
-                        na.setNotificationId(notificationId);
-                        na.setAttachmentId(attachmentId);
-                        na.setCreateTime(now);
-                        return na;
-                    }).collect(Collectors.toList());
-            attachments.forEach(notificationAttachmentDao::insert); // 批量插入
-            log.info("为通知 {} 关联了 {} 个附件", notificationId, attachments.size());
-        }
         return inserted > 0;
     }
 
@@ -133,60 +105,20 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
             notification.setSenderId(notification.getPublisherId());
         }
         boolean success = save(notification);
-        if (!success) {
-            log.error("保存通知到数据库失败: {}", notification);
-            return false;
-        }
-        // TODO: 实现附件关联逻辑
-        if (attachmentIds != null && !attachmentIds.isEmpty()) {
-            for (Long attachmentId : attachmentIds) {
-                NotificationAttachment notificationAttachment = new NotificationAttachment();
-                notificationAttachment.setNotificationId(notification.getId());
-                notificationAttachment.setAttachmentId(attachmentId);
-                notificationAttachment.setCreateTime(new Date());
-                notificationAttachmentDao.insert(notificationAttachment);
-            }
-        }
-        return true;
+        return success;
     }
 
     @Override
     @Transactional
     public boolean updateNotification(Notification notification) {
         log.info("更新通知: {}", notification);
-        Account currentUser = ThreadLocalUtil.getCurrentUser();
-        if (currentUser == null) {
-            throw new CustomException("用户未登录");
-        }
         Notification existingNotification = notificationDao.selectById(notification.getId());
         if (existingNotification == null) {
             throw new CustomException("通知不存在");
         }
         notification.setUpdateTime(new Date());
 
-        // 先删除旧的关联
-        LambdaQueryWrapper<NotificationAttachment> deleteWrapper = new LambdaQueryWrapper<>();
-        deleteWrapper.eq(NotificationAttachment::getNotificationId, notification.getId());
-        int deletedAttachments = notificationAttachmentDao.delete(deleteWrapper);
-        log.info("更新通知 {} 时，删除了 {} 条旧附件关联", notification.getId(), deletedAttachments);
-
         int updated = notificationDao.updateById(notification);
-
-        // 再添加新的关联
-        if (updated > 0 && !CollectionUtils.isEmpty(notification.getAttachmentIds())) {
-            Long notificationId = notification.getId();
-            Date now = new Date();
-            List<NotificationAttachment> attachments = notification.getAttachmentIds().stream()
-                    .map(attachmentId -> {
-                        NotificationAttachment na = new NotificationAttachment();
-                        na.setNotificationId(notificationId);
-                        na.setAttachmentId(attachmentId);
-                        na.setCreateTime(now);
-                        return na;
-                    }).collect(Collectors.toList());
-            attachments.forEach(notificationAttachmentDao::insert);
-            log.info("为通知 {} 新关联了 {} 个附件", notificationId, attachments.size());
-        }
         return updated > 0;
     }
 
@@ -201,15 +133,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
             notification.setSenderId(notification.getPublisherId());
         }
         boolean success = updateById(notification);
-        if (!success) {
-            log.error("更新通知到数据库失败: {}", notification);
-            return false;
-        }
-        // TODO: 实现附件更新逻辑
-        if (true) {
-            // ... (删除旧附件，添加新附件逻辑) ...
-        }
-        return true;
+        return success;
     }
 
     @Override
@@ -218,40 +142,17 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
         log.info("删除通知 ID: {}", id);
         // 1. 删除通知本身
         boolean deleted = removeById(id);
-        // 2. 删除关联的附件记录 (如果存在)
-        if (deleted) {
-            deleteNotificationAttachmentsByNotificationId(id);
-        }
         return deleted;
-    }
-
-    /**
-     * 根据通知 ID 删除关联的附件记录
-     *
-     * @param notificationId 通知 ID
-     */
-    private void deleteNotificationAttachmentsByNotificationId(Long notificationId) {
-        LambdaQueryWrapper<NotificationAttachment> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(NotificationAttachment::getNotificationId, notificationId);
-        notificationAttachmentDao.delete(wrapper);
-        // TODO: 删除附件
     }
 
     @Override
     @Transactional
-    public boolean batchDeleteNotifications(Long[] ids) {
-        if (ids == null || ids.length == 0) {
+    public boolean batchDeleteNotifications(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
             return false;
         }
         // 1. 批量删除通知
-        boolean deleted = removeByIds(Arrays.asList(ids));
-        // 2. 批量删除关联的附件记录
-        if (deleted) {
-            for (Long id : ids) {
-                deleteNotificationAttachmentsByNotificationId(id);
-            }
-        }
-        // TODO: 批量删除附件
+        boolean deleted = removeByIds(ids);
         return deleted;
     }
 

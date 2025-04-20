@@ -227,25 +227,25 @@ public class CourseController {
         }
     }
 
-    /**
-     * 更新课程状态
-     * 
-     * @param id 课程ID
-     * @param status 课程状态
-     * @return 更新结果
-     */
-    @PutMapping("/{id}/status/{status}")
-    public Result updateCourseStatus(@PathVariable Long id, @PathVariable Integer status) {
-        try {
-            boolean result = courseService.updateCourseStatus(id, status);
-            if (result) {
-                return Result.success("状态更新成功");
-            } else {
-                return Result.error("状态更新失败");
-            }
-        } catch (Exception e) {
-            log.error("更新课程状态失败 (ID: {}, Status: {})", id, status, e);
-            return Result.error("状态更新失败: " + e.getMessage());
-        }
-    }
+    // /**
+    //  * 更新课程状态
+    //  * 
+    //  * @param id 课程ID
+    //  * @param status 课程状态
+    //  * @return 更新结果
+    //  */
+    // @PutMapping("/{id}/status/{status}")
+    // public Result updateCourseStatus(@PathVariable Long id, @PathVariable Integer status) {
+    //     try {
+    //         boolean result = courseService.updateCourseStatus(id, status);
+    //         if (result) {
+    //             return Result.success("状态更新成功");
+    //         } else {
+    //             return Result.error("状态更新失败");
+    //         }
+    //     } catch (Exception e) {
+    //         log.error("更新课程状态失败 (ID: {}, Status: {})", id, status, e);
+    //         return Result.error("状态更新失败: " + e.getMessage());
+    //     }
+    // }
 }

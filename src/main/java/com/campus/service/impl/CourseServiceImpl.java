@@ -105,12 +105,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     }
 
     @Override
-    @Transactional
-    public boolean updateCourseStatus(Long id, Integer status) {
-        return baseMapper.updateStatus(id, status) > 0;
-    }
-    
-    @Override
     public IPage<Course> getCoursesByPage(int pageNum, int pageSize) {
         IPage<Course> page = new Page<>(pageNum, pageSize);
         return this.page(page);

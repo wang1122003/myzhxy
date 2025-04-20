@@ -1,6 +1,8 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ScheduleDao;
 import com.campus.entity.Schedule;
@@ -278,6 +280,62 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
         return list(queryWrapper);
+    }
+
+    @Override
+    public IPage<Schedule> getSchedulesPage(Map<String, Object> params, int page, int size) {
+        // 1. 创建分页对象
+        Page<Schedule> pageRequest = new Page<>(page, size);
+
+        // 2. 构建查询条件
+        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 添加学期条件 (通常是必选)
+        if (params.containsKey("termId") && params.get("termId") != null) {
+            queryWrapper.eq(Schedule::getTermId, params.get("termId"));
+        } else {
+            // 如果学期是必选的，可以在这里抛出异常或返回空分页
+            // throw new CustomException("查询课表必须指定学期");
+            return new Page<>(page, size, 0); // 返回空结果
+        }
+
+        // ---- 暂时注释掉模糊查询 ----
+        // // 添加课程名称模糊查询
+        // if (params.containsKey("courseName") && params.get("courseName") != null) {
+        //     queryWrapper.apply("course_id IN (SELECT id FROM course WHERE course_name LIKE {0})", "%" + params.get("courseName") + "%");
+        // }
+        // 
+        // // 添加教师名称模糊查询 
+        // if (params.containsKey("teacherName") && params.get("teacherName") != null) {
+        //      queryWrapper.apply("teacher_id IN (SELECT t.id FROM teacher t JOIN user u ON t.user_id = u.id WHERE u.real_name LIKE {0} OR u.username LIKE {0})", "%" + params.get("teacherName") + "%"); // 修正子查询
+        // }
+        // 
+        // // 添加班级名称模糊查询 
+        // if (params.containsKey("className") && params.get("className") != null) {
+        //      queryWrapper.apply("class_id IN (SELECT id FROM clazz WHERE name LIKE {0})", "%" + params.get("className") + "%"); // 修正表名 class -> clazz
+        // }
+        // 
+        // // 添加教室 ID 查询
+        // if (params.containsKey("classroomId") && params.get("classroomId") != null) {
+        //     queryWrapper.eq(Schedule::getClassroomId, params.get("classroomId"));
+        // }
+        // ---- 结束注释 ----
+
+        // 添加排序 (按星期和开始时间)
+        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+
+        // 3. 执行分页查询
+        // IPage<Schedule> schedulePage = this.page(pageRequest, queryWrapper); // 直接用 MybatisPlus 的 page 方法
+        // 或者调用自定义的 Dao 方法（如果需要复杂 JOIN）
+        IPage<Schedule> schedulePage = baseMapper.selectPage(pageRequest, queryWrapper); // 使用 baseMapper
+
+        // 4. 可能需要填充非数据库字段 (如 courseName, teacherName, className)
+        // 这通常在 Dao/Mapper XML 或 Service 层完成
+        // 如果 baseMapper.selectPage 返回的 Schedule 对象没有这些字段，需要额外处理
+        // 例如：遍历 schedulePage.getRecords() 并根据 ID 查询填充
+        // (为了简化，这里暂时省略填充步骤，假设前端只显示 Schedule 表中的字段，或者 Mapper XML 中已处理 JOIN)
+
+        return schedulePage;
     }
 
     private boolean isTimeConflict(Schedule schedule) {

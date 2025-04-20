@@ -3,13 +3,7 @@
     <div class="page-header">
       <h2>课表管理</h2>
       <div>
-        <!-- 可以添加自动排课等按钮 -->
-        <el-button
-            type="warning"
-            @click="handleAutoSchedule"
-        >
-          自动排课
-        </el-button>
+        <!-- 移除 "自动排课" 按钮 -->
         <el-button
             type="primary"
             @click="handleAddScheduleItem"
@@ -73,94 +67,15 @@
             查询课表
           </el-button>
         </el-form-item>
-        <el-form-item label="视图">
-          <el-radio-group v-model="viewType">
-            <el-radio-button value="week">
-              周视图
-            </el-radio-button>
-            <el-radio-button value="list">
-              列表视图
-            </el-radio-button>
-          </el-radio-group>
-        </el-form-item>
       </el-form>
     </el-card>
 
     <el-card
-        v-loading="loadingSchedule || loadingTimeSlots || loadingWeekdays"
+        v-loading="loadingSchedule || loadingWeekdays"
         class="schedule-card"
     >
-      <!-- 周视图 -->
-      <div
-          v-if="viewType === 'week'"
-          class="week-view"
-      >
-        <div class="time-column">
-          <div class="header-cell">
-            时间
-          </div>
-          <div
-              v-for="time in timeSlotsRef"
-              :key="time.slot"
-              class="time-cell"
-          >
-            {{ time.label }}
-            <div class="time-range">
-              {{ time.startTime }} - {{ time.endTime }}
-            </div>
-          </div>
-        </div>
-        <div
-            v-for="day in weekdaysRef"
-            :key="day.value"
-            class="day-column"
-        >
-          <div class="header-cell">
-            {{ day.label }}
-          </div>
-          <div
-              v-for="time in timeSlotsRef"
-              :key="`${day.value}-${time.slot}`"
-              :class="{ 'has-course': findCoursesForCell(day.value, time).length > 0 }"
-              class="schedule-cell"
-          >
-            <!-- 管理员视图可能一个格子有多门课 -->
-            <div
-                v-for="course in findCoursesForCell(day.value, time)"
-                :key="course.id"
-                :style="{ backgroundColor: getCourseColor(course.courseId) }"
-                class="course-item admin-course-item"
-                @click="showCourseDetail(course)"
-            >
-              <div class="course-name">
-                {{ course.courseName }}
-              </div>
-              <div class="course-detail">
-                {{ course.teacherName }} / {{ course.classroomName }}
-              </div>
-              <div class="course-detail">
-                {{ course.className }}
-              </div>
-            </div>
-            <!-- 可以添加按钮用于在该时间段添加课程 -->
-            <el-button
-                v-if="findCoursesForCell(day.value, time).length === 0"
-                :icon="Plus"
-                circle
-                class="add-in-cell-btn"
-                size="small"
-                type="primary"
-                @click="handleAddScheduleItemInCell(day.value, time)"
-            />
-          </div>
-        </div>
-      </div>
-
       <!-- 列表视图 -->
-      <div
-          v-else
-          class="list-view"
-      >
+      <div class="list-view">
         <el-table
             :data="scheduleList"
             border
@@ -221,9 +136,9 @@
           </el-table-column>
         </el-table>
       </div>
-      <!-- 分页 (列表视图可能需要) -->
+      <!-- 分页 -->
       <div
-          v-if="viewType === 'list' && total > 0"
+          v-if="total > 0"
           class="pagination-container"
       >
         <el-pagination
@@ -382,17 +297,14 @@
                 label="开始时间段"
                 prop="startTime"
             >
-              <el-select
+              <el-time-select
                   v-model="scheduleForm.startTime"
+                  end="22:00"
+                  format="HH:mm"
+                  start="07:00"
                   placeholder="选择开始时间"
-              >
-                <el-option
-                    v-for="time in timeSlotsRef"
-                    :key="time.slot"
-                    :label="`${time.label} (${time.startTime})`"
-                    :value="time.startTime"
-                />
-              </el-select>
+                  step="00:15"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -400,17 +312,14 @@
                 label="结束时间段"
                 prop="endTime"
             >
-              <el-select
+              <el-time-select
                   v-model="scheduleForm.endTime"
+                  end="22:00"
+                  format="HH:mm"
+                  start="07:00"
                   placeholder="选择结束时间"
-              >
-                <el-option
-                    v-for="time in timeSlotsRef"
-                    :key="time.slot"
-                    :label="`${time.label} (${time.endTime})`"
-                    :value="time.endTime"
-                />
-              </el-select>
+                  step="00:15"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -454,108 +363,6 @@
         </span>
       </template>
     </el-dialog>
-
-    <!-- 自动排课对话框 -->
-    <el-dialog
-        v-model="autoScheduleDialogVisible"
-        title="自动排课"
-        width="700px"
-    >
-      <el-form
-          ref="autoScheduleFormRef"
-          v-loading="autoScheduleLoading"
-          :model="autoScheduleForm"
-          :rules="autoScheduleFormRules"
-          label-width="120px"
-      >
-        <el-form-item label="学期" prop="termId">
-          <el-select
-              v-model="autoScheduleForm.termId"
-              filterable
-              placeholder="选择学期"
-          >
-            <el-option
-                v-for="item in semestersRef"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="课程" prop="courses">
-          <el-select
-              v-model="autoScheduleForm.courses"
-              :loading="loadingCourses"
-              filterable
-              multiple
-              placeholder="选择需要排课的课程"
-          >
-            <el-option
-                v-for="course in courseOptions"
-                :key="course.id"
-                :label="`${course.courseNo} - ${course.courseName}`"
-                :value="course.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="班级" prop="classes">
-          <el-select
-              v-model="autoScheduleForm.classes"
-              :loading="loadingClasses"
-              filterable
-              multiple
-              placeholder="选择需要排课的班级"
-          >
-            <el-option
-                v-for="cls in classOptions"
-                :key="cls.id"
-                :label="cls.name"
-                :value="cls.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="排课规则">
-          <el-checkbox v-model="autoScheduleForm.avoidTimeConflicts">避免时间冲突</el-checkbox>
-          <el-tooltip content="避免同一教师、班级、教室在同一时间段被多次安排">
-            <el-icon>
-              <InfoFilled/>
-            </el-icon>
-          </el-tooltip>
-        </el-form-item>
-
-        <el-form-item label="教师负荷均衡">
-          <el-checkbox v-model="autoScheduleForm.balanceTeacherLoad">平衡教师课时分配</el-checkbox>
-          <el-tooltip content="尽量平均分配教师的课时，避免某些教师课时过多">
-            <el-icon>
-              <InfoFilled/>
-            </el-icon>
-          </el-tooltip>
-        </el-form-item>
-
-        <el-form-item label="教师喜好">
-          <el-checkbox v-model="autoScheduleForm.respectPreferences">尊重教师时间喜好</el-checkbox>
-          <el-tooltip content="尽量按照教师的时间偏好安排课程">
-            <el-icon>
-              <InfoFilled/>
-            </el-icon>
-          </el-tooltip>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="autoScheduleDialogVisible = false">取消</el-button>
-          <el-button
-              :loading="autoScheduleLoading"
-              type="primary"
-              @click="submitAutoScheduleForm"
-          >开始排课</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -574,41 +381,29 @@ import {
   ElMessageBox,
   ElOption,
   ElPagination,
-  ElRadioButton,
-  ElRadioGroup,
   ElRow,
   ElSelect,
   ElTable,
-  ElTableColumn
+  ElTableColumn,
+  ElTimeSelect,
 } from 'element-plus';
-import {InfoFilled, Plus} from '@element-plus/icons-vue';
-import {
-  addSchedule,
-  deleteSchedule,
-  generateSchedule,
-  getScheduleById,
-  getScheduleList,
-  updateSchedule
-} from '@/api/schedule';
-import {getClasses, getTerms, getTimeSlots, getWeekdays} from '@/api/common';
+import {addSchedule, deleteSchedule, getScheduleById, getScheduleList, updateSchedule} from '@/api/schedule';
+import {getClasses, getTerms, getWeekdays} from '@/api/common';
 import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherSelectList} from '@/api/user';
 import {getAvailableClassrooms} from '@/api/classroom';
 
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);
-const loadingTimeSlots = ref(false);
 const loadingWeekdays = ref(false);
 
 const scheduleList = ref([]);
-const viewType = ref('week');
 const semestersRef = ref([]);
-const timeSlotsRef = ref([]);
 const weekdaysRef = ref([]);
 
 const total = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(50);
+const pageSize = ref(10);
 
 const searchParams = reactive({
   semester: null,
@@ -647,7 +442,18 @@ const scheduleFormRules = reactive({
   classroomId: [{required: true, message: '请选择教室', trigger: 'change'}],
   weekDay: [{required: true, message: '请选择星期', trigger: 'change'}],
   startTime: [{required: true, message: '请选择开始时间', trigger: 'change'}],
-  endTime: [{required: true, message: '请选择结束时间', trigger: 'change'}],
+  endTime: [
+    {required: true, message: '请选择结束时间', trigger: 'change'},
+    {
+      validator: (rule, value, callback) => {
+        if (scheduleForm.value.startTime && value <= scheduleForm.value.startTime) {
+          callback(new Error('结束时间必须晚于开始时间'));
+        } else {
+          callback();
+        }
+      }, trigger: 'change'
+    }
+  ],
   startWeek: [{required: true, message: '请输入开始周', trigger: 'blur'}],
   endWeek: [
     {required: true, message: '请输入结束周', trigger: 'blur'},
@@ -672,63 +478,15 @@ const loadingTeachers = ref(false);
 const loadingClasses = ref(false);
 const loadingClassrooms = ref(false);
 
-const autoScheduleDialogVisible = ref(false);
-const autoScheduleLoading = ref(false);
-const autoScheduleForm = ref({
-  termId: null,
-  avoidTimeConflicts: true,
-  balanceTeacherLoad: true,
-  respectPreferences: true,
-  courses: [],
-  classes: []
-});
-
-const autoScheduleFormRules = reactive({
-  termId: [{required: true, message: '请选择学期', trigger: 'change'}],
-  courses: [{required: true, message: '请至少选择一门课程', trigger: 'change'}],
-  classes: [{required: true, message: '请至少选择一个班级', trigger: 'change'}]
-});
-
-const autoScheduleFormRef = ref(null);
-const submitAutoScheduleForm = () => {
-  autoScheduleFormRef.value.validate(async (valid) => {
-    if (valid) {
-      autoScheduleLoading.value = true;
-      try {
-        // 准备请求数据
-        const data = {
-          ...autoScheduleForm.value
-        };
-
-        // 调用自动排课 API
-        await generateSchedule(data);
-        ElMessage.success('自动排课成功，正在刷新数据');
-        autoScheduleDialogVisible.value = false;
-
-        // 重新获取课表数据
-        fetchSchedule();
-      } catch (error) {
-        console.error("自动排课失败", error);
-        ElMessage.error(error?.response?.data?.message || '自动排课失败，请检查参数设置');
-      } finally {
-        autoScheduleLoading.value = false;
-      }
-    }
-  });
-};
-
 const fetchInitialData = async () => {
   loadingSemesters.value = true;
-  loadingTimeSlots.value = true;
   loadingWeekdays.value = true;
   try {
-    const [termsRes, timeSlotsRes, weekdaysRes] = await Promise.all([
+    const [termsRes, weekdaysRes] = await Promise.all([
       getTerms(),
-      getTimeSlots(),
       getWeekdays()
     ]);
     semestersRef.value = termsRes.data || [];
-    timeSlotsRef.value = timeSlotsRes.data || [];
     weekdaysRef.value = weekdaysRes.data || [];
 
     if (semestersRef.value.length > 0 && !searchParams.semester) {
@@ -737,19 +495,12 @@ const fetchInitialData = async () => {
     }
   } catch (error) {
     console.error('获取初始数据失败', error);
-    ElMessage.error('获取学期/时间段/星期数据失败');
+    ElMessage.error('获取学期/星期数据失败');
   } finally {
     loadingSemesters.value = false;
-    loadingTimeSlots.value = false;
     loadingWeekdays.value = false;
   }
 };
-
-const courseColors = {};
-const colorPalette = [
-  '#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399',
-  '#3ECBBC', '#EA7C69', '#AA68CA', '#68C0CA', '#CA6897'
-];
 
 const fetchSchedule = async () => {
   if (!searchParams.semester) {
@@ -763,28 +514,20 @@ const fetchSchedule = async () => {
       teacherName: searchParams.teacherName || null,
       courseName: searchParams.courseName || null,
       className: searchParams.className || null,
-      page: viewType.value === 'list' ? currentPage.value : null,
-      size: viewType.value === 'list' ? pageSize.value : null,
+      page: currentPage.value,
+      size: pageSize.value,
     };
     Object.keys(params).forEach(key => params[key] == null && delete params[key]);
 
     const response = await getScheduleList(params);
-    if (viewType.value === 'list') {
-      scheduleList.value = response.data.list || [];
+    // 修正：后端返回 IPage 对象，包含 records 和 total
+    if (response.data && response.data.records) {
+      scheduleList.value = response.data.records;
       total.value = response.data.total || 0;
     } else {
-      scheduleList.value = response.data.list || response.data || [];
+      // 处理异常情况或旧格式 (如果后端可能不返回 IPage)
+      scheduleList.value = [];
       total.value = 0;
-    }
-
-    if (viewType.value === 'week') {
-      Object.keys(courseColors).forEach(key => delete courseColors[key]);
-      scheduleList.value.forEach(schedule => {
-        if (schedule.courseId && !courseColors[schedule.courseId]) {
-          const colorIndex = Object.keys(courseColors).length % colorPalette.length;
-          courseColors[schedule.courseId] = colorPalette[colorIndex];
-        }
-      });
     }
 
   } catch (error) {
@@ -806,37 +549,6 @@ const weekdayMap = computed(() => {
 });
 const formatWeekday = (weekdayValue) => weekdayMap.value[weekdayValue] || '';
 
-const timeToMinutes = (timeStr) => {
-  if (!timeStr || !timeStr.includes(':')) return 0;
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const findCoursesForCell = (dayValue, timeSlot) => {
-  if (!timeSlot || !timeSlot.startTime) return [];
-  const slotStartMinutes = timeToMinutes(timeSlot.startTime);
-
-  return scheduleList.value.filter(schedule => {
-    if (!schedule.startTime) return false; // 跳过 startTime 为空的记录
-    let scheduleStartTimeStr = '';
-    try {
-      // 将 Date 对象格式化为 HH:mm
-      const date = new Date(schedule.startTime);
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      scheduleStartTimeStr = `${hours}:${minutes}`;
-    } catch (e) {
-      console.error("格式化课表开始时间失败:", schedule.startTime, e);
-      return false; // 格式化失败则不匹配
-    }
-    // 用格式化后的字符串计算分钟数
-    const scheduleStartMinutes = timeToMinutes(scheduleStartTimeStr);
-    return schedule.weekday === dayValue && scheduleStartMinutes === slotStartMinutes;
-  });
-};
-
-const getCourseColor = (courseId) => courseColors[courseId] || '#409EFF';
-
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
@@ -847,50 +559,9 @@ const handleCurrentChange = (val) => {
   fetchSchedule();
 };
 
-const handleAutoSchedule = () => {
-  autoScheduleDialogVisible.value = true;
-  loadingCourses.value = true;
-  loadingClasses.value = true;
-
-  // 初始化表单
-  autoScheduleForm.value = {
-    termId: searchParams.semester,
-    avoidTimeConflicts: true,
-    balanceTeacherLoad: true,
-    respectPreferences: true,
-    courses: [],
-    classes: []
-  };
-
-  // 获取课程和班级数据
-  Promise.all([
-    getAllCoursesForSelect(),
-    getClasses()
-  ]).then(([courseRes, classRes]) => {
-    courseOptions.value = courseRes.data || [];
-    classOptions.value = classRes.data || [];
-  }).catch(error => {
-    console.error("获取课程和班级数据失败", error);
-    ElMessage.error("获取课程和班级数据失败");
-  }).finally(() => {
-    loadingCourses.value = false;
-    loadingClasses.value = false;
-  });
-};
-
 const handleAddScheduleItem = () => {
   resetScheduleForm();
   dialogTitle.value = '手动添加课表项';
-  dialogVisible.value = true;
-  fetchSelectOptions();
-};
-
-const handleAddScheduleItemInCell = (day, timeSlot) => {
-  resetScheduleForm();
-  scheduleForm.value.weekDay = day;
-  scheduleForm.value.startTime = timeSlot.startTime;
-  scheduleForm.value.endTime = timeSlot.endTime;
-  dialogTitle.value = `添加课表项 (星期${day} ${timeSlot.label})`;
   dialogVisible.value = true;
   fetchSelectOptions();
 };
@@ -904,7 +575,14 @@ const handleEditScheduleItem = async (row) => {
   fetchSelectOptions();
   try {
     const res = await getScheduleById(row.id);
-    scheduleForm.value = {...res.data};
+    const loadedData = {...res.data};
+    if (loadedData.startTime && loadedData.startTime.includes(':')) {
+      loadedData.startTime = loadedData.startTime.substring(0, 5);
+    }
+    if (loadedData.endTime && loadedData.endTime.includes(':')) {
+      loadedData.endTime = loadedData.endTime.substring(0, 5);
+    }
+    scheduleForm.value = loadedData;
   } catch (error) {
     console.error("获取课表详情失败", error);
     ElMessage.error("获取课表详情失败");
@@ -930,10 +608,6 @@ const handleDeleteScheduleItem = (row) => {
     }
   }).catch(() => {
   });
-};
-
-const showCourseDetail = (course) => {
-  ElMessage.info(`查看课程 ${course.courseName} 详情（管理员视图）`);
 };
 
 const fetchSelectOptions = async () => {
@@ -1049,103 +723,6 @@ export default {
 
 .dialog-footer {
   text-align: right;
-}
-
-/* 周视图样式 (复用并微调) */
-.week-view {
-  display: flex;
-  border-left: 1px solid #ebeef5;
-  border-top: 1px solid #ebeef5;
-}
-
-.time-column,
-.day-column {
-  display: flex;
-  flex-direction: column;
-}
-
-.time-column {
-  flex: 0 0 100px;
-}
-
-.day-column {
-  flex: 1;
-}
-
-.header-cell,
-.time-cell,
-.schedule-cell {
-  border-right: 1px solid #ebeef5;
-  border-bottom: 1px solid #ebeef5;
-  text-align: center;
-  position: relative;
-}
-
-.header-cell {
-  background-color: #fafafa;
-  font-weight: bold;
-  padding: 10px 5px;
-  height: 50px;
-  box-sizing: border-box;
-}
-
-.time-cell {
-  height: 100px; /* 管理员视图格子可能需要更高 */
-  padding: 5px;
-  font-size: 12px;
-  color: #909399;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  box-sizing: border-box;
-}
-
-.time-range {
-  font-size: 10px;
-  margin-top: 4px;
-}
-
-.schedule-cell {
-  height: 100px; /* 对应 time-cell 高度 */
-  box-sizing: border-box;
-  position: relative; /* 为了添加按钮定位 */
-}
-
-.course-item {
-  border-radius: 4px;
-  padding: 3px 5px;
-  font-size: 11px; /* 字号减小 */
-  color: #fff;
-  cursor: pointer;
-  overflow: hidden;
-  margin-bottom: 2px; /* 多个课程项之间的间距 */
-  text-align: left; /* 左对齐 */
-}
-
-.admin-course-item { /* 管理员视图特定样式 */
-  position: relative; /* 改为相对定位，使其在单元格内堆叠 */
-}
-
-.course-name {
-  font-weight: bold;
-}
-
-.course-detail {
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-.add-in-cell-btn {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  opacity: 0.5; /* 默认半透明 */
-  transition: opacity 0.2s;
-}
-
-.schedule-cell:hover .add-in-cell-btn {
-  opacity: 1; /* 悬停时完全显示 */
 }
 
 /* 列表视图 */

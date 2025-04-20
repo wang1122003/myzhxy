@@ -86,13 +86,13 @@ public class Post implements Serializable {
      * 是否置顶：0-否，1-是
      */
     @TableField("is_top")
-    private Integer isTop;
+    private Boolean isTop;
     
     /**
      * 是否精华：0-否，1-是
      */
     @TableField("is_essence")
-    private Integer isEssence;
+    private Boolean isEssence;
     
     /**
      * 状态：1-正常，0-禁用

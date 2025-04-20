@@ -6,18 +6,21 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ActivityDao;
 import com.campus.dao.ActivityParticipantDao;
+import com.campus.dao.ActivityRegistrationDao;
+import com.campus.dao.UserDao;
 import com.campus.entity.Activity;
 import com.campus.entity.ActivityParticipant;
+import com.campus.entity.ActivityRegistration;
+import com.campus.entity.User;
 import com.campus.service.ActivityService;
+import com.campus.vo.ActivityRegistrationVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +37,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
 
     @Autowired
     private ActivityParticipantDao activityParticipantDao;
+
+    @Autowired(required = false)
+    private ActivityRegistrationDao activityRegistrationDao;
+
+    @Autowired
+    private UserDao userDao;
     
     /**
      * 根据ID查询活动
@@ -366,11 +375,16 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
 
     @Override
     public boolean isUserJoined(Long activityId, Long userId) {
-        // 使用新的 DAO 查询是否存在记录
+        // Adapt this if using ActivityRegistrationDao
         LambdaQueryWrapper<ActivityParticipant> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(ActivityParticipant::getActivityId, activityId)
                 .eq(ActivityParticipant::getUserId, userId);
-        return activityParticipantDao.selectCount(queryWrapper) > 0;
+        // return activityParticipantDao.selectCount(queryWrapper) > 0;
+        // Assuming ActivityParticipantDao is the correct one for now
+        // If ActivityRegistrationDao is used, replace above line with:
+        return activityRegistrationDao.selectCount(new LambdaQueryWrapper<ActivityRegistration>()
+                .eq(ActivityRegistration::getActivityId, activityId)
+                .eq(ActivityRegistration::getUserId, userId)) > 0;
     }
 
     @Override
@@ -424,6 +438,60 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
     public List<Activity> getUserActivities(Long userId) {
         // 复用 getStudentEnrolledActivities 的逻辑
         return getStudentEnrolledActivities(userId);
+    }
+
+    @Override
+    public List<ActivityRegistrationVO> getRegistrationsByActivityId(Long activityId) {
+        if (activityRegistrationDao == null) {
+            log.warn("ActivityRegistrationDao is not available, cannot fetch registrations.");
+            return Collections.emptyList();
+        }
+        if (activityId == null) {
+            return Collections.emptyList();
+        }
+
+        // 1. Find all registrations for the activity
+        LambdaQueryWrapper<ActivityRegistration> regQuery = new LambdaQueryWrapper<>();
+        regQuery.eq(ActivityRegistration::getActivityId, activityId)
+                .orderByDesc(ActivityRegistration::getRegistrationTime); // Order by registration time
+        List<ActivityRegistration> registrations = activityRegistrationDao.selectList(regQuery);
+
+        if (registrations.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. Extract user IDs
+        List<Long> userIds = registrations.stream()
+                .map(ActivityRegistration::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (userIds.isEmpty()) {
+            // Should not happen if registrations list is not empty and userId is not null
+            log.warn("No valid user IDs found for activity registrations: {}", activityId);
+            // Return registrations without user info in this case, or an empty list
+            return registrations.stream()
+                    .map(reg -> new ActivityRegistrationVO(reg, null))
+                    .collect(Collectors.toList());
+        }
+
+        // 3. Fetch user details
+        List<User> users = userDao.selectBatchIds(userIds);
+        Map<Long, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        // 4. Create VO list
+        List<ActivityRegistrationVO> voList = new ArrayList<>();
+        for (ActivityRegistration reg : registrations) {
+            User user = userMap.get(reg.getUserId());
+            // Only add if user info is found (or handle missing user case differently)
+            // if (user != null) { 
+            voList.add(new ActivityRegistrationVO(reg, user));
+            // }
+        }
+
+        return voList;
     }
 
 }

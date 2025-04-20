@@ -23,7 +23,7 @@
             <id column="u_id" property="id"/>
             <result column="username" property="username"/>
             <result column="real_name" property="realName"/>
-            <result column="avatar" property="avatar"/>
+            <result column="avatar_url" property="avatarUrl"/>
         </association>
     </resultMap>
 
@@ -38,7 +38,7 @@
     <select id="getAllPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         <where>
@@ -76,7 +76,7 @@
     <select id="getPostById" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE p.id = #{id,jdbcType=BIGINT}
@@ -86,7 +86,7 @@
     <select id="getPostsByAuthorId" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE p.author_id = #{authorId,jdbcType=BIGINT}
@@ -103,7 +103,7 @@
     <select id="getPostsByForumType" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE p.forum_type = #{forumType,jdbcType=VARCHAR}
@@ -117,7 +117,7 @@
     <select id="getPostsByTag" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
@@ -134,7 +134,7 @@
     <select id="getHotPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         WHERE p.status = 1
@@ -146,7 +146,7 @@
     <select id="searchPosts" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar
+        u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
         LEFT JOIN user u ON p.author_id = u.id
         <where>

@@ -102,16 +102,16 @@
         </el-table-column>
         <el-table-column
             label="发布人"
-            prop="publisher"
+            prop="senderRealName"
             width="120"
         />
         <el-table-column
             label="发布时间"
-            prop="publishTime"
+            prop="sendTime"
             width="180"
         >
           <template #default="scope">
-            {{ formatTime(scope.row.publishTime) }}
+            {{ formatTime(scope.row.sendTime) }}
           </template>
         </el-table-column>
         <el-table-column
@@ -377,7 +377,11 @@ onBeforeUnmount(() => {
   editor.destroy();
 });
 
-const uploadAttachmentUrl = ref(FILE_API.UPLOAD_DOCUMENT || '/api/file/upload/document');
+// 获取基础路径 (确保环境变量 VITE_APP_BASE_API 配置正确)
+const baseUrl = import.meta.env.VITE_APP_BASE_API || '';
+
+// 拼接完整的上传 URL
+const uploadAttachmentUrl = ref(`${baseUrl}${FILE_API.UPLOAD_DOCUMENT}`);
 const uploadHeaders = ref({Authorization: `Bearer ${getToken()}`});
 
 const handleAttachmentSuccess = (response, uploadFile, uploadFiles) => {
@@ -633,8 +637,13 @@ const fetchNotices = async () => {
       status: searchParams.status
     };
     const res = await getNoticeList(params);
-    noticeList.value = res.data.list || [];
-    total.value = res.data.total || 0;
+    if (res.data && res.data.records) {
+      noticeList.value = res.data.records;
+      total.value = res.data.total || 0;
+    } else {
+      noticeList.value = [];
+      total.value = 0;
+    }
   } catch (error) {
     console.error("获取通知列表失败", error);
     ElMessage.error("获取通知列表失败");

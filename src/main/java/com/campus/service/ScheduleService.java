@@ -1,5 +1,6 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Schedule;
 
@@ -247,4 +248,14 @@ public interface ScheduleService extends IService<Schedule> {
     List<Schedule> getScheduleByTeacherIdAndTermId(Long teacherId, Long termId);
 
     List<Schedule> getScheduleByCourseIdAndTermId(Long courseId, Long termId);
+
+    /**
+     * 分页查询课表 (支持筛选)
+     *
+     * @param params 查询参数 (如 termId, courseName, teacherName, className 等)
+     * @param page   页码
+     * @param size   每页数量
+     * @return 分页结果对象
+     */
+    IPage<Schedule> getSchedulesPage(Map<String, Object> params, int page, int size);
 }

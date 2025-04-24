@@ -22,50 +22,53 @@
       >
         <el-form-item label="学期">
           <el-select
-              v-model="searchParams.semester"
-              :loading="loadingSemesters"
-              filterable
+              v-model="searchParams.termId"
               placeholder="选择学期"
-              required
-              style="width: 200px;"
-              @change="fetchSchedule"
+              clearable
+              filterable
+              @change="handleFilterChange"
+              style="width: 200px"
           >
             <el-option
-                v-for="item in semestersRef"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+                v-for="term in termList"
+                :key="term.id"
+                :label="term.termName"
+                :value="term.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="教师">
-          <el-input
-              v-model="searchParams.teacherName"
+        <el-form-item label="星期">
+          <el-select
+              v-model="searchParams.weekDay"
+              placeholder="选择星期"
               clearable
-              placeholder="教师姓名"
-          />
+              @change="handleFilterChange"
+              style="width: 150px"
+          >
+            <el-option
+                v-for="day in weekDayOptions"
+                :key="day.value"
+                :label="day.label"
+                :value="day.value"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="课程">
+        <el-form-item label="关键词">
           <el-input
-              v-model="searchParams.courseName"
+              v-model="searchParams.keyword"
+              placeholder="搜索课程/教师/教室"
               clearable
-              placeholder="课程名称/代码"
-          />
-        </el-form-item>
-        <el-form-item label="班级">
-          <el-input
-              v-model="searchParams.className"
-              clearable
-              placeholder="班级名称"
-          />
+              style="width: 240px"
+              @keyup.enter="handleFilterChange"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button
-              type="primary"
-              @click="fetchSchedule"
-          >
-            查询课表
-          </el-button>
+          <el-button type="primary" @click="handleFilterChange" :icon="Search">查询</el-button>
+          <el-button :icon="Plus" @click="handleAddScheduleItem">添加排课</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -392,6 +395,8 @@ import {getClasses, getTerms, getWeekdays} from '@/api/common';
 import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherSelectList} from '@/api/user';
 import {getAvailableClassrooms} from '@/api/classroom';
+import {getTermList} from '@/api/term';
+import {Search, Plus} from '@element-plus/icons-vue';
 
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);
@@ -406,10 +411,12 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 const searchParams = reactive({
-  semester: null,
+  termId: null,
   teacherName: '',
   courseName: '',
-  className: ''
+  className: '',
+  weekDay: null,
+  keyword: '',
 });
 
 const dialogVisible = ref(false);
@@ -478,6 +485,10 @@ const loadingTeachers = ref(false);
 const loadingClasses = ref(false);
 const loadingClassrooms = ref(false);
 
+const termList = ref([]);
+
+const weekDayOptions = ref([]);
+
 const fetchInitialData = async () => {
   loadingSemesters.value = true;
   loadingWeekdays.value = true;
@@ -489,8 +500,8 @@ const fetchInitialData = async () => {
     semestersRef.value = termsRes.data || [];
     weekdaysRef.value = weekdaysRes.data || [];
 
-    if (semestersRef.value.length > 0 && !searchParams.semester) {
-      searchParams.semester = semestersRef.value[0].value;
+    if (semestersRef.value.length > 0 && !searchParams.termId) {
+      searchParams.termId = semestersRef.value[0].value;
       await fetchSchedule();
     }
   } catch (error) {
@@ -503,14 +514,14 @@ const fetchInitialData = async () => {
 };
 
 const fetchSchedule = async () => {
-  if (!searchParams.semester) {
+  if (!searchParams.termId) {
     ElMessage.warning('请先选择学期');
     return;
   }
   loadingSchedule.value = true;
   try {
     const params = {
-      semester: searchParams.semester,
+      termId: searchParams.termId,
       teacherName: searchParams.teacherName || null,
       courseName: searchParams.courseName || null,
       className: searchParams.className || null,
@@ -643,7 +654,7 @@ const resetScheduleForm = () => {
   }
   scheduleForm.value = {
     id: null,
-    termId: searchParams.semester,
+    termId: searchParams.termId,
     courseId: null,
     teacherId: null,
     classId: null,
@@ -686,8 +697,57 @@ const submitScheduleForm = () => {
   });
 };
 
+const fetchTerms = async () => {
+  try {
+    const res = await getTermList();
+    if (res.code === 200 && res.data) {
+      termList.value = res.data;
+      // 设置默认选中当前学期
+      const currentTerm = res.data.find(t => t.current === 1);
+      if (currentTerm) {
+        searchParams.termId = currentTerm.id;
+        fetchSchedule(); // 加载默认学期的课表
+      }
+    } else {
+      ElMessage.error(res.message || '获取学期列表失败');
+    }
+  } catch (error) {
+    console.error("获取学期列表失败", error);
+    ElMessage.error('获取学期列表时发生错误');
+  }
+};
+
+const handleFilterChange = () => {
+  currentPage.value = 1;
+  fetchSchedule();
+};
+
+const fetchWeekdays = async () => {
+  loadingWeekdays.value = true;
+  try {
+    const res = await getWeekdays();
+    if (res.success && Array.isArray(res.data)) {
+      weekDayOptions.value = res.data.map(day => ({
+        label: day.label,
+        value: day.value
+      }));
+    } else {
+      ElMessage.error(res.message || '获取星期列表失败');
+      weekDayOptions.value = [];
+    }
+  } catch (error) {
+    console.error('获取星期列表失败:', error);
+    ElMessage.error('获取星期列表失败');
+    weekDayOptions.value = [];
+  } finally {
+    loadingWeekdays.value = false;
+  }
+};
+
 onMounted(() => {
   fetchInitialData();
+  fetchTerms();
+  fetchWeekdays();
 });
 
 </script>

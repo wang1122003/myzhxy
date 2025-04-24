@@ -376,7 +376,7 @@ const formatRole = (userType) => {
 const getRoleTagType = (userType) => {
   if (userType === 'Admin') return 'danger';
   if (userType === 'Teacher') return 'success';
-  if (userType === 'Student') return ''; // Default type
+  if (userType === 'Student') return 'info';
   return 'info';
 };
 

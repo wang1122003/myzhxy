@@ -74,7 +74,7 @@
 import {onMounted, reactive, ref} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Plus} from '@element-plus/icons-vue'
-import {createForumCategory, deleteForumCategory, getForumCategories, updateForumCategory} from '@/api/forum'
+import {createForumCategory, deleteForumCategory, getForumCategories, updateForumCategory} from '@/api/post'
 
 export default {
   name: 'CategoryManagement',

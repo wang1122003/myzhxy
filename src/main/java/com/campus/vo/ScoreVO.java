@@ -28,7 +28,7 @@ public class ScoreVO {
     private Date createTime;
     private Date updateTime;
 
-    // Course Info
+    // 课程信息
     private String courseCode;
     private String courseName;
     private Float credit;
@@ -45,4 +45,4 @@ public class ScoreVO {
             this.credit = course.getCredit();
         }
     }
-} 
+}

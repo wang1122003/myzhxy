@@ -22,15 +22,15 @@ public class ForumServiceImpl implements ForumService {
     @Override
     public List<String> listAvailableForumTypes() {
         QueryWrapper<Post> queryWrapper = new QueryWrapper<>();
-        queryWrapper.select("DISTINCT forum_type");
-        queryWrapper.isNotNull("forum_type");
-        queryWrapper.ne("forum_type", "");
+        queryWrapper.select("DISTINCT category");
+        queryWrapper.isNotNull("category");
+        queryWrapper.ne("category", "");
 
-        // 使用 selectObjs 直接获取 forum_type 列表 (类型为 Object)
-        List<Object> forumTypeObjects = postDao.selectObjs(queryWrapper);
+        // 使用 selectObjs 直接获取 category 列表 (类型为 Object)
+        List<Object> categoryObjects = postDao.selectObjs(queryWrapper);
 
         // 将 Object 列表转换为 String 列表
-        return forumTypeObjects.stream()
+        return categoryObjects.stream()
                 .filter(obj -> obj != null) // 过滤 null 值
                 .map(String::valueOf) // 转换为 String
                 .distinct() // 确保去重

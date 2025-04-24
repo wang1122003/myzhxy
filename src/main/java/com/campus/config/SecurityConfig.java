@@ -68,7 +68,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 允许的前端来源 (重要！根据你的前端地址修改)
-        configuration.setAllowedOrigins(List.of("http://localhost:8088"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8088", "http://localhost:7778", "http://localhost:7777")); // 添加前端开发服务器地址
         // 允许所有请求方法
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // 允许所有请求头
@@ -98,4 +98,4 @@ public class SecurityConfig {
 
     // 其他 Bean 定义，如 AuthenticationManager 等 (后续添加)
 
-} 
+}

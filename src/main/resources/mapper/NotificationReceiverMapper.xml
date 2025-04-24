@@ -322,4 +322,12 @@
         DELETE FROM notification_receiver
         WHERE id = #{id,jdbcType=INTEGER}
     </delete>
+
+    <!-- 根据通知ID统计已读数量 -->
+    <select id="countReadByNotificationId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM notification_receiver
+        WHERE notification_id = #{notificationId,jdbcType=BIGINT}
+          AND read_status = 'Read' -- 假设已读状态值为 'Read'
+    </select>
 </mapper>

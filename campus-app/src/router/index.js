@@ -43,7 +43,7 @@ const routes = [
     {
         path: '/forum/post/:id',
         name: 'PostDetail',
-        component: () => import('../views/PostDetail.vue'),
+        component: () => import('../views/forum/PostDetail.vue'),
         meta: {title: '帖子详情'}
     },
     // 学生页面路由

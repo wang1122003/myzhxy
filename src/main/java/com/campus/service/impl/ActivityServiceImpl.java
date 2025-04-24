@@ -88,7 +88,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
         } catch (Exception e) {
             // 记录日志或处理异常
             LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Activity::getActivityType, activityType)
+            queryWrapper.eq(Activity::getType, String.valueOf(activityType))
                        .orderByDesc(Activity::getStartTime);
             return list(queryWrapper);
         }
@@ -163,27 +163,37 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
      */
     @Override
     public boolean addActivity(Activity activity) {
-        // 设置初始状态和时间
-        if (activity.getStatus() == null) {
-            activity.setStatus(0); // 默认未开始
+        // Basic validation
+        if (activity == null || !StringUtils.hasText(activity.getTitle())) {
+            log.warn("Attempted to add an activity with missing title.");
+            return false;
         }
-        
+        // Ensure create/update times are set
         Date now = new Date();
         activity.setCreateTime(now);
         activity.setUpdateTime(now);
-        
-        // 初始化报名人数
-        if (activity.getCurrentParticipants() == null) {
-            activity.setCurrentParticipants(0);
+        // Ensure status is valid string if provided, otherwise default?
+        // Example: Default to "1" (active/pending) if not set or invalid?
+        // For now, assume status comes pre-validated or handle in controller.
+        // Linter fix: Ensure status is String if set externally before calling this.
+
+        // If a numerical status was somehow passed, convert it here
+        // This part is speculative based on linter errors elsewhere, might not be needed here
+        /*
+        if (activity.getStatus() != null && !(activity.getStatus() instanceof String)) {
+             // This check is problematic, status is already String type in Activity entity
+             // Let's assume the input `activity` object has its status correctly set as String
+             // by the controller or caller. If not, the error originates there.
         }
-        
-        try {
-            int result = activityDao.insert(activity);
-            return result > 0;
-        } catch (Exception e) {
-            // 记录日志或处理异常
-            return save(activity);
+        */
+
+        boolean success = save(activity);
+        if (success) {
+            log.info("Activity added successfully: {}", activity.getTitle());
+        } else {
+            log.error("Failed to add activity: {}", activity.getTitle());
         }
+        return success;
     }
     
     /**
@@ -248,17 +258,25 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
      */
     @Override
     public boolean updateActivityStatus(Long id, Integer status) {
-        try {
-            int result = activityDao.updateStatus(id, status);
-            return result > 0;
-        } catch (Exception e) {
-            // 记录日志或处理异常
-            Activity activity = new Activity();
-            activity.setId(id);
-            activity.setStatus(status);
-            activity.setUpdateTime(new Date());
-            return updateById(activity);
+        Activity activity = getById(id);
+        if (activity == null) {
+            log.warn("Attempted to update status for non-existent activity: {}", id);
+            return false;
         }
+        if (status == null) {
+            log.warn("Attempted to update status with null value for activity: {}", id);
+            return false; // Or throw exception?
+        }
+        // Linter Fix: Convert Integer status to String before setting
+        activity.setStatus(String.valueOf(status));
+        activity.setUpdateTime(new Date());
+        boolean success = updateById(activity);
+        if (success) {
+            log.info("Activity status updated successfully for id: {}, new status: {}", id, status);
+        } else {
+            log.error("Failed to update activity status for id: {}", id);
+        }
+        return success;
     }
 
     /**
@@ -305,17 +323,20 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
 
         // 添加关键词搜索条件 (标题或描述)
         if (StringUtils.hasText(keyword)) {
-            queryWrapper.like(Activity::getTitle, keyword).or().like(Activity::getDescription, keyword);
+            // Use a nested query to ensure (title LIKE keyword OR description LIKE keyword)
+            queryWrapper.and(qw -> qw.like(Activity::getTitle, keyword).or().like(Activity::getDescription, keyword));
         }
 
         // 添加活动类型过滤
         if (activityType != null) {
-            queryWrapper.eq(Activity::getActivityType, activityType);
+            // Revert back to lambda expression for type
+            queryWrapper.eq(Activity::getType, activityType);
         }
 
         // 添加活动状态过滤
         if (status != null) {
-            queryWrapper.eq(Activity::getStatus, status);
+            // Revert back to lambda expression for status
+            queryWrapper.eq(Activity::getStatus, String.valueOf(status));
         }
 
         // 默认按创建时间降序排序
@@ -329,7 +350,8 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
     public boolean joinActivity(Long activityId, Long userId) {
         // 1. 检查活动是否存在且有效
         Activity activity = getActivityById(activityId);
-        if (activity == null || activity.getStatus() == 0) { // 0表示已取消
+        // Linter Fix: Compare status (String) with "0" (String)
+        if (activity == null || Objects.equals(activity.getStatus(), "0")) { // 0表示已取消
             log.warn("尝试加入不存在或已取消的活动, activityId: {}, userId: {}", activityId, userId);
             return false;
         }

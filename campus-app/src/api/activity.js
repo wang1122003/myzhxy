@@ -1,4 +1,4 @@
-import request from './request'
+import request from '../utils/request'
 import {ACTIVITY_API} from './api-endpoints'
 
 // 获取所有活动

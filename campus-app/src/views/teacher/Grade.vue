@@ -4,6 +4,22 @@
       <h2>成绩管理</h2>
       <div class="course-selector">
         <el-select
+            v-model="selectedTermId" 
+            placeholder="选择学期"
+            clearable
+            filterable
+            :loading="termsLoading"
+            style="width: 200px; margin-right: 10px;" 
+            @change="handleTermChange"
+        >
+          <el-option
+              v-for="term in termList"
+              :key="term.id"
+              :label="term.termName"
+              :value="term.id"
+          />
+        </el-select>
+        <el-select
             v-model="selectedCourseId"
             clearable
             placeholder="选择课程"
@@ -120,16 +136,22 @@ import {Search} from '@element-plus/icons-vue'
 import {getTeacherCourses} from '@/api/course'
 import {getCourseScores, recordStudentScore} from '@/api/grade' // Updated API
 import {formatDateTime} from '@/utils/formatters'; // Assuming formatter utility
+import {getTermList} from '@/api/term' // 导入学期列表 API
 
 const route = useRoute()
 const router = useRouter()
 
 // Data loading status
 const studentsLoading = ref(false)
+const termsLoading = ref(false) // 加载学期状态
 
 // Course related
 const courses = ref([])
 const selectedCourseId = ref('')
+
+// Term related
+const termList = ref([]) // 学期列表
+const selectedTermId = ref('') // 选中的学期ID
 
 // Student Scores related
 const students = ref([]) // Stores score records { id?, studentId, courseId, score, updateTime, student: {...} }
@@ -160,9 +182,32 @@ const fetchCourses = async () => {
   }
 }
 
-// Fetch student scores for the selected course
+// Fetch terms
+const fetchTerms = async () => {
+  termsLoading.value = true;
+  try {
+    const res = await getTermList();
+    if (res.code === 200 && res.data) {
+      termList.value = res.data;
+      // 设置默认学期（例如，当前学期）
+      const currentTerm = res.data.find(t => t.current === 1);
+      if (currentTerm) {
+        selectedTermId.value = currentTerm.id;
+      }
+    } else {
+      ElMessage.error(res.message || '获取学期列表失败');
+    }
+  } catch (error) {
+    console.error('获取学期列表失败', error);
+    ElMessage.error('获取学期列表失败');
+  } finally {
+    termsLoading.value = false;
+  }
+};
+
+// Fetch student scores for the selected course and term
 const fetchStudents = async () => {
-  if (!selectedCourseId.value) {
+  if (!selectedCourseId.value || !selectedTermId.value) {
     students.value = [];
     totalStudents.value = 0;
     return;
@@ -172,8 +217,8 @@ const fetchStudents = async () => {
   try {
     const params = {
       page: currentPage.value,
-      size: pageSize.value
-      // termId: selectedTermId.value // Add if term selection is implemented
+      size: pageSize.value,
+      termId: selectedTermId.value // 添加 termId 参数
     };
     const response = await getCourseScores(selectedCourseId.value, params)
     // Assuming response structure includes student details nested or needs joining
@@ -197,10 +242,18 @@ const markChanged = (row) => {
 // Handle course selection change
 const handleCourseChange = async () => {
   currentPage.value = 1; // Reset page when course changes
-  // Update URL query param
-  router.push({query: {...route.query, courseId: selectedCourseId.value}});
-  await fetchStudents();
+  // Update URL query param for course
+  router.push({ query: { ...route.query, courseId: selectedCourseId.value } });
+  await fetchStudents(); // Fetch students for new course and current term
 }
+
+// Handle term selection change
+const handleTermChange = async () => {
+  currentPage.value = 1; // Reset page when term changes
+  // Update URL query param for term (optional)
+  // router.push({ query: { ...route.query, termId: selectedTermId.value } });
+  await fetchStudents(); // Fetch students for current course and new term
+};
 
 // Handle pagination change
 const handlePageChange = (page) => {
@@ -261,11 +314,28 @@ const saveAllChanges = async () => {
 
 // Initialize data on mount
 const initData = async () => {
-  await fetchCourses()
-  // Check URL query for initial course selection
-  if (route.query.courseId && courses.value.some(c => c.id === route.query.courseId)) {
-    selectedCourseId.value = route.query.courseId
-    await fetchStudents()
+  await fetchTerms(); // 先获取学期
+  await fetchCourses(); // 再获取课程
+  // Check URL query for initial selections
+  let courseFromQuery = route.query.courseId;
+  let termFromQuery = route.query.termId; // Check for term in query too
+
+  let needsFetch = false;
+
+  if (termFromQuery && termList.value.some(t => t.id === termFromQuery)) {
+    selectedTermId.value = termFromQuery;
+    needsFetch = true;
+  } else if (selectedTermId.value) { // If term wasn't in query, but we have a default
+     needsFetch = true;
+  }
+
+  if (courseFromQuery && courses.value.some(c => c.id === courseFromQuery)) {
+    selectedCourseId.value = courseFromQuery;
+    needsFetch = true;
+  }
+
+  if (needsFetch && selectedCourseId.value && selectedTermId.value) {
+    await fetchStudents();
   }
 }
 

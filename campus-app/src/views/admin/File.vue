@@ -51,7 +51,7 @@
     <el-card v-if="showStats" class="stats-card">
       <template #header>
         <span>文件统计</span>
-        <el-button style="float: right; padding: 3px 0" type="link" @click="showStats = false">
+        <el-button style="float: right; padding: 3px 0" @click="showStats = false">
           隐藏
         </el-button>
       </template>

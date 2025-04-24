@@ -1,10 +1,11 @@
 package com.campus.utils;
 
+import com.campus.config.StorageProperties;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -45,16 +46,31 @@ public class InitializationUtils {
      * @param basePath 基础路径
      */
     public static void initUploadDirectories(String basePath) {
-        String baseDir = basePath != null && !basePath.isEmpty() ? basePath : "uploads";
+        // 确保 basePath 不为空或 null
+        if (basePath == null || basePath.trim().isEmpty()) {
+            logger.error("基础上传路径 (basePath) 未配置或为空，无法初始化上传目录。");
+            // 可以选择抛出异常或返回，这里选择记录错误并返回
+            return;
+            // 或者设置一个安全的默认值，但不推荐硬编码
+            // basePath = "./default_storage"; // 示例：相对路径
+            // logger.warn("基础上传路径 (basePath) 未配置，使用默认值: {}", basePath);
+        }
+
+        // 移除之前可能存在的默认值逻辑
+        // String baseDir = basePath != null && !basePath.isEmpty() ? basePath : "uploads";
+
+        // 直接使用传入的 basePath
+        String baseDir = basePath.trim();
 
         // 建立目录结构
-        String imageDir = baseDir + "/images";
-        String documentDir = baseDir + "/documents";
-        String avatarDir = baseDir + "/avatars";
-        String posterDir = baseDir + "/posters";
-        String courseDir = baseDir + "/courses";
-        String postDir = baseDir + "/posts";
-        String tempDir = baseDir + "/temp";
+        String imageDir = Paths.get(baseDir, "images").toString();
+        String documentDir = Paths.get(baseDir, "documents").toString();
+        String avatarDir = Paths.get(baseDir, "avatars").toString();
+        String posterDir = Paths.get(baseDir, "posters").toString();
+        String courseDir = Paths.get(baseDir, "courses").toString();
+        String postDir = Paths.get(baseDir, "posts").toString();
+        String tempDir = Paths.get(baseDir, "temp").toString();
+        String noticeDir = Paths.get(baseDir, "notices").toString(); // 添加之前可能遗漏的 notices 目录
 
         // 创建所有需要的目录
         createDirectoryIfNotExists(baseDir);
@@ -65,6 +81,7 @@ public class InitializationUtils {
         createDirectoryIfNotExists(courseDir);
         createDirectoryIfNotExists(postDir);
         createDirectoryIfNotExists(tempDir);
+        createDirectoryIfNotExists(noticeDir); // 创建 notices 目录
 
         logger.info("文件上传目录初始化完成: {}", baseDir);
     }
@@ -100,69 +117,55 @@ public class InitializationUtils {
 
         private static final Logger logger = LoggerFactory.getLogger(SystemInitializer.class);
 
-        @Value("${file.upload.path:uploads}")
-        private String uploadPath;
+        // 移除 @Value 注入
+        // @Value("${file.upload.path:uploads}")
+        // private String uploadPath;
+
+        // 注入 StorageProperties Bean
+        private final StorageProperties storageProperties;
+
+        @Autowired // 使用构造函数注入
+        public SystemInitializer(StorageProperties storageProperties) {
+            this.storageProperties = storageProperties;
+        }
 
         @Override
         public void onApplicationEvent(ContextRefreshedEvent event) {
-            // 使用双重检查锁定模式确保只初始化一次
-            if (!initialized) {
-                synchronized (SystemInitializer.class) {
-                    if (!initialized) {
-                        logger.info("开始系统初始化...");
+            // 确保只在 Root WebApplicationContext 初始化完成后执行一次
+            // 避免在 Servlet Context 刷新时重复执行 (如果存在多个 Context)
+            if (event.getApplicationContext().getParent() == null) {
+                // 使用双重检查锁定模式确保只初始化一次
+                if (!InitializationUtils.isInitialized()) {
+                    synchronized (SystemInitializer.class) {
+                        if (!InitializationUtils.isInitialized()) {
+                            logger.info("开始系统初始化...");
 
-                        // 初始化文件上传目录
-                        logger.info("初始化文件上传目录: {}", uploadPath);
-                        initUploadDirectories(uploadPath);
+                            // 从注入的 Bean 获取上传路径
+                            String uploadPath = storageProperties.getLocation();
+                            if (uploadPath == null || uploadPath.trim().isEmpty()) {
+                                logger.error("从 StorageProperties 获取的上传路径为空，无法初始化。请检查 'file.upload.path' 配置。");
+                                return; // 或者抛出异常
+                            }
 
-                        // 可以在这里添加其他初始化操作
+                            // 初始化文件上传目录
+                            logger.info("初始化文件上传目录: {}", uploadPath);
+                            InitializationUtils.initUploadDirectories(uploadPath);
 
-                        logger.info("系统初始化完成");
-                        initialized = true;
+                            // 可以在这里添加其他初始化操作
+
+                            logger.info("系统初始化完成");
+                            InitializationUtils.setInitialized(true);
+                        }
                     }
                 }
             }
         }
     }
 
-    /**
-     * Web应用初始化组件
-     * 在Web容器启动时执行必要的初始化操作
-     */
+    // 移除 WebContextInitializer 类
+    /*
     public static class WebContextInitializer implements ServletContextListener {
-
-        private static final Logger logger = LoggerFactory.getLogger(WebContextInitializer.class);
-
-        @Override
-        public void contextInitialized(ServletContextEvent sce) {
-            logger.info("Web应用初始化开始...");
-
-            try {
-                // 初始化文件上传目录
-                logger.info("开始初始化文件上传目录");
-                FileUtils.createDirectoryIfNotExists(FileUtils.getBaseUploadDir());
-                FileUtils.createDirectoryIfNotExists(FileUtils.IMAGE_UPLOAD_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.DOCUMENT_UPLOAD_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.AVATAR_UPLOAD_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.POSTER_UPLOAD_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.COURSE_MATERIAL_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.POST_IMAGE_DIR);
-                FileUtils.createDirectoryIfNotExists(FileUtils.TEMP_DIR);
-                logger.info("文件上传目录初始化完成");
-
-                // 可以在这里添加其他初始化操作
-
-                logger.info("Web应用初始化完成");
-            } catch (Exception e) {
-                logger.error("Web应用初始化失败", e);
-            }
-        }
-
-        @Override
-        public void contextDestroyed(ServletContextEvent sce) {
-            logger.info("Web应用正在关闭...");
-            // 可以在这里添加资源清理代码
-            logger.info("Web应用已关闭");
-        }
+        // ... 原来的代码 ...
     }
+    */
 } 

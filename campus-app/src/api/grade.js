@@ -1,9 +1,9 @@
-import request from './request'
+import request from '../utils/request'
 import {GRADE_API} from './api-endpoints'
 
 /**
  * 获取当前登录学生的成绩列表
- * @param {object} params - 查询参数，例如 { semester: '2023-2024-1' } (注意：semester 参数可能已在后端弃用)
+ * @param {object} params - 查询参数，例如 { semester: '2023-2024-1' }
  */
 export function getMyGrades(params) {
     return request({
@@ -52,6 +52,44 @@ export function batchDeleteScores(ids) {
     })
 }
 
+/**
+ * 导出成绩
+ * @param {number} courseId - 课程ID 
+ */
+export function exportGrades(courseId) {
+    return request({
+        url: GRADE_API.EXPORT.replace(':courseId', courseId),
+        method: 'get',
+        responseType: 'blob'
+    })
+}
+
+/**
+ * 导入成绩
+ * @param {FormData} formData - 包含Excel文件的表单数据
+ */
+export function importGrades(formData) {
+    return request({
+        url: GRADE_API.IMPORT,
+        method: 'post',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+}
+
+/**
+ * 获取课程成绩统计信息
+ * @param {number} courseId - 课程ID
+ */
+export function getCourseScoreStats(courseId) {
+    return request({
+        url: GRADE_API.GET_COURSE_STATS.replace(':courseId', courseId),
+        method: 'get'
+    });
+}
+
 // --- 移除或注释掉不再使用的旧 API 函数 ---
 /*
 // 获取课程学生成绩列表 (旧，使用 getCourseScores 替代)
@@ -71,42 +109,9 @@ export function saveStudentGrades(data) {
         data
     })
 }
-
-// 导出成绩 (如果后端不再支持，则移除)
-export function exportGrades(courseId) {
-    return request({
-        url: GRADE_API.EXPORT.replace(':courseId', courseId), // May be obsolete
-        method: 'get',
-        responseType: 'blob'
-    })
-}
-
-// 导入成绩 (如果后端不再支持，则移除)
-export function importGrades(formData) {
-    return request({
-        url: GRADE_API.IMPORT, // May be obsolete
-        method: 'post',
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-}
 */
 
 // --- 保留可能仍然需要的 API (例如统计)
-/**
- * 获取课程成绩统计信息
- * @param {number} courseId - 课程ID
- */
-export function getCourseScoreStats(courseId) {
-    return request({
-        url: GRADE_API.GET_COURSE_STATS.replace(':courseId', courseId),
-        method: 'get'
-    });
-}
-
-// 如果需要，可以添加其他仍然有效的 API 调用...
 
 // --- 移除或重构教师评分项相关 API (与 Grade.vue 相关) ---
 /*

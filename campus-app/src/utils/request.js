@@ -7,7 +7,7 @@ import {token as authToken} from '@/utils/auth'; // 移除 logout
 
 // 创建axios实例
 const request = axios.create({
-    baseURL: 'http://localhost:8080/campus', // 修改 baseURL，移除末尾的 /api
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/campus', // 修正 baseURL，移除末尾的 /api
     timeout: 15000 // 请求超时时间，增加到15秒
 })
 
@@ -109,7 +109,8 @@ const handleUnauthorized = () => {
     if (isHandlingUnauthorized) return;
     isHandlingUnauthorized = true;
 
-    const userStore = useUserStore(); // 获取 store 实例
+    // 修正useUserStore未定义的问题
+    // const userStore = useUserStore(); // 获取 store 实例
 
     ElMessageBox.confirm(
         '登录状态已过期，您可以取消继续留在该页面，或者重新登录',
@@ -120,12 +121,11 @@ const handleUnauthorized = () => {
             type: 'warning'
         }
     ).then(() => {
-        userStore.logout() // 调用 store 的 logout action 清理状态
-        // 移除直接操作 localStorage 的代码
-        // localStorage.removeItem('token')
-        // localStorage.removeItem('user')
-        // localStorage.removeItem('role')
-        // localStorage.removeItem('isShowingAuthError')
+        // userStore.logout() // 调用 store 的 logout action 清理状态
+        // 直接清理localStorage中的数据
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('role')
 
         // 跳转到登录页，并携带当前页面路径
         router.push({
@@ -139,8 +139,7 @@ const handleUnauthorized = () => {
         console.log('用户取消了重新登录');
     }).finally(() => {
         isHandlingUnauthorized = false; // 重置标志位
-        // localStorage.removeItem('isShowingAuthError') // 移除旧的标志位逻辑
     })
 }
 
-export default request 
+export default request

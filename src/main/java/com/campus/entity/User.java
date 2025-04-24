@@ -90,12 +90,6 @@ public class User implements Serializable, UserDetails {
     private Date updateTime;
 
     /**
-     * 角色列表 (非数据库字段)
-     */
-    @TableField(exist = false)
-    private List<Role> roles;
-
-    /**
      * 学生信息 (非数据库字段, 当 userType 为 Student 时)
      */
     @TableField(exist = false)

@@ -28,7 +28,7 @@
               <div class="post-author">
                 <el-avatar :size="40" :src="post.avatar || defaultAvatar"></el-avatar>
                 <div class="author-info">
-                  <div class="author-name">{{ post.author ? (post.author.realName || post.author.username) : '' }}</div>
+                  <div class="author-name">{{ post.author ? (post.author.realName || post.author.username) : post.authorName }}</div>
                   <div class="post-time">{{ formatTime(post.createTime) }}</div>
                 </div>
               </div>
@@ -107,7 +107,7 @@
                   <el-avatar :size="32" :src="comment.avatar || defaultAvatar"></el-avatar>
                   <div class="author-info">
                     <div class="author-name">
-                      {{ comment.author ? (comment.author.realName || comment.author.username) : '' }}
+                      {{ comment.author ? (comment.author.realName || comment.author.username) : comment.authorName }}
                     </div>
                     <div class="comment-time">{{ formatTime(comment.createTime) }}</div>
                   </div>
@@ -300,17 +300,18 @@ import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, View} from '@element-plus/icons-vue'
 import {
-  addComment,
-  cancelLikeComment,
+  getPostById,
+  likePost,
   cancelLikePost,
   deleteComment,
-  getPostById,
-  getPostComments,
   likeComment,
-  likePost
-} from '@/api/forum'
+  cancelLikeComment,
+  getPostComments,
+  createComment
+} from '@/api/post'
 import {formatDistance} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
+import {useUserStore} from '@/utils/auth'
 
 export default {
   name: 'PostDetail',
@@ -487,7 +488,7 @@ export default {
 
       submittingComment.value = true
       try {
-        await addComment({
+        await createComment({
           postId: postId.value,
           content: commentContent.value.trim()
         })
@@ -516,8 +517,8 @@ export default {
       replyingTo.value = comment.id
       replyingToComment.value = subComment ? subComment : comment
       replyingToName.value = subComment
-          ? (subComment.author ? (subComment.author.realName || subComment.author.username) : '')
-          : (comment.author ? (comment.author.realName || comment.author.username) : '')
+          ? (subComment.author ? (subComment.author.realName || subComment.author.username) : subComment.authorName || '')
+          : (comment.author ? (comment.author.realName || comment.author.username) : comment.authorName || '')
       replyContent.value = ''
     }
 
@@ -543,9 +544,10 @@ export default {
 
       submittingReply.value = true
       try {
-        await addComment({
+        await createComment({
           postId: postId.value,
           parentId: replyingTo.value,
+          replyToId: replyingToComment.value.id,
           content: replyContent.value.trim()
         })
 

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,7 +40,11 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
      */
     @Override
     public User getUserById(Long id) {
-        return getById(id);
+        User user = getById(id);
+        if (user != null) {
+            user.setPassword(null);
+        }
+        return user;
     }
 
     /**
@@ -351,21 +356,13 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
      * 分页查询用户列表
      */
     @Override
-    public IPage<User> findUsersPage(int page, int size, String keyword, Integer userTypeCode) {
+    public IPage<User> findUsersPage(int page, int size, String keyword, String userType) {
         Page<User> pageRequest = new Page<>(page, size);
         LambdaQueryWrapper<User> queryWrapper = Wrappers.lambdaQuery();
 
-        // 处理用户类型转换: Integer (0,1,2) to String ("Admin", "Student", "Teacher")
-        String userTypeString = null;
-        if (userTypeCode != null) {
-            if (userTypeCode == 0) userTypeString = "Admin";
-            else if (userTypeCode == 1) userTypeString = "Student";
-            else if (userTypeCode == 2) userTypeString = "Teacher";
-            else log.warn("无效的用户类型代码: {}", userTypeCode);
-        }
-
-        if (StringUtils.hasText(userTypeString)) {
-            queryWrapper.eq(User::getUserType, userTypeString);
+        // Use String userType directly
+        if (StringUtils.hasText(userType)) {
+            queryWrapper.eq(User::getUserType, userType);
         }
 
         // 处理关键词搜索
@@ -382,35 +379,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return this.page(pageRequest, queryWrapper);
     }
 
-    /**
-     * 解析用户导入文件
-     */
-    @Override
-    public List<User> parseUserImportFile(MultipartFile file, Integer userType) throws Exception {
-        log.warn("用户文件导入功能已移除");
-        throw new UnsupportedOperationException("用户文件导入功能已移除");
-    }
 
-    /**
-     * 批量添加用户 (用于导入)
-     */
-    @Override
-    @Transactional
-    public boolean batchAddUsers(List<User> users) {
-        if (users == null || users.isEmpty()) {
-            return true; // Nothing to add
-        }
-        Date now = new Date();
-        users.forEach(user -> {
-            user.setCreateTime(now);
-            user.setUpdateTime(now);
-            if (user.getStatus() == null) user.setStatus("Active");
-            if (user.getPassword() == null || user.getPassword().isEmpty()) {
-                log.warn("批量添加时，用户 {} 密码为空，操作可能失败或跳过", user.getUsername());
-            }
-        });
-        return saveBatch(users);
-    }
 
     /**
      * 检查管理员账号是否存在
@@ -443,5 +412,26 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             throw new CustomException("管理员密码不能为空");
         }
         return save(admin);
+    }
+
+    @Override
+    public List<User> getUsersByIds(Set<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        List<User> users = baseMapper.selectBatchIds(ids);
+        users.forEach(user -> user.setPassword(null));
+        return users;
+    }
+
+    /**
+     * 根据用户名查找用户
+     * @param username 用户名
+     * @return 用户实体，或null如果找不到
+     */
+    @Override
+    public User findByUsername(String username) {
+        // 这个方法可以直接调用已有的getUserByUsername方法
+        return getUserByUsername(username);
     }
 }

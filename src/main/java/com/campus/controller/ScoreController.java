@@ -39,7 +39,6 @@ public class ScoreController {
      * @return 操作结果
      */
     @PostMapping // 处理创建
-    @PutMapping // 处理更新 (如果ID存在，隐式通过 recordScore 逻辑处理)
     public Result recordOrUpdateScore(@RequestBody Score score) {
         // 在调用Service前进行基本验证
         if (score.getStudentId() == null || score.getCourseId() == null || score.getTotalScore() == null) {

@@ -1,5 +1,6 @@
 package com.campus.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.dto.PageResult;
 import com.campus.entity.Comment;
 import com.campus.entity.Post;
@@ -8,6 +9,8 @@ import com.campus.service.ForumService;
 import com.campus.service.PostService;
 import com.campus.utils.Result;
 import com.campus.vo.CommentVO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +27,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/forum")
 public class ForumController {
+
+    private static final Logger log = LoggerFactory.getLogger(ForumController.class);
 
     @Autowired
     private PostService postService;
@@ -355,6 +360,53 @@ public class ForumController {
                                                          @RequestParam(required = false) String keyword) {
         // 调用返回 PageResult<CommentVO> 的服务方法
         PageResult<CommentVO> pageResult = commentService.getAllCommentsPaginated(page, size, postId, authorId, keyword);
-        return Result.success("查询成功", pageResult); // 返回成功结果
+        return Result.success(pageResult); // 返回成功结果
+    }
+
+    /**
+     * [新增] 获取所有评论（管理端），支持分页和筛选
+     *
+     * @param page    页码
+     * @param size    每页数量
+     * @param status  评论状态 (可选, 1: Approved, -1: Deleted/Pending)
+     * @param keyword 搜索关键词 (用户名或评论内容, 可选)
+     * @return
+     */
+    @GetMapping("/comments/manage")
+    public Result<Page<Map<String, Object>>> getAllCommentsManaged(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String keyword) {
+        try {
+            // 调用 Service 层的新方法来处理获取所有评论的逻辑
+            Page<Map<String, Object>> commentPage = commentService.getAllCommentsManaged(page, size, status, keyword);
+            return Result.success("获取评论管理列表成功", commentPage);
+        } catch (Exception e) {
+            log.error("获取评论管理列表失败", e);
+            return Result.error("获取评论管理列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取指定用户的评论分页列表
+     * @param userId 用户ID
+     * @param page 页码
+     * @param size 每页数量
+     * @return
+     */
+    @GetMapping("/comments/user/{userId}")
+    public Result<Page<Map<String, Object>>> getUserComments(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            // This method remains for fetching specific user's comments if needed elsewhere
+            Page<Map<String, Object>> commentPage = commentService.getCommentsByUserIdWithPostInfo(userId, page, size);
+            return Result.success("获取用户评论列表成功", commentPage);
+        } catch (Exception e) {
+            log.error("获取用户 {} 的评论列表失败", userId, e);
+            return Result.error("获取评论列表失败");
+        }
     }
 } 

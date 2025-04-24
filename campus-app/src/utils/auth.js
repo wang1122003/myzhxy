@@ -143,6 +143,30 @@ function removeToken() {
     // localStorage.removeItem(TokenKey);
 }
 
+/**
+ * 提供用户存储的hook，供组件和视图使用
+ * @returns {Object} 包含用户状态和方法的对象
+ */
+function useUserStore() {
+    return {
+        // 状态
+        token,
+        userInfo,
+        isLoggedIn,
+        userRole,
+        userAvatar,
+        userRealName,
+        userId,
+        
+        // 方法
+        login,
+        logout,
+        setToken,
+        setUserInfo,
+        fetchUserInfo
+    };
+}
+
 export {
     // Reactive State & Getters (directly usable in components/setup)
     token,
@@ -162,5 +186,8 @@ export {
 
     // Original auth functions (potentially redundant, keep for compatibility or remove)
     getToken,
-    removeToken
+    removeToken,
+    
+    // 用户存储Hook
+    useUserStore
 }; 

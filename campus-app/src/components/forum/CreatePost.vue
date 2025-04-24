@@ -82,8 +82,8 @@ import {onBeforeUnmount, onMounted, reactive, ref, shallowRef} from 'vue'
 import {ElMessage} from 'element-plus'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
-import {createPost} from '@/api/forum'
-import request from '@/api/request'
+import {createPost, getAvailableForums} from '@/api/post'
+import request from '@/utils/request'
 
 export default {
   name: 'CreatePost',

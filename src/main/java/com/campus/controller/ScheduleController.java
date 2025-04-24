@@ -5,9 +5,11 @@ package com.campus.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Schedule;
 import com.campus.entity.User;
+import com.campus.entity.Term;
 import com.campus.exception.CustomException;
 import com.campus.service.AuthService;
 import com.campus.service.ScheduleService;
+import com.campus.service.TermService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +34,12 @@ public class ScheduleController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private TermService termService;
+
     /**
      * 获取课表列表 (支持分页和筛选)
-     * @param termId 学期ID
+     * @param termCode 学期代码 (String, e.g., "2023-2024-1")
      * @param courseName 课程名称 (用于模糊查询)
      * @param teacherName 教师名称 (用于模糊查询)
      * @param className 班级名称 (用于模糊查询)
@@ -44,7 +49,7 @@ public class ScheduleController {
      */
     @GetMapping
     public Result getSchedules(
-            @RequestParam(required = false) Long termId,
+            @RequestParam(required = false) String termCode,
             @RequestParam(required = false) String courseName,
             @RequestParam(required = false) String teacherName,
             @RequestParam(required = false) String className,
@@ -54,6 +59,16 @@ public class ScheduleController {
 
         try {
             Map<String, Object> params = new HashMap<>();
+            Long termId = null;
+            if (termCode != null && !termCode.isEmpty()) {
+                Term term = termService.getByCode(termCode);
+                if (term != null) {
+                    termId = term.getId();
+                } else {
+                    log.warn("未找到学期代码 '{}' 对应的学期", termCode);
+                }
+            }
+            
             if (termId != null) params.put("termId", termId);
             if (courseName != null && !courseName.isEmpty()) params.put("courseName", courseName);
             if (teacherName != null && !teacherName.isEmpty()) params.put("teacherName", teacherName);
@@ -113,7 +128,7 @@ public class ScheduleController {
             if (schedule.getClassroomId() == null) {
                 return Result.error("教室不能为空");
             }
-            if (schedule.getWeekDay() == null) {
+            if (schedule.getDayOfWeek() == null || schedule.getDayOfWeek().isEmpty()) {
                 return Result.error("星期几不能为空");
             }
             
@@ -143,7 +158,7 @@ public class ScheduleController {
     @PutMapping("/{id}")
     public Result updateSchedule(@PathVariable Long id, @RequestBody Schedule schedule) {
         log.debug("更新课表 ID {}: 课程 {}, 教师 {}, 教室 {}, 星期 {}",
-                id, schedule.getCourseId(), schedule.getTeacherId(), schedule.getClassroomId(), schedule.getWeekDay());
+                id, schedule.getCourseId(), schedule.getTeacherId(), schedule.getClassroomId(), schedule.getDayOfWeek());
         schedule.setId(id);
         try {
             // 可在此处添加验证 (例如，检查必填字段)

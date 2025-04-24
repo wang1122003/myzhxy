@@ -417,7 +417,7 @@ public class FileController {
      *
      * @return 统计信息
      */
-    @GetMapping("/manager/stats")
+    @GetMapping("/file/manager/stats")
     public Result getFileStats() {
         try {
             File baseDir = new File(uploadPath);

@@ -10,8 +10,13 @@
         <result column="priority" property="priority" jdbcType="INTEGER"/>
         <result column="sender_id" property="senderId" jdbcType="INTEGER"/>
         <result column="target_type" property="targetType" jdbcType="VARCHAR"/>
-        <result column="target_id" property="targetId" jdbcType="INTEGER"/>
-        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="target_ids" property="targetId" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="is_top" property="isTop" jdbcType="INTEGER"/>
+        <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
+        <result column="publisher_id" property="publisherId" jdbcType="INTEGER"/>
+        <result column="publisher_name" property="publisherName" jdbcType="VARCHAR"/>
+        <result column="attachments_json" property="attachmentsJson" jdbcType="LONGVARCHAR"/>
         <result column="send_time" property="sendTime" jdbcType="TIMESTAMP"/>
         <result column="expire_time" property="expireTime" jdbcType="TIMESTAMP"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
@@ -28,7 +33,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         n.id, n.title, n.content, n.type, n.priority,
-        n.sender_id, n.target_type, n.target_id, n.status,
+        n.sender_id, n.target_type, n.target_ids, n.status,
         n.send_time, n.expire_time, n.create_time, n.update_time,
         u.username as sender_username, u.real_name as sender_real_name,
         u.avatar_url as sender_avatar, u.user_type as sender_user_type
@@ -89,7 +94,7 @@
         FROM notification n
         LEFT JOIN user u ON n.sender_id = u.id
         WHERE n.target_type = #{targetType,jdbcType=VARCHAR}
-        AND n.target_id = #{targetId,jdbcType=INTEGER}
+        AND n.target_ids = #{targetId,jdbcType=VARCHAR}
         ORDER BY n.send_time DESC
     </select>
 
@@ -99,7 +104,7 @@
         <include refid="Base_Column_List"/>
         FROM notification n
         LEFT JOIN user u ON n.sender_id = u.id
-        WHERE n.status = 1
+        WHERE n.status = '1'
         AND (n.expire_time IS NULL OR n.expire_time > NOW())
         ORDER BY n.priority DESC, n.send_time DESC
     </select>
@@ -110,7 +115,7 @@
         <include refid="Base_Column_List"/>
         FROM notification n
         LEFT JOIN user u ON n.sender_id = u.id
-        WHERE n.status = 1 -- 只查询已发布的通知
+        WHERE n.status = '1'
         ORDER BY n.send_time DESC
         LIMIT #{limit}
     </select>
@@ -133,14 +138,17 @@
     <insert id="addNotification" parameterType="com.campus.entity.Notification" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO notification (
             title, content, type, priority, sender_id,
-            target_type, target_id, status, send_time,
-            expire_time, create_time, update_time
+            target_type, target_ids, status, send_time,
+            expire_time, publisher_id, publisher_name, is_top, view_count, attachments_json,
+            create_time, update_time
         )
         VALUES (
             #{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{type,jdbcType=VARCHAR},
             #{priority,jdbcType=INTEGER}, #{senderId,jdbcType=INTEGER}, #{targetType,jdbcType=VARCHAR},
-            #{targetId,jdbcType=INTEGER}, #{status,jdbcType=INTEGER}, #{sendTime,jdbcType=TIMESTAMP},
-            #{expireTime,jdbcType=TIMESTAMP}, NOW(), NOW()
+            #{targetId,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{sendTime,jdbcType=TIMESTAMP},
+            #{expireTime,jdbcType=TIMESTAMP}, #{publisherId,jdbcType=INTEGER}, #{publisherName,jdbcType=VARCHAR},
+            #{isTop,jdbcType=INTEGER}, #{viewCount,jdbcType=INTEGER}, #{attachmentsJson,jdbcType=LONGVARCHAR},
+            NOW(), NOW()
         )
     </insert>
 
@@ -154,8 +162,13 @@
             priority = #{priority,jdbcType=INTEGER},
             sender_id = #{senderId,jdbcType=INTEGER},
             target_type = #{targetType,jdbcType=VARCHAR},
-            target_id = #{targetId,jdbcType=INTEGER},
-            status = #{status,jdbcType=INTEGER},
+            target_ids = #{targetId,jdbcType=VARCHAR},
+            status = #{status,jdbcType=VARCHAR},
+            is_top = #{isTop,jdbcType=INTEGER},
+            view_count = #{viewCount,jdbcType=INTEGER},
+            publisher_id = #{publisherId,jdbcType=INTEGER},
+            publisher_name = #{publisherName,jdbcType=VARCHAR},
+            attachments_json = #{attachmentsJson,jdbcType=LONGVARCHAR},
             send_time = #{sendTime,jdbcType=TIMESTAMP},
             expire_time = #{expireTime,jdbcType=TIMESTAMP},
             update_time = NOW()
@@ -172,7 +185,7 @@
     <update id="updateNotificationStatus">
         UPDATE notification
         SET
-            status = #{status,jdbcType=INTEGER},
+            status = #{status,jdbcType=VARCHAR},
             update_time = NOW()
         WHERE id = #{id,jdbcType=INTEGER}
     </update>
@@ -181,7 +194,7 @@
     <update id="batchUpdateNotificationStatus">
         UPDATE notification
         SET
-            status = #{status,jdbcType=INTEGER},
+            status = #{status,jdbcType=VARCHAR},
             update_time = NOW()
         WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">
@@ -193,12 +206,12 @@
     <select id="getNotificationStats" resultType="java.util.Map">
         SELECT
             COUNT(*) as total_notifications,
-            COUNT(CASE WHEN status = 1 THEN 1 END) as active_notifications,
-            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_notifications,
+            COUNT(CASE WHEN status = '1' THEN 1 END) as active_notifications,
+            COUNT(CASE WHEN status = '0' THEN 1 END) as inactive_notifications,
             COUNT(DISTINCT type) as total_types,
             COUNT(DISTINCT sender_id) as total_senders,
             COUNT(DISTINCT target_type) as total_target_types,
-            COUNT(DISTINCT target_id) as total_targets,
+            COUNT(DISTINCT target_ids) as total_targets,
             COUNT(CASE WHEN expire_time &lt;= NOW() THEN 1 END) as expired_notifications
         FROM notification
     </select>
@@ -208,11 +221,11 @@
         SELECT
             type,
             COUNT(*) as notification_count,
-            COUNT(CASE WHEN status = 1 THEN 1 END) as active_count,
-            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_count,
+            COUNT(CASE WHEN status = '1' THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = '0' THEN 1 END) as inactive_count,
             COUNT(DISTINCT sender_id) as sender_count,
             COUNT(DISTINCT target_type) as target_type_count,
-            COUNT(DISTINCT target_id) as target_count,
+            COUNT(DISTINCT target_ids) as target_count,
             COUNT(CASE WHEN expire_time &lt;= NOW() THEN 1 END) as expired_count
         FROM notification
         GROUP BY type
@@ -226,11 +239,11 @@
             u.real_name as sender_real_name,
             u.user_type as sender_user_type,
             COUNT(n.id) as notification_count,
-            COUNT(CASE WHEN n.status = 1 THEN 1 END) as active_count,
-            COUNT(CASE WHEN n.status = 0 THEN 1 END) as inactive_count,
+            COUNT(CASE WHEN n.status = '1' THEN 1 END) as active_count,
+            COUNT(CASE WHEN n.status = '0' THEN 1 END) as inactive_count,
             COUNT(DISTINCT n.type) as type_count,
             COUNT(DISTINCT n.target_type) as target_type_count,
-            COUNT(DISTINCT n.target_id) as target_count,
+            COUNT(DISTINCT n.target_ids) as target_count,
             COUNT(CASE WHEN n.expire_time &lt;= NOW() THEN 1 END) as expired_count
         FROM notification n
         LEFT JOIN user u ON n.sender_id = u.id
@@ -243,11 +256,11 @@
         SELECT
             target_type,
             COUNT(*) as notification_count,
-            COUNT(CASE WHEN status = 1 THEN 1 END) as active_count,
-            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_count,
+            COUNT(CASE WHEN status = '1' THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = '0' THEN 1 END) as inactive_count,
             COUNT(DISTINCT type) as type_count,
             COUNT(DISTINCT sender_id) as sender_count,
-            COUNT(DISTINCT target_id) as target_count,
+            COUNT(DISTINCT target_ids) as target_count,
             COUNT(CASE WHEN expire_time &lt;= NOW() THEN 1 END) as expired_count
         FROM notification
         GROUP BY target_type
@@ -259,12 +272,12 @@
         SELECT
             DATE_FORMAT(send_time, '%Y-%m') as month,
             COUNT(*) as notification_count,
-            COUNT(CASE WHEN status = 1 THEN 1 END) as active_count,
-            COUNT(CASE WHEN status = 0 THEN 1 END) as inactive_count,
+            COUNT(CASE WHEN status = '1' THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = '0' THEN 1 END) as inactive_count,
             COUNT(DISTINCT type) as type_count,
             COUNT(DISTINCT sender_id) as sender_count,
             COUNT(DISTINCT target_type) as target_type_count,
-            COUNT(DISTINCT target_id) as target_count,
+            COUNT(DISTINCT target_ids) as target_count,
             COUNT(CASE WHEN expire_time &lt;= NOW() THEN 1 END) as expired_count
         FROM notification
         GROUP BY DATE_FORMAT(send_time, '%Y-%m')

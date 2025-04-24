@@ -36,10 +36,10 @@ public class Activity implements Serializable {
     private String description;
 
     /**
-     * 活动类型 (例如: 1-讲座, 2-社团, 3-竞赛等)
+     * 活动类型 (例如: "讲座", "社团", "竞赛" 等)
      */
-    @TableField("activity_type")
-    private Integer activityType;
+    @TableField("type")
+    private String type;
 
     /**
      * 活动地点
@@ -96,10 +96,10 @@ public class Activity implements Serializable {
     private Integer currentParticipants;
 
     /**
-     * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等)
+     * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等) (修改为字符串类型以适应数据库或前端数据)
      */
     @TableField("status")
-    private Integer status;
+    private String status;
 
     /**
      * 记录创建时间

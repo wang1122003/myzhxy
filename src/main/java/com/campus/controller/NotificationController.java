@@ -165,7 +165,7 @@ public class NotificationController {
      * @return 更新结果
      */
     @PutMapping("/status/{id}")
-    public Result updateNotificationStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public Result updateNotificationStatus(@PathVariable Long id, @RequestParam String status) {
         try {
             notificationService.updateNotificationStatus(id, status);
             return Result.success("更新状态成功");

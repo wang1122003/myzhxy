@@ -3,10 +3,10 @@ package com.campus.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.User;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 用户服务接口
@@ -172,26 +172,10 @@ public interface UserService extends IService<User> {
      * @param page 当前页码
      * @param size 每页数量
      * @param keyword 搜索关键词 (可选, 搜索用户名、真实姓名或邮箱)
-     * @param userType 用户类型 (可选, 0: Admin, 1: Student, 2: Teacher)
+     * @param userType 用户类型 (可选, "Admin", "Student", "Teacher")
      * @return 分页结果对象
      */
-    IPage<User> findUsersPage(int page, int size, String keyword, Integer userType);
-
-    /**
-     * 解析用户导入文件
-     * @param file 上传的Excel文件
-     * @param userType 要导入的用户类型 (0, 1, 2)
-     * @return 解析出的用户列表
-     * @throws Exception 文件解析错误
-     */
-    List<User> parseUserImportFile(MultipartFile file, Integer userType) throws Exception;
-
-    /**
-     * 批量添加用户 (用于导入)
-     * @param users 用户列表
-     * @return 是否成功
-     */
-    boolean batchAddUsers(List<User> users);
+    IPage<User> findUsersPage(int page, int size, String keyword, String userType);
 
     /**
      * 检查管理员账号是否存在
@@ -206,4 +190,20 @@ public interface UserService extends IService<User> {
      * @return 是否成功
      */
     boolean addAdminUser(User admin);
+
+    /**
+     * 根据用户名查找用户
+     *
+     * @param username 用户名
+     * @return 用户实体，或null如果找不到
+     */
+    User findByUsername(String username);
+
+    /**
+     * 根据用户ID批量获取用户信息
+     *
+     * @param ids 用户ID集合
+     * @return 用户列表
+     */
+    List<User> getUsersByIds(Set<Long> ids);
 }

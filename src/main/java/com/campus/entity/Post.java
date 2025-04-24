@@ -5,7 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -16,6 +19,8 @@ import java.util.List;
  */
 @Data
 @TableName(value = "post", autoResultMap = true)
+@EqualsAndHashCode(callSuper = false)
+@ToString(callSuper = true)
 public class Post implements Serializable {
     private static final long serialVersionUID = 1L;
     
@@ -40,21 +45,21 @@ public class Post implements Serializable {
     /**
      * 作者ID
      */
-    @TableField("author_id")
-    private Long authorId;
+    @TableField("user_id")
+    private Long userId;
     
     /**
-     * 板块类型
+     * 板块类型 / 分类
      * 例如：学习交流、校园生活、招聘信息等
      */
-    @TableField("forum_type")
-    private String forumType;
+    @TableField("category")
+    private String category;
 
     /**
-     * 板块颜色代码
+     * 板块颜色代码 (非数据库字段)
      * 用于前端显示
      */
-    @TableField("forum_color")
+    @TableField(exist = false)
     private String forumColor;
 
     /**
@@ -98,19 +103,21 @@ public class Post implements Serializable {
      * 状态：1-正常，0-禁用
      */
     @TableField("status")
-    private Integer status;
+    private String status;
     
     /**
      * 创建时间
      */
-    @TableField("create_time")
-    private Date createTime;
+    @TableField("creation_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date creationTime;
     
     /**
      * 更新时间
      */
-    @TableField("update_time")
-    private Date updateTime;
+    @TableField("last_update_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date lastUpdateTime;
 
     /**
      * 作者姓名（非数据库字段，需要Service层填充）

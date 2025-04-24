@@ -20,6 +20,23 @@
           :model="searchParams"
           @submit.prevent="handleSearch"
       >
+        <el-form-item label="学期">
+          <el-select
+              v-model="searchParams.termId"
+              placeholder="选择学期"
+              clearable
+              filterable
+              style="width: 200px;"
+              @change="handleTermChange"
+          >
+            <el-option
+                v-for="term in termList"
+                :key="term.id"
+                :label="term.termName"
+                :value="term.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="关键词">
           <el-input
               v-model="searchParams.keyword"
@@ -273,6 +290,8 @@ import {
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
+import {getTeacherList} from '@/api/user';
+import {getTermList} from '@/api/term';
 
 const loading = ref(false);
 const courseList = ref([]);
@@ -281,7 +300,8 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const searchParams = reactive({
   keyword: '',
-  status: null
+  status: null,
+  termId: null,
 });
 
 const dialogVisible = ref(false);
@@ -323,14 +343,18 @@ const courseFormRules = reactive({
 
 const isEditMode = computed(() => !!courseForm.value.id);
 
+const teacherList = ref([]);
+const termList = ref([]);
+
 const fetchCourses = async () => {
   loading.value = true;
   try {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchParams.keyword || null,
-      status: searchParams.status
+      keyword: searchParams.keyword || undefined,
+      status: searchParams.status,
+      termId: searchParams.termId || undefined,
     };
     const res = await getCourseList(params);
     courseList.value = res.data.records || [];
@@ -340,6 +364,34 @@ const fetchCourses = async () => {
     ElMessage.error("获取课程列表失败");
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchTeachers = async () => {
+  try {
+    const res = await getTeacherList({userType: 'Teacher'});
+    teacherList.value = res.data || [];
+  } catch (error) {
+    console.error("获取教师列表失败", error);
+  }
+};
+
+const fetchTerms = async () => {
+  try {
+    const res = await getTermList();
+    if (res.code === 200 && res.data) {
+      termList.value = res.data;
+      const currentTerm = res.data.find(t => t.current === 1);
+      if (currentTerm && !searchParams.termId) {
+        searchParams.termId = currentTerm.id;
+        fetchCourses();
+      }
+    } else {
+      ElMessage.error(res.message || '获取学期列表失败');
+    }
+  } catch (error) {
+    console.error("获取学期列表失败", error);
+    ElMessage.error('获取学期列表时发生错误');
   }
 };
 
@@ -442,8 +494,14 @@ const formatTime = (timeStr) => {
   }
 };
 
-onMounted(() => {
+const handleTermChange = () => {
+  currentPage.value = 1;
   fetchCourses();
+};
+
+onMounted(() => {
+  fetchTerms();
+  fetchTeachers();
 });
 
 </script>

@@ -1,11 +1,12 @@
 package com.campus.service.impl;
 
+import com.campus.config.StorageProperties;
 import com.campus.service.FileService;
 import com.campus.utils.FileUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -29,60 +31,88 @@ public class FileServiceImpl implements FileService {
     private static final Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // Assuming URLs start with "/uploads" based on spring-mvc.xml
-    private static final String URL_PREFIX = "/uploads";
-    // Injected base path for constructing URLs and deleting files
-    @Value("${file.upload.path}")
-    private String uploadBasePath; // Physical base path
+    // URL 前缀，应与 Spring MVC 资源映射路径一致
+    private static final String URL_PREFIX = "/uploads"; // 保持和 application.properties 及 mvc 配置一致
+
+    // 注入 StorageProperties
+    private final StorageProperties storageProperties;
+
+    @Autowired // 使用构造函数注入
+    public FileServiceImpl(StorageProperties storageProperties) {
+        this.storageProperties = storageProperties;
+    }
+
+    private String getBasePath() {
+        String location = storageProperties.getLocation();
+        if (location == null || location.trim().isEmpty()) {
+            logger.error("文件上传基础路径未配置 (storageProperties.location is empty/null). 请检查 application.properties 中的 'file.upload.path'");
+            // 抛出异常或者返回一个默认值（不推荐）
+            throw new IllegalStateException("文件上传基础路径未配置。");
+        }
+        return location.trim();
+    }
     
     @Override
     public String uploadImage(MultipartFile file) throws IOException {
         validateImageFile(file);
-        return FileUtils.uploadFile(file, FileUtils.IMAGE_UPLOAD_DIR);
+        String targetDir = Paths.get(getBasePath(), "images").toString();
+        // uploadFile 返回完整路径
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        // 返回相对于 Web 访问的 URL
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
     public String uploadImage(MultipartFile file, String type) throws IOException {
         validateImageFile(file);
-        String directory;
+        String baseDir = getBasePath();
+        String subDir;
         
         switch (type.toLowerCase()) {
             case "avatar":
-                directory = FileUtils.AVATAR_UPLOAD_DIR;
+                subDir = "avatars";
                 break;
             case "poster":
-                directory = FileUtils.POSTER_UPLOAD_DIR;
+                subDir = "posters";
                 break;
             case "post":
-                directory = FileUtils.POST_IMAGE_DIR;
+                subDir = "posts";
                 break;
             default:
-                directory = FileUtils.IMAGE_UPLOAD_DIR + "/" + type;
-                // 确保目录存在
-                FileUtils.createDirectoryIfNotExists(directory);
+                // 对于未知类型，放入 images 下的子目录
+                subDir = Paths.get("images", type).toString();
         }
-        
-        return FileUtils.uploadFile(file, directory);
+        String targetDir = Paths.get(baseDir, subDir).toString();
+        // FileUtils.uploadFile 内部会创建目录，移除外部调用
+        // FileUtils.createDirectoryIfNotExists(directory);
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
     public String uploadActivityPoster(MultipartFile file) throws IOException {
         validateImageFile(file);
-        return FileUtils.uploadFile(file, FileUtils.POSTER_UPLOAD_DIR);
+        String targetDir = Paths.get(getBasePath(), "posters").toString();
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
     public String uploadUserAvatar(MultipartFile file, Long userId) throws IOException {
         validateImageFile(file);
-        String userAvatarDir = FileUtils.AVATAR_UPLOAD_DIR + "/" + userId;
-        FileUtils.createDirectoryIfNotExists(userAvatarDir);
-        return FileUtils.uploadFile(file, userAvatarDir);
+        String targetDir = Paths.get(getBasePath(), "avatars", String.valueOf(userId)).toString();
+        // FileUtils.uploadFile 内部会创建目录，移除外部调用
+        // FileUtils.createDirectoryIfNotExists(userAvatarDir);
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
     public String uploadPostImage(MultipartFile file) throws IOException {
         validateImageFile(file);
-        return FileUtils.uploadFile(file, FileUtils.POST_IMAGE_DIR);
+        String targetDir = Paths.get(getBasePath(), "posts").toString();
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
@@ -94,8 +124,10 @@ public class FileServiceImpl implements FileService {
         if (!FileUtils.isDocument(file.getOriginalFilename())) {
             throw new IllegalArgumentException("请上传合法的文档文件");
         }
-        
-        return FileUtils.uploadFile(file, FileUtils.DOCUMENT_UPLOAD_DIR);
+        String targetDir = Paths.get(getBasePath(), "documents").toString();
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        // 通常文档也需要返回 URL
+        return convertFullPathToUrl(fullPath);
     }
     
     @Override
@@ -104,11 +136,12 @@ public class FileServiceImpl implements FileService {
             throw new IllegalArgumentException("上传文件不能为空");
         }
         
-        String courseMaterialDir = FileUtils.COURSE_MATERIAL_DIR + "/" + courseId;
-        FileUtils.createDirectoryIfNotExists(courseMaterialDir);
-        // Existing methods return relative physical path from base upload dir
-        String relativeFilePath = FileUtils.uploadFile(file, courseMaterialDir);
-        return relativeFilePath; // Return relative path for consistency
+        String targetDir = Paths.get(getBasePath(), "courses", String.valueOf(courseId)).toString();
+        // FileUtils.uploadFile 内部会创建目录，移除外部调用
+        // FileUtils.createDirectoryIfNotExists(courseMaterialDir);
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        // 返回 URL 供访问
+        return convertFullPathToUrl(fullPath);
     }
 
     @Override
@@ -118,177 +151,199 @@ public class FileServiceImpl implements FileService {
         }
         // No specific validation for generic attachments for now
 
-        // Upload the file using the utility method, returns relative path from base upload dir
-        String relativeFilePath = FileUtils.uploadFile(file, FileUtils.NOTICE_ATTACHMENT_DIR);
+        String targetDir = Paths.get(getBasePath(), "notices").toString();
+        String fullPath = FileUtils.uploadFile(file, targetDir);
 
         // Construct the result map
         Map<String, String> result = new HashMap<>();
         result.put("name", file.getOriginalFilename());
-
-        // Construct the accessible URL: URL_PREFIX + path_relative_to_upload_base
-        // Example: uploadBasePath = /d:/Workspace/campus/uploads
-        //          relativeFilePath = uploads/notices/uuid.pdf
-        //          We need to remove the 'uploads' part from relativeFilePath to get the path_relative_to_upload_base
-        String pathRelativeToUploadBase = relativeFilePath.substring(FileUtils.getBaseUploadDir().length());
-        // Ensure it starts with a slash and replace backslashes
-        pathRelativeToUploadBase = (pathRelativeToUploadBase.startsWith("/") ? pathRelativeToUploadBase : "/" + pathRelativeToUploadBase)
-                .replace("\\", "/");
-
-        result.put("url", URL_PREFIX + pathRelativeToUploadBase); // e.g., /uploads/notices/uuid.pdf
+        result.put("url", convertFullPathToUrl(fullPath)); // 使用辅助方法转换 URL
+        result.put("physicalPath", fullPath); // 可以选择性返回物理路径
 
         return result;
     }
     
     @Override
-    public boolean deleteFile(String relativePath) {
-        if (relativePath == null || relativePath.isEmpty()) {
-            logger.error("相对路径不能为空");
+    public boolean deleteFile(String relativeOrFullPath) {
+        if (relativeOrFullPath == null || relativeOrFullPath.isEmpty()) {
+            logger.error("文件路径不能为空");
             return false;
         }
 
-        // 构建完整物理路径
-        String fullPath = FileUtils.getPhysicalPath(relativePath);
-
+        String fullPath;
         try {
-            File file = new File(fullPath);
-            if (file.exists() && file.isFile()) {
-                boolean deleted = file.delete();
-                if (deleted) {
-                    logger.info("文件删除成功: {}", relativePath);
-                    return true;
-                } else {
-                    logger.error("文件删除失败: {}", relativePath);
+             // 尝试判断传入的是相对路径还是绝对路径
+            Path path = Paths.get(relativeOrFullPath);
+
+            if (path.isAbsolute()) {
+                 // 如果已经是绝对路径，直接使用，但验证它是否在 basePath 内
+                 fullPath = relativeOrFullPath;
+                 Path basePathObj = Paths.get(getBasePath()).normalize();
+                 if (!path.normalize().startsWith(basePathObj)) {
+                      logger.error("尝试删除基础上传目录之外的文件: {}", fullPath);
                     return false;
                 }
             } else {
-                logger.warn("文件不存在或不是一个文件: {}", relativePath);
-                return true; // 文件不存在视为删除成功
+                 // 如果是相对路径，则基于 basePath 构建完整路径
+                 fullPath = Paths.get(getBasePath(), relativeOrFullPath).toString();
             }
         } catch (Exception e) {
-            logger.error("删除文件时发生错误: {}", relativePath, e);
+            logger.error("解析删除文件路径时出错: {}", relativeOrFullPath, e);
             return false;
         }
+
+        // 使用 FileUtils.deleteFile，它接收完整路径
+        return FileUtils.deleteFile(fullPath);
     }
 
     @Override
     public boolean deleteAll() {
-        try {
-            // 获取上传根目录
-            String uploadDir = FileUtils.getUploadRootDir();
-            File directory = new File(uploadDir);
+        String baseDir = getBasePath(); // 获取基础目录
+        Path directoryPath = Paths.get(baseDir);
 
-            // 如果目录不存在，直接返回成功
-            if (!directory.exists() || !directory.isDirectory()) {
-                logger.warn("上传目录不存在: {}", uploadDir);
+        if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
+            logger.warn("上传目录不存在，无需删除: {}", baseDir);
                 return true;
             }
 
-            // 递归删除所有文件和子目录
-            boolean success = deleteDirectory(directory);
-
-            if (success) {
-                logger.info("成功删除所有上传的文件");
-                // 删除后重新创建上传目录
-                directory.mkdirs();
+        logger.info("开始删除目录及其所有内容: {}", baseDir);
+        try (Stream<Path> walk = Files.walk(directoryPath)) {
+            walk.sorted(java.util.Comparator.reverseOrder()) // 逆序删除，先删文件再删目录
+                .map(Path::toFile)
+                // .peek(System.out::println) // for debugging
+                .forEach(file -> {
+                    // 不删除根目录本身，比较标准化路径
+                    if (!file.getAbsoluteFile().toPath().normalize().equals(directoryPath.normalize())) {
+                        if (!file.delete()) {
+                             logger.error("无法删除文件或目录: {}", file.getAbsolutePath());
+                             // 可以选择抛出异常中断操作或继续
             } else {
-                logger.error("删除所有上传文件失败");
-            }
+                             // logger.debug("已删除: {}", file.getAbsolutePath()); // Debug级别日志可以取消注释
+                        }
+                    }
+                });
 
-            return success;
-        } catch (Exception e) {
-            logger.error("删除所有文件时发生错误", e);
+             logger.info("成功删除上传目录内容: {}", baseDir);
+             // 如果需要，重新创建根目录 (通常不需要，除非上面的删除逻辑会删除根目录)
+             // Files.createDirectories(directoryPath);
+            return true;
+        } catch (IOException e) {
+            logger.error("删除目录内容时发生错误: {}", baseDir, e);
             return false;
         }
     }
-
-    /**
-     * 递归删除目录及其内容
-     *
-     * @param directory 要删除的目录
-     * @return 是否删除成功
-     */
-    private boolean deleteDirectory(File directory) {
-        if (directory.exists()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isDirectory()) {
-                        deleteDirectory(file);
-                    } else {
-                        file.delete();
-                    }
-                }
-            }
-        }
-        // 如果是根目录，不要删除根目录本身
-        if (!directory.getAbsolutePath().equals(FileUtils.getUploadRootDir())) {
-            return directory.delete();
-        }
-        return true;
-    }
     
     @Override
-    public String getFileInfo(String filePath) {
-        if (filePath == null || filePath.isEmpty()) {
+    public String getFileInfo(String relativeOrFullPath) {
+        if (relativeOrFullPath == null || relativeOrFullPath.isEmpty()) {
             throw new IllegalArgumentException("文件路径不能为空");
         }
         
-        File file = new File(filePath);
+        // 构建完整物理路径
+        String fullPath;
+         try {
+             Path pathObj = Paths.get(relativeOrFullPath);
+             if (pathObj.isAbsolute()) {
+                  fullPath = relativeOrFullPath;
+                  // 可选：验证是否在 basePath 内
+                  Path basePathObj = Paths.get(getBasePath()).normalize();
+                  if (!pathObj.normalize().startsWith(basePathObj)) {
+                       logger.warn("尝试获取基础上传目录之外的文件信息: {}", fullPath);
+                        throw new IllegalArgumentException("不允许访问指定路径的文件");
+                  }
+             } else {
+                 fullPath = Paths.get(getBasePath(), relativeOrFullPath).toString();
+             }
+         } catch (Exception e) {
+              logger.error("解析文件信息路径时出错: {}", relativeOrFullPath, e);
+              throw new IllegalArgumentException("无效的文件路径: " + relativeOrFullPath, e);
+         }
+
+        File file = new File(fullPath);
         if (!file.exists()) {
-            throw new IllegalArgumentException("文件不存在");
+            // 可能是请求时路径错误，或者文件已被删除
+            logger.warn("尝试获取文件信息但文件不存在: FullPath={}, RequestPath={}", fullPath, relativeOrFullPath);
+            throw new IllegalArgumentException("文件不存在: " + relativeOrFullPath);
         }
         
         try {
             Map<String, Object> fileInfo = new HashMap<>();
             fileInfo.put("name", file.getName());
-            fileInfo.put("path", filePath);
+            fileInfo.put("path", relativeOrFullPath); // 返回请求时使用的路径
+            // fileInfo.put("fullPath", fullPath); // 避免泄露服务器完整路径
             fileInfo.put("size", file.length());
             fileInfo.put("readableSize", FileUtils.getReadableFileSize(file.length()));
             fileInfo.put("type", FileUtils.getFileType(file.getName()));
             fileInfo.put("lastModified", file.lastModified());
             fileInfo.put("isDirectory", file.isDirectory());
+            fileInfo.put("url", convertFullPathToUrl(fullPath)); // 添加 URL
             
             return objectMapper.writeValueAsString(fileInfo);
-        } catch (Exception e) {
-            logger.error("获取文件信息失败", e);
-            throw new RuntimeException("获取文件信息失败");
+        } catch (IOException e) {
+            logger.error("获取文件信息序列化失败: {}", relativeOrFullPath, e);
+            throw new RuntimeException("获取文件信息失败", e);
         }
     }
     
     @Override
-    public boolean downloadFile(String filePath, OutputStream outputStream) {
-        if (filePath == null || filePath.isEmpty() || outputStream == null) {
+    public boolean downloadFile(String relativeOrFullPath, OutputStream outputStream) {
+         if (relativeOrFullPath == null || relativeOrFullPath.isEmpty() || outputStream == null) {
+            logger.error("文件路径或输出流不能为空");
             return false;
         }
         
+        // 构建完整物理路径
+        String fullPath;
         try {
-            Path path = Paths.get(filePath);
-            if (!Files.exists(path)) {
-                logger.error("下载文件失败，文件不存在: {}", filePath);
+             Path pathObj = Paths.get(relativeOrFullPath);
+             if (pathObj.isAbsolute()) {
+                  fullPath = relativeOrFullPath;
+                  // 可选：验证是否在 basePath 内
+                   Path basePathObj = Paths.get(getBasePath()).normalize();
+                  if (!pathObj.normalize().startsWith(basePathObj)) {
+                       logger.error("尝试下载基础上传目录之外的文件: {}", fullPath);
+                       return false;
+                  }
+             } else {
+                 fullPath = Paths.get(getBasePath(), relativeOrFullPath).toString();
+             }
+         } catch (Exception e) {
+             logger.error("解析下载文件路径时出错: {}", relativeOrFullPath, e);
+             return false;
+         }
+
+
+        Path filePath = Paths.get(fullPath);
+        if (!Files.exists(filePath) || !Files.isReadable(filePath) || Files.isDirectory(filePath)) {
+             logger.error("下载目标文件不存在、不可读或为目录: {}", fullPath);
                 return false;
             }
             
-            Files.copy(path, outputStream);
-            logger.info("文件下载成功: {}", filePath);
+        try {
+            Files.copy(filePath, outputStream);
+            outputStream.flush(); // 确保内容写入
+            // logger.info("文件下载成功: {}", fullPath); // 成功日志可能过于频繁
             return true;
         } catch (IOException e) {
-            logger.error("文件下载失败: {}", filePath, e);
+            // 捕获可能的客户端连接关闭异常
+            if (e.getClass().getName().contains("ClientAbortException")) {
+                logger.warn("文件下载中断 (客户端关闭连接): {}", fullPath);
+            } else {
+                logger.error("文件下载失败: {}", fullPath, e);
+            }
             return false;
+        } finally {
+             // 通常不应在此处关闭 outputStream，调用者负责关闭
+             // try { outputStream.close(); } catch (IOException e) { logger.error("关闭输出流失败", e); }
         }
     }
     
     @Override
     public String generateTempUrl(String filePath, long expireTime) {
-        if (filePath == null || filePath.isEmpty()) {
-            throw new IllegalArgumentException("文件路径不能为空");
-        }
-        
-        File file = new File(filePath);
-        if (!file.exists()) {
-            throw new IllegalArgumentException("文件不存在");
-        }
-        
-        return FileUtils.generateTempUrl(filePath, expireTime);
+        // 临时 URL 生成逻辑需要根据实际需求实现，可能涉及签名等
+        logger.warn("generateTempUrl 方法未实现或已废弃，返回文件的常规 URL");
+        // 可能需要将物理路径转换为 Web 可访问路径
+         return convertFullPathToUrl(filePath); // 示例：直接返回普通 URL
     }
     
     /**
@@ -296,68 +351,115 @@ public class FileServiceImpl implements FileService {
      */
     private void validateImageFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("上传图片不能为空");
+            throw new IllegalArgumentException("上传文件不能为空");
         }
         if (!FileUtils.isImage(file.getOriginalFilename())) {
-            throw new IllegalArgumentException("请上传合法的图片文件 (jpg, png, gif, bmp, webp)");
+            // 返回更详细的允许类型
+            throw new IllegalArgumentException("请上传合法的图片文件 (jpg, jpeg, png, gif, bmp, webp)");
         }
+        // 可以添加文件大小限制检查等
+        /*
+        long maxSize = 10 * 1024 * 1024; // 示例：10MB
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException("文件大小不能超过 " + FileUtils.getReadableFileSize(maxSize));
+        }
+        */
     }
 
     @Override
     public void init() {
+         // 这个 init 方法似乎未使用 Spring 的初始化回调 (如 @PostConstruct)，用途是什么？
+         // 如果是为了确保目录存在，InitializationUtils.SystemInitializer 已经处理了
+         // 考虑使用 @PostConstruct 代替，或者移除此方法
+        logger.info("FileServiceImpl init() called. Base path from properties: {}", getBasePath());
+        // 可以考虑移除此方法，除非有特定用途
+        /*
         try {
-            File uploadDir = new File(uploadBasePath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-            logger.info("初始化文件存储目录：{}", uploadBasePath);
+            // 确保基础目录存在 (虽然 InitializationUtils 也会做)
+            Files.createDirectories(Paths.get(getBasePath()));
         } catch (Exception e) {
             logger.error("初始化存储目录失败", e);
-            throw new RuntimeException("无法创建上传文件存储目录");
+            throw new RuntimeException("Could not initialize storage location", e);
         }
+        */
     }
 
     @Override
     public String storeFile(MultipartFile file, String... extraParams) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("上传文件不能为空");
-        }
+        // 这个方法似乎与 uploadXXX 方法重复，并且使用了 varargs extraParams，用途不明
+        // 建议整合或移除
+        logger.warn("storeFile 方法可能已废弃或需要整合");
+        String type = (extraParams != null && extraParams.length > 0) ? extraParams[0] : "general"; // 假设第一个参数是类型
 
-        String directory = extraParams.length > 0 ? extraParams[0] : "";
-        return FileUtils.uploadFile(file, directory);
+        String baseDir = getBasePath();
+        String targetDir = Paths.get(baseDir, "general", type).toString(); // 存入 general 子目录
+
+        // 应该使用统一的上传逻辑
+        String fullPath = FileUtils.uploadFile(file, targetDir);
+        return convertFullPathToUrl(fullPath); // 返回 URL
     }
 
     @Override
     public Path load(String filename) {
-        return Paths.get(uploadBasePath).resolve(filename);
+        // filename 应该是相对于 basePath 的路径
+        return Paths.get(getBasePath()).resolve(filename);
     }
 
     @Override
     public Stream<Path> loadAll() {
+        Path rootLocation = Paths.get(getBasePath());
         try {
-            Path root = Paths.get(uploadBasePath);
-            return Files.walk(root, 1)
-                    .filter(path -> !path.equals(root))
-                    .map(root::relativize);
+            return Files.walk(rootLocation, 1) // 只遍历第一层
+                    .filter(path -> !path.equals(rootLocation)) // 过滤掉根目录本身
+                    .map(rootLocation::relativize); // 返回相对路径
         } catch (IOException e) {
-            logger.error("读取文件目录失败", e);
-            throw new RuntimeException("无法读取存储的文件", e);
+            logger.error("无法读取存储的文件", e);
+            throw new RuntimeException("Failed to read stored files", e);
         }
     }
 
     @Override
     public Resource loadAsResource(String filename) {
+         // filename 应该是相对于 basePath 的路径
         try {
-            Path file = load(filename);
-            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(file.toUri());
+            Path file = load(filename); // load 返回的是绝对路径
+            Resource resource = new org.springframework.core.io.UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("无法读取文件: " + filename);
+                 logger.error("无法读取文件: {}", filename);
+                throw new RuntimeException("Could not read file: " + filename);
             }
-        } catch (Exception e) {
-            logger.error("加载文件资源失败: {}", filename, e);
-            throw new RuntimeException("无法读取文件: " + filename, e);
+        } catch (java.net.MalformedURLException e) {
+            logger.error("无法读取文件: {}", filename, e);
+            throw new RuntimeException("Could not read file: " + filename, e);
+        }
+    }
+
+    /**
+     * 将文件的完整物理路径转换为可通过 Web 访问的 URL
+     * @param fullPath 文件的完整物理路径 (e.g., d:/Workspace/campus/uploads/images/uuid.jpg)
+     * @return 相对于 Web 根目录的 URL (e.g., /uploads/images/uuid.jpg)
+     */
+    private String convertFullPathToUrl(String fullPath) {
+        if (fullPath == null || fullPath.isEmpty()) {
+            return "";
+        }
+        String basePath = getBasePath();
+        // 确保 fullPath 以 basePath 开头，忽略大小写和路径分隔符差异
+        Path fullPathObj = Paths.get(fullPath);
+        Path basePathObj = Paths.get(basePath);
+
+        if (fullPathObj.normalize().startsWith(basePathObj.normalize())) {
+            // 获取相对路径
+            Path relativePath = basePathObj.relativize(fullPathObj);
+            // 构建 URL
+            return URL_PREFIX + "/" + relativePath.toString().replace("\\", "/");
+        } else {
+            logger.warn("无法将物理路径转换为URL，因为它不在基础上传路径下。FullPath: {}, BasePath: {}", fullPath, basePath);
+            // 返回原始路径或空字符串，或者可以尝试只返回文件名
+            // 更好的方式可能是让 uploadFile 返回相对路径，但这与方式一的目标不符
+             return fullPath; // 或者返回 FileUtils.getFileNameFromPath(fullPath)
         }
     }
 } 

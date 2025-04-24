@@ -43,6 +43,16 @@
           </template>
         </el-table-column>
         <el-table-column
+            label="已读"
+            prop="readCount"
+            width="80"
+            align="center"
+        >
+          <template #default="scope">
+            {{ scope.row.readCount ?? 0 }}
+          </template>
+        </el-table-column>
+        <el-table-column
             label="操作"
             width="100"
         >

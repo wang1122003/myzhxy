@@ -19,6 +19,7 @@
             formatTime(noticeData.publishTime)
           }}</span>
         <span v-if="noticeData.type"><el-icon><CollectionTag/></el-icon> 类型: {{ getNoticeTypeName(noticeData.type) }}</span>
+        <span v-if="noticeData.readCount !== undefined"><el-icon><View /></el-icon> 已读: {{ noticeData.readCount }}</span>
       </div>
       <el-divider/>
       <div class="notice-body" v-html="noticeData.content"></div>
@@ -52,7 +53,7 @@
 <script setup>
 import {defineEmits, defineProps, ref, watch} from 'vue';
 import {ElButton, ElDialog, ElDivider, ElEmpty, ElIcon, ElLink, ElMessage, vLoading} from 'element-plus';
-import {Clock, CollectionTag, Paperclip, User} from '@element-plus/icons-vue';
+import {Clock, CollectionTag, Paperclip, User, View} from '@element-plus/icons-vue';
 import {getNoticeById} from '@/api/notice'; // Correct import
 // import { downloadFile } from '@/api/file'; // Import if download functionality is needed
 

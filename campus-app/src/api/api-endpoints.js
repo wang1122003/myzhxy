@@ -61,7 +61,7 @@ export const SCHEDULE_API = {
 
 // 活动相关接口
 export const ACTIVITY_API = {
-    GET_ALL: '/api/activities',
+    GET_ALL: '/activities',
     GET_BY_ID: '/activities/:id',
     GET_BY_TYPE: '/activities/type/:activityType',
     GET_BY_STATUS: '/activities/status/:status',
@@ -112,10 +112,11 @@ export const FORUM_API = {
     DELETE: '/forum/posts/:id',
     GET_COMMENTS: '/forum/posts/:postId/comments',
     ADD_COMMENT: '/forum/posts/:postId/comments',
-    DELETE_COMMENT: '/forum/posts/comments/:commentId',
+    DELETE_COMMENT: '/forum/comments/:commentId',
     GET_HOT_POSTS: '/forum/posts/hot',
     INCREMENT_VIEWS: '/forum/posts/:id/views',
     LIKE_POST: '/forum/posts/:id/like',
+    UNLIKE_POST: '/forum/posts/:id/unlike',
     GET_TAGS: '/forum/posts/:postId/tags',
     ADD_TAGS: '/forum/posts/:postId/tags',
     REMOVE_TAG: '/forum/posts/:postId/tags/:tagId',
@@ -131,6 +132,7 @@ export const FORUM_API = {
     DELETE_COMMENT_DIRECT: '/forum/comments/:id',
     BATCH_DELETE_COMMENTS: '/forum/comments/batch',
     LIKE_COMMENT: '/forum/comments/:id/like',
+    UNLIKE_COMMENT: '/forum/comments/:id/unlike',
 
     // 标签相关
     GET_ALL_TAGS: '/forum/tags',
@@ -144,19 +146,15 @@ export const FORUM_API = {
     // --- 合并自外部定义 ---
     GET_CATEGORIES: '/forum/categories',
     ADD_CATEGORY: '/forum/categories',
-    UPDATE_CATEGORY: '/forum/categories',
-    DELETE_CATEGORY: '/forum/categories',
-    UNLIKE_POST: '/forum/posts/unlike',
+    UPDATE_CATEGORY: '/forum/categories/:id',
+    DELETE_CATEGORY: '/forum/categories/:id',
     GET_TOP: '/forum/posts/top',
     GET_ESSENCE: '/forum/posts/essence',
-    SET_TOP: '/forum/posts/top',
-    SET_ESSENCE: '/forum/posts/essence',
-    UPDATE_STATUS: '/forum/posts/status',
-    UNLIKE_COMMENT: '/forum/comments/unlike',
+    SET_TOP: '/forum/posts/:id/top',
+    SET_ESSENCE: '/forum/posts/:id/essence',
+    UPDATE_STATUS: '/forum/posts/:id/status',
     GET_ALL_CATEGORIES: '/forum/categories/all',
-    GET_AVAILABLE_FORUMS: '/forum/forums',
-    UPLOAD_POST_IMAGE: '/upload/image',
-    UPLOAD_FILE: '/upload/file'
+    GET_AVAILABLE_FORUMS: '/forum/forums'
 }
 
 // 文件相关接口
@@ -172,9 +170,9 @@ export const FILE_API = {
     GET_FILE_INFO: '/file/info',
     DOWNLOAD_FILE: '/file/download',
     GET_TEMP_URL: '/file/temp-url',
-    LIST_DIRECTORY: '/api/file/manager/list',
-    BATCH_DELETE: '/manager/batch-delete',
-    GET_FILE_STATS: '/api/manager/stats'
+    LIST_DIRECTORY: '/file/manager/list',
+    BATCH_DELETE: '/file/manager/batch-delete',
+    GET_FILE_STATS: '/file/manager/stats'
 }
 
 // 通用接口
@@ -193,29 +191,21 @@ export const COMMON_API = {
     GET_POST_CATEGORIES: '/common/post-categories'
 }
 
-// --- 新增或调整的接口 ---
-// (根据需要添加，例如 Grades API)
+// --- 成绩相关接口 ---
 export const GRADE_API = {
-    // GET_STUDENT_GRADES: '/scores/me', // Use GET_MY_SCORES instead
-    GET_MY_SCORES: '/api/scores/me', // For student view
-    GET_COURSE_SCORES: '/api/scores/course/:courseId', // For teacher view (gets all scores for a course)
-    GET_STUDENT_COURSE_SCORE: '/api/scores/student/:studentId/course/:courseId', // Get single score record
-    RECORD_SCORE: '/api/scores', // POST for new, PUT for update (using recordScore method in service)
-    BATCH_DELETE: '/api/scores/batch', // DELETE
-    // Obsolete endpoints (removed or handled differently)
-    // GET_COURSE_STUDENTS: '/scores/course-students', // Use GET_COURSE_SCORES
-    // SAVE_BATCH: '/scores/save-batch', // Use RECORD_SCORE or specific update endpoint
-    // EXPORT: '/scores/export/:courseId',
-    // IMPORT: '/scores/import'
-    // Keep stats/analysis endpoints if they are still needed and implemented in backend
-    GET_STATS: '/api/scores/stats',
-    GET_COURSE_STATS: '/api/scores/stats/course/:courseId' // Example if needed
+    GET_MY_SCORES: '/scores/me', // For student view
+    GET_COURSE_SCORES: '/scores/course/:courseId', // For teacher view
+    GET_STUDENT_COURSE_SCORE: '/scores/student/:studentId/course/:courseId', // Get single score record
+    RECORD_SCORE: '/scores', // POST for new, PUT for update
+    BATCH_DELETE: '/scores/batch', // DELETE
+    GET_STATS: '/scores/stats',
+    GET_COURSE_STATS: '/scores/stats/course/:courseId',
+    EXPORT: '/scores/export/:courseId',
+    IMPORT: '/scores/import'
 }
 
-// (根据需要添加其他 API 定义，例如 Student Activities)
-// export const ACTIVITY_API = {
-//   ... (保留 ACTIVITY_API 已有内容)
-//   GET_STUDENT_ACTIVITIES: '/activities/student/my' // 示例
-// }
-
-// --- 以下内容已移除并合并或移动到 forum.js ---
+// 学期相关接口
+export const TERM_API = {
+    GET_ALL: '/terms',
+    GET_CURRENT: '/terms/current'
+};

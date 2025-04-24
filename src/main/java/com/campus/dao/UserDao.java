@@ -20,18 +20,11 @@ public interface UserDao extends BaseMapper<User> {
     User findByUsername(String username);
     
     /**
-     * 根据角色查询用户
-     * @param role 角色
-     * @return 用户列表
-     */
-    List<User> findByRole(String role);
-    
-    /**
      * 根据用户类型查询用户
-     * @param userType 用户类型
+     * @param userType 用户类型 (String, e.g., "Student", "Teacher")
      * @return 用户列表
      */
-    List<User> findByUserType(Integer userType);
+    List<User> findByUserType(String userType);
     
     /**
      * 根据状态查询用户
@@ -54,13 +47,6 @@ public interface UserDao extends BaseMapper<User> {
      * @return 用户列表
      */
     List<User> searchUsers(@Param("keyword") String keyword);
-    
-    /**
-     * 获取角色用户数
-     * @param role 角色
-     * @return 用户数量
-     */
-    int getRoleUserCount(String role);
     
     /**
      * 获取状态用户数
@@ -115,14 +101,6 @@ public interface UserDao extends BaseMapper<User> {
      * @return 删除数量
      */
     int deleteBatchIds(@Param("ids") List<Long> ids);
-
-    /**
-     * 根据角色ID列表查询用户ID列表
-     *
-     * @param roleIds 角色ID列表
-     * @return 用户ID列表
-     */
-    List<Long> findUserIdsByRoleIds(@Param("roleIds") List<Long> roleIds);
 
     /**
      * 根据部门ID列表查询用户ID列表

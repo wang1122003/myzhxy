@@ -10,9 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -271,7 +269,7 @@ public class UserController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer userType) {
+            @RequestParam(required = false) String userType) {
 
         try {
             IPage<User> userPage = userService.findUsersPage(page, size, keyword, userType);
@@ -374,40 +372,6 @@ public class UserController {
     public Result getUserStats() {
         Map<String, Object> stats = userService.getUserStats();
         return Result.success("获取用户统计信息成功", stats);
-    }
-
-    /**
-     * 导入用户数据 (功能已移除)
-     * @param file Excel 文件
-     * @param userType 用户类型 (0: Admin, 1: Student, 2: Teacher)
-     * @return 导入结果
-     */
-    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Result importUsers(@RequestParam("file") MultipartFile file,
-                              @RequestParam("userType") Integer userType) {
-        log.warn("用户文件导入接口 (/import) 已被移除");
-        return Result.error("用户文件导入功能已移除");
-    }
-
-    /**
-     * 批量导入用户 (功能关联性移除)
-     * @param users 用户列表
-     * @return 导入结果
-     */
-    @PostMapping("/batch-import")
-    public Result batchImportUsers(@RequestBody List<User> users) {
-        log.warn("批量用户导入接口 (/batch-import) 已移除");
-        return Result.error("批量用户导入功能已移除 (关联文件导入)");
-    }
-
-    /**
-     * 下载用户导入模板 (功能已移除)
-     * @param response HTTP响应对象，用于写入文件流
-     */
-    @GetMapping("/import-template")
-    public Result downloadImportTemplate(HttpServletResponse response) {
-        log.warn("下载用户导入模板接口 (/import-template) 已移除");
-        return Result.error("下载用户导入模板功能已移除");
     }
 
     /**

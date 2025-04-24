@@ -1,15 +1,18 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.dto.PageResult;
 import com.campus.entity.Comment;
 import com.campus.vo.CommentVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 论坛评论服务接口
  */
-public interface CommentService {
+public interface CommentService extends IService<Comment> {
     
     /**
      * 根据ID查询评论信息
@@ -93,7 +96,7 @@ public interface CommentService {
      * @param status 状态值
      * @return 是否成功
      */
-    boolean updateCommentStatus(Long id, Integer status);
+    boolean updateCommentStatus(Long id, String status);
     
     /**
      * 增加评论点赞次数
@@ -139,4 +142,33 @@ public interface CommentService {
      * @return 分页评论结果 (包含作者信息)
      */
     PageResult<CommentVO> getAllCommentsPaginated(int pageNo, int pageSize, Long postId, Long authorId, String keyword);
+
+    /**
+     * 发表评论 (包含回复)
+     *
+     * @param comment 评论实体，包含postId, userId, content, parentId
+     * @return 创建后的评论实体
+     */
+    Comment createComment(Comment comment);
+
+    /**
+     * [新增] 获取所有评论（管理端），支持分页和筛选
+     *
+     * @param page    页码
+     * @param size    每页数量
+     * @param status  评论状态 (可选)
+     * @param keyword 搜索关键词 (可选)
+     * @return 评论分页结果 (Map包含评论信息和帖子信息)
+     */
+    Page<Map<String, Object>> getAllCommentsManaged(int page, int size, Integer status, String keyword);
+
+    /**
+     * [新增] 获取指定用户的评论分页列表，并包含关联的帖子信息
+     *
+     * @param userId 用户ID
+     * @param page   页码
+     * @param size   每页数量
+     * @return 评论分页结果 (Map包含评论信息和帖子信息)
+     */
+    Page<Map<String, Object>> getCommentsByUserIdWithPostInfo(Long userId, int page, int size);
 }

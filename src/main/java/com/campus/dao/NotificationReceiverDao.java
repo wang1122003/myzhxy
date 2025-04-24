@@ -84,4 +84,12 @@ public interface NotificationReceiverDao extends BaseMapper<NotificationReceiver
      * @return 数量
      */
     Integer count(@Param("ew") Wrapper<NotificationReceiver> queryWrapper);
+
+    /**
+     * 根据通知ID统计已读数量
+     *
+     * @param notificationId 通知ID
+     * @return 已读数量
+     */
+    int countReadByNotificationId(@Param("notificationId") Long notificationId);
 }

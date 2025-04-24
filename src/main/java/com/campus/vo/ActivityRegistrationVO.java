@@ -21,11 +21,11 @@ public class ActivityRegistrationVO {
     private Date registrationTime;
     private Integer status;
 
-    // User Info
+    // 用户信息
     private String username;
     private String realName;
     private String avatarUrl;
-    private String phone; // Optionally add other user fields like phone/email
+    private String phone; // 可选：添加其他用户字段，如手机号/邮箱
     private String email;
 
     /**
@@ -46,4 +46,4 @@ public class ActivityRegistrationVO {
             this.email = user.getEmail();
         }
     }
-} 
+}

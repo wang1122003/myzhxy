@@ -3,14 +3,14 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:flyway="http://flywaydb.org/schema/flyway"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context
        http://www.springframework.org/schema/context/spring-context.xsd
-
-
        http://www.springframework.org/schema/tx
-       http://www.springframework.org/schema/tx/spring-tx.xsd">
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://flywaydb.org/schema/flyway http://flywaydb.org/schema/flyway/flyway-spring.xsd">
 
     <!-- 扫描service包下所有使用注解的类型 -->
     <context:component-scan base-package="com.campus.service" />
@@ -62,6 +62,7 @@
         <property name="connectionProperties" value="druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000"/>
     </bean>
 
+
     <!-- 配置MyBatis-Plus插件 -->
     <bean id="mybatisPlusInterceptor" class="com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor">
         <property name="interceptors">
@@ -73,7 +74,7 @@
         </property>
     </bean>
 
-    <!-- 配置SqlSessionFactory对象 -->
+    <!-- 修改 depends-on 属性 -->
     <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
         <!-- 注入数据库连接池 -->
         <property name="dataSource" ref="dataSource" />
@@ -100,14 +101,6 @@
                 </property>
             </bean>
         </property>
-    </bean>
-
-    <!-- 配置扫描Dao接口包，动态实现Dao接口，注入到spring容器中 -->
-    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <!-- 注入sqlSessionFactory -->
-        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
-        <!-- 给出需要扫描Dao接口包 -->
-        <property name="basePackage" value="com.campus.dao" />
     </bean>
 
     <!-- 配置事务管理器 -->

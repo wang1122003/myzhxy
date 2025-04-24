@@ -111,10 +111,10 @@ public interface NotificationService extends IService<Notification> {
     /**
      * 更新通知状态
      * @param id 通知ID
-     * @param status 新状态
+     * @param status 新状态 (String, e.g., "Active", "Recalled")
      * @return 是否成功
      */
-    boolean updateNotificationStatus(Long id, Integer status);
+    boolean updateNotificationStatus(Long id, String status);
 
     /**
      * 增加阅读次数
@@ -143,13 +143,13 @@ public interface NotificationService extends IService<Notification> {
     boolean sendNotificationToUsers(Notification notification, List<Long> userIds);
 
     /**
-     * 发送通知给指定角色
+     * 发送通知给指定用户类型
      *
      * @param notification 通知对象
-     * @param roleIds      角色ID列表
+     * @param userType     用户类型 (Admin, Teacher, Student)
      * @return 是否成功
      */
-    boolean sendNotificationToRoles(Notification notification, List<Long> roleIds);
+    boolean sendNotificationByUserType(Notification notification, String userType);
 
     /**
      * 发送通知给指定部门

@@ -6,8 +6,8 @@
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="title" property="title" jdbcType="VARCHAR"/>
         <result column="content" property="content" jdbcType="LONGVARCHAR"/>
-        <result column="author_id" property="authorId" jdbcType="BIGINT"/>
-        <result column="forum_type" property="forumType" jdbcType="VARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="category" property="category" jdbcType="VARCHAR"/>
         <result column="forum_color" property="forumColor" jdbcType="VARCHAR"/>
         <result column="tags" property="tags"
                 typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
@@ -16,9 +16,9 @@
         <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
         <result column="is_top" property="isTop" jdbcType="TINYINT"/>
         <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
-        <result column="status" property="status" jdbcType="TINYINT"/>
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="creation_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <association property="author" javaType="com.campus.entity.User">
             <id column="u_id" property="id"/>
             <result column="username" property="username"/>
@@ -29,9 +29,9 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        p.id, p.title, p.content, p.author_id, p.forum_type, p.forum_color, p.tags,
+        p.id, p.title, p.content, p.user_id, p.category, p.forum_color, p.tags,
         p.view_count, p.like_count, p.comment_count, p.is_top, p.is_essence, p.status, 
-        p.create_time, p.update_time
+        p.creation_time, p.last_update_time
     </sql>
 
     <!-- 获取所有帖子（分页） -->
@@ -40,16 +40,16 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
+        LEFT JOIN user u ON p.user_id = u.id
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=TINYINT}
+                AND p.status = #{status,jdbcType=VARCHAR}
             </if>
-            <if test="forumType != null">
-                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
+            <if test="category != null">
+                AND p.category = #{category,jdbcType=VARCHAR}
             </if>
         </where>
-        ORDER BY p.create_time DESC
+        ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
             limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
@@ -61,10 +61,10 @@
         FROM post p
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=TINYINT}
+                AND p.status = #{status,jdbcType=VARCHAR}
             </if>
-            <if test="forumType != null">
-                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
+            <if test="category != null">
+                AND p.category = #{category,jdbcType=VARCHAR}
             </if>
             <if test="tag != null">
                 AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
@@ -78,7 +78,7 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
+        LEFT JOIN user u ON p.user_id = u.id
         WHERE p.id = #{id,jdbcType=BIGINT}
     </select>
 
@@ -88,12 +88,12 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        WHERE p.author_id = #{authorId,jdbcType=BIGINT}
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.user_id = #{authorId,jdbcType=BIGINT}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=TINYINT}
+            AND p.status = #{status,jdbcType=VARCHAR}
         </if>
-        ORDER BY p.create_time DESC
+        ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
             limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
@@ -105,12 +105,12 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        WHERE p.forum_type = #{forumType,jdbcType=VARCHAR}
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.category = #{forumType,jdbcType=VARCHAR}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=TINYINT}
+            AND p.status = #{status,jdbcType=VARCHAR}
         </if>
-        ORDER BY p.create_time DESC
+        ORDER BY p.creation_time DESC
     </select>
 
     <!-- 根据标签获取帖子 -->
@@ -119,12 +119,12 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
+        LEFT JOIN user u ON p.user_id = u.id
         WHERE JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
         <if test="status != null">
-            AND p.status = #{status,jdbcType=TINYINT}
+            AND p.status = #{status,jdbcType=VARCHAR}
         </if>
-        ORDER BY p.create_time DESC
+        ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
             limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
@@ -136,8 +136,8 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
-        WHERE p.status = 1
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.status = 'Active'
         ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
         limit #{limit,jdbcType=INTEGER}
     </select>
@@ -148,7 +148,7 @@
         <include refid="Base_Column_List"/>,
         u.id as u_id, u.username, u.real_name, u.avatar_url
         FROM post p
-        LEFT JOIN user u ON p.author_id = u.id
+        LEFT JOIN user u ON p.user_id = u.id
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (
@@ -158,16 +158,16 @@
                 )
             </if>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=TINYINT}
+                AND p.status = #{status,jdbcType=VARCHAR}
             </if>
-            <if test="forumType != null">
-                AND p.forum_type = #{forumType,jdbcType=VARCHAR}
+            <if test="category != null">
+                AND p.category = #{category,jdbcType=VARCHAR}
             </if>
             <if test="tag != null">
                 AND JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
             </if>
         </where>
-        ORDER BY p.create_time DESC
+        ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
             limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
@@ -175,15 +175,15 @@
 
     <!-- 添加帖子 -->
     <insert id="addPost" parameterType="com.campus.entity.Post" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO post (title, content, author_id, forum_type, forum_color, tags,
+        INSERT INTO post (title, content, user_id, category, forum_color, tags,
                           view_count, like_count, comment_count, is_top, is_essence, status,
-                          create_time, update_time
+                          creation_time, last_update_time
         )
-        VALUES (#{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{authorId,jdbcType=BIGINT},
-                #{forumType,jdbcType=VARCHAR}, #{forumColor,jdbcType=VARCHAR},
+        VALUES (#{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{userId,jdbcType=BIGINT},
+                #{category,jdbcType=VARCHAR}, #{forumColor,jdbcType=VARCHAR},
                 #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
                 #{viewCount,jdbcType=INTEGER}, #{likeCount,jdbcType=INTEGER}, #{commentCount,jdbcType=INTEGER},
-                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
+                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=VARCHAR},
                 NOW(), NOW()
         )
     </insert>
@@ -194,11 +194,11 @@
         SET
             title = #{title,jdbcType=VARCHAR},
             content = #{content,jdbcType=LONGVARCHAR},
-            forum_type  = #{forumType,jdbcType=VARCHAR},
+            category  = #{category,jdbcType=VARCHAR},
             forum_color = #{forumColor,jdbcType=VARCHAR},
             tags        = #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
-            status      = #{status,jdbcType=TINYINT},
-            update_time = NOW()
+            status      = #{status,jdbcType=VARCHAR},
+            last_update_time = NOW()
         WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
@@ -218,9 +218,15 @@
                            p.tags,
                            '$[*]' COLUMNS (tags_element VARCHAR(50) PATH '$')
                    ) AS tj
-              WHERE p.status = 1) t
+              WHERE p.status = 'Active') t
         GROUP BY tag
         ORDER BY count DESC
         limit #{limit, jdbcType=INTEGER}
+    </select>
+
+    <!-- 根据分类获取不同的颜色 -->
+    <select id="getForumCategories" resultType="com.campus.entity.Post">
+        SELECT DISTINCT category, forum_color FROM post
+        WHERE category IS NOT NULL AND category != ''
     </select>
 </mapper>

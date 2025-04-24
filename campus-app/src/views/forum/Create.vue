@@ -109,7 +109,7 @@ import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ArrowLeft, Plus} from '@element-plus/icons-vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
-import {createPost, getCategories} from '@/api/forum'
+import {createPost, getForumCategories} from '@/api/post'
 
 export default {
   name: 'CreatePost',
@@ -157,7 +157,7 @@ export default {
     // 获取分类
     const fetchCategories = async () => {
       try {
-        const res = await getCategories()
+        const res = await getForumCategories()
         categories.value = res.data || []
       } catch (error) {
         console.error('获取分类失败:', error)

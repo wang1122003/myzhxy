@@ -66,7 +66,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         queryWrapper.eq(Schedule::getTeacherId, teacherId)
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
-        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
         return list(queryWrapper);
     }
 
@@ -76,7 +76,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         queryWrapper.eq(Schedule::getClassId, classId)
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
-        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
         return list(queryWrapper);
     }
 
@@ -217,7 +217,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         // Check only classroom conflict for now
         LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Schedule::getClassroomId, schedule.getClassroomId())
-                  .eq(Schedule::getWeekDay, schedule.getWeekDay())
+                  .eq(Schedule::getDayOfWeek, schedule.getDayOfWeek())
                   .le(Schedule::getStartTime, schedule.getEndTime())
                   .ge(Schedule::getEndTime, schedule.getStartTime());
         
@@ -259,7 +259,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         queryWrapper.eq(Schedule::getClassId, classId)
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
-        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
         return list(queryWrapper);
     }
 
@@ -269,7 +269,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         queryWrapper.eq(Schedule::getTeacherId, teacherId)
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
-        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
         return list(queryWrapper);
     }
 
@@ -279,6 +279,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         queryWrapper.eq(Schedule::getCourseId, courseId)
                 .eq(Schedule::getTermId, termId)
                 .eq(Schedule::getStatus, 1);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
         return list(queryWrapper);
     }
 
@@ -299,30 +300,33 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             return new Page<>(page, size, 0); // 返回空结果
         }
 
-        // ---- 暂时注释掉模糊查询 ----
-        // // 添加课程名称模糊查询
-        // if (params.containsKey("courseName") && params.get("courseName") != null) {
-        //     queryWrapper.apply("course_id IN (SELECT id FROM course WHERE course_name LIKE {0})", "%" + params.get("courseName") + "%");
-        // }
-        // 
-        // // 添加教师名称模糊查询 
-        // if (params.containsKey("teacherName") && params.get("teacherName") != null) {
-        //      queryWrapper.apply("teacher_id IN (SELECT t.id FROM teacher t JOIN user u ON t.user_id = u.id WHERE u.real_name LIKE {0} OR u.username LIKE {0})", "%" + params.get("teacherName") + "%"); // 修正子查询
-        // }
-        // 
-        // // 添加班级名称模糊查询 
-        // if (params.containsKey("className") && params.get("className") != null) {
-        //      queryWrapper.apply("class_id IN (SELECT id FROM clazz WHERE name LIKE {0})", "%" + params.get("className") + "%"); // 修正表名 class -> clazz
-        // }
-        // 
-        // // 添加教室 ID 查询
-        // if (params.containsKey("classroomId") && params.get("classroomId") != null) {
-        //     queryWrapper.eq(Schedule::getClassroomId, params.get("classroomId"));
-        // }
-        // ---- 结束注释 ----
+        // ---- 取消注释模糊查询和教室ID查询 ----
+        // 添加课程名称模糊查询
+        if (params.containsKey("courseName") && params.get("courseName") != null && !((String)params.get("courseName")).isEmpty()) { // Check if not empty
+            queryWrapper.apply("course_id IN (SELECT id FROM course WHERE course_name LIKE {0})", "%" + params.get("courseName") + "%");
+        }
+        
+        // 添加教师名称模糊查询 
+        if (params.containsKey("teacherName") && params.get("teacherName") != null && !((String)params.get("teacherName")).isEmpty()) { // Check if not empty
+             // 假设教师信息存储在 user 表，通过 teacher_id 关联
+             // 注意：实际关联方式可能不同，需根据数据库结构调整
+             queryWrapper.apply("teacher_id IN (SELECT id FROM user WHERE (real_name LIKE {0} OR username LIKE {0}) AND user_type = 'Teacher')", "%" + params.get("teacherName") + "%");
+        }
+        
+        // 添加班级名称模糊查询 
+        // 假设班级信息存储在 clazz 表
+        if (params.containsKey("className") && params.get("className") != null && !((String)params.get("className")).isEmpty()) { // Check if not empty
+             queryWrapper.apply("class_id IN (SELECT id FROM clazz WHERE name LIKE {0})", "%" + params.get("className") + "%");
+        }
+        
+        // 添加教室 ID 查询
+        if (params.containsKey("classroomId") && params.get("classroomId") != null) {
+            queryWrapper.eq(Schedule::getClassroomId, params.get("classroomId"));
+        }
+        // ---- 结束取消注释 ----
 
         // 添加排序 (按星期和开始时间)
-        queryWrapper.orderByAsc(Schedule::getWeekDay).orderByAsc(Schedule::getStartTime);
+        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
 
         // 3. 执行分页查询
         // IPage<Schedule> schedulePage = this.page(pageRequest, queryWrapper); // 直接用 MybatisPlus 的 page 方法
@@ -341,7 +345,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
     private boolean isTimeConflict(Schedule schedule) {
         LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Schedule::getClassroomId, schedule.getClassroomId())
-                .eq(Schedule::getWeekDay, schedule.getWeekDay())
+                .eq(Schedule::getDayOfWeek, schedule.getDayOfWeek())
                 .eq(Schedule::getTermId, schedule.getTermId())
                 .eq(Schedule::getStatus, 1)
                 .ne(schedule.getId() != null, Schedule::getId, schedule.getId());
@@ -370,38 +374,59 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
 
     private Map<String, Object> buildWeeklyScheduleMap(List<Schedule> schedules, Long primaryId, Long termId, String type) {
         Map<String, Object> weeklySchedule = new HashMap<>();
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-
-        for (int i = 1; i <= 7; i++) {
-            weeklySchedule.put("day" + i, new HashMap<String, Object>());
-        }
-
-        for (Schedule schedule : schedules) {
-            int weekDay = schedule.getWeekDay();
-            Date startTime = schedule.getStartTime();
-            Date endTime = schedule.getEndTime();
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> daySchedule = (Map<String, Object>) weeklySchedule.get("day" + weekDay);
-
-            Map<String, Object> courseInfo = new HashMap<>();
-            courseInfo.put("scheduleId", schedule.getId());
-            courseInfo.put("courseId", schedule.getCourseId());
-            courseInfo.put("weekDay", weekDay);
-            courseInfo.put("startTime", startTime != null ? timeFormat.format(startTime) : "");
-            courseInfo.put("endTime", endTime != null ? timeFormat.format(endTime) : "");
-            courseInfo.put("startWeek", schedule.getStartWeek());
-            courseInfo.put("endWeek", schedule.getEndWeek());
-            courseInfo.put("location", "教室ID:" + schedule.getClassroomId());
-
-            String timeSlotKey = (startTime != null ? timeFormat.format(startTime) : "N/A") + "-" +
-                    (endTime != null ? timeFormat.format(endTime) : "N/A");
-            daySchedule.put(timeSlotKey, courseInfo);
-        }
-
-        weeklySchedule.put(type + "Id", primaryId);
+        weeklySchedule.put("type", type);
+        weeklySchedule.put("id", primaryId);
         weeklySchedule.put("termId", termId);
 
+        // Initialize map with empty lists for each day (key: "1"-"7")
+        Map<String, List<Schedule>> scheduleByDay = new HashMap<>();
+        for (int i = 1; i <= 7; i++) {
+            scheduleByDay.put(String.valueOf(i), new ArrayList<>());
+        }
+
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+
+        for (Schedule schedule : schedules) {
+            String dayValue = schedule.getDayOfWeek(); // Get the String value
+            String dayKey = null;
+            if (dayValue != null) {
+                // Convert day name (if needed) or use directly if it's already number string
+                dayKey = convertDayNameToNumberString(dayValue); 
+            }
+
+            if (dayKey != null && scheduleByDay.containsKey(dayKey)) {
+                // Optional: Format start/end time for cleaner JSON output
+                // schedule.setFormattedStartTime(timeFormat.format(schedule.getStartTime()));
+                // schedule.setFormattedEndTime(timeFormat.format(schedule.getEndTime()));
+                scheduleByDay.get(dayKey).add(schedule);
+            }
+        }
+
+        // Sort schedules within each day by start time
+        for (List<Schedule> dailySchedules : scheduleByDay.values()) {
+            dailySchedules.sort(Comparator.comparing(Schedule::getStartTime));
+        }
+
+        weeklySchedule.put("schedule", scheduleByDay);
         return weeklySchedule;
+    }
+
+    /**
+     * Helper method to convert day name/number string to number string ("1"-"7").
+     * Handles potential case variations and numeric strings.
+     */
+    private String convertDayNameToNumberString(String dayValue) {
+        if (dayValue == null) return null;
+        String lowerDay = dayValue.trim().toLowerCase();
+        switch (lowerDay) {
+            case "monday": case "1": return "1";
+            case "tuesday": case "2": return "2";
+            case "wednesday": case "3": return "3";
+            case "thursday": case "4": return "4";
+            case "friday": case "5": return "5";
+            case "saturday": case "6": return "6";
+            case "sunday": case "7": return "7";
+            default: return null; // Invalid day value
+        }
     }
 }

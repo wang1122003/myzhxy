@@ -48,8 +48,21 @@ export default defineConfig({
         }
     },
     server: {
-        port: 8088, // 保持与之前相同的端口
-        open: true
+        port: 7777,
+        open: true,
+        proxy: {
+            // 代理所有 /api 请求到后端服务器
+            '/api': {
+                target: 'http://localhost:8080', // SSM服务运行在8080端口
+                changeOrigin: true,
+                secure: false,
+            }
+        }
+    },
+    // 配置构建输出目录到SSM项目的静态资源目录
+    build: {
+        outDir: '../src/main/resources/static',
+        emptyOutDir: true
     },
     // 兼容原有的环境变量配置
     define: {

@@ -118,7 +118,7 @@ import {onMounted, ref} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Search} from '@element-plus/icons-vue'
 import {useRouter} from 'vue-router'
-import {getAllComments, updateCommentStatus} from '@/api/forum'
+import {getAllComments, updateCommentStatus} from '@/api/post'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
 

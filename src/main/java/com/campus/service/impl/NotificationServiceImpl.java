@@ -11,6 +11,7 @@ import com.campus.dao.NotificationReceiverDao;
 import com.campus.dao.UserDao;
 import com.campus.entity.Notification;
 import com.campus.entity.NotificationReceiver;
+import com.campus.entity.User;
 import com.campus.exception.CustomException;
 import com.campus.service.NotificationService;
 import org.slf4j.Logger;
@@ -157,7 +158,9 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
     }
 
     @Override
-    public boolean updateNotificationStatus(Long id, Integer status) {
+    public boolean updateNotificationStatus(Long id, String status) {
+        // Basic validation for status string could be added here if needed
+        // e.g., if (!"Active".equals(status) && !"Recalled".equals(status)) { return false; }
         Notification notification = new Notification();
         notification.setId(id);
         notification.setStatus(status);
@@ -175,7 +178,19 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
         Page<Notification> page = new Page<>(pageNo, pageSize);
         LambdaQueryWrapper<Notification> wrapper = buildQueryWrapper(notification);
         wrapper.orderByDesc(Notification::getIsTop, Notification::getCreateTime);
-        return notificationDao.selectPage(page, wrapper);
+        IPage<Notification> resultPage = notificationDao.selectPage(page, wrapper);
+
+        // 填充已读人数
+        if (resultPage != null && resultPage.getRecords() != null) {
+            for (Notification n : resultPage.getRecords()) {
+                if (n != null && n.getId() != null) {
+                    int readCount = notificationReceiverDao.countReadByNotificationId(n.getId());
+                    n.setReadCount(readCount);
+                }
+            }
+        }
+
+        return resultPage;
     }
 
     @Override
@@ -193,12 +208,19 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
 
     @Override
     @Transactional
-    public boolean sendNotificationToRoles(Notification notification, List<Long> roleIds) {
+    public boolean sendNotificationByUserType(Notification notification, String userType) {
         saveNotificationIfNotExists(notification);
-        if (roleIds == null || roleIds.isEmpty()) {
+        if (StringUtils.isBlank(userType)) {
+            log.warn("尝试向空的用户类型发送通知，已忽略。");
+            return true; // 或者返回 false，取决于业务逻辑
+        }
+        // 调用 UserDao 获取该 userType 的所有用户 ID
+        List<User> users = userDao.findByUserType(userType); // 现在参数类型匹配
+        if (users == null || users.isEmpty()) {
+            log.info("未找到用户类型为 '{}' 的用户，无需发送通知。", userType); // 添加日志参数
             return true;
         }
-        List<Long> userIds = userDao.findUserIdsByRoleIds(roleIds);
+        List<Long> userIds = users.stream().map(User::getId).collect(Collectors.toList());
         return sendNotificationToUsers(notification, userIds);
     }
 
@@ -291,8 +313,8 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
             if (StringUtils.isNotBlank(notification.getTitle())) {
                 wrapper.like(Notification::getTitle, notification.getTitle());
             }
-            if (notification.getNoticeType() != null) {
-                wrapper.eq(Notification::getNoticeType, notification.getNoticeType());
+            if (StringUtils.isNotBlank(notification.getType())) {
+                wrapper.eq(Notification::getType, notification.getType());
             }
             if (notification.getStatus() != null) {
                 wrapper.eq(Notification::getStatus, notification.getStatus());

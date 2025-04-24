@@ -23,8 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -114,7 +116,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
     public boolean addComment(Comment comment) {
         // 设置初始值
         Date now = new Date();
-        comment.setCreateTime(now);
+        comment.setCreationTime(now);
         comment.setUpdateTime(now);
         
         // 初始化点赞次数
@@ -122,7 +124,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
         
         // 如果没有设置状态，默认为正常
         if (comment.getStatus() == null) {
-            comment.setStatus(1);
+            comment.setStatus("Active");
         }
 
         boolean result = commentDao.addComment(comment) > 0;
@@ -164,7 +166,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
 
     @Override
     @Transactional
-    public boolean updateCommentStatus(Long id, Integer status) {
+    public boolean updateCommentStatus(Long id, String status) {
         return commentDao.updateCommentStatus(id, status) > 0;
     }
 
@@ -189,8 +191,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
     @Override
     @Transactional
     public boolean cancelLikeComment(Long commentId) {
-        // Implement logic to decrement like count
-        return false; // Placeholder
+        // Implement logic to decrement like count by calling decrementLikeCount
+        return decrementLikeCount(commentId);
     }
 
     @Override
@@ -206,7 +208,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
             wrapper.eq(Comment::getPostId, postId);
         }
         if (authorId != null) {
-            wrapper.eq(Comment::getAuthorId, authorId);
+            wrapper.eq(Comment::getUserId, authorId);
         }
         if (StringUtils.isNotBlank(keyword)) {
             // 假设 keyword 搜索评论内容
@@ -214,7 +216,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
         }
 
         // 添加排序，例如按创建时间降序
-        wrapper.orderByDesc(Comment::getCreateTime);
+        wrapper.orderByDesc(Comment::getCreationTime);
 
         // 执行分页查询
         IPage<Comment> resultPage = commentDao.selectPage(page, wrapper);
@@ -228,7 +230,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
         } else {
             // 提取作者ID列表
             List<Long> authorIds = comments.stream()
-                    .map(Comment::getAuthorId)
+                    .map(Comment::getUserId)
                     .filter(id -> id != null) // 过滤掉可能存在的 null ID
                     .distinct()
                     .collect(Collectors.toList());
@@ -246,7 +248,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
                 CommentVO commentVO = new CommentVO();
                 BeanUtils.copyProperties(comment, commentVO); // 复制基础属性
 
-                User author = finalUserMap.get(comment.getAuthorId());
+                User author = finalUserMap.get(comment.getUserId());
                 if (author != null) {
                     commentVO.setUsername(author.getUsername());
                     commentVO.setAvatar(author.getAvatarUrl()); // 使用 getAvatarUrl()
@@ -272,7 +274,43 @@ public class CommentServiceImpl extends ServiceImpl<CommentDao, Comment> impleme
     public List<Comment> getReplies(Long parentId) {
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Comment::getParentId, parentId)
-                .orderByAsc(Comment::getCreateTime); // Order replies by time
+                .orderByAsc(Comment::getCreationTime); // Order replies by time
         return commentDao.selectList(wrapper);
+    }
+
+    @Override
+    public Page<Map<String, Object>> getAllCommentsManaged(int page, int size, Integer status, String keyword) {
+        // TODO: Implement actual logic to fetch all comments with filtering and pagination
+        // Placeholder implementation:
+        log.warn("getAllCommentsManaged is not fully implemented yet."); 
+        Page<Map<String, Object>> emptyPage = new Page<>(page, size);
+        emptyPage.setRecords(new ArrayList<>());
+        emptyPage.setTotal(0);
+        return emptyPage;
+    }
+
+    @Override
+    public Page<Map<String, Object>> getCommentsByUserIdWithPostInfo(Long userId, int page, int size) {
+        // TODO: Implement actual logic to fetch user comments with post info
+        // Placeholder implementation:
+        log.warn("getCommentsByUserIdWithPostInfo is not fully implemented yet.");
+        Page<Map<String, Object>> emptyPage = new Page<>(page, size);
+        emptyPage.setRecords(new ArrayList<>());
+        emptyPage.setTotal(0);
+        return emptyPage;
+    }
+
+    @Override
+    @Transactional
+    public Comment createComment(Comment comment) {
+        // Basic implementation: Set creation time and save
+        // TODO: Add logic to update post comment count
+        comment.setCreationTime(new Date()); 
+        boolean saved = this.save(comment);
+        if (saved && comment.getParentId() == null) {
+             // Increment post comment count if it's a top-level comment
+             postService.incrementCommentCount(comment.getPostId());
+         }
+        return saved ? comment : null;
     }
 }

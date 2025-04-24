@@ -40,12 +40,6 @@ public class Notification implements Serializable {
      */
     @TableField("content")
     private String content;
-    
-    /**
-     * 通知类型：1-系统通知，2-教学通知，3-学工通知，4-生活通知，99-其他通知
-     */
-    @TableField("notice_type")
-    private Integer noticeType;
 
     /**
      * 通知类型字符串版本
@@ -60,10 +54,10 @@ public class Notification implements Serializable {
     private Integer priority;
 
     /**
-     * 通知状态：0-草稿, 1-已发布, 2-已撤回
+     * 通知状态：0-草稿, 1-已发布, 2-已撤回 (修改为字符串类型以适应数据库或前端数据)
      */
     @TableField("status")
-    private Integer status;
+    private String status;
 
     /**
      * 是否置顶：0-否, 1-是
@@ -104,8 +98,8 @@ public class Notification implements Serializable {
     /**
      * 目标ID
      */
-    @TableField("target_id")
-    private Long targetId;
+    @TableField("target_ids")
+    private String targetId;
 
     /**
      * 发送时间
@@ -168,6 +162,12 @@ public class Notification implements Serializable {
      */
     @TableField(exist = false)
     private List<String> receiverNames;
+
+    /**
+     * 已读人数 (非数据库字段)
+     */
+    @TableField(exist = false)
+    private Integer readCount;
 
     /**
      * 消息类型名称 (非数据库字段)

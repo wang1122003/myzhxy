@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- status=WARN 用于设置Log4j2自身内部日志级别 -->
+<Configuration status="WARN" monitorInterval="60">
+    <!-- 定义属性 -->
+    <Properties>
+        <Property name="LOG_HOME">logs</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Property>
+        <Property name="CONSOLE_CHARSET">UTF-8</Property> <!-- 控制台编码，统一为 UTF-8 -->
+        <Property name="FILE_CHARSET">UTF-8</Property> <!-- 文件编码 -->
+    </Properties>
+
+    <!-- 定义Appenders -->
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="${CONSOLE_CHARSET}"/>
+        </Console>
+
+        <!-- 滚动文件输出 -->
+        <RollingFile name="FILE" fileName="${LOG_HOME}/campus.log"
+                     filePattern="${LOG_HOME}/campus.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="${LOG_PATTERN}" charset="${FILE_CHARSET}"/>
+            <Policies>
+                <!-- 按时间滚动 -->
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <!-- 最多保留30天的日志文件 -->
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+
+    <!-- 定义Loggers -->
+    <Loggers>
+        <!-- MyBatis Mapper接口日志 -->
+        <Logger name="com.campus.dao" level="debug" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+
+        <!-- Spring框架日志 -->
+        <Logger name="org.springframework" level="info" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+        <!-- Spring Web 日志 -->
+        <Logger name="org.springframework.web" level="info" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+
+        <!-- Druid 连接池日志 -->
+        <Logger name="com.alibaba.druid" level="info" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+
+        <!-- JDBC 相关日志 (如果需要更详细的SQL日志，可以将level改为debug或trace) -->
+        <Logger name="java.sql" level="info" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+        <Logger name="jdbc.sqltiming" level="info" additivity="false">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Logger>
+
+        <!-- Root Logger -->
+        <Root level="info">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Root>
+    </Loggers>
+
+</Configuration> 

@@ -12,18 +12,22 @@ import com.campus.entity.Post;
 import com.campus.entity.User;
 import com.campus.exception.AuthenticationException;
 import com.campus.service.PostService;
+import com.campus.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +43,9 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
     @Autowired
     private UserDao userDao;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private HttpServletRequest request;
@@ -90,12 +97,12 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @Transactional
     public boolean addPost(Post post) {
-        post.setCreateTime(new Date());
-        post.setUpdateTime(new Date());
+        post.setCreationTime(new Date());
+        post.setLastUpdateTime(new Date());
         if (post.getViewCount() == null) post.setViewCount(0);
         if (post.getCommentCount() == null) post.setCommentCount(0);
         if (post.getLikeCount() == null) post.setLikeCount(0);
-        if (post.getStatus() == null) post.setStatus(1);
+        if (post.getStatus() == null) post.setStatus("Active");
         if (post.getIsTop() == null) post.setIsTop(false);
         if (post.getIsEssence() == null) post.setIsEssence(false);
         return save(post);
@@ -104,7 +111,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @Transactional
     public boolean updatePost(Post post) {
-        post.setUpdateTime(new Date());
+        post.setLastUpdateTime(new Date());
         return updateById(post);
     }
 
@@ -132,7 +139,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = new Post();
         post.setId(id);
         post.setIsTop(isTop == 1);
-        post.setUpdateTime(new Date());
+        post.setLastUpdateTime(new Date());
         
         return postDao.update(post) > 0;
     }
@@ -143,7 +150,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = new Post();
         post.setId(id);
         post.setIsEssence(isEssence == 1);
-        post.setUpdateTime(new Date());
+        post.setLastUpdateTime(new Date());
         
         return postDao.update(post) > 0;
     }
@@ -154,7 +161,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = postDao.findById(id);
         if (post != null) {
             post.setViewCount(post.getViewCount() + 1);
-            post.setUpdateTime(new Date());
+            post.setLastUpdateTime(new Date());
             return postDao.update(post) > 0;
         }
         return false;
@@ -166,7 +173,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = postDao.findById(id);
         if (post != null) {
             post.setCommentCount(post.getCommentCount() + 1);
-            post.setUpdateTime(new Date());
+            post.setLastUpdateTime(new Date());
             return postDao.update(post) > 0;
         }
         return false;
@@ -178,7 +185,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = postDao.findById(id);
         if (post != null) {
             post.setLikeCount(post.getLikeCount() + 1);
-            post.setUpdateTime(new Date());
+            post.setLastUpdateTime(new Date());
             return postDao.update(post) > 0;
         }
         return false;
@@ -367,12 +374,12 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
         Long authorId = (Long) params.get("authorId");
         if (authorId != null) {
-            queryWrapper.eq(Post::getAuthorId, authorId);
+            queryWrapper.eq(Post::getUserId, authorId);
         }
 
-        String forumType = (String) params.get("forumType");
+        String forumType = (String) params.get("category");
         if (StringUtils.hasText(forumType)) {
-            queryWrapper.eq(Post::getForumType, forumType);
+            queryWrapper.eq(Post::getCategory, forumType);
         }
 
         Integer status = (Integer) params.get("status");
@@ -381,7 +388,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         }
 
         // 3. 添加排序 (示例：按创建时间降序)
-        queryWrapper.orderByDesc(Post::getCreateTime);
+        queryWrapper.orderByDesc(Post::getCreationTime);
 
         // 4. 执行分页查询
         IPage<Post> postPage = this.page(pageRequest, queryWrapper);
@@ -390,16 +397,17 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         if (postPage.getRecords() != null && !postPage.getRecords().isEmpty()) {
             // 批量获取作者ID
             List<Long> authorIds = postPage.getRecords().stream()
-                    .map(Post::getAuthorId)
+                    .map(Post::getUserId)
                     .distinct()
                     .collect(Collectors.toList());
             // 批量查询用户信息
-            Map<Long, User> userMap = userDao.selectBatchIds(authorIds).stream()
+            Map<Long, User> userMap = userService.getUsersByIds(authorIds.stream().collect(Collectors.toSet()))
+                    .stream()
                     .collect(Collectors.toMap(User::getId, user -> user));
 
             // 填充作者姓名和头像
             postPage.getRecords().forEach(post -> {
-                User author = userMap.get(post.getAuthorId());
+                User author = userMap.get(post.getUserId());
                 if (author != null) {
                     post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
                     post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法
@@ -435,7 +443,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         // LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
         // wrapper.eq(Post::getForumId, forumId); // Error: getForumId not found
         // wrapper.eq(Post::getStatus, 1);
-        // wrapper.orderByDesc(Post::getCreateTime);
+        // wrapper.orderByDesc(Post::getCreationTime);
         // return postDao.selectPage(page, wrapper);
     }
 
@@ -460,25 +468,25 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         log.info("Creating post with title: {}", post.getTitle());
 
         // 设置默认值并验证必填字段
-        if (post.getAuthorId() == null && request != null) {
-            post.setAuthorId(getCurrentUserIdFromRequest()); // 从当前请求获取用户ID
+        if (post.getUserId() == null && request != null) {
+            post.setUserId(getCurrentUserIdFromRequest()); // 从当前请求获取用户ID
         }
 
-        if (post.getAuthorId() == null) {
+        if (post.getUserId() == null) {
             log.warn("Cannot create post without author ID");
             return false;
         }
 
         // 设置创建和更新时间
         Date now = new Date();
-        post.setCreateTime(now);
-        post.setUpdateTime(now);
+        post.setCreationTime(now);
+        post.setLastUpdateTime(now);
         
         // 设置默认值
         post.setViewCount(post.getViewCount() == null ? 0 : post.getViewCount());
         post.setLikeCount(post.getLikeCount() == null ? 0 : post.getLikeCount());
         post.setCommentCount(post.getCommentCount() == null ? 0 : post.getCommentCount());
-        post.setStatus(post.getStatus() == null ? 1 : post.getStatus());
+        post.setStatus(post.getStatus() == null ? "Active" : post.getStatus());
         post.setIsTop(post.getIsTop() != null && post.getIsTop());
         post.setIsEssence(post.getIsEssence() != null && post.getIsEssence());
 
@@ -503,7 +511,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         return this.page(page, new LambdaQueryWrapper<Post>()
                 .eq(Post::getStatus, 1)
                 .apply(sql, tag)
-                .orderByDesc(Post::getCreateTime));
+                .orderByDesc(Post::getCreationTime));
     }
 
     @Override
@@ -527,8 +535,8 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
     // 辅助方法：加载作者信息
     private void loadAuthorInfo(Post post) {
-        if (post != null && post.getAuthorId() != null) {
-            User author = userDao.selectById(post.getAuthorId());
+        if (post != null && post.getUserId() != null) {
+            User author = userService.getUserById(post.getUserId());
             if (author != null) {
                 post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
                 post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法

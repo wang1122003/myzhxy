@@ -35,7 +35,7 @@ public class ClassroomController {
      * @return 分页教室列表
      */
     @GetMapping
-    public Result getClassroomsByPage(
+    public Result<IPage<Classroom>> getClassroomsByPage(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
@@ -51,7 +51,8 @@ public class ClassroomController {
             result.put("current", pageData.getCurrent());
             result.put("size", pageData.getSize());
 
-            return Result.success(result);
+            // 返回 IPage 对象，而不是 Map
+            return Result.success(pageData);
         } catch (Exception e) {
             log.error("分页获取教室列表失败", e);
             return Result.error("获取教室列表失败: " + e.getMessage());
@@ -63,7 +64,7 @@ public class ClassroomController {
      * @return 教室列表
      */
     @GetMapping("/all")
-    public Result getAllClassrooms() {
+    public Result<List<Classroom>> getAllClassrooms() {
         try {
             List<Classroom> classrooms = classroomService.getAllClassrooms();
             return Result.success(classrooms);
@@ -79,7 +80,7 @@ public class ClassroomController {
      * @return 教室详情
      */
     @GetMapping("/{id}")
-    public Result getClassroomById(@PathVariable Long id) {
+    public Result<Classroom> getClassroomById(@PathVariable Long id) {
         try {
             Classroom classroom = classroomService.getClassroomById(id);
             if (classroom != null) {
@@ -100,7 +101,7 @@ public class ClassroomController {
      * @return 添加结果
      */
     @PostMapping
-    public Result addClassroom(@RequestBody Classroom classroom) {
+    public Result<Void> addClassroom(@RequestBody Classroom classroom) {
         log.debug("添加教室: {}", classroom.getName());
         try {
             // 基本验证 (可以扩展)
@@ -109,7 +110,8 @@ public class ClassroomController {
             }
             boolean result = classroomService.addClassroom(classroom);
             log.info("教室添加结果: {}", result);
-            return result ? Result.success("添加成功", classroom) : Result.error("添加失败，教室名称可能已存在");
+            // 返回 Result<Void>，成功时不带数据体
+            return result ? Result.success("添加成功") : Result.error("添加失败，教室名称可能已存在");
         } catch (CustomException e) {
             log.error("添加教室 '{}' 出错: {}", classroom.getName(), e.getMessage());
             return Result.error(e.getMessage());
@@ -127,7 +129,7 @@ public class ClassroomController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public Result updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
+    public Result<Void> updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
         log.debug("更新教室 ID {}: {}", id, classroom.getName());
         // 确保路径中的ID设置到对象上
         classroom.setId(id);
@@ -154,7 +156,7 @@ public class ClassroomController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
-    public Result deleteClassroom(@PathVariable Long id) {
+    public Result<Void> deleteClassroom(@PathVariable Long id) {
         try {
             boolean success = classroomService.deleteClassroom(id);
             if (success) {
@@ -178,7 +180,7 @@ public class ClassroomController {
      * @return 删除结果
      */
     @DeleteMapping("/batch")
-    public Result batchDeleteClassrooms(@RequestBody List<Long> ids) {
+    public Result<Void> batchDeleteClassrooms(@RequestBody List<Long> ids) {
         log.debug("批量删除教室，IDs: {}", ids);
         if (ids == null || ids.isEmpty()) {
             return Result.error("请提供要删除的教室ID");
@@ -220,7 +222,7 @@ public class ClassroomController {
      * @return 更新结果
      */
     @PutMapping("/{id}/status/{status}")
-    public Result updateClassroomStatus(@PathVariable Long id, @PathVariable Integer status) {
+    public Result<Void> updateClassroomStatus(@PathVariable Long id, @PathVariable Integer status) {
         log.debug("更新教室 ID {} 的状态为 {}", id, status);
         if (status == null) {
             return Result.error("状态值不能为空");
@@ -244,7 +246,7 @@ public class ClassroomController {
      * @return 更新结果
      */
     @PutMapping("/batch/status")
-    public Result batchUpdateClassroomStatus(@RequestBody Map<String, Object> statusUpdateRequest) {
+    public Result<Void> batchUpdateClassroomStatus(@RequestBody Map<String, Object> statusUpdateRequest) {
         @SuppressWarnings("unchecked") // 类型转换警告
         List<Long> ids = (List<Long>) statusUpdateRequest.get("ids");
         Integer status = (Integer) statusUpdateRequest.get("status");
@@ -268,7 +270,7 @@ public class ClassroomController {
      * @return 可用教室列表
      */
     @GetMapping("/available")
-    public Result getAvailableClassrooms() {
+    public Result<List<Classroom>> getAvailableClassrooms() {
         try {
             List<Classroom> classrooms = classroomService.getAvailableClassrooms();
             return Result.success(classrooms);

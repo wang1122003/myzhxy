@@ -35,11 +35,11 @@ public interface CommentDao extends BaseMapper<Comment> {
     
     /**
      * 根据作者ID查询评论
-     * @param authorId 作者ID
+     * @param userId 作者ID
      * @param parentIdStatus 父评论ID状态，true-查询父评论为null的评论，false-查询父评论不为null的评论，null-查询所有评论
      * @return 评论列表
      */
-    List<Comment> getCommentsByAuthorId(@Param("authorId") Long authorId, @Param("parentIdStatus") Boolean parentIdStatus);
+    List<Comment> getCommentsByAuthorId(@Param("userId") Long userId, @Param("parentIdStatus") Boolean parentIdStatus);
     
     /**
      * 根据父评论ID查询子评论
@@ -64,10 +64,10 @@ public interface CommentDao extends BaseMapper<Comment> {
     
     /**
      * 获取用户的评论数量
-     * @param authorId 用户ID
+     * @param userId 用户ID
      * @return 评论数量
      */
-    int getCommentCountByAuthorId(@Param("authorId") Long authorId);
+    int getCommentCountByAuthorId(@Param("userId") Long userId);
     
     /**
      * 添加评论
@@ -128,7 +128,7 @@ public interface CommentDao extends BaseMapper<Comment> {
      * @param status 状态值
      * @return 影响行数
      */
-    int updateCommentStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateCommentStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
      * 增加点赞数
@@ -160,10 +160,10 @@ public interface CommentDao extends BaseMapper<Comment> {
 
     /**
      * 获取作者评论统计信息
-     * @param authorId 作者ID
+     * @param userId 作者ID
      * @return 统计信息
      */
-    Map<String, Object> getAuthorCommentStats(@Param("authorId") Long authorId);
+    Map<String, Object> getAuthorCommentStats(@Param("userId") Long userId);
 
     /**
      * 获取评论发布趋势

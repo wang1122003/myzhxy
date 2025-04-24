@@ -42,10 +42,10 @@ public class Schedule implements Serializable {
     private Long classroomId;
     
     /**
-     * 星期几 (1-7 表示周一至周日)
+     * 星期几 (例如: Monday, Tuesday... 或 1-7)
      */
-    @TableField("week_day")
-    private Integer weekDay;
+    @TableField("day_of_week")
+    private String dayOfWeek;
     
     /**
      * 上课开始时间 (时分秒，通常和 week_day 配合)

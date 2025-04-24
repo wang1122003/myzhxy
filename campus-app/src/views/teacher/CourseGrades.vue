@@ -12,6 +12,40 @@
         </div>
       </template>
 
+      <div class="toolbar">
+        <div class="filter-area">
+          <el-select
+              v-model="selectedTerm"
+              placeholder="选择学期"
+              clearable
+              style="width: 200px; margin-right: 10px"
+              @change="handleFilterChange" 
+          >
+            <el-option
+                v-for="term in termList"
+                :key="term.id"
+                :label="term.termName"
+                :value="term.id"
+            />
+          </el-select>
+          <el-input
+              v-model="searchKeyword"
+              clearable
+              placeholder="搜索学生姓名或学号"
+              style="width: 240px"
+              @keyup.enter="handleSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+        <div class="action-buttons">
+          <el-button link style="padding: 3px 0" type="primary" @click="handleExport">导出成绩</el-button>
+          <el-button link style="padding: 3px 0" type="primary" @click="handleImport">导入成绩</el-button>
+        </div>
+      </div>
+
       <el-table
           v-loading="loading"
           :data="students"
@@ -95,7 +129,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import {
   ElButton,
@@ -110,17 +144,22 @@ import {
   ElTable,
   ElTableColumn,
   ElTag,
-  ElUpload
+  ElUpload,
+  ElSelect,
+  ElOption,
+  ElInput
 } from 'element-plus';
 import {exportGrades, getCourseScores, importGrades, recordStudentScore} from '@/api/grade';
 import {formatDateTime} from '@/utils/formatters';
+import {getCourseById} from '@/api/course';
+import {getTermList} from '@/api/term';
+import {Search} from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
 const courseId = computed(() => route.params.courseId);
 const courseName = computed(() => route.query.courseName || '未命名课程');
-
-const loading = ref(false);
+const courseInfo = ref(null);
 const students = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
@@ -131,31 +170,77 @@ const hasUnsavedChanges = computed(() => students.value.some(student => student.
 const importDialogVisible = ref(false);
 const importFile = ref(null);
 
-// 获取学生名单和成绩
-const fetchStudentGrades = async () => {
-  loading.value = true;
+const termList = ref([]);
+const selectedTerm = ref(null);
+const searchKeyword = ref('');
+
+// 获取课程信息
+const fetchCourseInfo = async () => {
+  if (!courseId.value) return;
   try {
-    const res = await getCourseScores(courseId.value, {
-      page: currentPage.value,
-      size: pageSize.value
-    });
-
-    // 为每个学生添加changed标志，用于跟踪是否有修改
-    students.value = (res.data?.list || []).map(scoreRecord => ({
-      ...scoreRecord,
-      changed: false
-    }));
-
-    total.value = res.data?.total || 0;
+    const res = await getCourseById(courseId.value);
+    courseInfo.value = res.data;
   } catch (error) {
-    console.error('获取学生成绩失败', error);
-    ElMessage.error('获取学生成绩失败');
-    students.value = [];
-    total.value = 0;
-  } finally {
-    loading.value = false;
+    console.error('获取课程信息失败:', error);
+    ElMessage.error('获取课程信息失败');
   }
 };
+
+// 获取学期列表
+const fetchTerms = async () => {
+  try {
+    const res = await getTermList();
+    if (res.code === 200 && res.data) {
+      termList.value = res.data;
+      // 尝试设置当前学期为默认值
+      const currentTerm = res.data.find(t => t.current === 1);
+      if (currentTerm) {
+        selectedTerm.value = currentTerm.id;
+        // 加载默认学期的成绩
+        fetchGrades();
+      }
+    } else {
+      ElMessage.error(res.message || '获取学期列表失败');
+    }
+  } catch (error) {
+    console.error('获取学期列表失败:', error);
+    ElMessage.error('获取学期列表时发生错误');
+  }
+};
+
+// 获取成绩列表
+const fetchGrades = async () => {
+  if (!courseId.value || !selectedTerm.value) {
+    students.value = [];
+    if (!selectedTerm.value) {
+      ElMessage.info('请选择学期以查看成绩');
+    }
+    return;
+  }
+  try {
+    const params = {
+      courseId: courseId.value,
+      termId: selectedTerm.value
+    };
+    const res = await getCourseScores(params);
+    students.value = res.data?.list || res.data || [];
+    total.value = res.data?.total || 0;
+  } catch (error) {
+    console.error('获取成绩列表失败:', error);
+    ElMessage.error('获取成绩列表失败');
+    students.value = [];
+    total.value = 0;
+  }
+};
+
+// 学期选择变化时重新加载成绩
+watch(selectedTerm, (newVal) => {
+  if (newVal) {
+    fetchGrades();
+  } else {
+    students.value = [];
+  }
+});
 
 // 处理分数修改
 const markChanged = (row) => {
@@ -243,7 +328,7 @@ const confirmImport = async () => {
     ElMessage.success('成绩导入成功');
     importDialogVisible.value = false;
     // 重新加载数据
-    await fetchStudentGrades();
+    await fetchGrades();
   } catch (error) {
     console.error('成绩导入失败', error);
     ElMessage.error('成绩导入失败: ' + (error.message || '未知错误'));
@@ -287,13 +372,13 @@ const handleSizeChange = (size) => {
     ).then(() => {
       pageSize.value = size;
       currentPage.value = 1;
-      fetchStudentGrades();
+      fetchGrades();
     }).catch(() => {
     });
   } else {
     pageSize.value = size;
     currentPage.value = 1;
-    fetchStudentGrades();
+    fetchGrades();
   }
 };
 
@@ -310,17 +395,27 @@ const handleCurrentChange = (page) => {
         }
     ).then(() => {
       currentPage.value = page;
-      fetchStudentGrades();
+      fetchGrades();
     }).catch(() => {
     });
   } else {
     currentPage.value = page;
-    fetchStudentGrades();
+    fetchGrades();
   }
 };
 
+const handleFilterChange = () => {
+  fetchGrades();
+};
+
+const handleSearch = () => {
+  // 实现搜索功能
+  console.log('搜索关键词:', searchKeyword.value);
+};
+
 onMounted(() => {
-  fetchStudentGrades();
+  fetchCourseInfo();
+  fetchTerms();
 });
 </script>
 
@@ -379,5 +474,22 @@ export default {
 .score-f {
   color: #f56c6c;
   font-weight: bold;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-area {
+  display: flex;
+  gap: 10px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
 }
 </style> 

@@ -358,7 +358,7 @@ import {
   ElTag
 } from 'element-plus'
 import {ChatDotRound, Menu, Plus} from '@element-plus/icons-vue'
-import {createPost, deletePost, getForumCategories, searchPosts, updatePost} from '@/api/forum'
+import {createPost, deletePost, getForumCategories, searchPosts, updatePost} from '@/api/post'
 import {getToken} from '@/utils/auth'
 import '@wangeditor/editor/dist/css/style.css'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'

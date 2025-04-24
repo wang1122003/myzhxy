@@ -182,7 +182,7 @@ import {computed, onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ChatDotRound, Collection, EditPen, InfoFilled, Opportunity, Search, Star, View} from '@element-plus/icons-vue'
-import {getAllCategories, getAllPosts, getForumCategories, getHotPosts, viewPost} from '@/api/forum'
+import {getAllPosts, getForumCategories, getHotPosts, viewPost} from '@/api/post'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
 import CreatePost from '@/components/forum/CreatePost.vue'
@@ -298,9 +298,9 @@ export default {
     const fetchPopularTags = async () => {
       loadingTags.value = true
       try {
-        const res = await getAllCategories({limit: 15, sortBy: 'count'}); // Assuming backend supports parameters
-        if (Array.isArray(res.data)) { // Ensure res.data is an array
-          popularTags.value = res.data.slice(0, 15).map(tag => ({...tag, count: tag.count || 0})); // Take top 15
+        const res = await getForumCategories({limit: 15, sortBy: 'count'});
+        if (Array.isArray(res.data)) {
+          popularTags.value = res.data.slice(0, 15).map(tag => ({...tag, count: tag.count || 0}));
         } else {
           popularTags.value = [];
         }

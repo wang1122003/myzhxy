@@ -119,7 +119,7 @@
             title = #{title,jdbcType=VARCHAR},
             specialty = #{specialty,jdbcType=VARCHAR},
             office_location = #{officeLocation,jdbcType=VARCHAR},
-            status = #{status,jdbcType=INTEGER},
+            status = #{status,jdbcType=TINYINT},
             update_time = NOW()
         WHERE id = #{id,jdbcType=INTEGER}
     </update>
@@ -133,8 +133,7 @@
     <!-- 更新教师状态 -->
     <update id="updateTeacherStatus">
         UPDATE teacher
-        SET
-            status = #{status,jdbcType=INTEGER},
+        SET status = #{status,jdbcType=TINYINT},
             update_time = NOW()
         WHERE id = #{id,jdbcType=INTEGER}
     </update>
@@ -177,4 +176,4 @@
         GROUP BY title
         ORDER BY teacher_count DESC
     </select>
-</mapper> 
+</mapper>

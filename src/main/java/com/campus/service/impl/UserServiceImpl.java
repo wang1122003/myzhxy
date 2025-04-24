@@ -434,4 +434,14 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         // 这个方法可以直接调用已有的getUserByUsername方法
         return getUserByUsername(username);
     }
+
+    // 移除复杂验证逻辑后的密码重置方法
+    public void verifyPasswordReset(String username, String newPassword) {
+        User user = userDao.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setPassword(newPassword); // 明文存储仅用于演示
+        userDao.update(user);
+    }
 }

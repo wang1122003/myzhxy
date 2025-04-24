@@ -104,17 +104,9 @@ export default {
 
     // 表单校验规则
     const rules = {
-      title: [
-        {required: true, message: '请输入帖子标题', trigger: 'blur'},
-        {min: 2, max: 100, message: '标题长度在2到100个字符之间', trigger: 'blur'}
-      ],
-      forumId: [
-        {required: true, message: '请选择帖子分类', trigger: 'change'}
-      ],
-      content: [
-        {required: true, message: '请输入帖子内容', trigger: 'blur'},
-        {min: 10, message: '内容不能少于10个字符', trigger: 'blur'}
-      ]
+      title: [formRules.required, {min: 2, max: 100, message: '标题长度在2到100个字符之间', trigger: 'blur'}],
+      forumId: [formRules.required],
+      content: [formRules.required, {min: 10, message: '内容不能少于10个字符', trigger: 'blur'}]
     }
 
     // 论坛板块数据
@@ -292,4 +284,4 @@ export default {
 :deep(.w-e-text-container) {
   height: 350px;
 }
-</style> 
+</style>

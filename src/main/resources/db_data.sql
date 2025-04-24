@@ -34,7 +34,7 @@ SELECT
     '13800138000',   -- phone
     'avatar/admin.jpg', -- avatar_url
     'Admin',        -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'admin');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -47,7 +47,7 @@ SELECT
     '13800138001',   -- phone
     'avatar/teacher1.jpg', -- avatar_url
     'Teacher',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'teacher1');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -60,7 +60,7 @@ SELECT
     '13800138002',   -- phone
     'avatar/teacher2.jpg', -- avatar_url
     'Teacher',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'teacher2');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -73,7 +73,7 @@ SELECT
     '13600004444',   -- phone (Updated)
     'avatar/teacher3.jpg', -- avatar_url
     'Teacher',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'teacher3');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -86,7 +86,7 @@ SELECT
     '13500005555',   -- phone (Updated)
     'avatar/teacher4.jpg', -- avatar_url
     'Teacher',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'teacher4');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -99,7 +99,7 @@ SELECT
     '13800138003',   -- phone
     'avatar/student1.jpg', -- avatar_url
     'Student',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'student1');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -112,7 +112,7 @@ SELECT
     '13800138004',   -- phone
     'avatar/student2.jpg', -- avatar_url
     'Student',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'student2');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -125,7 +125,7 @@ SELECT
     '13900001111',   -- phone (Updated)
     'avatar/student3.jpg', -- avatar_url
     'Student',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'student3');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -138,7 +138,7 @@ SELECT
     '13800002222',   -- phone (Updated)
     'avatar/student4.jpg', -- avatar_url
     'Student',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'student4');
 
 INSERT INTO `user` (`username`, `password`, `real_name`, `gender`, `email`, `phone`, `avatar_url`, `user_type`, `status`)
@@ -151,7 +151,7 @@ SELECT
     '13700003333',   -- phone (Updated)
     'avatar/student5.jpg', -- avatar_url
     'Student',      -- user_type
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `user` WHERE `username` = 'student5');
 
 -- 插入教师数据
@@ -341,7 +341,7 @@ SELECT
     1,              -- course_type (必修)
     '计算机网络基础课程，主要介绍网络协议和网络编程', -- introduction
     (SELECT id FROM `teacher` WHERE teacher_no = 'T001'), -- teacher_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `course` WHERE `course_code` = 'CS301');
 
 INSERT INTO `course` (`course_name`, `course_code`, `department_id`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`, `status`)
@@ -354,7 +354,7 @@ SELECT
     1,              -- course_type (必修)
     '数据结构与算法分析，包括常见数据结构和算法设计', -- introduction
     (SELECT id FROM `teacher` WHERE teacher_no = 'T001'), -- teacher_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `course` WHERE `course_code` = 'CS201');
 
 INSERT INTO `course` (`course_name`, `course_code`, `department_id`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`, `status`)
@@ -367,7 +367,7 @@ SELECT
     1,              -- course_type (必修)
     '软件开发流程、需求分析、设计模式等内容', -- introduction
     (SELECT id FROM `teacher` WHERE teacher_no = 'T002'), -- teacher_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `course` WHERE `course_code` = 'SE302');
 
 INSERT INTO `course` (`course_name`, `course_code`, `department_id`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`, `status`)
@@ -380,7 +380,7 @@ SELECT
     1,              -- course_type (必修)
     '微积分、线性代数等高等数学基础', -- introduction
     (SELECT id FROM `teacher` WHERE teacher_no = 'T003'), -- teacher_id (假设 T003 教高数)
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `course` WHERE `course_code` = 'MA101');
 
 INSERT INTO `course` (`course_name`, `course_code`, `department_id`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`, `status`)
@@ -393,7 +393,7 @@ SELECT
     2,              -- course_type (选修)
     '学习HTML、CSS、JavaScript等Web前端技术及主流框架应用。', -- introduction
     (SELECT id FROM `teacher` WHERE teacher_no = 'T004'), -- teacher_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `course` WHERE `course_code` = 'SE2001');
 
 ALTER TABLE `course` AUTO_INCREMENT = 6;
@@ -405,7 +405,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'CS301'),   -- course_id
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     NOW(),          -- selection_time
-    'Selected'      -- status
+    1                                                        -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023001') AND course_id = (SELECT id FROM `course` WHERE course_code = 'CS301') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -414,7 +414,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'CS201'),   -- course_id
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     NOW(),          -- selection_time
-    'Selected'      -- status
+    1                                                        -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023001') AND course_id = (SELECT id FROM `course` WHERE course_code = 'CS201') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -423,7 +423,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'CS201'),   -- course_id
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     NOW(),          -- selection_time
-    'Selected'      -- status
+    1                                                        -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023002') AND course_id = (SELECT id FROM `course` WHERE course_code = 'CS201') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -432,7 +432,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'SE302'),   -- course_id
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     NOW(),          -- selection_time
-    'Selected'      -- status
+    1                                                        -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023002') AND course_id = (SELECT id FROM `course` WHERE course_code = 'SE302') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -441,7 +441,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'MA101'),   -- course_id (高等数学)
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     '2023-09-05',   -- selection_time
-    'Selected'      -- status
+    1                                                           -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023240301') AND course_id = (SELECT id FROM `course` WHERE course_code = 'MA101') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -450,7 +450,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'SE2001'),   -- course_id (Web前端)
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     '2023-09-05',   -- selection_time
-    'Selected'      -- status
+    1                                                           -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023130401') AND course_id = (SELECT id FROM `course` WHERE course_code = 'SE2001') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 INSERT INTO `course_selection` (`student_id`, `course_id`, `term_id`, `selection_time`, `status`)
@@ -459,7 +459,7 @@ SELECT
     (SELECT id FROM `course` WHERE course_code = 'SE2001'),   -- course_id (Web前端)
     (SELECT id FROM `term` WHERE code = '2023-2024-1'),      -- term_id
     '2023-09-05',   -- selection_time
-    'Selected'      -- status
+    1                                                           -- status（0-已退课，1-已选）
 WHERE NOT EXISTS (SELECT 1 FROM `course_selection` WHERE student_id = (SELECT id FROM `student` WHERE student_no = '2023130402') AND course_id = (SELECT id FROM `course` WHERE course_code = 'SE2001') AND term_id = (SELECT id FROM `term` WHERE code = '2023-2024-1'));
 
 -- 插入成绩数据 (关联 course_selection_id)
@@ -564,7 +564,7 @@ SELECT
     1,              -- start_week
     16,             -- end_week
     (SELECT id FROM `clazz` WHERE name = '计算机2301班'), -- class_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `schedule` sch
                   JOIN `course` c ON sch.course_id = c.id
                   JOIN `term` t ON sch.term_id = t.id
@@ -583,7 +583,7 @@ SELECT
     1,              -- start_week
     16,             -- end_week
     (SELECT id FROM `clazz` WHERE name = '计算机2301班'), -- class_id (假设也给计科班上)
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `schedule` sch
                   JOIN `course` c ON sch.course_id = c.id
                   JOIN `term` t ON sch.term_id = t.id
@@ -602,7 +602,7 @@ SELECT
     1,              -- start_week
     16,             -- end_week
     (SELECT id FROM `clazz` WHERE name = '软件2301班'), -- class_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `schedule` sch
                   JOIN `course` c ON sch.course_id = c.id
                   JOIN `term` t ON sch.term_id = t.id
@@ -621,7 +621,7 @@ SELECT
     1,              -- start_week
     16,             -- end_week
     (SELECT id FROM `clazz` WHERE name = '数学2302班'), -- class_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `schedule` sch
                   JOIN `course` c ON sch.course_id = c.id
                   JOIN `term` t ON sch.term_id = t.id
@@ -640,7 +640,7 @@ SELECT
     1,              -- start_week
     16,             -- end_week
     (SELECT id FROM `clazz` WHERE name = '软件2301班'), -- class_id
-    'Active'        -- status
+    1 -- status（0-禁用，1-正常）
 WHERE NOT EXISTS (SELECT 1 FROM `schedule` sch
                   JOIN `course` c ON sch.course_id = c.id
                   JOIN `term` t ON sch.term_id = t.id
@@ -710,7 +710,7 @@ SELECT
     (SELECT id FROM `activity` WHERE title = '校园歌手大赛' AND YEAR(start_time) = 2024), -- activity_id
     (SELECT id FROM `user` WHERE username = 'student1'), -- user_id
     '2024-04-10 14:30:00',                -- registration_time
-    'Confirmed'                           -- status
+    1                                                                                     -- status（0-已取消，1-已确认）
 WHERE (SELECT id FROM `activity` WHERE title = '校园歌手大赛' AND YEAR(start_time) = 2024) IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM `activity_participant` ap JOIN `activity` a ON ap.activity_id = a.id WHERE a.title = '校园歌手大赛' AND YEAR(a.start_time) = 2024 AND ap.user_id = (SELECT id FROM `user` WHERE username = 'student1'));
 
@@ -719,7 +719,7 @@ SELECT
     (SELECT id FROM `activity` WHERE title = '软件创新大赛'), -- activity_id
     (SELECT id FROM `user` WHERE username = 'student4'), -- user_id
     '2024-04-20 15:30:00',                -- registration_time
-    'Confirmed'                           -- status
+    1                                                         -- status（0-已取消，1-已确认）
 WHERE (SELECT id FROM `activity` WHERE title = '软件创新大赛') IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM `activity_participant` ap JOIN `activity` a ON ap.activity_id = a.id WHERE a.title = '软件创新大赛' AND ap.user_id = (SELECT id FROM `user` WHERE username = 'student4'));
 
@@ -728,7 +728,7 @@ SELECT
     (SELECT id FROM `activity` WHERE title = '软件创新大赛'), -- activity_id
     (SELECT id FROM `user` WHERE username = 'student5'), -- user_id
     '2024-04-21 09:15:00',                -- registration_time
-    'Confirmed'                           -- status
+    1                                                         -- status（0-已取消，1-已确认）
 WHERE (SELECT id FROM `activity` WHERE title = '软件创新大赛') IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM `activity_participant` ap JOIN `activity` a ON ap.activity_id = a.id WHERE a.title = '软件创新大赛' AND ap.user_id = (SELECT id FROM `user` WHERE username = 'student5'));
 
@@ -853,5 +853,4 @@ WHERE a.title = '软件创新大赛'
   AND NOT EXISTS (
       SELECT 1 FROM `notification_receiver` nr
       WHERE nr.notification_id = (SELECT id FROM `notification` WHERE title = '软件创新大赛参赛指南')
-        AND nr.receiver_id = ap.user_id
-  ); 
+        AND nr.receiver_id = ap.user_id);

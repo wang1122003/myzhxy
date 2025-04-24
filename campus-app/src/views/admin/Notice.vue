@@ -78,7 +78,7 @@
 
     <!-- 通知列表 -->
     <el-card class="notice-list-card">
-      <el-table
+      <BaseTable :table-data="noticeList"
           v-loading="loading"
           :data="noticeList"
           style="width: 100%"
@@ -165,7 +165,7 @@
             <!-- 可以添加置顶等操作 -->
           </template>
         </el-table-column>
-      </el-table>
+      </BaseTable>
 
       <!-- 分页 -->
       <div
@@ -756,4 +756,9 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>
+const statusOptions = [
+{ value: 'DRAFT', label: '草稿' },
+{ value: 'PUBLISHED', label: '已发布' },
+{ value: 'RECALLED', label: '已撤回' }
+];

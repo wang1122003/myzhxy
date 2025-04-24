@@ -21,6 +21,20 @@ import java.util.List;
 @Data
 @TableName("user")
 public class User implements Serializable, UserDetails {
+
+    @Override
+    public Long getId() {
+        return this.id;
+    }
+
+    public String getUserType() {
+        return this.userType;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
     private static final long serialVersionUID = 1L;
     
     /**

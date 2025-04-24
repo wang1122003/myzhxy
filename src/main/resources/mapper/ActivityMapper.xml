@@ -17,7 +17,7 @@
         <result column="poster_url" property="posterUrl" jdbcType="VARCHAR"/>
         <result column="max_participants" property="maxParticipants" jdbcType="INTEGER"/>
         <result column="current_participants" property="currentParticipants" jdbcType="INTEGER"/>
-        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <result column="registration_deadline" property="registrationDeadline" jdbcType="TIMESTAMP"/>
@@ -262,4 +262,4 @@
         FROM activity
         WHERE title = #{name,jdbcType=VARCHAR}
     </select>
-</mapper> 
+</mapper>

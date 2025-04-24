@@ -56,8 +56,13 @@ public class Notification implements Serializable {
     /**
      * 通知状态：0-草稿, 1-已发布, 2-已撤回 (修改为字符串类型以适应数据库或前端数据)
      */
+    // 统一状态枚举值
     @TableField("status")
-    private String status;
+    private String status; // DRAFT/PUBLISHED/RECALLED
+
+    // 新增统一字段
+    @TableField(exist = false)
+    private Integer totalReceivers;
 
     /**
      * 是否置顶：0-否, 1-是

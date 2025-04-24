@@ -75,33 +75,33 @@
 
     <!-- 课程列表 -->
     <el-card class="course-list-card">
-      <el-table
+      <BaseTable :table-data="courseList"
           v-loading="loading"
           :data="courseList"
           style="width: 100%"
       >
-        <el-table-column
+        <BaseTable -column :table-data="courseList"
             label="课程代码"
             prop="courseCode"
             width="150"
         />
-        <el-table-column
+        <BaseTable -column :table-data="courseList"
             label="课程名称"
             min-width="200"
             prop="courseName"
         />
-        <el-table-column
+        <BaseTable -column :table-data="courseList"
             label="学分"
             prop="credit"
             width="80"
         />
-        <el-table-column
+        <BaseTable -column :table-data="courseList"
             label="学时"
             prop="hours"
             width="80"
         />
         <!-- 可以添加院系、类型等字段 -->
-        <el-table-column
+        <BaseTable -column :table-data="courseList"
             label="创建时间"
             prop="createTime"
             width="180"
@@ -110,7 +110,7 @@
             {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column
+          <BaseTable -column :table-data="courseList"
             fixed="right"
             label="操作"
             width="150"
@@ -132,7 +132,7 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+          </BaseTable>
 
       <!-- 分页 -->
       <div
@@ -539,4 +539,4 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>

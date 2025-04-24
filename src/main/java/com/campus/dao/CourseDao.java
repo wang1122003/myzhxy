@@ -18,13 +18,7 @@ public interface CourseDao extends BaseMapper<Course> {
      * @param id 课程ID
      * @return 课程对象
      */
-    Course findById(Long id);
     
-    /**
-     * 查询所有课程
-     * @return 课程列表
-     */
-    List<Course> findAll();
     
     /**
      * 根据教师ID查询课程

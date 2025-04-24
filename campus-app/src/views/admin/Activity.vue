@@ -67,7 +67,7 @@
 
     <!-- 活动列表 -->
     <el-card class="activity-list-card">
-      <el-table
+      <BaseTable :table-data="activityList"
           v-loading="loading"
           :data="activityList"
           style="width: 100%"
@@ -156,7 +156,7 @@
             <!-- 可以添加取消活动等操作 -->
           </template>
         </el-table-column>
-      </el-table>
+      </BaseTable>
 
       <!-- 分页 -->
       <div
@@ -796,4 +796,4 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>

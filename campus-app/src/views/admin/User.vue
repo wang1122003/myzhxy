@@ -38,7 +38,7 @@
 
     <!-- 用户列表 -->
     <el-card class="user-list-card">
-      <el-table v-loading="loading" :data="userList" style="width: 100%">
+      <BaseTable v-loading="loading" :table-data="userList" style="width: 100%">
         <el-table-column label="用户名" min-width="120" prop="username"/>
         <el-table-column label="姓名" prop="realName" width="120"/>
         <el-table-column label="角色" prop="userType" width="100">
@@ -67,7 +67,7 @@
             </el-button> <!-- 禁止删除 admin -->
           </template>
         </el-table-column>
-      </el-table>
+      </BaseTable>
 
       <!-- 分页 -->
       <div v-if="total > 0" class="pagination-container">
@@ -191,12 +191,8 @@ const userFormRules = reactive({ // 表单验证规则
   ],
   realName: [{required: true, message: '请输入姓名', trigger: 'blur'}],
   userType: [{required: true, message: '请选择角色', trigger: 'change'}],
-  email: [
-    {type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change']}
-  ],
-  phone: [
-    {pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur'}
-  ]
+  email: [formRules.required, formRules.email],
+  phone: [formRules.required, formRules.phone]
 });
 
 // 获取用户列表
@@ -420,4 +416,4 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>

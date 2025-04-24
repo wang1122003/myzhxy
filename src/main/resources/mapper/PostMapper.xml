@@ -16,7 +16,7 @@
         <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
         <result column="is_top" property="isTop" jdbcType="TINYINT"/>
         <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
-        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
         <result column="creation_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="last_update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <association property="author" javaType="com.campus.entity.User">

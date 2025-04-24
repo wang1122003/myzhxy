@@ -79,24 +79,24 @@
     >
       <!-- 列表视图 -->
       <div class="list-view">
-        <el-table
+        <BaseTable :table-data="scheduleList"
             :data="scheduleList"
             border
             style="width: 100%"
         >
-          <el-table-column
+          <BaseTable -column :table-data="scheduleList"
               label="课程名称"
               prop="courseName"
           />
-          <el-table-column
+          <BaseTable -column :table-data="scheduleList"
               label="授课教师"
               prop="teacherName"
           />
-          <el-table-column
+          <BaseTable -column :table-data="scheduleList"
               label="班级"
               prop="className"
           />
-          <el-table-column
+          <BaseTable -column :table-data="scheduleList"
               label="星期"
               prop="weekday"
           >
@@ -104,19 +104,19 @@
               {{ formatWeekday(scope.row.weekday) }}
             </template>
           </el-table-column>
-          <el-table-column
+            <BaseTable -column :table-data="scheduleList"
               label="开始时间"
               prop="startTime"
           />
-          <el-table-column
+            <BaseTable -column :table-data="scheduleList"
               label="结束时间"
               prop="endTime"
           />
-          <el-table-column
+            <BaseTable -column :table-data="scheduleList"
               label="教室"
               prop="classroomName"
           />
-          <el-table-column
+            <BaseTable -column :table-data="scheduleList"
               label="操作"
               width="150"
           >
@@ -137,7 +137,7 @@
               </el-button>
             </template>
           </el-table-column>
-        </el-table>
+            </BaseTable>
       </div>
       <!-- 分页 -->
       <div
@@ -442,26 +442,23 @@ const scheduleForm = ref({
 });
 
 const scheduleFormRules = reactive({
-  termId: [{required: true, message: '请选择学期', trigger: 'change'}],
-  courseId: [{required: true, message: '请选择课程', trigger: 'change'}],
-  teacherId: [{required: true, message: '请选择教师', trigger: 'change'}],
-  classId: [{required: true, message: '请选择班级', trigger: 'change'}],
-  classroomId: [{required: true, message: '请选择教室', trigger: 'change'}],
-  weekDay: [{required: true, message: '请选择星期', trigger: 'change'}],
-  startTime: [{required: true, message: '请选择开始时间', trigger: 'change'}],
-  endTime: [
-    {required: true, message: '请选择结束时间', trigger: 'change'},
-    {
-      validator: (rule, value, callback) => {
-        if (scheduleForm.value.startTime && value <= scheduleForm.value.startTime) {
-          callback(new Error('结束时间必须晚于开始时间'));
-        } else {
-          callback();
-        }
-      }, trigger: 'change'
-    }
-  ],
-  startWeek: [{required: true, message: '请输入开始周', trigger: 'blur'}],
+  termId: [formRules.required],
+  courseId: [formRules.required],
+  teacherId: [formRules.required],
+  classId: [formRules.required],
+  classroomId: [formRules.required],
+  weekDay: [formRules.required],
+  startTime: [formRules.required],
+  endTime: [formRules.required, {
+    validator: (rule, value, callback) => {
+      if (scheduleForm.value.startTime && value <= scheduleForm.value.startTime) {
+        callback(new Error('结束时间必须晚于开始时间'));
+      } else {
+        callback();
+      }
+    }, trigger: 'change'
+  }],
+  startWeek: [formRules.required],
   endWeek: [
     {required: true, message: '请输入结束周', trigger: 'blur'},
     {
@@ -790,4 +787,4 @@ export default {
   width: 100%;
 }
 
-</style> 
+</style>

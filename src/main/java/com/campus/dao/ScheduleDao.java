@@ -13,18 +13,22 @@ import java.util.Map;
  */
 @Repository
 public interface ScheduleDao extends BaseMapper<Schedule> {
+
+    @Override
+    default Schedule selectById(Serializable id) {
+        return selectOne(Wrappers.<Schedule>query().eq("id", id));
+    }
+
+    @Override
+    default List<Schedule> selectList(Wrapper<Schedule> wrapper) {
+        return selectAll(wrapper);
+    }
     /**
      * 根据ID查询课程表
      * @param id 课程表ID
      * @return 课程表对象
      */
-    Schedule findById(Long id);
     
-    /**
-     * 查询所有课程表
-     * @return 课程表列表
-     */
-    List<Schedule> findAll();
     
     /**
      * 根据课程ID查询课程表
@@ -98,26 +102,6 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
                             @Param("startTime") Integer startTime,
                             @Param("endTime") Integer endTime);
     
-    /**
-     * 添加课程表
-     * @param schedule 课程表对象
-     * @return 影响行数
-     */
-    int insert(Schedule schedule);
-    
-    /**
-     * 更新课程表
-     * @param schedule 课程表对象
-     * @return 影响行数
-     */
-    int update(Schedule schedule);
-    
-    /**
-     * 删除课程表
-     * @param id 课程表ID
-     * @return 影响行数
-     */
-    int delete(Long id);
     
     /**
      * 批量删除课程表
@@ -132,7 +116,7 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
      * @param limit 数量限制
      * @return 课程表列表
      */
-    List<Schedule> findByPage(@Param("offset") Integer offset, @Param("limit") Integer limit);
+    List<Schedule> selectAll(@Param("ew") Wrapper<Schedule> wrapper);
     
     /**
      * 获取课程表总数

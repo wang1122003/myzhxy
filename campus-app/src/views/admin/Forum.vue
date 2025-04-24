@@ -79,10 +79,11 @@
         </el-card>
 
         <!-- 帖子列表 -->
+        n'g'nngn
         <el-card class="post-list-card">
-          <el-table
-              v-loading="loading"
+          <BaseTable 
               :data="forumList"
+              v-loading="loading"
               style="width: 100%"
           >
             <el-table-column type="expand">
@@ -227,7 +228,7 @@
                 </el-button>
               </template>
             </el-table-column>
-          </el-table>
+          </BaseTable>
 
           <!-- 分页 -->
           <div
@@ -728,4 +729,4 @@ export default {
 .dialog-footer {
   text-align: right;
 }
-</style> 
+</style>

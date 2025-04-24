@@ -66,7 +66,7 @@
         </div>
         <div v-if="fileStats.typeStats && fileStats.typeStats.length > 0" class="stats-types">
           <h4>文件类型分布:</h4>
-          <el-table :data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
+          <BaseTable :table-data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
             <el-table-column label="类型" prop="type" width="100"></el-table-column>
             <el-table-column label="数量" prop="count" width="80"></el-table-column>
             <el-table-column label="大小" prop="size">
@@ -74,7 +74,7 @@
                 {{ formatFileSize(scope.row.size) }}
               </template>
             </el-table-column>
-          </el-table>
+          </BaseTable>
         </div>
       </div>
     </el-card>
@@ -148,7 +148,7 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </BaseTable>
     </div>
 
     <!-- 当目录为空时显示 -->
@@ -526,4 +526,4 @@ export default {
 .stats-types h4 {
   margin-bottom: 8px;
 }
-</style> 
+</style>

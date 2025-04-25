@@ -16,67 +16,67 @@ import java.util.Date;
 @TableName("schedule")
 public class Schedule implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 课表ID (主键)
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 课程ID (关联 course 表)
      */
     @TableField("course_id")
     private Long courseId;
-    
+
     /**
      * 教师ID (关联 teacher/user 表)
      */
     @TableField("teacher_id")
     private Long teacherId;
-    
+
     /**
      * 教室ID (关联 classroom 表)
      */
     @TableField("classroom_id")
     private Long classroomId;
-    
+
     /**
      * 星期几 (例如: Monday, Tuesday... 或 1-7)
      */
     @TableField("day_of_week")
     private String dayOfWeek;
-    
+
     /**
      * 上课开始时间 (时分秒，通常和 week_day 配合)
      */
     @TableField("start_time")
     private Date startTime;
-    
+
     /**
      * 上课结束时间 (时分秒)
      */
     @TableField("end_time")
     private Date endTime;
-    
+
     /**
      * 课程起始周次
      */
     @TableField("start_week")
     private Integer startWeek;
-    
+
     /**
      * 课程结束周次
      */
     @TableField("end_week")
     private Integer endWeek;
-    
+
     /**
      * 学期信息 (数据库字段)
      */
     @TableField("term_info")
     private String termInfo;
-    
+
     /**
      * 课程名称 (非数据库字段, 通过JOIN查询得到)
      */
@@ -100,13 +100,13 @@ public class Schedule implements Serializable {
      */
     @TableField("status")
     private String status;
-    
+
     /**
      * 记录创建时间
      */
     @TableField("create_time")
     private Date createTime;
-    
+
     /**
      * 记录更新时间
      */

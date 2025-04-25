@@ -175,7 +175,7 @@
 import {onMounted, reactive, ref} from 'vue'
 import {ElMessage} from 'element-plus'
 import {Document, Search} from '@element-plus/icons-vue'
-import {getNoticeById, getNoticeList} from '@/api/notice'
+import {getNoticeById, getNotificationsPage} from '@/api/notice'
 import {downloadFile} from '@/api/file'
 
 // 公告类型选项
@@ -212,7 +212,7 @@ const fetchNotices = async () => {
       type: filter.type || null,
       keyword: filter.keyword || null
     };
-    const res = await getNoticeList(params);
+    const res = await getNotificationsPage(params);
     notices.value = res.data.list || []
     total.value = res.data.total || 0
   } catch (error) {

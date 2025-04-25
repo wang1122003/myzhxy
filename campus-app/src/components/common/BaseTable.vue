@@ -25,13 +25,15 @@
     </el-table>
     <div v-if="isPagination" class="pagination-container">
       <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+          :current-page="currentPage"
+          :page-size="pageSize"
           :layout="paginationLayout"
           :page-sizes="pageSizes"
           :total="total"
           @size-change="onSizeChange"
           @current-change="onCurrentChange"
+          @update:current-page="val => emit('update:current-page', val)"
+          @update:page-size="val => emit('update:page-size', val)"
       />
     </div>
   </div>
@@ -119,7 +121,9 @@ const emit = defineEmits([
   'selection-change',
   'sort-change',
   'size-change',
-  'current-change'
+  'current-change',
+  'update:current-page',
+  'update:page-size'
 ]);
 
 // 表格ID，解决Cannot read properties of null (reading 'tableId')错误

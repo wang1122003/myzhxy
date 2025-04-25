@@ -1,14 +1,21 @@
 import request from '@/utils/request';
-import {TERM_API} from './api-endpoints'; // 假设 API 端点定义在 api-endpoints.js
+
+// API Endpoints for Term
+const API = {
+    GET_ALL: '/terms',
+    GET_CURRENT: '/terms/current'
+    // Add other term-related endpoints if they exist in the controller
+    // e.g., ADD: '/terms', UPDATE: (id) => `/terms/${id}`, DELETE: (id) => `/terms/${id}`
+};
 
 /**
  * 获取所有学期列表
  * @param {object} params 查询参数，例如 { sortByCreateDesc: true }
  * @returns Promise
  */
-export function getTermList(params) {
+export function getAllTerms(params) {
     return request({
-        url: TERM_API.GET_ALL,
+        url: API.GET_ALL,
         method: 'get',
         params
     });
@@ -20,7 +27,7 @@ export function getTermList(params) {
  */
 export function getCurrentTerm() {
     return request({
-        url: TERM_API.GET_CURRENT,
+        url: API.GET_CURRENT,
         method: 'get'
     });
 }

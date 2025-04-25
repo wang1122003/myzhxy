@@ -1,7 +1,6 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -13,107 +12,181 @@ import com.campus.enums.UserStatus;
 import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
 import com.campus.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.security.crypto.password.PasswordEncoder; // TODO: [Security] Uncomment and Inject PasswordEncoder
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import java.util.*;
+// import java.util.stream.Collectors; // Removed unused import
 
 /**
- * 用户服务实现类 (使用明文密码)
+ * 用户服务实现类
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
+
+    // TODO: [Security] Inject PasswordEncoder
+    // @Autowired
+    // private PasswordEncoder passwordEncoder;
+
     /**
-     * 根据ID查询用户
-     * @param id 用户ID
-     * @return 用户对象
+     * 根据ID查询用户 (清除密码)
      */
     @Override
     public User getUserById(Long id) {
         User user = getById(id);
         if (user != null) {
-            user.setPassword(null);
+            user.setPassword(null); // Never return password hash
         }
         return user;
     }
 
     /**
-     * 根据用户名查询用户
-     * @param username 用户名
-     * @return 用户对象
+     * 根据用户名查询用户 (内部使用，可能包含密码)
      */
     @Override
     public User getUserByUsername(String username) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUsername, username);
+        if (!StringUtils.hasText(username)) return null;
+        // Explicitly select columns to avoid errors with removed fields
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda()
+                .eq(User::getUsername, username)
+                .select(User.class, info -> !info.getColumn().equals("nickname") && !info.getColumn().equals("birth_date"));
         return getOne(queryWrapper);
     }
 
     /**
-     * 查询所有用户
-     * @return 用户列表
+     * 查询所有用户 (清除密码)
      */
     @Override
     public List<User> getAllUsers() {
-        return list();
+        List<User> users = list();
+        users.forEach(user -> user.setPassword(null));
+        return users;
     }
 
     /**
-     * 添加用户
+     * 添加用户 (密码需处理)
      */
     @Override
     @Transactional
     public boolean addUser(User user) {
-        if (getUserByUsername(user.getUsername()) != null) {
-            throw new CustomException("用户名已存在");
-        }
-        Date now = new Date();
-        user.setCreateTime(now);
-        user.setUpdateTime(now);
-        if (user.getStatus() == null) {
-            user.setStatus(UserStatus.ACTIVE);
+        // Validation
+        if (user == null || !StringUtils.hasText(user.getUsername()) || !StringUtils.hasText(user.getPassword())) {
+            throw new CustomException("用户名和密码不能为空");
         }
         if (user.getUserType() == null) {
             throw new CustomException("用户类型不能为空");
         }
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new CustomException("密码不能为空");
+        // Check uniqueness using DAO count methods
+        if (baseMapper.countByUsername(user.getUsername()) > 0) {
+            throw new CustomException("用户名已存在: " + user.getUsername());
         }
+        if (StringUtils.hasText(user.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+            throw new CustomException("邮箱已存在: " + user.getEmail());
+        }
+        if (StringUtils.hasText(user.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+            throw new CustomException("手机号已存在: " + user.getPhone());
+        }
+        if (StringUtils.hasText(user.getUserNo()) && baseMapper.countByUserNo(user.getUserNo()) > 0) {
+            throw new CustomException("学工号已存在: " + user.getUserNo());
+        }
+
+        // Set defaults
+        Date now = new Date();
+        user.setCreateTime(now);
+        user.setUpdateTime(now);
+        user.setStatus(user.getStatus() == null ? UserStatus.ACTIVE : user.getStatus());
+
+        // TODO: [Security] Encode password before saving
+        // String encodedPassword = passwordEncoder.encode(user.getPassword());
+        // user.setPassword(encodedPassword);
+        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
+        String plainPassword = user.getPassword(); // Store temporarily if needed, but ideally encode immediately
+        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+        user.setPassword(plainPassword); // Store plaintext (INSECURE!)
+
         return save(user);
     }
 
     /**
-     * 更新用户 (保存明文密码，如果提供了)
+     * 更新用户 (密码可选更新，需处理)
      */
     @Override
+    @Transactional
     public boolean updateUser(User user) {
-        user.setUpdateTime(new Date());
-        if (user.getPassword() != null && user.getPassword().isEmpty()) {
-            user.setPassword(null);
+        if (user == null || user.getId() == null) {
+            throw new CustomException("更新用户信息失败：用户ID不能为空");
         }
+        // Fetch existing user to prevent overwriting critical fields unintentionally
+        User existingUser = getById(user.getId());
+        if (existingUser == null) {
+            throw new CustomException("更新用户信息失败：用户不存在 (ID: " + user.getId() + ")");
+        }
+
+        // Prevent changing username?
+        user.setUsername(existingUser.getUsername());
+        // Prevent changing createTime
+        user.setCreateTime(existingUser.getCreateTime());
+
+        // Set update time
+        user.setUpdateTime(new Date());
+
+        // Handle password update: only update if a non-empty password is provided
+        if (StringUtils.hasText(user.getPassword())) {
+            // TODO: [Security] Encode the new password
+            // String encodedPassword = passwordEncoder.encode(user.getPassword());
+            // user.setPassword(encodedPassword);
+            // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
+            user.setPassword(user.getPassword()); // Store plaintext (INSECURE!)
+            // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+        } else {
+            // If password in request is null or empty, retain the existing password
+            user.setPassword(existingUser.getPassword());
+        }
+
+        // Check uniqueness for fields that might change (email, phone, userNo)
+        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+            throw new CustomException("邮箱已存在: " + user.getEmail());
+        }
+        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+            throw new CustomException("手机号已存在: " + user.getPhone());
+        }
+        if (StringUtils.hasText(user.getUserNo()) && !Objects.equals(user.getUserNo(), existingUser.getUserNo()) && baseMapper.countByUserNo(user.getUserNo()) > 0) {
+            throw new CustomException("学工号已存在: " + user.getUserNo());
+        }
+
+        // Perform the update
         return updateById(user);
     }
 
     /**
      * 删除用户
-     * @param id 用户ID
-     * @return 是否成功
      */
     @Override
+    @Transactional
     public boolean deleteUser(Long id) {
+        // TODO: Add checks? Can user be deleted? (e.g., if they have posts, courses etc.)
+        if (id == null) return false;
         return removeById(id);
     }
 
     /**
      * 批量删除用户
-     * @param ids 用户ID数组
-     * @return 是否成功
      */
     @Override
+    @Transactional
     public boolean batchDeleteUsers(Long[] ids) {
+        if (ids == null || ids.length == 0) {
+            return true;
+        }
+        // TODO: Add checks before batch deleting?
         return removeByIds(Arrays.asList(ids));
     }
 
@@ -123,219 +196,283 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Override
     @Transactional
     public boolean updateUserStatus(Long id, UserStatus status) {
-        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, id)
+        if (id == null || status == null) {
+            throw new IllegalArgumentException("用户ID和状态不能为空");
+        }
+        // Prevent setting invalid status? (Enum validation handles this)
+
+        return update(Wrappers.<User>lambdaUpdate()
+                .eq(User::getId, id)
                 .set(User::getStatus, status)
-                .set(User::getUpdateTime, new Date());
-        return update(updateWrapper);
+                .set(User::getUpdateTime, new Date()));
     }
 
     /**
-     * 修改密码 
+     * 修改密码 (需要密码比对)
      */
     @Override
+    @Transactional
     public boolean updatePassword(Long id, String oldPassword, String newPassword) {
-        User user = getById(id);
+        if (id == null || !StringUtils.hasText(oldPassword) || !StringUtils.hasText(newPassword)) {
+            throw new CustomException("用户ID、旧密码和新密码不能为空");
+        }
+        User user = getById(id); // Fetch user with password hash
         if (user == null) {
-            return false;
+            throw new CustomException("用户不存在");
         }
+
+        // TODO: [Security] Compare oldPassword with stored hash using PasswordEncoder
+        // if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+        //     throw new CustomException("旧密码不正确");
+        // }
+        // --- REMOVE PLAINTEXT PASSWORD COMPARISON --- >>
         if (!Objects.equals(oldPassword, user.getPassword())) {
-            return false;
+            throw new CustomException("旧密码不正确");
         }
-        user.setPassword(newPassword);
-        user.setUpdateTime(new Date());
-        boolean success = updateById(user);
-        return success;
+        // << --- REMOVE PLAINTEXT PASSWORD COMPARISON ---
+
+        // TODO: [Security] Encode the new password
+        // String encodedNewPassword = passwordEncoder.encode(newPassword);
+        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
+        String plainNewPassword = newPassword; // (INSECURE!)
+        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+
+        // Update password and update time
+        return update(Wrappers.<User>lambdaUpdate()
+                .eq(User::getId, id)
+                .set(User::getPassword, plainNewPassword) // Store plaintext (INSECURE!) / encodedNewPassword
+                .set(User::getUpdateTime, new Date()));
     }
 
     /**
-     * 用户登录
+     * 用户登录 (需要密码比对)
      */
     @Override
     public User login(String username, String password) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUsername, username);
-        User user = getOne(queryWrapper);
+        if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
+            return null; // Or throw exception
+        }
+        User user = getUserByUsername(username); // Fetch user with password hash
 
         if (user == null) {
-            return null;
+            return null; // User not found
         }
+
+        // TODO: [Security] Compare provided password with stored hash using PasswordEncoder
+        // if (!passwordEncoder.matches(password, user.getPassword())) {
+        //     return null; // Password mismatch
+        // }
+        // --- REMOVE PLAINTEXT PASSWORD COMPARISON --- >>
         if (!Objects.equals(password, user.getPassword())) {
-            return null;
+            return null; // Password mismatch (INSECURE!)
         }
+        // << --- REMOVE PLAINTEXT PASSWORD COMPARISON ---
+
+        // Check user status
         if (user.getStatus() != UserStatus.ACTIVE) {
-            return null;
+            // Corrected log.warn usage
+            log.warn("用户登录失败，账户状态异常: username={}, status={}", username, user.getStatus() != null ? user.getStatus().getValue() : "null");
+            // Depending on requirements, you might throw specific exceptions for different statuses
+            // throw new CustomException("账户已被禁用");
+            // throw new CustomException("账户待激活");
+            return null; // Or throw specific exception
         }
+
+        // Login successful, clear password before returning
+        user.setPassword(null);
         return user;
     }
-    
+
     /**
-     * 搜索用户
-     * @param keyword 关键词
-     * @return 匹配的用户列表
+     * 搜索用户 (清除密码)
      */
     @Override
     public List<User> searchUsers(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getAllUsers();
+        if (!StringUtils.hasText(keyword)) {
+            return getAllUsers(); // Return all users (passwords cleared) if keyword is empty
         }
-        
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(User::getUsername, keyword)
-                   .or()
-                   .like(User::getRealName, keyword)
-                   .or()
-                   .like(User::getEmail, keyword)
-                   .or()
-                   .like(User::getPhone, keyword);
-        
-        return list(queryWrapper);
+
+        LambdaQueryWrapper<User> queryWrapper = Wrappers.<User>lambdaQuery()
+                .like(User::getUsername, keyword)
+                .or().like(User::getRealName, keyword)
+                .or().like(User::getEmail, keyword)
+                .or().like(User::getPhone, keyword)
+                .or().like(User::getUserNo, keyword); // Added userNo search
+
+        List<User> users = list(queryWrapper);
+        users.forEach(user -> user.setPassword(null)); // Clear passwords
+        return users;
     }
-    
+
     /**
-     * 重置用户密码 
+     * 重置用户密码 (管理员操作，无需旧密码)
      */
     @Override
+    @Transactional
     public boolean resetPassword(Long id, String newPassword) {
-        User user = getById(id);
-        if (user == null) {
-            return false;
+        if (id == null || !StringUtils.hasText(newPassword)) {
+            throw new CustomException("用户ID和新密码不能为空");
         }
-        user.setPassword(newPassword);
-        user.setUpdateTime(new Date());
-        boolean success = updateById(user);
-        return success;
+        // TODO: Add permission check - only admins should reset passwords
+
+        // TODO: [Security] Encode the new password
+        // String encodedNewPassword = passwordEncoder.encode(newPassword);
+        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
+        String plainNewPassword = newPassword; // (INSECURE!)
+        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+
+        return update(Wrappers.<User>lambdaUpdate()
+                .eq(User::getId, id)
+                .set(User::getPassword, plainNewPassword) // Store plaintext (INSECURE!) / encodedNewPassword
+                .set(User::getUpdateTime, new Date()));
     }
-    
+
     /**
      * 获取用户总数
-     * @return 用户总数
      */
     @Override
     public long getUserCount() {
         return count();
     }
-    
+
     /**
      * 根据用户类型获取用户数量 (使用 Enum)
      */
     @Override
     public long getUserCountByType(UserType userType) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (userType != null) {
-            queryWrapper.eq(User::getUserType, userType);
-        }
-        return count(queryWrapper);
+        return count(Wrappers.<User>lambdaQuery().eq(userType != null, User::getUserType, userType));
     }
-    
+
     /**
      * 根据状态获取用户数量 (使用 Enum)
      */
     @Override
     public long getUserCountByStatus(UserStatus status) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (status != null) {
-            queryWrapper.eq(User::getStatus, status);
-        }
-        return count(queryWrapper);
+        return count(Wrappers.<User>lambdaQuery().eq(status != null, User::getStatus, status));
     }
 
     /**
-     * 根据用户类型查询用户 (使用 Enum)
+     * 根据类型获取用户列表 (清除密码)
      */
     @Override
     public List<User> getUsersByType(UserType userType) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (userType != null) {
-            queryWrapper.eq(User::getUserType, userType);
-        }
-        return list(queryWrapper);
+        List<User> users = list(Wrappers.<User>lambdaQuery().eq(userType != null, User::getUserType, userType));
+        users.forEach(user -> user.setPassword(null));
+        return users;
     }
 
+    /**
+     * 获取所有学生 (清除密码)
+     */
     @Override
     public List<User> getAllStudents() {
         return getUsersByType(UserType.STUDENT);
     }
 
+    /**
+     * 获取所有教师 (清除密码)
+     */
     @Override
     public List<User> getAllTeachers() {
         return getUsersByType(UserType.TEACHER);
     }
 
+    /**
+     * 获取用户统计信息
+     */
     @Override
     public Map<String, Object> getUserStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", getUserCount());
-        stats.put("admins", getUserCountByType(UserType.ADMIN));
-        stats.put("students", getUserCountByType(UserType.STUDENT));
-        stats.put("teachers", getUserCountByType(UserType.TEACHER));
-        stats.put("active", getUserCountByStatus(UserStatus.ACTIVE));
-        stats.put("inactive", getUserCountByStatus(UserStatus.INACTIVE));
+        stats.put("totalUsers", getUserCount());
+        stats.put("studentCount", getUserCountByType(UserType.STUDENT));
+        stats.put("teacherCount", getUserCountByType(UserType.TEACHER));
+        stats.put("adminCount", getUserCountByType(UserType.ADMIN));
+        stats.put("activeUsers", getUserCountByStatus(UserStatus.ACTIVE));
+        stats.put("inactiveUsers", getUserCountByStatus(UserStatus.INACTIVE));
+        // stats.put("lockedUsers", getUserCountByStatus(UserStatus.LOCKED)); // Removed LOCKED status
         return stats;
     }
 
     /**
-     * 更新用户个人资料 (由用户自己操作)
+     * 更新用户个人资料 (不允许修改密码、用户名、状态、类型、创建时间)
      */
     @Override
     @Transactional
     public boolean updateUserProfile(User user) {
         if (user == null || user.getId() == null) {
-            return false;
+            throw new CustomException("用户ID不能为空");
         }
-        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, user.getId());
+        // TODO: Ensure the user ID matches the currently authenticated user
+        // Long currentUserId = getCurrentUserId(); // Assuming such method exists
+        // if (!user.getId().equals(currentUserId)) {
+        //     throw new CustomException("无权修改他人资料");
+        // }
 
-        // 只更新允许修改的字段
-        if (user.getRealName() != null) {
-            updateWrapper.set(User::getRealName, user.getRealName());
-        }
-        if (user.getGender() != null) {
-            updateWrapper.set(User::getGender, user.getGender());
-        }
-        if (user.getPhone() != null) {
-            updateWrapper.set(User::getPhone, user.getPhone());
-        }
-        if (user.getEmail() != null) {
-            updateWrapper.set(User::getEmail, user.getEmail());
-        }
-        // AvatarURL field does not exist, removed related logic
+        // Use LambdaUpdateWrapper to update only allowed fields
+        LambdaUpdateWrapper<User> updateWrapper = Wrappers.<User>lambdaUpdate()
+                .eq(User::getId, user.getId());
 
-        // 总是更新 updateTime
+        // Fields allowed to be updated in profile (Corrected usage of set)
+        if (StringUtils.hasText(user.getRealName())) updateWrapper.set(User::getRealName, user.getRealName());
+        // if (StringUtils.hasText(user.getNickname())) updateWrapper.set(User::getNickname, user.getNickname()); // 移除
+        if (StringUtils.hasText(user.getEmail())) updateWrapper.set(User::getEmail, user.getEmail());
+        if (StringUtils.hasText(user.getPhone())) updateWrapper.set(User::getPhone, user.getPhone());
+        if (user.getGender() != null) updateWrapper.set(User::getGender, user.getGender());
+        if (user.getBirthDate() != null) updateWrapper.set(User::getBirthDate, user.getBirthDate());
+        // 注释掉以下对已移除字段的引用 (约 415-423 行)
+        /*
+        if (StringUtils.hasText(user.getAvatarUrl())) updateWrapper.set(User::getAvatarUrl, user.getAvatarUrl());
+        if (StringUtils.hasText(user.getAddress())) updateWrapper.set(User::getAddress, user.getAddress());
+        // Assuming department is linked via departmentId, maybe update that?
+        // if (user.getDepartmentId() != null) updateWrapper.set(User::getDepartmentId, user.getDepartmentId());
+        if (StringUtils.hasText(user.getMajor())) updateWrapper.set(User::getMajor, user.getMajor());
+        if (StringUtils.hasText(user.getClazz())) updateWrapper.set(User::getClazz, user.getClazz());
+        if (StringUtils.hasText(user.getDescription())) updateWrapper.set(User::getDescription, user.getDescription());
+        */
+
+        // Always update the update time
         updateWrapper.set(User::getUpdateTime, new Date());
+
+        // Check uniqueness before update
+        User existingUser = getById(user.getId()); // Get current data for comparison
+        if (existingUser == null) throw new CustomException("用户不存在");
+
+        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+            throw new CustomException("邮箱已存在: " + user.getEmail());
+        }
+        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+            throw new CustomException("手机号已存在: " + user.getPhone());
+        }
 
         return update(updateWrapper);
     }
 
     /**
-     * 分页查询用户列表 (Use Enum for userType filter)
+     * 分页查找用户 (清除密码)
      */
     @Override
     public IPage<User> findUsersPage(int page, int size, String keyword, UserType userType) {
         Page<User> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<User> queryWrapper = Wrappers.lambdaQuery();
+        LambdaQueryWrapper<User> queryWrapper = Wrappers.<User>lambdaQuery();
 
-        // Use Enum userType directly
-        if (userType != null) {
-            queryWrapper.eq(User::getUserType, userType);
-        }
-
-        // 处理关键词搜索 (Assuming these fields exist)
+        queryWrapper.eq(userType != null, User::getUserType, userType);
         if (StringUtils.hasText(keyword)) {
             queryWrapper.and(qw -> qw.like(User::getUsername, keyword)
                     .or().like(User::getRealName, keyword)
                     .or().like(User::getEmail, keyword)
-                    .or().like(User::getPhone, keyword));
+                    .or().like(User::getPhone, keyword)
+                    .or().like(User::getUserNo, keyword));
         }
 
-        // 添加排序（例如，按创建时间降序）
-        queryWrapper.orderByDesc(User::getCreateTime);
+        queryWrapper.orderByAsc(User::getId); // Default order
 
-        return this.page(pageRequest, queryWrapper);
+        IPage<User> resultPage = page(pageRequest, queryWrapper);
+        resultPage.getRecords().forEach(user -> user.setPassword(null)); // Clear passwords
+        return resultPage;
     }
 
     /**
-     * 检查管理员账号是否存在 (Use Enum)
+     * 检查是否存在管理员
      */
     @Override
     public boolean checkAdminExists() {
@@ -343,77 +480,66 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     /**
-     * 添加管理员用户 (Check using Enum)
+     * 添加管理员用户 (密码需处理)
      */
     @Override
     @Transactional
     public boolean addAdminUser(User admin) {
-        // 校验管理员类型
-        if (admin.getUserType() != UserType.ADMIN) {
-            throw new CustomException("只能添加管理员类型的用户");
+        if (admin == null) {
+            throw new CustomException("管理员信息不能为空");
         }
-        // 检查用户名是否已存在
-        if (getUserByUsername(admin.getUsername()) != null) {
-            throw new CustomException("用户名 " + admin.getUsername() + " 已存在");
-        }
-        // 检查是否已有管理员存在
-        if (checkAdminExists()) {
-            throw new CustomException("系统已存在管理员");
-        }
+        admin.setUserType(UserType.ADMIN); // Ensure type is ADMIN
+        // Set other defaults if needed (e.g., status)
+        admin.setStatus(admin.getStatus() == null ? UserStatus.ACTIVE : admin.getStatus());
 
-        // 设置默认值
-        Date now = new Date();
-        admin.setCreateTime(now);
-        admin.setUpdateTime(now);
-        if (admin.getStatus() == null) {
-            admin.setStatus(UserStatus.ACTIVE);
-        }
-        if (admin.getPassword() == null || admin.getPassword().isEmpty()) {
-            throw new CustomException("管理员密码不能为空");
-        }
-        // 保存管理员用户
-        return save(admin);
+        // Use the common addUser method for validation, default setting, and saving
+        return addUser(admin);
     }
 
+    /**
+     * 根据ID列表获取用户 (清除密码)
+     */
     @Override
     public List<User> getUsersByIds(Set<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.in(User::getId, ids);
-        return list(queryWrapper);
+        List<User> users = listByIds(ids);
+        users.forEach(user -> user.setPassword(null));
+        return users;
     }
 
     /**
-     * 根据用户名查找用户
-     * @param username 用户名
-     * @return 用户实体，或null如果找不到
+     * 根据用户名查找用户 (Spring Security 使用，保留密码)
      */
     @Override
     public User findByUsername(String username) {
-        return getUserByUsername(username);
+        if (!StringUtils.hasText(username)) return null;
+        // This method is often used by Spring Security, which needs the password hash.
+        // Do NOT clear the password here.
+        return getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, username));
+    }
+
+    // Internal helper or example method - Not part of the interface
+    public void verifyPasswordReset(String username, String newPassword) {
+        // Example method - might be part of a password reset flow
+        User user = findByUsername(username);
+        if (user == null) {
+            throw new CustomException("User not found");
+        }
+        // ... (generate token, send email, etc.)
     }
 
     /**
-     * 验证并重置密码 (示例性，具体逻辑可能需要调整)
-     *
-     * @param username    用户名
-     * @param newPassword 新密码
+     * 根据学工号查询用户 (清除密码)
      */
-    public void verifyPasswordReset(String username, String newPassword) {
-        User user = findByUsername(username);
-        if (user == null) {
-            throw new CustomException("用户不存在");
-        }
-        // 这里可以添加更多的验证逻辑，例如验证 token 等
-        resetPassword(user.getId(), newPassword);
-    }
-
     @Override
     public User getUserByUserNo(String userNo) {
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserNo, userNo);
-        return getOne(queryWrapper);
+        if (!StringUtils.hasText(userNo)) return null;
+        User user = getOne(Wrappers.<User>lambdaQuery().eq(User::getUserNo, userNo));
+        if (user != null) {
+            user.setPassword(null);
+        }
+        return user;
     }
 }

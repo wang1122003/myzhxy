@@ -26,7 +26,7 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreDao, Score> implements Sc
 
     @Autowired
     private ScoreDao scoreDao;
-    
+
     @Autowired
     private CourseDao courseDao;
 
@@ -36,35 +36,47 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreDao, Score> implements Sc
     @Override
     @Transactional
     public boolean recordScore(Score score) {
-        // 计算总分
-        if (score.getRegularScore() != null && score.getMidtermScore() != null && score.getFinalScore() != null) {
-            // 假设比例为：平时成绩30%，期中成绩30%，期末成绩40%
-            BigDecimal regularWeight = new BigDecimal("0.3");
-            BigDecimal midtermWeight = new BigDecimal("0.3");
-            BigDecimal finalWeight = new BigDecimal("0.4");
+        // 计算总分 (如果需要)
+        calculateTotalScoreIfNeeded(score);
 
-            BigDecimal totalScore = score.getRegularScore().multiply(regularWeight)
-                    .add(score.getMidtermScore().multiply(midtermWeight))
-                    .add(score.getFinalScore().multiply(finalWeight));
-
-            // 保留2位小数
-            totalScore = totalScore.setScale(2, RoundingMode.HALF_UP);
-            score.setTotalScore(totalScore);
+        // 根据 studentId 和 courseId (以及可选的 termInfo) 查找现有成绩
+        LambdaQueryWrapper<Score> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Score::getStudentId, score.getStudentId())
+                .eq(Score::getCourseId, score.getCourseId());
+        if (score.getTermInfo() != null) {
+            queryWrapper.eq(Score::getTermInfo, score.getTermInfo());
         }
+        // 如果有 selectionId，也可用作查询条件
+        // queryWrapper.eq(score.getSelectionId() != null, Score::getSelectionId, score.getSelectionId());
 
-        return this.save(score);
+        Score existingScore = scoreDao.selectOne(queryWrapper);
+
+        Date now = new Date();
+        score.setUpdateTime(now);
+
+        if (existingScore != null) {
+            // 更新现有成绩
+            score.setId(existingScore.getId()); // 确保ID被设置用于更新
+            score.setCreateTime(existingScore.getCreateTime()); // 保留原始创建时间
+            return this.updateById(score);
+        } else {
+            // 创建新成绩
+            score.setCreateTime(now);
+            return this.save(score);
+        }
     }
 
-    @Override
-    @Transactional
-    public boolean updateScore(Score score) {
-        Score existingScore = this.getById(score.getId());
-        if (existingScore == null) {
-            return false;
-        }
+    // /** // 移除 updateScore 方法实现
+    //  * @deprecated Use recordScore instead which handles both create and update.
+    //  */
+    // @Deprecated
+    // @Override
+    // @Transactional
+    // public boolean updateScore(Score score) { ... implementation removed ... }
 
-        // 计算总分
-        if (score.getRegularScore() != null && score.getMidtermScore() != null && score.getFinalScore() != null) {
+    // 辅助方法：计算总分（如果需要）
+    private void calculateTotalScoreIfNeeded(Score score) {
+        if (score.getTotalScore() == null && score.getRegularScore() != null && score.getMidtermScore() != null && score.getFinalScore() != null) {
             // 假设比例为：平时成绩30%，期中成绩30%，期末成绩40%
             BigDecimal regularWeight = new BigDecimal("0.3");
             BigDecimal midtermWeight = new BigDecimal("0.3");
@@ -77,9 +89,10 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreDao, Score> implements Sc
             // 保留2位小数
             totalScore = totalScore.setScale(2, RoundingMode.HALF_UP);
             score.setTotalScore(totalScore);
+            // 同时可以根据 totalScore 计算 grade 和 gpa
+            // score.setGrade(calculateGrade(totalScore));
+            // score.setGpa(calculateGradePoint(totalScore));
         }
-
-        return this.updateById(score);
     }
 
     @Override
@@ -268,7 +281,7 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreDao, Score> implements Sc
         statistics.put("validCount", validScores.size());
 
         if (!validScores.isEmpty()) {
-        BigDecimal sum = BigDecimal.ZERO;
+            BigDecimal sum = BigDecimal.ZERO;
             BigDecimal max = validScores.get(0);
             BigDecimal min = validScores.get(0);
 
@@ -396,20 +409,20 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreDao, Score> implements Sc
 
         for (Score score : scores) {
             // 计算总分
-        if (score.getRegularScore() != null && score.getMidtermScore() != null && score.getFinalScore() != null) {
-            // 假设比例为：平时成绩30%，期中成绩30%，期末成绩40%
-            BigDecimal regularWeight = new BigDecimal("0.3");
-            BigDecimal midtermWeight = new BigDecimal("0.3");
-            BigDecimal finalWeight = new BigDecimal("0.4");
+            if (score.getRegularScore() != null && score.getMidtermScore() != null && score.getFinalScore() != null) {
+                // 假设比例为：平时成绩30%，期中成绩30%，期末成绩40%
+                BigDecimal regularWeight = new BigDecimal("0.3");
+                BigDecimal midtermWeight = new BigDecimal("0.3");
+                BigDecimal finalWeight = new BigDecimal("0.4");
 
-            BigDecimal totalScore = score.getRegularScore().multiply(regularWeight)
-                    .add(score.getMidtermScore().multiply(midtermWeight))
-                    .add(score.getFinalScore().multiply(finalWeight));
+                BigDecimal totalScore = score.getRegularScore().multiply(regularWeight)
+                        .add(score.getMidtermScore().multiply(midtermWeight))
+                        .add(score.getFinalScore().multiply(finalWeight));
 
-            // 保留2位小数
-            totalScore = totalScore.setScale(2, RoundingMode.HALF_UP);
-            score.setTotalScore(totalScore);
-        }
+                // 保留2位小数
+                totalScore = totalScore.setScale(2, RoundingMode.HALF_UP);
+                score.setTotalScore(totalScore);
+            }
         }
 
         return this.saveBatch(scores);

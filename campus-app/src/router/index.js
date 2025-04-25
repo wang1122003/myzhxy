@@ -66,8 +66,8 @@ const routes = [
             },
             {
                 path: 'grades',
-                name: 'StudentGrades',
-                component: () => import('../views/student/Grades.vue')
+                name: 'StudentMyGrades',
+                component: () => import('../views/student/MyGrades.vue')
             },
             {
                 path: 'activities',
@@ -76,8 +76,8 @@ const routes = [
             },
             {
                 path: 'activity/:id',
-                name: 'StudentActivity',
-                component: () => import('../views/student/Activity.vue')
+                name: 'StudentActivityDetail',
+                component: () => import('../views/student/ActivityDetail.vue')
             },
             {
                 path: 'files',
@@ -116,21 +116,33 @@ const routes = [
                 component: () => import('../views/teacher/Courses.vue')
             },
             {
+                path: 'course-management',
+                name: 'TeacherCourseManagement',
+                component: () => import('../views/teacher/TeacherCourseManagement.vue'),
+                meta: {title: '我的课程管理'}
+            },
+            {
+                path: 'grades',
+                name: 'TeacherGradeManagementEntry',
+                component: () => import('../views/teacher/GradeManagementEntry.vue'),
+                meta: {title: '成绩管理'}
+            },
+            {
+                path: 'courses/:courseId/grades',
+                name: 'TeacherCourseGradeManagement',
+                component: () => import('../views/teacher/CourseGradeManagement.vue'),
+                meta: {title: '课程成绩管理'}
+            },
+            {
                 path: 'courses/:courseId/resources',
                 name: 'TeacherCourseResources',
                 component: () => import('../views/teacher/CourseResources.vue'),
                 meta: {title: '课程资源管理'}
             },
             {
-                path: 'courses/:courseId/grades',
-                name: 'TeacherCourseGrades',
-                component: () => import('../views/teacher/CourseGrades.vue'),
-                meta: {title: '课程成绩管理'}
-            },
-            {
                 path: 'notices',
                 name: 'TeacherNotices',
-                component: () => import('../views/NoticeList.vue'),
+                component: () => import('../views/teacher/TeacherNoticeView.vue'),
                 meta: {title: '通知公告'}
             }
         ]

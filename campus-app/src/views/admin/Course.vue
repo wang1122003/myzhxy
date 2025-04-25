@@ -101,7 +101,7 @@
             width="80"
         />
         <!-- 可以添加院系、类型等字段 -->
-        <BaseTable -column :table-data="courseList"
+        <el-table-column :table-data="courseList"
             label="创建时间"
             prop="createTime"
             width="180"
@@ -110,7 +110,7 @@
             {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-          <BaseTable -column :table-data="courseList"
+        <el-table-column :table-data="courseList"
             fixed="right"
             label="操作"
             width="150"
@@ -132,7 +132,7 @@
             </el-button>
           </template>
         </el-table-column>
-          </BaseTable>
+      </BaseTable>
 
       <!-- 分页 -->
       <div

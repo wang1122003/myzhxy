@@ -316,7 +316,6 @@ import {addNotice, deleteNotice, getNoticeById, getNoticeList, updateNotice, upd
 import {getNoticeTypes} from '@/api/common';
 import {getToken} from '@/utils/auth';
 import {deleteFile as deleteAttachmentFile} from '@/api/file';
-import {FILE_API} from '@/api/api-endpoints';
 
 const loading = ref(false);
 const loadingNoticeTypes = ref(false);
@@ -354,12 +353,12 @@ const editorConfig = {
   placeholder: '请输入内容...',
   MENU_CONF: {
     uploadImage: {
-      server: FILE_API.UPLOAD_IMAGE,
+      server: '/file/upload/image',
       fieldName: 'file',
       headers: {Authorization: `Bearer ${getToken()}`},
     },
     uploadAttachment: {
-      server: FILE_API.UPLOAD_ATTACHMENT,
+      server: '/file/upload/document',
       fieldName: 'file',
       headers: {Authorization: `Bearer ${getToken()}`},
     },
@@ -380,7 +379,7 @@ onBeforeUnmount(() => {
 const baseUrl = import.meta.env.VITE_APP_BASE_API || '';
 
 // 拼接完整的上传 URL
-const uploadAttachmentUrl = ref(`${baseUrl}${FILE_API.UPLOAD_DOCUMENT}`);
+const uploadAttachmentUrl = ref(`${baseUrl}${'/file/upload/document'}`);
 const uploadHeaders = ref({Authorization: `Bearer ${getToken()}`});
 
 const handleAttachmentSuccess = (response, uploadFile, uploadFiles) => {

@@ -1,30 +1,32 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.NotificationDao;
-import com.campus.dao.NotificationReceiverDao;
 import com.campus.dao.UserDao;
 import com.campus.entity.Notification;
-import com.campus.entity.NotificationReceiver;
 import com.campus.entity.User;
+import com.campus.entity.NotificationUser;
 import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
+import com.campus.exception.ResourceNotFoundException;
 import com.campus.service.NotificationService;
 import com.campus.service.UserService;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.campus.dao.NotificationUserDao;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,318 +36,393 @@ import java.util.stream.Collectors;
 @Service
 public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notification> implements NotificationService {
 
-    @Autowired
-    private NotificationDao notificationDao;
-
-    @Autowired
-    private UserDao userDao;
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private NotificationDao notificationDao;
+    @Autowired
+    private UserDao userDao;
+    @Autowired
+    private NotificationUserDao notificationUserDao;
 
     @Override
     public Notification getNotificationWithAttachments(Long id) {
-        Notification notification = notificationDao.selectById(id);
+        Notification notification = getById(id);
+        if (notification == null) {
+            return null;
+        }
 
-        // TODO: [通知附件] Check if Notification entity actually has get/setAttachmentsJson and setAttachmentFiles methods
-        /*
-        if (notification != null && org.springframework.util.StringUtils.hasText(notification.getAttachmentsJson())) {
+        try {
+            this.incrementViewCount(id);
+        } catch (Exception e) {
+            log.error("尝试增加通知浏览次数失败 (non-blocking), id: {}", id, e);
+        }
+
+        if (StringUtils.hasText(notification.getAttachmentsJson())) {
             try {
-                List<Map<String, String>> attachments = objectMapper.readValue(
-                    notification.getAttachmentsJson(),
-                    new TypeReference<List<Map<String, String>>>() {}
-                );
+                TypeReference<List<Map<String, String>>> typeRef = new TypeReference<>() {
+                };
+                List<Map<String, String>> attachments = objectMapper.readValue(notification.getAttachmentsJson(), typeRef);
                 notification.setAttachmentFiles(attachments);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+            } catch (IOException e) {
+                log.error("解析通知附件JSON失败, id: {}", id, e);
+                notification.setAttachmentFiles(Collections.emptyList());
             }
         }
-        */
         return notification;
     }
 
     @Override
     public List<Notification> getAllNotifications() {
-        return notificationDao.getAllNotifications();
+        return list(Wrappers.<Notification>lambdaQuery().orderByDesc(Notification::getCreateTime));
     }
 
     @Override
     public List<Notification> getNotificationsByType(String type) {
-        return notificationDao.findByType(type);
+        if (!StringUtils.hasText(type)) {
+            return Collections.emptyList();
+        }
+        return list(Wrappers.<Notification>lambdaQuery()
+                .eq(Notification::getType, type)
+                .orderByDesc(Notification::getCreateTime));
     }
 
     @Override
     public List<Notification> getNotificationsByStatus(String status) {
-        return notificationDao.findByStatus(status);
+        if (!StringUtils.hasText(status)) {
+            return Collections.emptyList();
+        }
+        return list(Wrappers.<Notification>lambdaQuery()
+                .eq(Notification::getStatus, status)
+                .orderByDesc(Notification::getCreateTime));
     }
 
     @Override
     public List<Notification> getRecentNotifications(Integer limit) {
-        return notificationDao.findRecent(limit);
+        if (limit == null || limit <= 0) {
+            limit = 5;
+        }
+        Page<Notification> page = new Page<>(1, limit);
+        IPage<Notification> resultPage = page(page, Wrappers.<Notification>lambdaQuery()
+                .eq(Notification::getStatus, "1")
+                .orderByDesc(Notification::getIsTop, Notification::getCreateTime));
+        return resultPage.getRecords();
     }
 
     @Override
     public List<Notification> getTopNotifications() {
-        return notificationDao.findTop();
+        return list(Wrappers.<Notification>lambdaQuery()
+                .eq(Notification::getStatus, "1")
+                .eq(Notification::getIsTop, 1)
+                .orderByDesc(Notification::getCreateTime));
     }
 
     @Override
     public List<Notification> getNotificationsByPublisherId(Long publisherId) {
-        return notificationDao.findByPublisherId(publisherId);
-    }
-
-    @Override
-    @Transactional
-    public boolean addNotification(Notification notification) {
-        // TODO: [通知时间戳] Check if Notification entity actually has setCreateTime/setUpdateTime methods
-        // notification.setCreateTime(new Date());
-        // notification.setUpdateTime(new Date());
-        int inserted = notificationDao.insert(notification);
-        return inserted > 0;
-    }
-
-    @Override
-    @Transactional
-    public boolean addNotification(Notification notification, List<Long> attachmentIds) {
-        // TODO: [通知时间戳] Check if Notification entity actually has getCreateTime/setUpdateTime methods
-        // if (notification.getCreateTime() == null) {
-        //     notification.setCreateTime(new Date());
-        // }
-        // notification.setUpdateTime(new Date());
-
-        // TODO: [通知发送者/发布者] Check if Notification entity actually has get/set PublisherId/SenderId methods
-        // if (notification.getPublisherId() == null && notification.getSenderId() != null) {
-        //     notification.setPublisherId(notification.getSenderId());
-        // } else if (notification.getSenderId() == null && notification.getPublisherId() != null) {
-        //     notification.setSenderId(notification.getPublisherId());
-        // }
-        
-        boolean success = save(notification);
-        // TODO: Handle attachment association if needed
-        return success;
-    }
-
-    @Override
-    @Transactional
-    public boolean updateNotification(Notification notification) {
-        Notification existingNotification = notificationDao.selectById(notification.getId());
-        if (existingNotification == null) {
-            throw new RuntimeException("通知不存在");
+        if (publisherId == null) {
+            return Collections.emptyList();
         }
-        // TODO: [通知时间戳] Check if Notification entity actually has setUpdateTime
-        // notification.setUpdateTime(new Date());
-        int updated = notificationDao.updateById(notification);
-        return updated > 0;
+        return list(Wrappers.<Notification>lambdaQuery()
+                .eq(Notification::getPublisherId, publisherId)
+                .orderByDesc(Notification::getCreateTime));
     }
 
-    @Override
-    @Transactional
-    public boolean updateNotification(Notification notification, List<Long> attachmentIds) {
-        // TODO: [通知时间戳] Check if Notification entity actually has setUpdateTime
-        // notification.setUpdateTime(new Date());
+    private void prepareNotificationForSave(Notification notification, List<Long> userIds, String targetType) {
+        if (notification == null) throw new IllegalArgumentException("通知对象不能为空");
 
-        // TODO: [通知发送者/发布者] Check if Notification entity actually has get/set PublisherId/SenderId methods
-        // if (notification.getPublisherId() == null && notification.getSenderId() != null) {
-        //     notification.setPublisherId(notification.getSenderId());
-        // } else if (notification.getSenderId() == null && notification.getPublisherId() != null) {
-        //     notification.setSenderId(notification.getPublisherId());
-        // }
-        
-        boolean success = updateById(notification);
-        // TODO: Handle attachment updates if needed
-        return success;
-    }
+        notification.setTargetType(targetType);
+        notification.setCreateTime(notification.getCreateTime() == null ? new Date() : notification.getCreateTime());
+        notification.setUpdateTime(new Date());
+        notification.setStatus(notification.getStatus() == null ? "1" : notification.getStatus());
+        notification.setIsTop(notification.getIsTop() == null ? 0 : notification.getIsTop());
+        notification.setViewCount(notification.getViewCount() == null ? 0 : notification.getViewCount());
 
-    @Override
-    @Transactional
-    public boolean deleteNotification(Long id) {
-        boolean deleted = removeById(id);
-        return deleted;
-    }
-
-    @Override
-    @Transactional
-    public boolean batchDeleteNotifications(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return false;
-        }
-        boolean deleted = removeByIds(ids);
-        return deleted;
-    }
-
-    @Override
-    public boolean updateNotificationStatus(Long id, String status) {
-        Notification notification = new Notification();
-        // TODO: [通知ID/状态/时间戳] Check if Notification entity actually has setId/setStatus/setUpdateTime methods
-        // notification.setId(id);
-        // notification.setStatus(status);
-        // notification.setUpdateTime(new Date());
-        // For now, assume we cannot update selectively via entity setters
-        // Need custom DAO method or direct UpdateWrapper
-        // return updateById(notification); 
-        LambdaUpdateWrapper<Notification> updateWrapper = Wrappers.lambdaUpdate();
-        updateWrapper.eq(Notification::getId, id).set(Notification::getStatus, status);
-        return update(updateWrapper);
-    }
-
-    @Override
-    public boolean incrementViewCount(Long id) {
-        return notificationDao.incrementViewCount(id) > 0;
-    }
-
-    @Override
-    public IPage<Notification> getNotificationPage(int pageNo, int pageSize, Notification notification) {
-        Page<Notification> page = new Page<>(pageNo, pageSize);
-        LambdaQueryWrapper<Notification> wrapper = buildQueryWrapper(notification);
-        // TODO: [通知置顶/时间戳] Check if Notification entity has getIsTop/getCreateTime methods for sorting
-        // wrapper.orderByDesc(Notification::getIsTop, Notification::getCreateTime);
-        return notificationDao.selectPage(page, wrapper);
-    }
-
-    @Override
-    public IPage<Notification> getNotificationPage(int pageNo, int pageSize, String type, String keyword, String status) {
-        Page<Notification> page = new Page<>(pageNo, pageSize);
-        LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
-
-        // TODO: [通知类型/标题/内容/状态] Check if Notification entity has getType/getTitle/getContent/getStatus methods
-        /*
-        if (StringUtils.isNotBlank(type)) {
-            wrapper.eq(Notification::getType, type);
-        }
-        if (StringUtils.isNotBlank(keyword)) {
-            wrapper.like(Notification::getTitle, keyword)
-                   .or(w -> w.like(Notification::getContent, keyword));
-        }
-        if (StringUtils.isNotBlank(status)) {
-            wrapper.eq(Notification::getStatus, status);
-        }
-        */
-        // TODO: [通知置顶/时间戳] Check sorting fields exist
-        // wrapper.orderByDesc(Notification::getIsTop, Notification::getCreateTime);
-
-        return notificationDao.selectPage(page, wrapper);
-    }
-
-    @Override
-    @Transactional
-    public boolean sendNotificationToUsers(Notification notification, List<Long> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
-            return false;
+        if (!CollectionUtils.isEmpty(userIds)) {
+            List<Map<String, Object>> receivers = userIds.stream()
+                    .distinct()
+                    .map(userId -> {
+                        Map<String, Object> receiverMap = new HashMap<>();
+                        receiverMap.put("receiverId", userId);
+                        receiverMap.put("isRead", 0);
+                        receiverMap.put("readTime", null);
+                        return receiverMap;
+                    })
+                    .collect(Collectors.toList());
+            try {
+                notification.setReceiversJson(objectMapper.writeValueAsString(receivers));
+            } catch (IOException e) {
+                log.error("序列化通知接收者JSON失败 for targetType: {}", targetType, e);
+                throw new CustomException("发送通知失败 (接收者JSON序列化错误)");
+            }
+        } else {
+            notification.setReceiversJson("[]");
         }
 
-        saveNotificationIfNotExists(notification);
+        if (notification.getAttachmentFiles() != null && !notification.getAttachmentFiles().isEmpty()) {
+            try {
+                notification.setAttachmentsJson(objectMapper.writeValueAsString(notification.getAttachmentFiles()));
+            } catch (IOException e) {
+                log.error("序列化通知附件JSON失败 for targetType: {}", targetType, e);
+                notification.setAttachmentsJson("[]");
+            }
+        } else if (!StringUtils.hasText(notification.getAttachmentsJson())) {
+            notification.setAttachmentsJson("[]");
+        }
+    }
 
+    @Override
+    @Transactional
+    public void sendNotificationToUsers(Notification notification, List<Long> userIds) {
+        if (notification == null || userIds == null || userIds.isEmpty()) {
+            throw new IllegalArgumentException("通知和用户ID列表不能为空");
+        }
+
+        // 1. Save the notification itself (ensure it has an ID)
+        notification.setStatus("PUBLISHED"); // Set status to published
+        notification.setSendTime(new Date()); // Set send time
+        notification.setTargetType("USERS");
+        // Convert userIds list to JSON string for target_ids field
         try {
-            List<Map<String, Object>> receivers = new ArrayList<>();
-            // TODO: [通知接收者] Check if Notification entity has get/setReceiversJson methods
-            /*
-            if (org.springframework.util.StringUtils.hasText(notification.getReceiversJson())) {
-                receivers = objectMapper.readValue(
-                    notification.getReceiversJson(),
-                    new TypeReference<List<Map<String, Object>>>() {}
-                );
+            notification.setTargetIds(objectMapper.writeValueAsString(userIds));
+        } catch (IOException e) {
+            log.error("Failed to serialize targetIds for notification: {}", e.getMessage());
+            throw new CustomException("序列化目标用户ID失败");
+        }
+
+        // Save or Update the main notification record
+        this.saveOrUpdate(notification);
+        Long notificationId = notification.getId();
+        if (notificationId == null) {
+            throw new CustomException("保存通知记录失败，无法获取通知ID");
+        }
+
+        // 2. Create records in the notification_user junction table
+        List<NotificationUser> relations = userIds.stream()
+                .map(userId -> new NotificationUser(notificationId, userId, false, null))
+                .collect(Collectors.toList());
+
+        if (!relations.isEmpty()) {
+            // Use the injected NotificationUserDao for batch insert
+            int insertedCount = notificationUserDao.batchInsert(relations);
+            if (insertedCount != relations.size()) {
+                log.warn("发送通知给用户：预期插入 {} 条关联记录，实际插入 {} 条", relations.size(), insertedCount);
+                // Decide on error handling: throw exception or just log?
+                // throw new CustomException("部分通知未能成功发送给指定用户");
             }
-            */
-
-            for (Long userId : userIds) {
-                boolean exists = receivers.stream()
-                        .anyMatch(r -> userId.equals(Long.valueOf(r.get("receiverId").toString())));
-                if (!exists) {
-                    // TODO: [通知ID] Check if Notification entity has getId method
-                    // Map<String, Object> receiver = createReceiverMap(notification.getId(), userId);
-                    // receivers.add(receiver);
-                }
-            }
-
-            // TODO: [通知接收者] Check setReceiversJson exists
-            // notification.setReceiversJson(objectMapper.writeValueAsString(receivers));
-
-            return updateById(notification);
-        } catch (Exception e) { // Catch broader Exception for now
-            e.printStackTrace();
-            return false;
         }
     }
 
     @Override
     @Transactional
     public boolean sendNotificationByUserType(Notification notification, String userType) {
-        saveNotificationIfNotExists(notification);
-        if (StringUtils.isBlank(userType)) {
+        UserType typeEnum;
+        try {
+            typeEnum = UserType.valueOf(userType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.error("无效的用户类型: {}", userType);
+            throw new CustomException("无效的用户类型: " + userType);
+        }
+
+        List<Object> userIdObjects = userDao.selectObjs(Wrappers.<User>lambdaQuery()
+                .eq(User::getUserType, typeEnum)
+                .select(User::getId));
+
+        List<Long> userIds = userIdObjects.stream()
+                .filter(Objects::nonNull)
+                .map(id -> ((Number) id).longValue())
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(userIds)) {
+            log.warn("尝试按类型 '{}' 发送通知，但未找到该类型的用户。", userType);
             return false;
         }
 
-        // 查询该类型的用户
-        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(User::getUserType, userType);
-        List<User> users = userDao.selectList(queryWrapper);
-        
-        if (users == null || users.isEmpty()) {
-            return true; // 无需发送通知，没有符合条件的用户
-        }
+        prepareNotificationForSave(notification, userIds, userType);
 
-        List<Long> userIds = users.stream()
-                .map(User::getId)
-                .collect(Collectors.toList());
-            
-        return sendNotificationToUsers(notification, userIds);
+        if (notification.getId() != null) {
+            log.warn("sendNotificationByUserType 被调用，但传入的通知对象已包含ID，将尝试更新而非创建。 ID: {}", notification.getId());
+            return this.updateById(notification);
+        }
+        return this.save(notification);
     }
 
     @Override
     @Transactional
     public boolean sendNotificationToAll(Notification notification) {
-        // 获取所有用户ID
-        List<User> users = userDao.selectList(null);
-        List<Long> userIds = users.stream().map(User::getId).collect(Collectors.toList());
-        return sendNotificationToUsers(notification, userIds);
-    }
+        List<Object> allUserIdObjects = userDao.selectObjs(Wrappers.<User>lambdaQuery().select(User::getId));
 
-    /**
-     * 创建接收者信息Map
-     */
-    private Map<String, Object> createReceiverMap(Long notificationId, Long userId) {
-        Map<String, Object> receiver = new HashMap<>();
-        receiver.put("receiverId", userId);
-        receiver.put("notificationId", notificationId);
-        receiver.put("isRead", 0);
-        receiver.put("readTime", null);
-        receiver.put("createTime", new Date());
-        return receiver;
-    }
+        List<Long> allUserIds = allUserIdObjects.stream()
+                .filter(Objects::nonNull)
+                .map(id -> ((Number) id).longValue())
+                .collect(Collectors.toList());
 
-    /**
-     * 保存通知（如果不存在）
-     */
-    private void saveNotificationIfNotExists(Notification notification) {
-        // TODO: [通知ID/时间戳] Check getId, setCreateTime, setUpdateTime exist
-        /*
-        if (notification.getId() == null) {
-             notification.setCreateTime(new Date());
-             notification.setUpdateTime(new Date());
-             save(notification);
+        if (CollectionUtils.isEmpty(allUserIds)) {
+            log.warn("尝试发送全体通知，但系统中没有用户。");
+            return false;
         }
-        */
+
+        prepareNotificationForSave(notification, allUserIds, "全体");
+
+        if (notification.getId() != null) {
+            log.warn("sendNotificationToAll 被调用，但传入的通知对象已包含ID，将尝试更新而非创建。 ID: {}", notification.getId());
+            return this.updateById(notification);
+        }
+        return this.save(notification);
     }
 
-    /**
-     * 构建查询Wrapper
-     */
+    @Override
+    @Transactional
+    public boolean deleteNotification(Long id) {
+        if (id == null) return false;
+        return removeById(id);
+    }
+
+    @Override
+    @Transactional
+    public boolean batchDeleteNotifications(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return true;
+        }
+        return removeByIds(ids);
+    }
+
+    @Override
+    @Transactional
+    public boolean updateNotificationStatus(Long id, String status) {
+        if (id == null || !StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("通知ID和状态不能为空");
+        }
+        return update(Wrappers.<Notification>lambdaUpdate()
+                .eq(Notification::getId, id)
+                .set(Notification::getStatus, status)
+                .set(Notification::getUpdateTime, new Date()));
+    }
+
+    @Override
+    @Transactional
+    public boolean incrementViewCount(Long id) {
+        if (id == null) return false;
+        return update(Wrappers.<Notification>lambdaUpdate()
+                .eq(Notification::getId, id)
+                .setSql("view_count = view_count + 1"));
+    }
+
+    @Override
+    public IPage<Notification> getNotificationsForUser(Long userId, int pageNo, int pageSize, String status) {
+        Page<NotificationUser> page = new Page<>(pageNo, pageSize);
+        LambdaQueryWrapper<NotificationUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(NotificationUser::getUserId, userId);
+
+        if ("unread".equalsIgnoreCase(status)) {
+            queryWrapper.eq(NotificationUser::isRead, false);
+        } else if ("read".equalsIgnoreCase(status)) {
+            queryWrapper.eq(NotificationUser::isRead, true);
+        }
+        // "all" status doesn't need a filter
+
+        queryWrapper.orderByDesc(NotificationUser::getCreateTime); // Order by relation creation time?
+
+        IPage<NotificationUser> userPage = notificationUserDao.selectPage(page, queryWrapper);
+
+        // Extract notification IDs
+        // List<Long> notificationIds = userPage.getRecords().stream()
+        //         .map(NotificationUser::getNotificationId)
+        //         .collect(Collectors.toList()); // Unused
+
+        // Fetch Notification details (assuming NotificationDao exists or baseMapper works)
+        List<Notification> notifications = userPage.getRecords().stream()
+                .map(nu -> notificationDao.selectById(nu.getNotificationId())) // Fetch details
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // Create a new IPage with Notification objects
+        IPage<Notification> resultPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        resultPage.setRecords(notifications);
+
+        return resultPage;
+    }
+
+    @Override
+    @Transactional
+    public boolean markNotificationAsRead(Long notificationId, Long userId) {
+        // Check if the relation exists
+        NotificationUser relation = notificationUserDao.selectOne(Wrappers.<NotificationUser>lambdaQuery()
+                .eq(NotificationUser::getNotificationId, notificationId)
+                .eq(NotificationUser::getUserId, userId));
+
+        if (relation == null) {
+            // Relation doesn't exist, maybe the user wasn't a target?
+            // Or maybe it's a general notification they haven't interacted with?
+            // Option 1: Create the relation row now as read
+            // Option 2: Throw error / return false
+            log.warn("尝试标记未找到的通知关联记录为已读: notificationId={}, userId={}", notificationId, userId);
+            // Let's create it now if the notification exists
+            if (this.getById(notificationId) != null) {
+                NotificationUser newRelation = new NotificationUser(notificationId, userId, true, new Date());
+                return notificationUserDao.insert(newRelation) > 0;
+            } else {
+                throw new ResourceNotFoundException("通知 (ID: " + notificationId + ") 不存在");
+            }
+            // return false;
+        }
+
+        // If already read, return true (or false if you want to indicate no change)
+        if (relation.getIsRead()) {
+            return true; // Already marked as read
+        }
+
+        // Update the existing relation
+        relation.setIsRead(true);
+        relation.setReadTime(new Date());
+        return notificationUserDao.updateById(relation) > 0;
+    }
+
+    @Override
+    public IPage<Notification> getNotificationPage(int pageNo, int pageSize, Notification notification) {
+        Page<Notification> page = new Page<>(pageNo, pageSize);
+        LambdaQueryWrapper<Notification> queryWrapper = buildQueryWrapper(notification);
+        queryWrapper.orderByDesc(Notification::getCreateTime);
+        return page(page, queryWrapper);
+    }
+
+    @Override
+    public IPage<Notification> getNotificationPage(int pageNo, int pageSize, String type, String keyword, String status) {
+        Page<Notification> page = new Page<>(pageNo, pageSize);
+        LambdaQueryWrapper<Notification> queryWrapper = Wrappers.<Notification>lambdaQuery();
+
+        queryWrapper.eq(StringUtils.hasText(type), Notification::getType, type);
+        queryWrapper.eq(StringUtils.hasText(status), Notification::getStatus, status);
+        queryWrapper.like(StringUtils.hasText(keyword), Notification::getTitle, keyword);
+
+        queryWrapper.orderByDesc(Notification::getIsTop, Notification::getCreateTime);
+
+        return page(page, queryWrapper);
+    }
+
     private LambdaQueryWrapper<Notification> buildQueryWrapper(Notification notification) {
-        LambdaQueryWrapper<Notification> wrapper = Wrappers.lambdaQuery();
-        // TODO: [通知实体字段] Check all referenced fields (getTitle, getType, getStatus, etc.) exist
-        /*
+        LambdaQueryWrapper<Notification> queryWrapper = Wrappers.<Notification>lambdaQuery();
         if (notification != null) {
-            if (StringUtils.isNotBlank(notification.getTitle())) {
-                wrapper.like(Notification::getTitle, notification.getTitle());
-            }
-            if (StringUtils.isNotBlank(notification.getType())) {
-                wrapper.eq(Notification::getType, notification.getType());
-            }
-            if (notification.getStatus() != null) { // Assuming status is Integer or Enum
-                wrapper.eq(Notification::getStatus, notification.getStatus());
-            }
-            // Add other fields as needed
+            queryWrapper.eq(notification.getId() != null, Notification::getId, notification.getId());
+            queryWrapper.like(StringUtils.hasText(notification.getTitle()), Notification::getTitle, notification.getTitle());
+            queryWrapper.eq(StringUtils.hasText(notification.getType()), Notification::getType, notification.getType());
+            queryWrapper.eq(notification.getPriority() != null, Notification::getPriority, notification.getPriority());
+            queryWrapper.eq(StringUtils.hasText(notification.getStatus()), Notification::getStatus, notification.getStatus());
+            queryWrapper.eq(notification.getIsTop() != null, Notification::getIsTop, notification.getIsTop());
+            queryWrapper.eq(notification.getSenderId() != null, Notification::getSenderId, notification.getSenderId());
+            queryWrapper.eq(notification.getPublisherId() != null, Notification::getPublisherId, notification.getPublisherId());
+            queryWrapper.eq(StringUtils.hasText(notification.getTargetType()), Notification::getTargetType, notification.getTargetType());
         }
-        */
-        return wrapper;
+        return queryWrapper;
+    }
+
+    @Override
+    public List<Map<String, Object>> getNoticeTypes() {
+        List<Map<String, Object>> types = new ArrayList<>();
+        types.add(Map.of("value", "1", "label", "系统通知"));
+        types.add(Map.of("value", "2", "label", "教学通知"));
+        types.add(Map.of("value", "3", "label", "活动公告"));
+        types.add(Map.of("value", "4", "label", "其他"));
+        return types;
     }
 }

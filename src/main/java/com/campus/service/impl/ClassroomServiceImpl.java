@@ -1,19 +1,19 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ClassroomDao;
 import com.campus.entity.Classroom;
+import com.campus.enums.ClassroomStatus;
 import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.campus.enums.ClassroomStatus;
 
 import java.util.Date;
 import java.util.List;
@@ -42,7 +42,7 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
     }
 
     @Override
-    public IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status) {
+    public IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status, String roomType) {
         Page<Classroom> pageRequest = new Page<>(page, size);
         LambdaQueryWrapper<Classroom> queryWrapper = new LambdaQueryWrapper<>();
 
@@ -60,6 +60,14 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
                 queryWrapper.eq(Classroom::getStatus, classroomStatus);
             } else {
                 log.warn("Invalid status code provided for classroom search: " + status);
+            }
+        }
+        if (StringUtils.isNotBlank(roomType)) {
+            try {
+                Integer roomTypeCode = Integer.parseInt(roomType);
+                queryWrapper.eq(Classroom::getRoomType, roomTypeCode);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid roomType provided for classroom search: " + roomType);
             }
         }
         queryWrapper.orderByAsc(Classroom::getName);
@@ -103,10 +111,11 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
     public boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek) {
         // checkClassroomAvailability 方法尚未完全实现，总是返回 true
         log.warn("checkClassroomAvailability is not fully implemented.");
-        return true; 
+        return true;
     }
 
     @Override
+    @Transactional
     public void batchUpdateStatus(List<Long> ids, Integer status) {
         ClassroomStatus classroomStatus = ClassroomStatus.fromCode(status);
         if (classroomStatus == null) {
@@ -119,5 +128,17 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
                     .set(Classroom::getStatus, classroomStatus);
             update(updateWrapper);
         }
+    }
+
+    @Override
+    @Transactional
+    public boolean batchDeleteClassrooms(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return true; // 或者根据业务返回 false 或抛异常
+        }
+        // TODO: 检查这些教室是否被排课占用，如果占用则不允许删除或抛异常
+        // boolean isScheduled = scheduleService.isAnyClassroomScheduled(ids);
+        // if (isScheduled) { throw new CustomException("部分教室已被排课使用，无法删除"); }
+        return this.removeByIds(ids);
     }
 }

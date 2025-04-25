@@ -17,7 +17,7 @@ import java.util.Date;
 @TableName("score")
 public class Score implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 成绩ID
      */
@@ -29,19 +29,19 @@ public class Score implements Serializable {
      */
     @TableField("selection_id")
     private Long selectionId;
-    
+
     /**
      * 学生ID
      */
     @TableField("student_id")
     private Long studentId;
-    
+
     /**
      * 课程ID
      */
     @TableField("course_id")
     private Long courseId;
-    
+
     /**
      * 学期信息
      */
@@ -64,34 +64,35 @@ public class Score implements Serializable {
      * 绩点
      */
     private BigDecimal gpa;
-    
+
     /**
      * 平时成绩
      */
     @TableField("regular_score")
     private BigDecimal regularScore;
-    
+
     /**
      * 期中成绩
      */
     @TableField("midterm_score")
     private BigDecimal midtermScore;
-    
+
     /**
      * 期末成绩
      */
     @TableField("final_score")
     private BigDecimal finalScore;
-    
+
     /**
      * 成绩类型
      */
     @TableField("score_type")
     private String scoreType;
-    
+
     /**
      * 评语
      */
+    @TableField(exist = false)
     private String comment;
 
     /**
@@ -99,13 +100,13 @@ public class Score implements Serializable {
      */
     @TableField("evaluation_date")
     private Date evaluationDate;
-    
+
     /**
      * 创建时间
      */
     @TableField("create_time")
     private Date createTime;
-    
+
     /**
      * 更新时间
      */
@@ -119,6 +120,15 @@ public class Score implements Serializable {
     @TableField(exist = false)
     private String studentName; // 学生名称
 
+    /**
+     * 学生对象（非数据库字段）
+     */
     @TableField(exist = false)
-    private CourseSelection courseSelection; // 选课信息
+    private User student;
+
+    /**
+     * 课程对象（非数据库字段）
+     */
+    @TableField(exist = false)
+    private Course course;
 }

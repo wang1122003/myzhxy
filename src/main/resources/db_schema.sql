@@ -214,3 +214,24 @@ CREATE TABLE IF NOT EXISTS `post`
     INDEX `idx_post_status` (`status`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
+
+-- 创建文件记录表
+CREATE TABLE IF NOT EXISTS `file_record`
+(
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT,
+    `user_id`      BIGINT       NOT NULL COMMENT '上传者用户ID',
+    `filename`     VARCHAR(255) NOT NULL COMMENT '原始文件名',
+    `file_path`    VARCHAR(500) NOT NULL COMMENT '文件存储路径或唯一标识符',
+    `file_size`    BIGINT       NULL COMMENT '文件大小 (bytes)',
+    `file_type`    VARCHAR(100) NULL COMMENT '文件MIME类型或扩展名',
+    `upload_time`  DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+    `context_type` VARCHAR(50)  NULL COMMENT '文件上下文类型 (personal, course, avatar, activity_poster, etc.)',
+    `context_id`   BIGINT       NULL COMMENT '关联上下文的ID (如 course_id)',
+    `status`       TINYINT     DEFAULT 1 COMMENT '文件状态：0-已删除, 1-正常',
+    `storage_type` VARCHAR(20) DEFAULT 'local' COMMENT '存储类型 (local, s3, etc.)',
+    PRIMARY KEY (`id`),
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+    INDEX `idx_file_user` (`user_id`),
+    INDEX `idx_file_context` (`context_type`, `context_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT = '文件上传记录表';

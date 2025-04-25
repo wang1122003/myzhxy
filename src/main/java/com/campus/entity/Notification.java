@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,7 +35,7 @@ public class Notification implements Serializable {
      */
     @TableField("title")
     private String title;
-    
+
     /**
      * 通知内容
      */
@@ -60,10 +61,6 @@ public class Notification implements Serializable {
     @TableField("status")
     private String status; // DRAFT/PUBLISHED/RECALLED
 
-    // 新增统一字段
-    @TableField(exist = false)
-    private Integer totalReceivers;
-
     /**
      * 是否置顶：0-否, 1-是
      */
@@ -75,9 +72,9 @@ public class Notification implements Serializable {
      */
     @TableField("view_count")
     private Integer viewCount;
-    
+
     /**
-     * 发送者ID 
+     * 发送者ID
      */
     @TableField("sender_id")
     private Long senderId;
@@ -104,24 +101,28 @@ public class Notification implements Serializable {
      * 发送时间
      */
     @TableField("send_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date sendTime;
 
     /**
      * 过期时间
      */
     @TableField("expire_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date expireTime;
-    
+
     /**
      * 创建时间
      */
     @TableField("create_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
-    
+
     /**
      * 更新时间
      */
     @TableField("update_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;
 
     /**
@@ -139,18 +140,6 @@ public class Notification implements Serializable {
     private String attachmentsJson;
 
     /**
-     * 接收者类型：1-全体，2-指定用户，3-指定角色，4-指定部门
-     */
-    @TableField(exist = false)
-    private Integer receiverType;
-
-    /**
-     * 接收者ID列表 (根据 receiverType 类型确定含义)
-     */
-    @TableField(exist = false)
-    private List<Long> receiverIds;
-
-    /**
      * 已读状态 (非数据库字段，根据当前用户查询)
      */
     @TableField(exist = false)
@@ -161,12 +150,6 @@ public class Notification implements Serializable {
      */
     @TableField(exist = false)
     private List<Map<String, String>> attachmentFiles;
-
-    /**
-     * 接收者姓名列表 (非数据库字段，用于前端展示)
-     */
-    @TableField(exist = false)
-    private List<String> receiverNames;
 
     /**
      * 已读人数 (非数据库字段)
@@ -185,4 +168,203 @@ public class Notification implements Serializable {
      */
     @TableField(exist = false)
     private User sender;
+
+    /**
+     * 当前用户是否已读该通知 (用于Service层填充: getNotificationsForUser)
+     */
+    @TableField(exist = false)
+    private boolean readForCurrentUser;
+
+    // --- 手动添加 Getters/Setters (尝试解决 Lombok 问题) ---
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Integer getIsTop() {
+        return isTop;
+    }
+
+    public void setIsTop(Integer isTop) {
+        this.isTop = isTop;
+    }
+
+    public Integer getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(Integer viewCount) {
+        this.viewCount = viewCount;
+    }
+
+    public Long getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(Long senderId) {
+        this.senderId = senderId;
+    }
+
+    public Long getPublisherId() {
+        return publisherId;
+    }
+
+    public void setPublisherId(Long publisherId) {
+        this.publisherId = publisherId;
+    }
+
+    public String getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    public String getTargetIds() {
+        return targetIds;
+    }
+
+    public void setTargetIds(String targetIds) {
+        this.targetIds = targetIds;
+    }
+
+    public Date getSendTime() {
+        return sendTime;
+    }
+
+    public void setSendTime(Date sendTime) {
+        this.sendTime = sendTime;
+    }
+
+    public Date getExpireTime() {
+        return expireTime;
+    }
+
+    public void setExpireTime(Date expireTime) {
+        this.expireTime = expireTime;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public String getReceiversJson() {
+        return receiversJson;
+    }
+
+    public void setReceiversJson(String receiversJson) {
+        this.receiversJson = receiversJson;
+    }
+
+    public String getAttachmentsJson() {
+        return attachmentsJson;
+    }
+
+    public void setAttachmentsJson(String attachmentsJson) {
+        this.attachmentsJson = attachmentsJson;
+    }
+
+    public Boolean getIsRead() {
+        return isRead;
+    }
+
+    public void setIsRead(Boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public List<Map<String, String>> getAttachmentFiles() {
+        return attachmentFiles;
+    }
+
+    public void setAttachmentFiles(List<Map<String, String>> attachmentFiles) {
+        this.attachmentFiles = attachmentFiles;
+    }
+
+    public Integer getReadCount() {
+        return readCount;
+    }
+
+    public void setReadCount(Integer readCount) {
+        this.readCount = readCount;
+    }
+
+    public String getNoticeTypeName() {
+        return noticeTypeName;
+    }
+
+    public void setNoticeTypeName(String noticeTypeName) {
+        this.noticeTypeName = noticeTypeName;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public boolean isReadForCurrentUser() {
+        return readForCurrentUser;
+    }
+
+    public void setReadForCurrentUser(boolean readForCurrentUser) {
+        this.readForCurrentUser = readForCurrentUser;
+    }
 }

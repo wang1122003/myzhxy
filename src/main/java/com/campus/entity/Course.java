@@ -17,43 +17,43 @@ import java.util.Date;
 @TableName("course")
 public class Course implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 课程ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 课程编号
      */
     @TableField("code")
     private String courseNo;
-    
+
     /**
      * 课程名称
      */
     @TableField("name")
     private String courseName;
-    
+
     /**
      * 课程学分
      */
     @TableField("credit")
     private BigDecimal credit;
-    
+
     /**
      * 课程类型：1-必修课，2-选修课，3-通识等
      */
     @TableField("course_type")
     private Integer courseType;
-    
+
     /**
      * 课程简介
      */
     @TableField("description")
     private String introduction;
-    
+
     /**
      * 课程授课教师ID
      */
@@ -71,13 +71,13 @@ public class Course implements Serializable {
      */
     @TableField("status")
     private String status;
-    
+
     /**
      * 创建时间
      */
     @TableField("create_time")
     private Date createTime;
-    
+
     /**
      * 更新时间
      */

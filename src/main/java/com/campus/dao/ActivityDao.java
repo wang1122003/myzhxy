@@ -2,7 +2,8 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Activity;
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,143 +18,164 @@ import java.util.Map;
 public interface ActivityDao extends BaseMapper<Activity> {
     /**
      * 根据ID查询活动
+     *
      * @param id 活动ID
      * @return 活动对象
      */
     Activity findById(Long id);
-    
+
     /**
      * 查询所有活动
+     *
      * @return 活动列表
      */
     List<Activity> findAll();
-    
+
     /**
      * 根据活动类型查询活动
+     *
      * @param type 活动类型
      * @return 活动列表
      */
     List<Activity> findByType(String type);
-    
+
     /**
      * 根据状态查询活动
+     *
      * @param status 活动状态 (改为 String)
      * @return 活动列表
      */
     List<Activity> findByStatus(String status);
-    
+
     /**
      * 查询正在进行中的活动
+     *
      * @return 活动列表
      */
     List<Activity> findOngoing();
-    
+
     /**
      * 查询即将开始的活动
+     *
      * @param days 未来天数
      * @return 活动列表
      */
     List<Activity> findUpcoming(Integer days);
-    
+
     /**
      * 分页查询活动
+     *
      * @param offset 偏移量
-     * @param limit 数量限制
+     * @param limit  数量限制
      * @return 活动列表
      */
     List<Activity> findByPage(@Param("offset") Integer offset, @Param("limit") Integer limit);
-    
+
     /**
      * 获取活动总数
+     *
      * @return 活动数量
      */
     int getCount();
-    
+
     /**
      * 添加活动
+     *
      * @param activity 活动对象
      * @return 影响行数
      */
     int insert(Activity activity);
-    
+
     /**
      * 更新活动
+     *
      * @param activity 活动对象
      * @return 影响行数
      */
     int update(Activity activity);
-    
+
     /**
      * 删除活动
+     *
      * @param id 活动ID
      * @return 影响行数
      */
     int delete(Long id);
-    
+
     /**
      * 批量删除活动
+     *
      * @param ids 活动ID数组
      * @return 影响行数
      */
     int batchDelete(Long[] ids);
-    
+
     /**
      * 更新活动状态
-     * @param id 活动ID
+     *
+     * @param id     活动ID
      * @param status 活动状态 (改为 String)
      * @return 影响行数
      */
     int updateStatus(@Param("id") Long id, @Param("status") String status);
-    
+
     /**
      * 搜索活动
+     *
      * @param keyword 关键词
      * @return 活动列表
      */
     List<Activity> searchActivities(@Param("keyword") String keyword);
-    
+
     /**
      * 获取最近的活动
+     *
      * @param limit 数量限制
      * @return 活动列表
      */
     List<Activity> getRecentActivities(@Param("limit") Integer limit);
-    
+
     /**
      * 获取活动类型统计
+     *
      * @return 活动类型统计
      */
     List<Map<String, Object>> getActivityTypeStatistics();
-    
+
     /**
      * 获取活动状态统计
+     *
      * @return 活动状态统计
      */
     List<Map<String, Object>> getActivityStatusStatistics();
-    
+
     /**
      * 获取活动类型活动数
+     *
      * @param type 活动类型
      * @return 活动数量
      */
     int getActivityTypeCount(String type);
-    
+
     /**
      * 获取活动状态活动数
+     *
      * @param status 活动状态 (改为 String)
      * @return 活动数量
      */
     int getActivityStatusCount(String status);
-    
+
     /**
      * 检查活动名称是否存在
+     *
      * @param name 活动名称
      * @return 是否存在
      */
     boolean isActivityNameExists(String name);
-    
+
     /**
      * 获取组织者的活动
+     *
      * @param organizerId 组织者ID
      * @return 活动列表
      */

@@ -13,20 +13,15 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 记录或更新成绩
+     *
      * @param score 成绩对象
      * @return 是否成功
      */
     boolean recordScore(Score score);
 
     /**
-     * 更新成绩
-     * @param score 成绩对象
-     * @return 是否成功
-     */
-    boolean updateScore(Score score);
-
-    /**
      * 删除成绩
+     *
      * @param id 成绩ID
      * @return 是否成功
      */
@@ -34,6 +29,7 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 批量删除成绩
+     *
      * @param ids 成绩ID数组
      * @return 是否成功
      */
@@ -41,9 +37,10 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 获取指定学生指定课程的成绩
+     *
      * @param studentId 学生ID
-     * @param courseId 课程ID
-     * @param termInfo 学期信息
+     * @param courseId  课程ID
+     * @param termInfo  学期信息
      * @return 成绩对象，如果不存在则返回null
      */
     Score getStudentCourseScore(Long studentId, Long courseId, String termInfo);
@@ -58,6 +55,7 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 获取指定学生的所有成绩
+     *
      * @param studentId 学生ID
      * @return 成绩列表 (包含课程信息)
      */
@@ -65,14 +63,16 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 获取指定学生在指定学期的所有成绩
+     *
      * @param studentId 学生ID
-     * @param termInfo 学期信息
+     * @param termInfo  学期信息
      * @return 成绩列表
      */
     List<Score> getStudentTermScores(Long studentId, String termInfo);
 
     /**
      * 获取指定课程的所有成绩
+     *
      * @param courseId 课程ID
      * @return 成绩列表
      */
@@ -89,6 +89,7 @@ public interface ScoreService extends IService<Score> {
 
     /**
      * 获取指定课程的成绩统计信息
+     *
      * @param courseId 课程ID
      * @param termInfo 学期信息
      * @return 包含 average, max, min, count, validCount 的 Map

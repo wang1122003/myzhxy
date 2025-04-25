@@ -247,15 +247,15 @@ import {onMounted, reactive, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ArrowLeft, Calendar, Document, InfoFilled, Location, Star, User} from '@element-plus/icons-vue'
-import {cancelJoinActivity, getActivityDetail, joinActivity} from '@/api/activity'
+import {cancelJoinActivity, getActivityById, joinActivity} from '@/api/activity'
 import {downloadFile} from '@/api/file'
 
 const router = useRouter()
 const route = useRoute()
-const activityId = route.params.id
+const activityId = ref(route.params.id)
 
 const activity = reactive({})
-const loading = ref(false)
+const loading = ref(true)
 const joinLoading = ref(false)
 const cancelLoading = ref(false)
 const downloadLoading = ref(null)
@@ -265,10 +265,14 @@ const participantsVisible = ref(false)
 const fetchActivityDetail = async () => {
   loading.value = true
   try {
-    const res = await getActivityDetail(activityId)
-    Object.assign(activity, res.data)
+    const res = await getActivityById(activityId.value)
+    if (res.code === 200 && res.data) {
+      Object.assign(activity, res.data)
+    } else {
+      ElMessage.error(res.message || '获取活动详情失败')
+    }
   } catch (error) {
-    console.error('获取活动详情失败', error)
+    console.error("获取活动详情失败:", error)
     ElMessage.error('获取活动详情失败')
   } finally {
     loading.value = false
@@ -324,7 +328,7 @@ const handleJoin = async () => {
     )
 
     joinLoading.value = true
-    await joinActivity(activityId)
+    await joinActivity(activityId.value)
     ElMessage.success('报名成功')
     fetchActivityDetail()
   } catch (error) {
@@ -351,7 +355,7 @@ const handleCancel = async () => {
     )
 
     cancelLoading.value = true
-    await cancelJoinActivity(activityId)
+    await cancelJoinActivity(activityId.value)
     ElMessage.success('已取消报名')
     fetchActivityDetail()
   } catch (error) {

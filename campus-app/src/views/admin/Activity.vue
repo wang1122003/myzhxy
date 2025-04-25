@@ -378,7 +378,6 @@ import '@wangeditor/editor/dist/css/style.css';
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue';
 import {addActivity, deleteActivity, getActivityById, getActivityList, updateActivity,} from '@/api/activity';
 import {getToken} from '@/utils/auth';
-import {ACTIVITY_API} from '@/api/api-endpoints';
 
 const loading = ref(false);
 const activityList = ref([]);
@@ -414,7 +413,7 @@ const activityForm = ref({
 const posterFileList = ref([]); // For el-upload :file-list
 const imagePreviewVisible = ref(false);
 const imagePreviewUrl = ref('');
-const uploadPosterUrl = ref(ACTIVITY_API.UPLOAD_POSTER || '/api/activity/poster/upload');
+const uploadPosterUrl = ref('/activities/poster/upload'); // Using path directly, was ACTIVITY_API.UPLOAD_POSTER
 const uploadHeaders = ref({Authorization: `Bearer ${getToken()}`});
 
 // Editor State

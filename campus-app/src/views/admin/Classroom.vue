@@ -66,26 +66,24 @@
 
     <!-- 教室列表 -->
     <el-card class="classroom-list-card">
-      <base-table
-          :table-data="classroomList"
+      <BaseTable :table-data="classroomList"
           v-loading="loading"
           style="width: 100%">
-        <base-table-column
+        <el-table-column
             label="教室编号/名称"
             prop="name"
             min-width="180"/>
-      </base-table>
-        <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             label="教学楼"
             prop="building"
             width="120"
         />
-        <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             label="容量"
             prop="capacity"
             width="100"
         />
-        <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             label="类型"
             prop="roomType"
             width="120"
@@ -94,7 +92,7 @@
             {{ formatRoomType(scope.row.roomType) }}
           </template>
         </el-table-column>
-          <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             label="状态"
             prop="status"
             width="100"
@@ -105,7 +103,7 @@
             </el-tag>
           </template>
         </el-table-column>
-            <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             label="创建时间"
             prop="createTime"
             width="180"
@@ -114,7 +112,7 @@
             {{ formatTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-              <BaseTable -column :table-data="classroomList"
+        <el-table-column :table-data="classroomList"
             fixed="right"
             label="操作"
             width="150"
@@ -136,7 +134,7 @@
             </el-button>
           </template>
         </el-table-column>
-              </BaseTable>
+      </BaseTable>
 
       <!-- 分页 -->
       <div
@@ -486,8 +484,3 @@ onMounted(() => {
   text-align: right;
 }
 </style>
-export default {
-name: 'AdminClassroom',
-// ... existing code ...
-}
-</script>

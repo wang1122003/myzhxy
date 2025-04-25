@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Post;
-import com.campus.utils.PageUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -13,273 +12,219 @@ import java.util.Map;
  * 论坛帖子服务接口
  */
 public interface PostService extends IService<Post> {
-    
+
     /**
-     * 根据ID查询帖子
+     * 根据ID查询帖子 (包含作者信息)
+     *
      * @param id 帖子ID
      * @return 帖子对象
      */
     Post getPostById(Long id);
-    
+
     /**
-     * 获取所有帖子
+     * 分页获取所有帖子 (包含作者信息)
+     *
      * @param page 页码
      * @param size 每页大小
-     * @return 帖子分页数据
+     * @return 帖子分页数据 (Map for controller compatibility)
      */
     Map<String, Object> getAllPosts(int page, int size);
-    
+
     /**
-     * 根据用户ID查询帖子
+     * 根据用户ID查询帖子 (分页, 包含作者信息)
+     *
      * @param userId 用户ID
-     * @param page 页码
-     * @param size 每页大小
-     * @return 帖子分页数据
+     * @param page   页码
+     * @param size   每页大小
+     * @return 帖子分页数据 (Map for controller compatibility)
      */
     Map<String, Object> getPostsByUserId(Long userId, int page, int size);
-    
+
     /**
-     * 获取当前登录用户的帖子
+     * 获取当前登录用户的帖子 (分页, 包含作者信息)
+     *
      * @param page 页码
      * @param size 每页大小
-     * @return 帖子分页数据
+     * @return 帖子分页数据 (Map for controller compatibility)
      */
     Map<String, Object> getMyPosts(int page, int size);
-    
+
     /**
-     * 搜索帖子
+     * 搜索帖子 (分页, 包含作者信息)
+     *
      * @param keyword 关键词
-     * @param page 页码
-     * @param size 每页大小
-     * @return 帖子分页数据
+     * @param page    页码
+     * @param size    每页大小
+     * @return 帖子分页数据 (Map for controller compatibility)
      */
     Map<String, Object> searchPosts(String keyword, int page, int size);
-    
+
     /**
-     * 获取帖子的评论
+     * 获取帖子的评论列表
+     * 注意：评论存储在 Post 实体的 JSON 字段中
+     *
      * @param postId 帖子ID
-     * @return 评论列表
+     * @return 评论列表 (List of Maps)
      */
     List<Map<String, Object>> getCommentsByPostId(Long postId);
-    
+
     /**
-     * 添加评论
-     * @param postId 帖子ID
+     * 添加评论到帖子的 JSON 字段
+     *
+     * @param postId  帖子ID
      * @param content 评论内容
      * @return 是否成功
      */
     boolean addComment(Long postId, String content);
-    
+
     /**
-     * 删除评论
-     * @param postId 帖子ID
-     * @param commentId 评论ID
+     * 从帖子的 JSON 字段中删除评论
+     *
+     * @param postId    帖子ID
+     * @param commentId 评论ID (UUID String)
      * @return 是否成功
      */
     boolean deleteComment(Long postId, String commentId);
-    
+
     /**
-     * 获取热门帖子
+     * 获取热门帖子 (按某种规则排序，如浏览量、点赞数, 包含作者信息)
+     *
      * @param limit 数量限制
      * @return 热门帖子列表
      */
     List<Post> getHotPosts(int limit);
-    
+
     /**
-     * 增加帖子浏览量
-     * @param id 帖子ID
-     * @return 是否成功
-     */
-    boolean incrementViews(Long id);
-    
-    /**
-     * 点赞帖子
+     * 点赞帖子 (增加点赞数)
+     *
      * @param id 帖子ID
      * @return 是否成功
      */
     boolean likePost(Long id);
-    
+
     /**
-     * 取消点赞
+     * 取消点赞 (减少点赞数)
+     *
      * @param id 帖子ID
      * @return 是否成功
      */
     boolean unlikePost(Long id);
-    
+
     /**
-     * 获取帖子统计信息
-     * @return 统计信息
+     * 获取帖子统计信息 (总数、活跃数等)
+     *
+     * @return 统计信息Map
      */
     Map<String, Object> getPostStats();
-    
+
     /**
-     * 查询所有帖子
-     * @return 帖子列表
-     */
-    List<Post> getAllPosts();
-    
-    /**
-     * 根据作者ID查询帖子
+     * 根据作者ID查询所有帖子 (包含作者信息)
+     *
      * @param authorId 作者ID
      * @return 帖子列表
      */
     List<Post> getPostsByAuthorId(Long authorId);
-    
+
     /**
-     * 根据板块类别查询帖子
-     * @param category 板块类别
-     * @return 帖子列表
-     */
-    List<Post> getPostsByCategory(String category);
-    
-    /**
-     * 根据状态查询帖子
-     * @param status 状态
-     * @return 帖子列表
-     */
-    List<Post> getPostsByStatus(Integer status);
-    
-    /**
-     * 查询置顶帖子
+     * 查询置顶帖子 (包含作者信息)
+     *
      * @return 帖子列表
      */
     List<Post> getTopPosts();
-    
+
     /**
-     * 查询精华帖子
+     * 查询精华帖子 (包含作者信息)
+     *
      * @return 帖子列表
      */
     List<Post> getEssencePosts();
-    
+
     /**
      * 批量删除帖子
+     *
      * @param ids 帖子ID数组
      * @return 是否成功
      */
     boolean batchDeletePosts(Long[] ids);
-    
+
     /**
      * 更新帖子状态
-     * @param id 帖子ID
-     * @param status 状态值
+     *
+     * @param id     帖子ID
+     * @param status 状态值 (通常为 0 或 1)
      * @return 是否成功
      */
     boolean updatePostStatus(Long id, Integer status);
-    
+
     /**
      * 设置帖子置顶状态
-     * @param id 帖子ID
-     * @param isTop 是否置顶
+     *
+     * @param id    帖子ID
+     * @param isTop 是否置顶 (通常为 0 或 1)
      * @return 是否成功
      */
     boolean setPostTop(Long id, Integer isTop);
-    
+
     /**
      * 设置帖子精华状态
-     * @param id 帖子ID
-     * @param isEssence 是否精华
+     *
+     * @param id        帖子ID
+     * @param isEssence 是否精华 (通常为 0 或 1)
      * @return 是否成功
      */
     boolean setPostEssence(Long id, Integer isEssence);
-    
+
     /**
      * 增加帖子浏览次数
+     *
      * @param id 帖子ID
      * @return 是否成功
      */
     boolean incrementViewCount(Long id);
-    
+
     /**
-     * 增加帖子评论次数
-     * @param id 帖子ID
-     * @return 是否成功
-     */
-    boolean incrementCommentCount(Long id);
-    
-    /**
-     * 增加帖子点赞次数
-     * @param id 帖子ID
-     * @return 是否成功
-     */
-    boolean incrementLikeCount(Long id);
-    
-    /**
-     * 添加帖子
+     * 添加新帖子 (需要设置作者ID, 创建时间等)
+     *
      * @param post 帖子对象
      * @return 是否成功
      */
-    boolean addPost(Post post);
-    
+    boolean createPost(Post post);
+
     /**
-     * 更新帖子
+     * 更新帖子信息 (需要权限检查)
+     *
      * @param post 帖子对象
      * @return 是否成功
      */
     boolean updatePost(Post post);
-    
+
     /**
-     * 删除帖子
+     * 删除帖子 (需要权限检查)
+     *
      * @param id 帖子ID
      * @return 是否成功
      */
     boolean deletePost(Long id);
 
     /**
-     * 分页查询帖子列表并返回为Map结构
-     *
-     * @param params 查询参数 (包含过滤条件)
-     * @param page   当前页码
-     * @param size   每页数量
-     * @return 分页结果的Map表示
-     */
-    Map<String, Object> findPageMap(Map<String, Object> params, int page, int size);
-
-    /**
-     * 根据板块类别获取帖子
+     * 根据板块类别获取帖子 (分页, 包含作者信息)
      *
      * @param category 板块类别
-     * @param page    页码
-     * @param size    每页大小
-     * @return 帖子分页数据 (Map 格式，适配 Controller)
+     * @param page     页码
+     * @param size     每页大小
+     * @return 帖子分页数据 (Map for controller compatibility)
      */
     Map<String, Object> getPostsByCategory(String category, int page, int size);
 
     /**
-     * 根据类别分页查询帖子列表
+     * 获取所有帖子中存在的、非空不重复的分类列表。
      *
-     * @param page    分页参数
-     * @param category 板块类别
-     * @return 分页结果
+     * @return 帖子分类的字符串列表
      */
-    IPage<Post> getPostPageByCategory(Page<Post> page, String category);
+    List<String> listAvailableForumTypes();
 
     /**
-     * 根据ID获取帖子详情
-     *
-     * @param id 帖子ID
-     * @return 帖子详情
-     */
-    Post getPostDetail(Long id);
-
-    /**
-     * 创建帖子
-     *
-     * @param post 帖子信息
-     * @return 是否成功
-     */
-    boolean createPost(Post post);
-
-    /**
-     * 根据标签查询帖子
-     *
-     * @param tag  标签名
-     * @param page 分页参数
-     * @return 帖子分页列表
-     */
-    IPage<Post> getPostsByTag(String tag, Page<Post> page);
-
-    /**
-     * 获取热门标签
+     * 获取热门标签 (根据帖子中的标签统计)
      *
      * @param limit 限制数量
      * @return 热门标签列表
@@ -287,12 +232,29 @@ public interface PostService extends IService<Post> {
     List<String> getHotTags(int limit);
 
     /**
-     * 分页查询帖子
+     * 分页查询帖子列表并返回为Map结构 (通用方法, 包含作者信息)
      *
-     * @param params 查询参数
-     * @param page   页码
-     * @param size   每页大小
-     * @return 分页结果
+     * @param params 查询参数 (包含过滤条件)
+     * @param page   当前页码
+     * @param size   每页数量
+     * @return 分页结果的Map表示 (包含 total 和 rows)
      */
-    PageUtils.PageResult<Post> findPage(Map<String, Object> params, int page, int size);
+    Map<String, Object> findPageMap(Map<String, Object> params, int page, int size);
+
+    /**
+     * 获取帖子详情 (包含作者信息, 并增加浏览次数)
+     *
+     * @param id 帖子ID
+     * @return 帖子对象
+     */
+    Post getPostDetail(Long id);
+
+    /**
+     * 根据标签分页查询帖子 (包含作者信息)
+     *
+     * @param tag  标签
+     * @param page 分页对象 (Page<Post>)
+     * @return 分页结果 (IPage<Post>)
+     */
+    IPage<Post> getPostsByTag(String tag, Page<Post> page);
 }

@@ -20,19 +20,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private UserDetailsService userDetailsService;
-
     // Token在Cookie中的名称
     private static final String TOKEN_COOKIE_NAME = "campus_token";
     // Cookie有效期(秒)，默认24小时
     private static final int COOKIE_MAX_AGE = 24 * 60 * 60;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     /**
      * 从请求中获取Token
+     *
      * @param request HTTP请求
      * @return Token字符串，如果不存在则返回null
      */
@@ -42,7 +41,7 @@ public class AuthService {
         if (headerToken != null && headerToken.startsWith("Bearer ")) {
             return headerToken.substring(7);
         }
-        
+
         // 2. 再尝试从Cookie获取
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -52,14 +51,15 @@ public class AuthService {
                 }
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * 设置Token到Cookie
+     *
      * @param response HTTP响应
-     * @param token Token字符串
+     * @param token    Token字符串
      */
     public void setTokenToCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie(TOKEN_COOKIE_NAME, token);
@@ -68,9 +68,10 @@ public class AuthService {
         cookie.setHttpOnly(true); // 增强安全性，防止JS读取
         response.addCookie(cookie);
     }
-    
+
     /**
      * 清除Token Cookie
+     *
      * @param response HTTP响应
      */
     public void clearTokenCookie(HttpServletResponse response) {
@@ -79,7 +80,7 @@ public class AuthService {
         cookie.setMaxAge(0); // 立即过期
         response.addCookie(cookie);
     }
-    
+
     /**
      * 从HttpServletRequest中获取用户信息
      *
@@ -115,9 +116,43 @@ public class AuthService {
 
         return null;
     }
-    
+
+    /**
+     * 获取当前通过SecurityContext认证的用户
+     *
+     * @return 当前用户对象 (User)，如果未认证或认证信息不是User类型则返回null
+     */
+    public User getCurrentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                return (User) principal;
+            } else if (principal instanceof org.springframework.security.core.userdetails.User) {
+                // Handle case where principal is Spring Security User object
+                org.springframework.security.core.userdetails.User springUser = (org.springframework.security.core.userdetails.User) principal;
+                // Need to load our User entity based on the username
+                try {
+                    // Assuming UserDetailsService returns our User entity
+                    return (User) userDetailsService.loadUserByUsername(springUser.getUsername());
+                } catch (UsernameNotFoundException e) {
+                    return null;
+                }
+            } else if (principal instanceof String) {
+                // Fallback: If Principal is username string
+                try {
+                    return (User) userDetailsService.loadUserByUsername((String) principal);
+                } catch (UsernameNotFoundException e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * 生成认证Token
+     *
      * @param user 用户对象
      * @return JWT Token
      */

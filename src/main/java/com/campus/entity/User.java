@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.campus.enums.UserStatus;
 import com.campus.enums.UserType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,6 +23,76 @@ import java.util.Date;
 @TableName("user")
 public class User implements UserDetails {
 
+    private static final long serialVersionUID = 1L;
+    /**
+     * 用户ID
+     */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+    /**
+     * 用户名
+     */
+    private String username;
+    /**
+     * 密码
+     */
+    private String password;
+    /**
+     * 真实姓名
+     */
+    @TableField("real_name")
+    private String realName;
+    /**
+     * 性别：0-女，1-男
+     */
+    private Integer gender;
+    /**
+     * 出生日期
+     */
+    @TableField("birth_date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date birthDate;
+    /**
+     * 手机号
+     */
+    private String phone;
+    /**
+     * 邮箱
+     */
+    private String email;
+    /**
+     * 用户类型 (Student, Teacher, Admin)
+     */
+    @TableField(value = "user_type")
+    private UserType userType;
+    /**
+     * 状态 (Active, Inactive)
+     */
+    @TableField(value = "status")
+    private UserStatus status;
+    /**
+     * 学工号
+     */
+    @TableField("user_no")
+    private String userNo;
+    /**
+     * 创建时间
+     */
+    @TableField("create_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
+    /**
+     * 更新时间
+     */
+    @TableField("update_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date updateTime;
+    /**
+     * 记住我选项 (非数据库字段)
+     */
+    @TableField(exist = false)
+    private Boolean remember;
+
     public Long getId() {
         return this.id;
     }
@@ -30,98 +101,6 @@ public class User implements UserDetails {
     public String getPassword() {
         return this.password;
     }
-    private static final long serialVersionUID = 1L;
-    
-    /**
-     * 用户ID
-     */
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
-    
-    /**
-     * 用户名
-     */
-    private String username;
-    
-    /**
-     * 密码
-     */
-    private String password;
-    
-    /**
-     * 真实姓名
-     */
-    @TableField("real_name")
-    private String realName;
-    
-    /**
-     * 性别：0-女，1-男
-     */
-    private Integer gender;
-    
-    /**
-     * 手机号
-     */
-    private String phone;
-    
-    /**
-     * 邮箱
-     */
-    private String email;
-    
-    /**
-     * 用户类型 (Student, Teacher, Admin)
-     */
-    @TableField(value = "user_type")
-    private UserType userType;
-    
-    /**
-     * 状态 (Active, Inactive)
-     */
-    @TableField(value = "status")
-    private UserStatus status;
-
-    /**
-     * 学工号
-     */
-    @TableField("user_no")
-    private String userNo;
-    
-    /**
-     * 创建时间
-     */
-    @TableField("create_time")
-    private Date createTime;
-    
-    /**
-     * 更新时间
-     */
-    @TableField("update_time")
-    private Date updateTime;
-
-    /**
-     * 头像URL
-     */
-    @TableField("avatar_url")
-    private String avatarUrl;
-
-    /**
-     * 部门ID (外键, 可选)
-     */
-    @TableField("department_id")
-    private Long departmentId;
-
-    /**
-     * 班级ID (外键, 可选, 主要用于学生)
-     */
-    @TableField("class_id")
-    private Long classId;
-
-    /**
-     * 记住我选项 (非数据库字段)
-     */
-    @TableField(exist = false)
-    private Boolean remember;
 
     // --- UserDetails 实现 --- 
 

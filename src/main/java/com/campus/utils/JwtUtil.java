@@ -25,13 +25,24 @@ public class JwtUtil {
     // 密钥
     @Value("${jwt.secret:campus-management-system-secret-key-for-jwt-authentication}")
     private String secret;
-    
+
     // 过期时间(秒)
     @Value("${jwt.expiration:86400}")
     private long expiration;
-    
+
     // 安全密钥缓存
     private SecretKey secretKey;
+
+    /**
+     * 生成安全的随机密钥（用于配置文件中的密钥设置）
+     *
+     * @return 生成的Base64编码密钥字符串
+     */
+    public static String generateRandomSecretKey() {
+        byte[] keyBytes = new byte[64]; // 512位
+        new SecureRandom().nextBytes(keyBytes);
+        return Base64.getEncoder().encodeToString(keyBytes);
+    }
 
     /**
      * 生成JWT令牌
@@ -83,9 +94,9 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                .setSigningKey(getSecretKey())
-                .build()
-                .parseClaimsJws(token);
+                    .setSigningKey(getSecretKey())
+                    .build()
+                    .parseClaimsJws(token);
             return !isTokenExpired(token); // 增加过期检查
         } catch (Exception e) {
             // 可以根据具体异常类型打印更详细的日志
@@ -143,11 +154,11 @@ public class JwtUtil {
         final Date expirationDate = getClaimFromToken(token, Claims::getExpiration);
         return expirationDate.before(new Date());
     }
-    
+
     /**
      * 获取安全密钥
      * 确保密钥长度满足HS512算法的要求（至少512位/64字节）
-     * 
+     *
      * @return SecretKey对象
      */
     private SecretKey getSecretKey() {
@@ -155,42 +166,31 @@ public class JwtUtil {
         if (secretKey != null) {
             return secretKey;
         }
-        
+
         // 检查配置的密钥是否足够长
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        
+
         // 如果配置的密钥不够长(小于64字节)，则生成更长的密钥
         if (keyBytes.length < 64) {
             // 创建一个至少512位（64字节）的密钥
             byte[] newKeyBytes = new byte[64];
-            
+
             // 将现有密钥复制到新数组
             System.arraycopy(keyBytes, 0, newKeyBytes, 0, Math.min(keyBytes.length, 64));
-            
+
             // 使用SecureRandom填充剩余空间以确保密钥强度
             new SecureRandom().nextBytes(newKeyBytes);
-            
+
             // 创建并缓存密钥
             secretKey = Keys.hmacShaKeyFor(newKeyBytes);
         } else {
             // 如果配置的密钥足够长，直接使用
             secretKey = Keys.hmacShaKeyFor(keyBytes);
         }
-        
+
         return secretKey;
     }
-    
-    /**
-     * 生成安全的随机密钥（用于配置文件中的密钥设置）
-     * 
-     * @return 生成的Base64编码密钥字符串
-     */
-    public static String generateRandomSecretKey() {
-        byte[] keyBytes = new byte[64]; // 512位
-        new SecureRandom().nextBytes(keyBytes);
-        return Base64.getEncoder().encodeToString(keyBytes);
-    }
-    
+
     /**
      * 设置密钥（可选，用于配置）
      */
@@ -201,7 +201,7 @@ public class JwtUtil {
             this.secretKey = null;
         }
     }
-    
+
     /**
      * 设置过期时间（可选，用于配置）
      */

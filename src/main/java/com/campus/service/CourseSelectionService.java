@@ -1,5 +1,6 @@
 package com.campus.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.CourseSelection;
 
@@ -14,52 +15,28 @@ import java.util.Map;
 public interface CourseSelectionService extends IService<CourseSelection> {
 
     /**
-     * 根据学生ID查询选课记录
+     * 根据学生ID查询选课记录 (填充关联信息)
      *
      * @param userId 学生ID
-     * @return 选课记录列表
+     * @return 选课记录列表 (包含 courseName, studentName)
      */
     List<CourseSelection> getByStudentId(Long userId);
 
     /**
-     * 根据学生ID查询选课记录(Map格式)
-     *
-     * @param userId 学生ID
-     * @return 选课记录Map列表
-     */
-    List<Map<String, Object>> getByStudentIdMaps(Long userId);
-
-    /**
-     * 根据课程ID查询选课记录
+     * 根据课程ID查询选课记录 (填充关联信息)
      *
      * @param courseId 课程ID
-     * @return 选课记录列表
+     * @return 选课记录列表 (包含 courseName, studentName)
      */
     List<CourseSelection> getByCourseId(Long courseId);
 
     /**
-     * 根据课程ID查询选课记录(Map格式)
-     *
-     * @param courseId 课程ID
-     * @return 选课记录Map列表
-     */
-    List<Map<String, Object>> getByCourseIdMaps(Long courseId);
-
-    /**
      * 学生选课
      *
-     * @param courseSelection 选课信息
+     * @param courseSelection 选课信息 (至少包含 userId, courseId, termInfo)
      * @return 是否选课成功
      */
     boolean selectCourse(CourseSelection courseSelection);
-
-    /**
-     * 学生选课(Map版本)
-     *
-     * @param courseSelectionMap 选课信息Map
-     * @return 是否选课成功
-     */
-    boolean selectCourseByMap(Map<String, Object> courseSelectionMap);
 
     /**
      * 学生退选课程
@@ -72,54 +49,14 @@ public interface CourseSelectionService extends IService<CourseSelection> {
     boolean dropCourse(Long userId, Long courseId, String termInfo);
 
     /**
-     * 更新成绩信息
-     *
-     * @param courseSelection 选课信息（包含成绩）
-     * @return 是否更新成功
-     */
-    boolean updateScore(CourseSelection courseSelection);
-
-    /**
-     * 分页查询选课记录
+     * 分页查询选课记录 (填充关联信息)
      *
      * @param current 当前页
      * @param size    每页大小
-     * @param params  查询参数
-     * @return 分页结果
+     * @param params  查询参数 (Map, key 为字段名)
+     * @return 分页结果 (IPage<CourseSelection>)
      */
-    Map<String, Object> pageQuery(Long current, Long size, Map<String, Object> params);
-
-    /**
-     * 根据ID获取选课信息(Map版本)
-     *
-     * @param id 选课记录ID
-     * @return 选课信息Map
-     */
-    Map<String, Object> getMapById(Long id);
-
-    /**
-     * 保存选课信息(Map版本)
-     *
-     * @param courseSelectionMap 选课信息Map
-     * @return 是否保存成功
-     */
-    boolean saveByMap(Map<String, Object> courseSelectionMap);
-
-    /**
-     * 更新选课信息(Map版本)
-     *
-     * @param courseSelectionMap 选课信息Map
-     * @return 是否更新成功
-     */
-    boolean updateByMap(Map<String, Object> courseSelectionMap);
-
-    /**
-     * 更新成绩信息(Map版本)
-     *
-     * @param scoreMap 成绩信息Map
-     * @return 是否更新成功
-     */
-    boolean updateScoreByMap(Map<String, Object> scoreMap);
+    IPage<CourseSelection> pageQuery(Long current, Long size, Map<String, Object> params);
 
     /**
      * 检查学生是否已选该课程

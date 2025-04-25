@@ -57,7 +57,8 @@ const menuItems = shallowRef([
   // {index: '/teacher/notices', icon: ChatLineRound, title: '通知公告'}, // 移除通知公告
   {index: '/teacher/profile', icon: User, title: '个人资料'},
   {index: '/teacher/schedule', icon: Calendar, title: '我的课表'},
-  {index: '/teacher/courses', icon: Document, title: '课程管理'},
+  {index: '/teacher/course-management', icon: 'Notebook', title: '课程管理'},
+  {index: '/teacher/grades', icon: 'DataAnalysis', title: '成绩管理'},
 ]);
 
 // 新增：计算当前页面标题

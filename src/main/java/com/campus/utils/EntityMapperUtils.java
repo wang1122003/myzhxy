@@ -1,12 +1,9 @@
 package com.campus.utils;
 
-import com.campus.entity.*; // Import necessary entities
-import com.campus.enums.*; // Import necessary enums
-import org.springframework.beans.BeanUtils;
+import com.campus.entity.CourseSelection;
+import com.campus.entity.Score;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -99,6 +96,12 @@ public class EntityMapperUtils {
                             field.set(entity, Boolean.valueOf((String) value));
                         } else if (field.getType().isEnum() && value instanceof String) {
                             field.set(entity, Enum.valueOf((Class<Enum>) field.getType(), (String) value));
+                        } else if (value instanceof Enum) {
+                            // Handle Enums: Store their names or ordinal values
+                            // return ((Enum<?>) value).name(); // Store name
+                            field.set(entity, ((Enum<?>) value).ordinal()); // Store ordinal (integer)
+                        } else if (value instanceof Date) {
+                            field.set(entity, value);
                         } else {
                             field.set(entity, value);
                         }
@@ -230,4 +233,39 @@ public class EntityMapperUtils {
         return activity;
     }
     */
+
+    /**
+     * Converts an enum constant to its string representation (name).
+     * If the enum constant is null, returns null.
+     *
+     * @param enumConstant The enum constant.
+     * @param <E>          The enum type.
+     * @return The name of the enum constant, or null if the input is null.
+     */
+    public static <E extends Enum<?>> String enumToString(E enumConstant) {
+        return enumConstant != null ? enumConstant.name() : null;
+    }
+
+    /**
+     * Converts a string value to an enum constant of the specified enum type.
+     * If the string value is null or empty, or if no matching enum constant is found,
+     * returns null.
+     *
+     * @param value     The string value to convert.
+     * @param enumClass The class object of the enum type.
+     * @param <E>       The enum type.
+     * @return The corresponding enum constant, or null if not found or input is invalid.
+     */
+    public static <E extends Enum<E>> E stringToEnum(String value, Class<E> enumClass) {
+        if (value == null || value.isEmpty() || enumClass == null || !enumClass.isEnum()) {
+            return null;
+        }
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Log or handle the error if the string doesn't match any enum constant
+            System.err.println("Error converting string '" + value + "' to enum " + enumClass.getSimpleName() + ": " + e.getMessage());
+            return null;
+        }
+    }
 }

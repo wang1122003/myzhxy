@@ -1,6 +1,8 @@
 package com.campus.controller;
 
 // import com.campus.dto.CommonStatusDTO; // 移除未使用
+
+import com.campus.enums.Term;
 import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 公共API控制器
@@ -22,12 +25,14 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/common")
 public class CommonController {
-    
-    @Autowired
-    private FileService fileService;
+
+    // Comment out FileService dependency as it's not used after removing download logic
+    // @Autowired
+    // private FileService fileService;
 
     /**
      * 获取系统状态
+     *
      * @return 系统状态信息
      */
     @GetMapping("/status")
@@ -39,94 +44,23 @@ public class CommonController {
         status.put("time", System.currentTimeMillis());
         return Result.success("获取系统状态成功", status);
     }
-    
-    /**
-     * 获取最近通知公告
-     * @param limit 返回条数，默认5条
-     * @return 通知公告列表
-     */
-    @GetMapping("/notices/recent")
-    public Result<List<Map<String, Object>>> getRecentNotices(@RequestParam(required = false, defaultValue = "5") Integer limit) {
-        try {
-            // 这里应该连接数据库获取通知公告
-            // 为了演示，返回模拟数据
-            List<Map<String, Object>> notices = new ArrayList<>();
-            
-            Map<String, Object> notice1 = new HashMap<>();
-            notice1.put("id", 1);
-            notice1.put("title", "关于2023-2024学年第二学期选课的通知");
-            notice1.put("content", "各位同学：2023-2024学年第二学期选课将于2024年1月5日开始，请同学们提前做好准备。本学期选课采用分批次进行，具体安排如下：\n\n第一批次：2024年1月5日8:00-18:00，适用于大四年级学生\n第二批次：2024年1月6日8:00-18:00，适用于大三年级学生\n第三批次：2024年1月7日8:00-18:00，适用于大二年级学生\n第四批次：2024年1月8日8:00-18:00，适用于大一年级学生\n\n请学生们提前了解本专业培养方案，合理安排选课计划。选课系统登录方式不变，登录网址：http://xk.campus.edu.cn");
-            notice1.put("createTime", new Date().getTime() - 24 * 60 * 60 * 1000); // 一天前
-            notice1.put("author", "教务处");
-            
-            Map<String, Object> notice2 = new HashMap<>();
-            notice2.put("id", 2);
-            notice2.put("title", "寒假放假安排及注意事项");
-            notice2.put("content", "根据学校工作安排，2023-2024学年寒假将于2024年1月22日开始，2024年2月25日结束。请各位师生做好以下工作：\n\n1. 妥善保管个人财物，离校前关闭宿舍电源、水源\n2. 积极做好学生宿舍卫生清理工作\n3. 假期留校学生须提前向辅导员报备\n4. 注意交通安全，遵守疫情防控要求\n\n祝全体师生寒假愉快！");
-            notice2.put("createTime", new Date().getTime() - 5 * 24 * 60 * 60 * 1000); // 五天前
-            notice2.put("author", "学生处");
-            
-            Map<String, Object> notice3 = new HashMap<>();
-            notice3.put("id", 3);
-            notice3.put("title", "2024年教师招聘公告");
-            notice3.put("content", "为加强师资队伍建设，提升教育教学质量，我校现面向社会公开招聘教师若干名。招聘岗位包括计算机科学与技术、数学、英语、物理等学科教师。\n\n应聘条件：\n1. 具有博士学位，年龄一般在40周岁以下\n2. 具有扎实的专业基础和较强的教学能力\n3. 有海外知名高校学习或工作经历者优先\n\n应聘者请将个人简历、学历证书、科研成果等材料发送至hr@campus.edu.cn");
-            notice3.put("createTime", new Date().getTime() - 10 * 24 * 60 * 60 * 1000); // 十天前
-            notice3.put("author", "人事处");
-            
-            notices.add(notice1);
-            notices.add(notice2);
-            notices.add(notice3);
-            
-            // 只返回请求的条数
-            if (notices.size() > limit) {
-                notices = notices.subList(0, limit);
-            }
-            
-            return Result.success(notices);
-        } catch (Exception e) {
-            return Result.error("获取最近通知公告失败: " + e.getMessage());
-        }
-    }
 
     /**
-     * 获取所有通知类型
+     * 通过临时URL访问文件 (Method commented out as the underlying download logic changed)
      *
-     * @return 通知类型列表
-     */
-    @GetMapping("/notice-types")
-    public Result<List<Map<String, Object>>> getNoticeTypes() {
-        try {
-            // 实际应用中，这些类型可能来自数据库或枚举
-            // 修改键名以匹配前端 ElOption 的期望 (typeCode, typeName)
-            List<Map<String, Object>> noticeTypes = new ArrayList<>();
-            noticeTypes.add(Map.of("typeCode", "1", "typeName", "系统通知", "description", "关于系统维护、升级等重要通知")); // id -> typeCode, name -> typeName
-            noticeTypes.add(Map.of("typeCode", "2", "typeName", "教学通知", "description", "关于选课、考试、成绩等教学相关通知"));
-            noticeTypes.add(Map.of("typeCode", "3", "typeName", "学工通知", "description", "关于奖助学金、评优、活动等学生工作通知"));
-            noticeTypes.add(Map.of("typeCode", "4", "typeName", "生活通知", "description", "关于宿舍、食堂、水电等生活相关通知"));
-            noticeTypes.add(Map.of("typeCode", "99", "typeName", "其他通知", "description", "未分类的其他通知"));
-
-            // 确保 typeCode 是字符串或其他 Element Plus 支持的类型，这里使用字符串
-
-            return Result.success("获取通知类型成功", noticeTypes);
-        } catch (Exception e) {
-            return Result.error("获取通知类型失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 通过临时URL访问文件
-     * @param path 文件路径
-     * @param token 访问令牌
-     * @param expire 过期时间
+     * @param path     文件路径
+     * @param token    访问令牌
+     * @param expire   过期时间
      * @param response HTTP响应
      */
+    /*
     @GetMapping("/file/access")
     public void accessFileByTempUrl(
             @RequestParam("path") String path,
             @RequestParam("token") String token,
             @RequestParam("expire") long expire,
             HttpServletResponse response) {
-        
+
         try {
             // 验证参数
             if (path == null || token == null || expire <= 0) {
@@ -134,49 +68,56 @@ public class CommonController {
                 response.getWriter().write("无效的访问参数");
                 return;
             }
-            
+
             // 验证是否过期
             if (expire < System.currentTimeMillis()) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("访问链接已过期");
                 return;
             }
-            
-            // 提取文件名
-            String fileName = path.substring(path.lastIndexOf("/") + 1);
-            
+
+            // TODO: Validate token logic needed here
+
             // 设置响应头
             response.setContentType("application/octet-stream");
             response.setCharacterEncoding("UTF-8");
-            
-            // 使用输出流下载文件
+
+            // 使用输出流下载文件 (Old logic - needs rework)
             OutputStream outputStream = response.getOutputStream();
-            boolean success = fileService.downloadFile(path, outputStream);
-            
+            // boolean success = fileService.downloadFile(path, outputStream); // This method is removed
+            boolean success = false; // Placeholder - need to call new download mechanism
+            log.warn("accessFileByTempUrl is using removed download logic and needs rework.");
+
             if (!success) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 outputStream.write("文件不存在或访问失败".getBytes(StandardCharsets.UTF_8));
             }
-            
+
             outputStream.flush();
         } catch (IOException e) {
+            log.error("Error accessing file by temp URL", e);
             try {
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                response.getWriter().write("文件访问失败: " + e.getMessage());
+                if (!response.isCommitted()) {
+                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                     response.getWriter().write("文件访问失败: " + e.getMessage());
+                }
             } catch (IOException ex) {
-                // 无法设置响应，忽略
+                // Cannot set response, ignore
+                log.error("Error setting error response for temp URL access", ex);
             }
         }
     }
-    
+    */
+
     /**
      * 获取系统配置
+     *
      * @return 系统配置信息
      */
     @GetMapping("/config")
     public Result<Map<String, Object>> getSystemConfig() {
         Map<String, Object> config = new HashMap<>();
-        
+
         // 系统基本配置
         Map<String, Object> system = new HashMap<>();
         system.put("name", "智慧校园服务系统");
@@ -184,7 +125,7 @@ public class CommonController {
         system.put("logo", "/static/images/logo.png");
         system.put("footer", "© 2024 智慧校园服务系统 版权所有");
         config.put("system", system);
-        
+
         // 模块配置
         Map<String, Object> modules = new HashMap<>();
         modules.put("forum", true);
@@ -192,88 +133,142 @@ public class CommonController {
         modules.put("activity", true);
         modules.put("message", true);
         config.put("modules", modules);
-        
+
         // UI配置
         Map<String, Object> ui = new HashMap<>();
         ui.put("theme", "light");
         ui.put("primary_color", "#3a7bd5");
         ui.put("secondary_color", "#00d2ff");
         config.put("ui", ui);
-        
+
         return Result.success("获取系统配置成功", config);
     }
 
     /**
-     * 获取学期列表
-     *
-     * @return 学期列表
-     */
-    @GetMapping("/terms")
-    public Result<List<Map<String, String>>> getTerms() {
-        try {
-            // 在实际应用中，学期列表可能来自数据库或更复杂的配置
-            // 这里提供一个简单的硬编码示例
-            List<Map<String, String>> terms = new ArrayList<>();
-            terms.add(Map.of("value", "2024-2025-1", "label", "2024-2025学年 第一学期"));
-            terms.add(Map.of("value", "2023-2024-2", "label", "2023-2024学年 第二学期"));
-            terms.add(Map.of("value", "2023-2024-1", "label", "2023-2024学年 第一学期"));
-            terms.add(Map.of("value", "2022-2023-2", "label", "2022-2023学年 第二学期"));
-            // 可以添加更多学期...
-
-            return Result.success("获取学期列表成功", terms);
-        } catch (Exception e) {
-            return Result.error("获取学期列表失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 获取时间段列表 (用于课表)
-     *
+     * 获取可用时间段
      * @return 时间段列表
      */
     @GetMapping("/time-slots")
     public Result<List<Map<String, Object>>> getTimeSlots() {
-        try {
-            List<Map<String, Object>> timeSlots = new ArrayList<>();
-            // value 对应数据库存储， label 用于显示， slot 是节次
-            timeSlots.add(Map.of("value", 1, "label", "第1节", "slot", 1, "startTime", "08:00", "endTime", "08:45"));
-            timeSlots.add(Map.of("value", 2, "label", "第2节", "slot", 2, "startTime", "08:55", "endTime", "09:40"));
-            timeSlots.add(Map.of("value", 3, "label", "第3节", "slot", 3, "startTime", "10:00", "endTime", "10:45"));
-            timeSlots.add(Map.of("value", 4, "label", "第4节", "slot", 4, "startTime", "10:55", "endTime", "11:40"));
-            timeSlots.add(Map.of("value", 5, "label", "第5节", "slot", 5, "startTime", "14:00", "endTime", "14:45"));
-            timeSlots.add(Map.of("value", 6, "label", "第6节", "slot", 6, "startTime", "14:55", "endTime", "15:40"));
-            timeSlots.add(Map.of("value", 7, "label", "第7节", "slot", 7, "startTime", "16:00", "endTime", "16:45"));
-            timeSlots.add(Map.of("value", 8, "label", "第8节", "slot", 8, "startTime", "16:55", "endTime", "17:40"));
-            timeSlots.add(Map.of("value", 9, "label", "第9节", "slot", 9, "startTime", "19:00", "endTime", "19:45"));
-            timeSlots.add(Map.of("value", 10, "label", "第10节", "slot", 10, "startTime", "19:55", "endTime", "20:40"));
-
-            return Result.success("获取时间段成功", timeSlots);
-        } catch (Exception e) {
-            return Result.error("获取时间段失败: " + e.getMessage());
-        }
+        // 实际应用中可能从数据库或配置获取
+        List<Map<String, Object>> slots = new ArrayList<>();
+        slots.add(Map.of("id", 1, "name", "第1-2节", "startTime", "08:00", "endTime", "09:40"));
+        slots.add(Map.of("id", 2, "name", "第3-4节", "startTime", "10:00", "endTime", "11:40"));
+        slots.add(Map.of("id", 3, "name", "第5-6节", "startTime", "14:00", "endTime", "15:40"));
+        slots.add(Map.of("id", 4, "name", "第7-8节", "startTime", "16:00", "endTime", "17:40"));
+        slots.add(Map.of("id", 5, "name", "第9-10节", "startTime", "19:00", "endTime", "20:40"));
+        return Result.success("获取成功", slots);
     }
 
     /**
-     * 获取星期列表 (用于课表)
-     *
+     * 获取星期列表
      * @return 星期列表
      */
     @GetMapping("/weekdays")
     public Result<List<Map<String, Object>>> getWeekdays() {
-        try {
-            List<Map<String, Object>> weekdays = new ArrayList<>();
-            // value 对应数据库存储 (通常 1-7), label 用于显示
-            weekdays.add(Map.of("value", 1, "label", "周一"));
-            weekdays.add(Map.of("value", 2, "label", "周二"));
-            weekdays.add(Map.of("value", 3, "label", "周三"));
-            weekdays.add(Map.of("value", 4, "label", "周四"));
-            weekdays.add(Map.of("value", 5, "label", "周五"));
-            weekdays.add(Map.of("value", 6, "label", "周六"));
-            weekdays.add(Map.of("value", 7, "label", "周日"));
+        List<Map<String, Object>> weekdays = new ArrayList<>();
+        weekdays.add(Map.of("id", 1, "name", "星期一"));
+        weekdays.add(Map.of("id", 2, "name", "星期二"));
+        weekdays.add(Map.of("id", 3, "name", "星期三"));
+        weekdays.add(Map.of("id", 4, "name", "星期四"));
+        weekdays.add(Map.of("id", 5, "name", "星期五"));
+        weekdays.add(Map.of("id", 6, "name", "星期六"));
+        weekdays.add(Map.of("id", 7, "name", "星期日"));
+        return Result.success("获取成功", weekdays);
+    }
 
-            return Result.success("获取星期成功", weekdays);
-        } catch (Exception e) {
-            return Result.error("获取星期失败: " + e.getMessage());
+    /**
+     * 获取所有定义的学期列表 (按代码降序)
+     *
+     * @return 学期列表 (Map 形式)
+     */
+    @GetMapping("/terms")
+    public Result<List<Map<String, Object>>> getTerms() {
+        List<Map<String, Object>> termList = Term.getAllTermsSorted().stream()
+                .map(Term::toMap) // Convert enum to map
+                .collect(Collectors.toList());
+        return Result.success("获取成功", termList);
+    }
+
+    /**
+     * 获取当前学期信息
+     *
+     * @return 当前学期 (Map 形式)，如果未定义则返回错误
+     */
+    @GetMapping("/terms/current")
+    public Result<Map<String, Object>> getCurrentTerm() {
+        Term currentTerm = Term.getCurrentTerm();
+        if (currentTerm != null) {
+            return Result.success("获取成功", currentTerm.toMap());
+        } else {
+            return Result.error("未定义当前学期");
         }
+    }
+
+    // --- Added Stubs for Missing Common Lookups --- 
+
+    @GetMapping("/colleges")
+    public Result<List<Map<String, Object>>> getColleges() {
+        // TODO: Implement actual data retrieval
+        return Result.success("获取成功 (Stub)", List.of());
+    }
+
+    @GetMapping("/departments")
+    public Result<List<Map<String, Object>>> getDepartments(@RequestParam(required = false) Long collegeId) {
+        // TODO: Implement actual data retrieval (potentially filtered by collegeId)
+        return Result.success("获取成功 (Stub)", List.of());
+    }
+
+    @GetMapping("/majors")
+    public Result<List<Map<String, Object>>> getMajors(@RequestParam(required = false) Long departmentId) {
+        // TODO: Implement actual data retrieval (potentially filtered by departmentId)
+        return Result.success("获取成功 (Stub)", List.of());
+    }
+
+    @GetMapping("/classes")
+    public Result<List<Map<String, Object>>> getClasses(@RequestParam(required = false) Long majorId) {
+        // TODO: Implement actual data retrieval (potentially filtered by majorId)
+        return Result.success("获取成功 (Stub)", List.of());
+    }
+
+    @GetMapping("/room-types")
+    public Result<List<Map<String, Object>>> getRoomTypes() {
+        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
+        return Result.success("获取成功 (Stub)", List.of(
+                Map.of("id", 1, "name", "普通教室"),
+                Map.of("id", 2, "name", "实验室"),
+                Map.of("id", 3, "name", "会议室")
+        ));
+    }
+
+    @GetMapping("/course-types")
+    public Result<List<Map<String, Object>>> getCourseTypes() {
+        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
+        return Result.success("获取成功 (Stub)", List.of(
+                Map.of("id", 1, "name", "必修课"),
+                Map.of("id", 2, "name", "选修课"),
+                Map.of("id", 3, "name", "实验课")
+        ));
+    }
+
+    @GetMapping("/activity-types")
+    public Result<List<Map<String, Object>>> getActivityTypes() {
+        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
+        return Result.success("获取成功 (Stub)", List.of(
+                Map.of("id", 1, "name", "讲座"),
+                Map.of("id", 2, "name", "竞赛"),
+                Map.of("id", 3, "name", "社团活动")
+        ));
+    }
+
+    @GetMapping("/post-categories")
+    public Result<List<Map<String, Object>>> getPostCategories() {
+        // Note: ForumController /categories returns types based on Post entity
+        // This endpoint might be redundant or need different implementation
+        // TODO: Implement actual data retrieval or align with ForumController
+        return Result.success("获取成功 (Stub)", List.of(
+                Map.of("id", 1, "name", "学习交流 (Stub)"),
+                Map.of("id", 2, "name", "校园生活 (Stub)")
+        ));
     }
 } 

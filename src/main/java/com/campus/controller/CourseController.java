@@ -38,7 +38,7 @@ public class CourseController {
 
     /**
      * 获取课程详情
-     * 
+     *
      * @param id 课程ID
      * @return 课程详细信息
      */
@@ -58,7 +58,7 @@ public class CourseController {
 
     /**
      * 根据课程编号获取课程
-     * 
+     *
      * @param courseNo 课程编号
      * @return 课程详细信息
      */
@@ -78,9 +78,10 @@ public class CourseController {
 
     /**
      * 获取课程列表 (分页)
-     * @param pageNum 页码
+     *
+     * @param pageNum  页码
      * @param pageSize 每页大小
-     * @param keyword 搜索关键词(可选)
+     * @param keyword  搜索关键词(可选)
      * @return 课程分页结果
      */
     @GetMapping
@@ -101,7 +102,7 @@ public class CourseController {
 
     /**
      * 根据课程类型获取课程
-     * 
+     *
      * @param courseType 课程类型
      * @return 课程列表
      */
@@ -117,7 +118,7 @@ public class CourseController {
 
     /**
      * 根据学院ID获取课程
-     * 
+     *
      * @param collegeId 学院ID
      * @return 课程列表
      */
@@ -128,7 +129,7 @@ public class CourseController {
 
     /**
      * 添加课程
-     * 
+     *
      * @param course 课程信息
      * @return 添加结果
      */
@@ -147,8 +148,8 @@ public class CourseController {
 
     /**
      * 更新课程
-     * 
-     * @param id 课程ID
+     *
+     * @param id     课程ID
      * @param course 课程信息
      * @return 更新结果
      */
@@ -161,10 +162,6 @@ public class CourseController {
             }
 
             course.setId(id);
-            if (course.getCourseNo() == null || course.getCourseNo().isEmpty() ||
-                    course.getCourseName() == null || course.getCourseName().isEmpty()) {
-                return Result.error("课程代码和课程名称不能为空");
-            }
             boolean result = courseService.updateCourse(course);
             return result ? Result.success("更新成功") : Result.error("更新失败");
         } catch (AuthenticationException ae) {
@@ -178,7 +175,7 @@ public class CourseController {
 
     /**
      * 删除课程
-     * 
+     *
      * @param id 课程ID
      * @return 删除结果
      */
@@ -194,7 +191,7 @@ public class CourseController {
             if (isScheduled) {
                 return Result.error("该课程已被排课使用，无法删除");
             }
-            
+
             boolean result = courseService.deleteCourse(id);
             return result ? Result.success("删除成功") : Result.error("删除失败");
         } catch (AuthenticationException ae) {
@@ -236,13 +233,8 @@ public class CourseController {
     @PutMapping("/{id}/status/{statusInt}")
     public Result<Void> updateCourseStatus(@PathVariable Long id, @PathVariable Integer statusInt) {
         try {
-            Course course = courseService.getCourseById(id);
-            if (course == null) {
-                return Result.error("课程不存在");
-            }
             String status = String.valueOf(statusInt);
-            course.setStatus(status);
-            boolean result = courseService.updateCourse(course);
+            boolean result = courseService.updateCourseStatus(id, status);
             return result ? Result.success("更新状态成功") : Result.error("更新状态失败");
         } catch (Exception e) {
             return Result.error("更新状态失败: " + e.getMessage());

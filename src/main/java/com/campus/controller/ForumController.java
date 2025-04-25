@@ -2,9 +2,9 @@ package com.campus.controller;
 
 // import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 // import com.campus.entity.Comment; // Removed Comment dependency
+
 import com.campus.entity.Post;
-// import com.campus.service.CommentService; // Removed CommentService dependency
-import com.campus.service.ForumService;
+// import com.campus.service.ForumService; // 移除 ForumService 导入
 import com.campus.service.PostService;
 import com.campus.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +30,8 @@ public class ForumController {
     // @Autowired
     // private CommentService commentService; // Removed CommentService injection
 
-    @Autowired
-    private ForumService forumService;
+    // @Autowired
+    // private ForumService forumService; // 移除 ForumService 注入
 
     // =============== 板块/分类相关 API (新增/修改) ===============
 
@@ -42,11 +42,12 @@ public class ForumController {
      */
     @GetMapping("/categories")
     public Result<List<Map<String, Object>>> getForumCategories() {
-        List<String> forumTypes = forumService.listAvailableForumTypes();
+        // 调用 PostService 中的方法
+        List<String> forumTypes = postService.listAvailableForumTypes();
         List<Map<String, Object>> categories = new java.util.ArrayList<>();
         for (int i = 0; i < forumTypes.size(); i++) {
             Map<String, Object> category = new HashMap<>();
-            category.put("id", i + 1);
+            category.put("id", i + 1); // 暂时用索引作为ID
             category.put("name", forumTypes.get(i));
             categories.add(category);
         }
@@ -54,9 +55,64 @@ public class ForumController {
     }
 
     /**
+     * 添加论坛分类 (Stub)
+     *
+     * @param categoryData 分类信息 (e.g., {"name": "新板块"})
+     * @return 添加结果
+     */
+    @PostMapping("/categories")
+    public Result<String> addForumCategory(@RequestBody Map<String, String> categoryData) {
+        // TODO: Implement category creation logic
+        String name = categoryData.get("name");
+        if (name == null || name.isBlank()) {
+            return Result.error("分类名称不能为空");
+        }
+        System.out.println("Adding category: " + name);
+        // boolean success = forumService.addCategory(name);
+        // return success ? Result.success("添加成功") : Result.error("添加失败");
+        return Result.success("添加分类成功 (Stub)");
+    }
+
+    /**
+     * 更新论坛分类 (Stub)
+     *
+     * @param id           分类ID
+     * @param categoryData 分类信息 (e.g., {"name": "更新后板块"})
+     * @return 更新结果
+     */
+    @PutMapping("/categories/{id}")
+    public Result<String> updateForumCategory(@PathVariable Long id, @RequestBody Map<String, String> categoryData) {
+        // TODO: Implement category update logic
+        String name = categoryData.get("name");
+        if (name == null || name.isBlank()) {
+            return Result.error("分类名称不能为空");
+        }
+        System.out.println("Updating category " + id + " to name: " + name);
+        // boolean success = forumService.updateCategory(id, name);
+        // return success ? Result.success("更新成功") : Result.error("更新失败");
+        return Result.success("更新分类成功 (Stub)");
+    }
+
+    /**
+     * 删除论坛分类 (Stub)
+     *
+     * @param id 分类ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/categories/{id}")
+    public Result<String> deleteForumCategory(@PathVariable Long id) {
+        // TODO: Implement category deletion logic
+        System.out.println("Deleting category: " + id);
+        // boolean success = forumService.deleteCategory(id);
+        // return success ? Result.success("删除成功") : Result.error("删除失败");
+        return Result.success("删除分类成功 (Stub)");
+    }
+
+    /**
      * 获取所有可用的板块列表 (用于下拉列表等)
-     * @deprecated 此接口依赖不存在的 forum 表，请使用 /categories 接口替代
+     *
      * @return 板块列表
+     * @deprecated 此接口依赖不存在的 forum 表，请使用 /categories 接口替代
      */
     @Deprecated
     @GetMapping("/forums")
@@ -86,12 +142,12 @@ public class ForumController {
     /**
      * 获取所有帖子
      *
-     * @param page 页码
-     * @param size 每页数量
-     * @param keyword 关键词 (可选)
+     * @param page      页码
+     * @param size      每页数量
+     * @param keyword   关键词 (可选)
      * @param forumType 板块类型 (可选)
-     * @param tag 标签 (可选)
-     * @param sortBy 排序依据 (可选, 默认为 createTime)
+     * @param tag       标签 (可选)
+     * @param sortBy    排序依据 (可选, 默认为 createTime)
      * @return 帖子列表分页数据
      */
     @GetMapping("/posts")
@@ -183,8 +239,8 @@ public class ForumController {
      * 获取用户的帖子
      *
      * @param userId 用户ID
-     * @param page 页码
-     * @param size 每页数量
+     * @param page   页码
+     * @param size   每页数量
      * @return 用户帖子列表
      */
     @GetMapping("/posts/user/{userId}")
@@ -200,8 +256,8 @@ public class ForumController {
      * 搜索帖子
      *
      * @param keyword 关键词
-     * @param page 页码
-     * @param size 每页数量
+     * @param page    页码
+     * @param size    每页数量
      * @return 搜索结果
      */
     @GetMapping("/posts/search")
@@ -245,8 +301,8 @@ public class ForumController {
      */
     @PostMapping("/posts/{id}/view")
     public Result<Void> incrementViewCount(@PathVariable Long id) {
-        boolean success = postService.incrementViews(id);
-        return success ? Result.success() : Result.error("操作失败");
+        boolean success = postService.incrementViewCount(id);
+        return success ? Result.success() : Result.error("增加浏览量失败");
     }
 
     /**

@@ -1,16 +1,28 @@
-import request from '../utils/request'
-import {GRADE_API} from './api-endpoints'
+import request from '@/utils/request'
+
+// API Endpoints for Grade/Score Management
+const API = {
+    GET_MY_SCORES: '/scores/me',
+    GET_COURSE_SCORES: (courseId) => `/scores/course/${courseId}`,
+    GET_STUDENT_COURSE_SCORE: (studentId, courseId) => `/scores/student/${studentId}/course/${courseId}`,
+    RECORD_SCORE: '/scores', // POST for new, PUT for update
+    BATCH_DELETE: '/scores/batch',
+    GET_STATS: '/scores/stats',
+    GET_COURSE_STATS: (courseId) => `/scores/stats/course/${courseId}`,
+    EXPORT: (courseId) => `/scores/export/${courseId}`,
+    IMPORT: '/scores/import' // Assumes POST method
+};
 
 /**
  * 获取当前登录学生的成绩列表
  * @param {object} params - 查询参数，例如 { semester: '2023-2024-1' }
  */
-export function getMyGrades(params) {
+export function getMyScores(params) {
     return request({
-        url: GRADE_API.GET_MY_SCORES,
+        url: API.GET_MY_SCORES,
         method: 'get',
-        params
-    })
+        params // e.g., termId or courseId filter?
+    });
 }
 
 /**
@@ -20,24 +32,35 @@ export function getMyGrades(params) {
  */
 export function getCourseScores(courseId, params) {
     return request({
-        url: GRADE_API.GET_COURSE_SCORES.replace(':courseId', courseId),
+        url: API.GET_COURSE_SCORES(courseId),
         method: 'get',
-        params
-    })
+        params // e.g., studentName filter or pagination?
+    });
+}
+
+/**
+ * 获取特定学生特定课程的成绩记录
+ * @param {number} studentId - 学生ID
+ * @param {number} courseId - 课程ID
+ */
+export function getStudentCourseScore(studentId, courseId) {
+    return request({
+        url: API.GET_STUDENT_COURSE_SCORE(studentId, courseId),
+        method: 'get'
+    });
 }
 
 /**
  * 记录或更新单个学生的成绩
  * @param {object} data - 成绩数据，至少包含 studentId, courseId, score。 如果包含 id 则为更新，否则为新增。
  */
-export function recordStudentScore(data) {
-    const method = data.id ? 'put' : 'post';
-    const url = data.id ? `${GRADE_API.RECORD_SCORE}/${data.id}` : GRADE_API.RECORD_SCORE;
+export function recordScore(data) {
+    // 后端使用 POST 同时处理创建和更新
     return request({
-        url: url,
-        method: method,
+        url: API.RECORD_SCORE,
+        method: 'post', // Defaulting to POST, use PUT for updates if needed
         data
-    })
+    });
 }
 
 /**
@@ -46,49 +69,72 @@ export function recordStudentScore(data) {
  */
 export function batchDeleteScores(ids) {
     return request({
-        url: GRADE_API.BATCH_DELETE,
-        method: 'delete',
-        data: ids // Pass IDs in the request body for DELETE
-    })
-}
-
-/**
- * 导出成绩
- * @param {number} courseId - 课程ID 
- */
-export function exportGrades(courseId) {
-    return request({
-        url: GRADE_API.EXPORT.replace(':courseId', courseId),
-        method: 'get',
-        responseType: 'blob'
-    })
-}
-
-/**
- * 导入成绩
- * @param {FormData} formData - 包含Excel文件的表单数据
- */
-export function importGrades(formData) {
-    return request({
-        url: GRADE_API.IMPORT,
-        method: 'post',
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-}
-
-/**
- * 获取课程成绩统计信息
- * @param {number} courseId - 课程ID
- */
-export function getCourseScoreStats(courseId) {
-    return request({
-        url: GRADE_API.GET_COURSE_STATS.replace(':courseId', courseId),
-        method: 'get'
+        url: API.BATCH_DELETE,
+        method: 'delete', // Or POST
+        data: ids // Send IDs in request body
     });
 }
+
+/**
+ * 获取成绩统计信息 (总体) - (后端缺失)
+ * @param {object} params - 查询参数，例如 { termId: '2023-2024-1' }
+ */
+// export function getScoreStats(params) {
+//     return request({
+//         url: API.GET_STATS,
+//         method: 'get',
+//         params
+//     });
+// }
+
+/**
+ * 获取某门课程的成绩统计信息
+ * @param {number} courseId - 课程ID
+ * @param {object} params - 查询参数，例如 { studentName: 'John Doe' }
+ */
+export function getCourseScoreStats(courseId, params) {
+    return request({
+        url: API.GET_COURSE_STATS(courseId),
+        method: 'get',
+        params
+    });
+}
+
+/**
+ * 导出课程成绩 - (后端缺失)
+ * @param {number} courseId - 课程ID
+ * @param {object} params - 查询参数，例如 { studentName: 'John Doe' }
+ */
+// export function exportCourseScores(courseId, params) {
+//     // Similar to file download, might get URL or trigger blob download
+//     return request({
+//         url: API.EXPORT(courseId),
+//         method: 'get',
+//         params,
+//         responseType: 'blob' // Assuming backend sends file directly
+//     });
+//     // Add blob handling similar to file download if needed
+// }
+
+/**
+ * 导入成绩 - (后端缺失)
+ * @param {File} file - 要导入的成绩文件
+ * @param {number} courseId - 课程ID
+ */
+// export function importScores(file, courseId) { // courseId might be in query params or formData
+//     const formData = new FormData();
+//     formData.append('file', file);
+//     // Add courseId to formData if needed by backend
+//     // formData.append('courseId', courseId);
+
+//     return request({
+//         url: API.IMPORT,
+//         method: 'post',
+//         params: { courseId }, // Example: send courseId as query param
+//         data: formData,
+//         headers: { 'Content-Type': 'multipart/form-data' }
+//     });
+// }
 
 // --- 移除或注释掉不再使用的旧 API 函数 ---
 /*
@@ -113,7 +159,7 @@ export function saveStudentGrades(data) {
 
 // --- 保留可能仍然需要的 API (例如统计)
 
-// --- 移除或重构教师评分项相关 API (与 Grade.vue 相关) ---
+// --- 移除或重构教师评分项相关 API (与 MyGrades.vue 相关) ---
 /*
 export function getCourseGradeItems(courseId) { ... }
 export function createGradeItem(data) { ... }

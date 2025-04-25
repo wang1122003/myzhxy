@@ -1,11 +1,11 @@
 package com.campus.controller;
 
 // import com.campus.dto.ScoreDTO; // 移除未使用
+
 import com.campus.entity.Score;
 import com.campus.entity.User;
 import com.campus.service.AuthService;
 import com.campus.service.ScoreService;
-// import com.campus.service.TermService; // Removed Term dependency
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +36,7 @@ public class ScoreController {
     /**
      * 记录或更新成绩 (通过RequestBody)
      * 如果成绩对象包含ID，则更新；否则创建。
+     *
      * @param score 成绩信息 (必须包含 studentId, courseId, score)
      * @return 操作结果
      */
@@ -55,6 +56,7 @@ public class ScoreController {
 
     /**
      * 删除成绩
+     *
      * @param id 成绩ID
      * @return 删除结果
      */
@@ -70,6 +72,7 @@ public class ScoreController {
 
     /**
      * 批量删除成绩
+     *
      * @param ids 成绩ID数组
      * @return 删除结果
      */
@@ -87,6 +90,7 @@ public class ScoreController {
 
     /**
      * 根据选课ID获取成绩
+     *
      * @param selectionId 选课ID
      * @return 成绩对象
      */
@@ -100,7 +104,6 @@ public class ScoreController {
      * 获取指定学生指定课程的成绩
      *
      * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
-     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/student/{studentId}/course/{courseId}")
     public Result<Score> getStudentCourseScore(@PathVariable Long studentId, @PathVariable Long courseId,
@@ -111,6 +114,7 @@ public class ScoreController {
 
     /**
      * 获取指定学生的所有成绩
+     *
      * @param studentId 学生ID
      * @return 学生的成绩列表
      */
@@ -124,7 +128,6 @@ public class ScoreController {
      * 获取指定学生在指定学期的所有成绩
      *
      * @param termInfo 学期信息 (字符串如 "2023-2024-1")
-     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/student/{studentId}/term")
     public Result<List<Score>> getStudentTermScores(@PathVariable Long studentId, @RequestParam String termInfo) {
@@ -134,6 +137,7 @@ public class ScoreController {
 
     /**
      * 获取指定课程的所有成绩
+     *
      * @param courseId 课程ID
      * @return 课程的成绩列表
      */
@@ -147,7 +151,6 @@ public class ScoreController {
      * 获取指定课程在指定学期的所有成绩
      *
      * @param termInfo 学期信息 (字符串如 "2023-2024-1")
-     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/course/{courseId}/term")
     public Result<List<Score>> getCourseTermScores(@PathVariable Long courseId, @RequestParam String termInfo) {
@@ -180,7 +183,6 @@ public class ScoreController {
      * 计算学生GPA
      *
      * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
-     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/gpa/student/{studentId}")
     public Result<Double> calculateStudentGPA(@PathVariable Long studentId,
@@ -191,8 +193,8 @@ public class ScoreController {
 
     /**
      * 获取指定课程的成绩统计信息
+     *
      * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
-     * // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/stats/course/{courseId}")
     public Result<Map<String, Object>> getCourseScoreStatistics(@PathVariable Long courseId,

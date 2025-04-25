@@ -138,8 +138,8 @@ import {ElMessage} from 'element-plus'
 import {Calendar, Location, Search} from '@element-plus/icons-vue'
 import {
   cancelJoinActivity,
-  getActivityList,
-  getStudentActivities,
+  getAllActivities,
+  getMyActivities,
   joinActivity as joinActivityApi
 } from '@/api/activity'
 
@@ -166,7 +166,7 @@ export default {
     })
 
     const fetchActivities = () => {
-      getActivityList({
+      getAllActivities({
         page: currentPage.value,
         pageSize: pageSize.value,
         keyword: searchKeyword.value
@@ -179,7 +179,7 @@ export default {
     }
 
     const fetchEnrolledActivities = () => {
-      getStudentActivities().then(response => {
+      getMyActivities().then(response => {
         enrolledActivities.value = response.data
 
         // 标记已报名的活动

@@ -17,31 +17,31 @@ import java.util.Date;
 @TableName("classroom")
 public class Classroom implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 教室ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 教室编号
      */
     @TableField("name")
     private String name;
-    
+
     /**
      * 教学楼
      */
     @TableField("building")
     private String building;
-    
+
     /**
      * 教室容量
      */
     @TableField("capacity")
     private Integer capacity;
-    
+
     /**
      * 教室状态：0-禁用，1-正常，2-维护中
      */
@@ -53,13 +53,13 @@ public class Classroom implements Serializable {
      */
     @TableField("room_type")
     private Integer roomType;
-    
+
     /**
      * 创建时间
      */
     @TableField("create_time")
     private Date createTime;
-    
+
     /**
      * 更新时间
      */

@@ -79,24 +79,24 @@
     >
       <!-- 列表视图 -->
       <div class="list-view">
-        <BaseTable :table-data="scheduleList"
+        <el-table :table-data="scheduleList"
             :data="scheduleList"
             border
             style="width: 100%"
         >
-          <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="课程名称"
               prop="courseName"
           />
-          <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="授课教师"
               prop="teacherName"
           />
-          <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="班级"
               prop="className"
           />
-          <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="星期"
               prop="weekday"
           >
@@ -104,19 +104,19 @@
               {{ formatWeekday(scope.row.weekday) }}
             </template>
           </el-table-column>
-            <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="开始时间"
               prop="startTime"
           />
-            <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="结束时间"
               prop="endTime"
           />
-            <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="教室"
               prop="classroomName"
           />
-            <BaseTable -column :table-data="scheduleList"
+          <el-table-column
               label="操作"
               width="150"
           >
@@ -137,7 +137,7 @@
               </el-button>
             </template>
           </el-table-column>
-            </BaseTable>
+        </el-table>
       </div>
       <!-- 分页 -->
       <div

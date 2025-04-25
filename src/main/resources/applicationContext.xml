@@ -21,8 +21,8 @@
         <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
     </context:component-scan>
 
-    <!-- 扫描配置类 (部分配置已迁移或移除) -->
-    <!-- <context:component-scan base-package="com.campus.config"/> -->
+    <!-- 扫描配置类 (启用Spring Security配置) -->
+    <context:component-scan base-package="com.campus.config"/>
     <!-- 保留对特定配置Bean的扫描或显式定义 -->
 
     <!-- 配置MyBatis Mapper扫描 -->
@@ -71,6 +71,14 @@
     </bean>
 
 
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 启用注解驱动的事务管理 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
     <!-- 配置MyBatis-Plus插件 -->
     <bean id="mybatisPlusInterceptor" class="com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor">
         <property name="interceptors">
@@ -111,17 +119,14 @@
         </property>
     </bean>
 
-    <!-- 配置事务管理器 -->
-    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-        <!-- 注入数据库连接池 -->
-        <property name="dataSource" ref="dataSource" />
-    </bean>
-
     <!-- 配置基于注解的声明式事务 -->
     <tx:annotation-driven transaction-manager="transactionManager" />
 
     <!-- 恢复 JwtUtil Bean 定义 -->
     <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
+
+    <!-- 添加 ObjectMapper Bean 定义 -->
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 
     <!-- ObjectMapper Bean 定义移至 spring-mvc.xml -->
 </beans>

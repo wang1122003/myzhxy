@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/classrooms")
 public class ClassroomController {
-    
+
     @Autowired
     private ClassroomService classroomService;
 
@@ -30,6 +30,7 @@ public class ClassroomController {
      * @param keyword  关键词(教室编号/名称)
      * @param building 教学楼
      * @param status   状态 (0:禁用, 1:正常)
+     * @param roomType 教室类型 (新增)
      * @return 分页教室列表
      */
     @GetMapping
@@ -38,9 +39,10 @@ public class ClassroomController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String building,
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String roomType) {
         try {
-            IPage<Classroom> pageData = classroomService.getClassroomsByPage(page, size, keyword, building, status);
+            IPage<Classroom> pageData = classroomService.getClassroomsByPage(page, size, keyword, building, status, roomType);
 
             Map<String, Object> result = new HashMap<>();
             result.put("total", pageData.getTotal());
@@ -55,9 +57,10 @@ public class ClassroomController {
             return Result.error("获取教室列表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 获取所有教室
+     *
      * @return 教室列表
      */
     @GetMapping("/all")
@@ -69,9 +72,10 @@ public class ClassroomController {
             return Result.error("获取教室列表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 根据ID获取教室
+     *
      * @param id 教室ID
      * @return 教室详情
      */
@@ -88,7 +92,7 @@ public class ClassroomController {
             return Result.error("获取教室详情失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 添加教室
      *
@@ -98,12 +102,11 @@ public class ClassroomController {
     @PostMapping
     public Result<Void> addClassroom(@RequestBody Classroom classroom) {
         try {
-            // 基本验证 (可以扩展)
-            if (classroom.getName() == null || classroom.getName().isEmpty()) {
-                return Result.error("教室名称不能为空");
-            }
+            // 基本验证 (可以扩展) - 移除 Controller 层冗余校验
+            // if (classroom.getName() == null || classroom.getName().isEmpty()) {
+            //     return Result.error("教室名称不能为空");
+            // }
             boolean result = classroomService.addClassroom(classroom);
-            // 返回 Result<Void>，成功时不带数据体
             return result ? Result.success("添加成功") : Result.error("添加失败，教室名称可能已存在");
         } catch (CustomException e) {
             return Result.error(e.getMessage());
@@ -111,7 +114,7 @@ public class ClassroomController {
             return Result.error("添加教室时发生未知错误");
         }
     }
-    
+
     /**
      * 更新教室信息
      *
@@ -121,13 +124,12 @@ public class ClassroomController {
      */
     @PutMapping("/{id}")
     public Result<Void> updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
-        // 确保路径中的ID设置到对象上
         classroom.setId(id);
         try {
-            // 基本验证
-            if (classroom.getName() == null || classroom.getName().isEmpty()) {
-                return Result.error("教室名称不能为空");
-            }
+            // 基本验证 - 移除 Controller 层冗余校验
+            // if (classroom.getName() == null || classroom.getName().isEmpty()) {
+            //     return Result.error("教室名称不能为空");
+            // }
             boolean result = classroomService.updateClassroom(classroom);
             return result ? Result.success("更新成功") : Result.error("更新失败，教室名称可能重复或教室不存在");
         } catch (CustomException e) {
@@ -136,9 +138,10 @@ public class ClassroomController {
             return Result.error("更新教室时发生未知错误");
         }
     }
-    
+
     /**
      * 删除教室
+     *
      * @param id 教室ID
      * @return 删除结果
      */
@@ -157,7 +160,7 @@ public class ClassroomController {
             return Result.error("删除教室失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 批量删除教室
      *
@@ -170,30 +173,16 @@ public class ClassroomController {
             return Result.error("请提供要删除的教室ID");
         }
         try {
-            // 使用循环调用 deleteClassroom 替换 batchDeleteClassrooms
-            int successCount = 0;
-            int failCount = 0;
-            for (Long id : ids) {
-                try {
-                    if (classroomService.deleteClassroom(id)) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (Exception e) {
-                    failCount++;
-                }
-            }
-            if (failCount > 0) {
-                return Result.success(String.format("批量删除完成，%d个成功，%d个失败", successCount, failCount));
-            } else {
-                return Result.success("批量删除成功");
-            }
+            // 直接调用 Service 的批量删除方法
+            boolean success = classroomService.batchDeleteClassrooms(ids);
+            return success ? Result.success("批量删除成功") : Result.error("批量删除失败（可能部分教室已被排课使用）");
+        } catch (CustomException ce) { // Service 可能抛出自定义异常
+            return Result.error(ce.getMessage());
         } catch (Exception e) {
             return Result.error("批量删除教室时发生未知错误");
         }
     }
-    
+
     /**
      * 更新教室状态
      *
@@ -241,6 +230,7 @@ public class ClassroomController {
 
     /**
      * 获取可用教室
+     *
      * @return 可用教室列表
      */
     @GetMapping("/available")

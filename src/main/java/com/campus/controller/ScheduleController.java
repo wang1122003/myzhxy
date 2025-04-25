@@ -4,17 +4,16 @@ package com.campus.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Schedule;
-// import com.campus.entity.Term; // Removed Term entity dependency
 import com.campus.entity.User;
-import com.campus.enums.UserType; // Import UserType
+import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
 import com.campus.service.AuthService;
 import com.campus.service.ScheduleService;
-// import com.campus.service.TermService; // Removed TermService dependency
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.campus.enums.Term; // Import Term enum
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,14 +38,13 @@ public class ScheduleController {
     /**
      * 分页获取课表列表，支持多条件模糊查询
      *
-     * @param termCode 学期代码 (可选)
-     * // TODO: [学期功能] - Replace termCode filtering with config-based logic or remove if not needed immediately
-     * @param courseName 课程名称 (可选)
+     * @param termCode    学期代码 (可选)
+     * @param courseName  课程名称 (可选)
      * @param teacherName 教师姓名 (可选)
-     * @param className 班级名称 (可选)
+     * @param className   班级名称 (可选)
      * @param classroomId 教室ID (可选)
-     * @param page 页码
-     * @param size 每页数量
+     * @param page        页码
+     * @param size        每页数量
      * @return 课表分页数据
      */
     @GetMapping
@@ -73,7 +71,7 @@ public class ScheduleController {
             */
             // Pass termCode directly to service if it handles string-based filtering
             if (termCode != null && !termCode.isEmpty()) params.put("termInfo", termCode);
-            
+
             if (courseName != null && !courseName.isEmpty()) params.put("courseName", courseName);
             if (teacherName != null && !teacherName.isEmpty()) params.put("teacherName", teacherName);
             if (className != null && !className.isEmpty()) params.put("className", className);
@@ -86,9 +84,10 @@ public class ScheduleController {
             return Result.error("获取课表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 获取单个课表
+     *
      * @param id 课表ID
      * @return 课表详情
      */
@@ -105,34 +104,21 @@ public class ScheduleController {
             return Result.error("获取课表详情失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 添加课表
+     *
      * @param schedule 课表信息
      * @return 添加结果
      */
     @PostMapping
     public Result<Object> addSchedule(@RequestBody Schedule schedule) {
         try {
-            // 参数校验
-            if (schedule.getCourseId() == null) {
-                return Result.error("课程不能为空");
-            }
-            if (schedule.getTeacherId() == null) {
-                return Result.error("教师不能为空");
-            }
-            if (schedule.getClassroomId() == null) {
-                return Result.error("教室不能为空");
-            }
-            if (schedule.getDayOfWeek() == null || schedule.getDayOfWeek().isEmpty()) {
-                return Result.error("星期几不能为空");
-            }
-            
             // 检查时间冲突
             if (scheduleService.checkTimeConflict(schedule)) {
                 return Result.error("所选时间段已被占用，请选择其他时间");
             }
-            
+
             boolean success = scheduleService.addSchedule(schedule);
             if (success) {
                 return Result.success("课表添加成功");
@@ -143,10 +129,11 @@ public class ScheduleController {
             return Result.error("添加课表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 更新课表
-     * @param id 课表ID
+     *
+     * @param id       课表ID
      * @param schedule 课表信息
      * @return 更新结果
      */
@@ -163,9 +150,10 @@ public class ScheduleController {
             return Result.error("更新课表时发生未知错误");
         }
     }
-    
+
     /**
      * 删除课表
+     *
      * @param id 课表ID
      * @return 删除结果
      */
@@ -182,9 +170,10 @@ public class ScheduleController {
             return Result.error("删除课表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 批量删除课表
+     *
      * @param ids 课表ID数组
      * @return 删除结果
      */
@@ -194,7 +183,7 @@ public class ScheduleController {
             if (ids == null || ids.length == 0) {
                 return Result.error("未选择要删除的课表");
             }
-            
+
             boolean success = scheduleService.batchDeleteSchedules(ids);
             if (success) {
                 return Result.success("批量删除成功");
@@ -205,9 +194,10 @@ public class ScheduleController {
             return Result.error("批量删除课表失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 检查时间冲突
+     *
      * @param schedule 课表信息
      * @return 冲突检查结果
      */
@@ -220,92 +210,96 @@ public class ScheduleController {
             return Result.error("检查时间冲突失败: " + e.getMessage());
         }
     }
-    
+
     /**
      * 获取教师周课表
      * @param teacherId 教师ID
-     * @param termId 学期ID
-     * @return 周课表数据
+     * @param termCode  学期代码 (可选, 默认当前学期)
      */
     @GetMapping("/teacher-weekly")
     public Result<Map<String, Object>> getTeacherWeeklySchedule(
             @RequestParam Long teacherId,
-            @RequestParam Long termId) {
-        try {
-            Map<String, Object> result = scheduleService.getTeacherWeeklySchedule(teacherId, String.valueOf(termId));
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.error("获取教师周课表失败: " + e.getMessage());
-        }
+            @RequestParam(required = false) String termCode) {
+        String effectiveTermCode = getEffectiveTermCode(termCode);
+        if (effectiveTermCode == null) return Result.error("无法确定学期");
+        Map<String, Object> schedule = scheduleService.getTeacherWeeklySchedule(teacherId, effectiveTermCode);
+        return Result.success(schedule);
     }
-    
+
     /**
      * 获取学生周课表
-     * // TODO: [学期功能] - termId parameter might need adjustment based on config implementation.
-     * @param userId 学生用户ID
-     * @param termId 学期ID (Currently assumes ID, might change to termCode)
-     * @return 周课表数据
+     * @param studentId 学生ID (User ID)
+     * @param termCode  学期代码 (可选, 默认当前学期)
      */
     @GetMapping("/student-weekly")
     public Result<Map<String, Object>> getStudentWeeklySchedule(
-            @RequestParam Long userId,
-            @RequestParam Long termId) { // Keep Long for now, might change to String termCode later
-        try {
-            Map<String, Object> result = scheduleService.getStudentWeeklySchedule(userId, String.valueOf(termId));
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.error("获取学生周课表失败: " + e.getMessage());
-        }
+            @RequestParam Long studentId,
+            @RequestParam(required = false) String termCode) {
+        String effectiveTermCode = getEffectiveTermCode(termCode);
+        if (effectiveTermCode == null) return Result.error("无法确定学期");
+        Map<String, Object> schedule = scheduleService.getStudentWeeklySchedule(studentId, effectiveTermCode);
+        return Result.success(schedule);
     }
-    
+
     /**
      * 获取教室周课表
      * @param classroomId 教室ID
-     * @param termId 学期ID
-     * @return 周课表数据
+     * @param termCode    学期代码 (可选, 默认当前学期)
      */
     @GetMapping("/classroom-weekly")
     public Result<Map<String, Object>> getClassroomWeeklySchedule(
             @RequestParam Long classroomId,
-            @RequestParam Long termId) {
-        try {
-            Map<String, Object> result = scheduleService.getClassroomWeeklySchedule(classroomId, String.valueOf(termId));
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.error("获取教室周课表失败: " + e.getMessage());
-        }
+            @RequestParam(required = false) String termCode) {
+        String effectiveTermCode = getEffectiveTermCode(termCode);
+        if (effectiveTermCode == null) return Result.error("无法确定学期");
+        Map<String, Object> schedule = scheduleService.getClassroomWeeklySchedule(classroomId, effectiveTermCode);
+        return Result.success(schedule);
     }
 
     /**
      * 获取当前登录学生的课表
      *
-     * @param semester 学期信息 (可选)
-     * // TODO: [学期功能] - Logic for handling semester/term needs update based on config implementation.
-     * @param request HTTP请求
+     * @param termInfo  学期信息
+     * @param request  HTTP请求
      * @return 课表数据
      */
     @GetMapping("/student")
     public Result<Map<String, Object>> getStudentSchedule(
-            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) String termInfo,
             HttpServletRequest request) {
+        User currentUser = authService.getCurrentUserFromRequest(request);
+        if (currentUser == null) {
+            return Result.error(401, "用户未认证");
+        }
+        if (currentUser.getUserType() != UserType.STUDENT) {
+            return Result.error(403, "只有学生可以查看课表");
+        }
         try {
-            User currentUser = authService.getCurrentUserFromRequest(request);
-            if (currentUser == null) {
-                return Result.error("未登录或会话已过期");
-            }
-            if (currentUser.getUserType() != UserType.STUDENT) {
-                return Result.error("只有学生可以查看课表");
-            }
-            String termCodeToUse = semester;
-
-            if (termCodeToUse == null || termCodeToUse.isEmpty()) {
-                return Result.error("当前版本需要明确的学期参数");
-            }
-            // TODO: Refactor service call based on term handling
-            return Result.error("学期功能正在调整中，请稍后重试");
-
+            // 调用 getStudentWeeklySchedule 获取周课表 Map
+            Map<String, Object> weeklySchedule = scheduleService.getStudentWeeklySchedule(currentUser.getId(), termInfo);
+            return Result.success(weeklySchedule);
         } catch (Exception e) {
-            return Result.error("获取课表失败: " + e.getMessage());
+            return Result.error("获取学生课表失败: " + e.getMessage());
+        }
+    }
+
+    // Helper method to get current term code if not provided
+    private String getEffectiveTermCode(String providedTermCode) {
+        if (providedTermCode != null && !providedTermCode.trim().isEmpty()) {
+            // Optionally validate if providedTermCode exists in Term enum
+            if (Term.fromCode(providedTermCode) != null) {
+                return providedTermCode;
+            } else {
+                // log.warn("Provided term code is invalid: {}", providedTermCode);
+                return null; // Indicate error
+            }
+        }
+        Term currentTerm = Term.getCurrentTerm();
+        if (currentTerm != null) {
+            return currentTerm.getCode();
+        } else {
+            // log.error("Current term is not defined in Term enum.");
+            return null; // Indicate error
         }
     }
 }

@@ -1,22 +1,28 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.CourseSelectionDao;
+import com.campus.dao.CourseDao;
+import com.campus.dao.UserDao;
 import com.campus.entity.CourseSelection;
+import com.campus.entity.Course;
+import com.campus.entity.User;
+import com.campus.exception.CustomException;
 import com.campus.service.CourseSelectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.Objects;
 
 /**
  * <p>
@@ -27,66 +33,53 @@ import java.util.Map;
 public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionDao, CourseSelection> implements CourseSelectionService {
 
     @Autowired
-    private CourseSelectionDao courseSelectionDao;
+    private CourseDao courseDao;
+
+    @Autowired
+    private UserDao userDao;
 
     @Override
     public List<CourseSelection> getByStudentId(Long userId) {
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getUserId, userId);
-        return this.list(queryWrapper);
-    }
-
-    @Override
-    public List<Map<String, Object>> getByStudentIdMaps(Long userId) {
-        QueryWrapper<CourseSelection> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", userId);
-        return this.listMaps(queryWrapper);
+        List<CourseSelection> selections = this.list(queryWrapper);
+        fillAssociationInfo(selections);
+        return selections;
     }
 
     @Override
     public List<CourseSelection> getByCourseId(Long courseId) {
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getCourseId, courseId);
-        return this.list(queryWrapper);
-    }
-
-    @Override
-    public List<Map<String, Object>> getByCourseIdMaps(Long courseId) {
-        QueryWrapper<CourseSelection> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("course_id", courseId);
-        return this.listMaps(queryWrapper);
+        List<CourseSelection> selections = this.list(queryWrapper);
+        fillAssociationInfo(selections);
+        return selections;
     }
 
     @Override
     @Transactional
     public boolean selectCourse(CourseSelection courseSelection) {
-        // 检查是否已选过该课程
-        LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CourseSelection::getUserId, courseSelection.getUserId())
-                .eq(CourseSelection::getCourseId, courseSelection.getCourseId());
-        long count = this.count(queryWrapper);
-        if (count > 0) {
-            return false; // 已选过该课程
+        if (courseSelection == null || courseSelection.getUserId() == null || courseSelection.getCourseId() == null || courseSelection.getTermInfo() == null) {
+            throw new IllegalArgumentException("学生ID、课程ID和学期信息不能为空");
+        }
+        if (isCourseTaken(courseSelection.getUserId(), courseSelection.getCourseId(), courseSelection.getTermInfo())) {
+            throw new CustomException("您已选修过该学期的此门课程");
         }
 
-        // 设置选课时间和状态
         courseSelection.setSelectionTime(new Date());
-        courseSelection.setStatus("1"); // Assuming "1" represents Selected
+        courseSelection.setStatus("1");
         courseSelection.setCreateTime(new Date());
         courseSelection.setUpdateTime(new Date());
+        courseSelection.setRegularScore(null);
+        courseSelection.setMidtermScore(null);
+        courseSelection.setFinalExamScore(null);
+        courseSelection.setScoreValue(null);
+        courseSelection.setGrade(null);
+        courseSelection.setGpa(null);
+        courseSelection.setComment(null);
+        courseSelection.setEvaluationDate(null);
 
         return this.save(courseSelection);
-    }
-
-    @Override
-    @Transactional
-    public boolean selectCourseByMap(Map<String, Object> courseSelectionMap) {
-        CourseSelection courseSelection = new CourseSelection();
-        courseSelection.setUserId(Long.parseLong(courseSelectionMap.get("userId").toString()));
-        courseSelection.setCourseId(Long.parseLong(courseSelectionMap.get("courseId").toString()));
-        courseSelection.setTermInfo(courseSelectionMap.get("termInfo").toString());
-
-        return this.selectCourse(courseSelection);
     }
 
     @Override
@@ -96,188 +89,39 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionDao, 
         queryWrapper.eq(CourseSelection::getUserId, userId)
                 .eq(CourseSelection::getCourseId, courseId)
                 .eq(CourseSelection::getTermInfo, termInfo);
+        if (this.count(queryWrapper) == 0) {
+            throw new CustomException("未找到对应的选课记录");
+        }
+        CourseSelection selection = this.getOne(queryWrapper);
+        if (selection.getScoreValue() != null || selection.getGrade() != null) {
+            throw new CustomException("已录入成绩的课程不能退选");
+        }
         return this.remove(queryWrapper);
     }
 
     @Override
-    @Transactional
-    public boolean updateScore(CourseSelection courseSelection) {
-        // 获取原始数据
-        CourseSelection original = this.getById(courseSelection.getId());
-        if (original == null) {
-            return false;
-        }
-
-        // 更新成绩相关字段
-        original.setRegularScore(courseSelection.getRegularScore());
-        original.setMidtermScore(courseSelection.getMidtermScore());
-        original.setFinalExamScore(courseSelection.getFinalExamScore());
-        original.setScoreValue(courseSelection.getScoreValue());
-        original.setGrade(courseSelection.getGrade());
-        original.setGpa(courseSelection.getGpa());
-        original.setComment(courseSelection.getComment());
-        original.setEvaluationDate(courseSelection.getEvaluationDate() != null ?
-                courseSelection.getEvaluationDate() : new Date());
-        original.setUpdateTime(new Date());
-
-        return this.updateById(original);
-    }
-
-    @Override
-    @Transactional
-    public boolean updateScoreByMap(Map<String, Object> scoreMap) {
-        Long id = Long.parseLong(scoreMap.get("id").toString());
-        CourseSelection courseSelection = this.getById(id);
-        if (courseSelection == null) {
-            return false;
-        }
-
-        if (scoreMap.containsKey("regularScore")) {
-            courseSelection.setRegularScore(new BigDecimal(scoreMap.get("regularScore").toString()));
-        }
-        if (scoreMap.containsKey("midtermScore")) {
-            courseSelection.setMidtermScore(new BigDecimal(scoreMap.get("midtermScore").toString()));
-        }
-        if (scoreMap.containsKey("finalExamScore")) {
-            courseSelection.setFinalExamScore(new BigDecimal(scoreMap.get("finalExamScore").toString()));
-        }
-        if (scoreMap.containsKey("scoreValue")) {
-            courseSelection.setScoreValue(new BigDecimal(scoreMap.get("scoreValue").toString()));
-        }
-        if (scoreMap.containsKey("grade")) {
-            courseSelection.setGrade(scoreMap.get("grade").toString());
-        }
-        if (scoreMap.containsKey("gpa")) {
-            courseSelection.setGpa(new BigDecimal(scoreMap.get("gpa").toString()));
-        }
-        if (scoreMap.containsKey("comment")) {
-            courseSelection.setComment(scoreMap.get("comment").toString());
-        }
-        if (scoreMap.containsKey("evaluationDate")) {
-            // 根据输入格式转换日期
-            courseSelection.setEvaluationDate(new Date()); // 简化处理，实际应解析日期字符串
-        } else {
-            courseSelection.setEvaluationDate(new Date());
-        }
-        courseSelection.setUpdateTime(new Date());
-
-        return this.updateById(courseSelection);
-    }
-
-    @Override
-    public Map<String, Object> pageQuery(Long current, Long size, Map<String, Object> params) {
+    public IPage<CourseSelection> pageQuery(Long current, Long size, Map<String, Object> params) {
         Page<CourseSelection> page = new Page<>(current, size);
-        QueryWrapper<CourseSelection> queryWrapper = new QueryWrapper<>();
+        LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 添加查询条件
         if (params.containsKey("userId")) {
-            queryWrapper.eq("user_id", params.get("userId"));
+            queryWrapper.eq(CourseSelection::getUserId, params.get("userId"));
         }
         if (params.containsKey("courseId")) {
-            queryWrapper.eq("course_id", params.get("courseId"));
+            queryWrapper.eq(CourseSelection::getCourseId, params.get("courseId"));
         }
         if (params.containsKey("termInfo")) {
-            queryWrapper.eq("term_info", params.get("termInfo"));
+            queryWrapper.eq(CourseSelection::getTermInfo, params.get("termInfo"));
         }
         if (params.containsKey("status")) {
-            queryWrapper.eq("status", params.get("status"));
+            queryWrapper.eq(CourseSelection::getStatus, params.get("status"));
         }
 
-        // 排序
-        queryWrapper.orderByDesc("update_time");
+        queryWrapper.orderByDesc(CourseSelection::getUpdateTime);
 
-        // 执行分页查询
         IPage<CourseSelection> pageResult = this.page(page, queryWrapper);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("records", pageResult.getRecords());
-        result.put("total", pageResult.getTotal());
-        result.put("size", pageResult.getSize());
-        result.put("current", pageResult.getCurrent());
-        result.put("pages", pageResult.getPages());
-
-        return result;
-    }
-
-    @Override
-    public Map<String, Object> getMapById(Long id) {
-        return this.getMap(new QueryWrapper<CourseSelection>().eq("id", id));
-    }
-
-    @Override
-    @Transactional
-    public boolean saveByMap(Map<String, Object> courseSelectionMap) {
-        CourseSelection courseSelection = new CourseSelection();
-
-        if (courseSelectionMap.containsKey("userId")) {
-            courseSelection.setUserId(Long.parseLong(courseSelectionMap.get("userId").toString()));
-        }
-        if (courseSelectionMap.containsKey("courseId")) {
-            courseSelection.setCourseId(Long.parseLong(courseSelectionMap.get("courseId").toString()));
-        }
-        if (courseSelectionMap.containsKey("termInfo")) {
-            courseSelection.setTermInfo(courseSelectionMap.get("termInfo").toString());
-        }
-        if (courseSelectionMap.containsKey("status")) {
-            courseSelection.setStatus(courseSelectionMap.get("status").toString());
-        } else {
-            courseSelection.setStatus("1"); // 默认状态 "1"
-        }
-
-        courseSelection.setSelectionTime(new Date());
-        courseSelection.setCreateTime(new Date());
-        courseSelection.setUpdateTime(new Date());
-
-        return this.save(courseSelection);
-    }
-
-    @Override
-    @Transactional
-    public boolean updateByMap(Map<String, Object> courseSelectionMap) {
-        if (!courseSelectionMap.containsKey("id")) {
-            return false;
-        }
-
-        Long id = Long.parseLong(courseSelectionMap.get("id").toString());
-        CourseSelection courseSelection = this.getById(id);
-        if (courseSelection == null) {
-            return false;
-        }
-
-        if (courseSelectionMap.containsKey("userId")) {
-            courseSelection.setUserId(Long.parseLong(courseSelectionMap.get("userId").toString()));
-        }
-        if (courseSelectionMap.containsKey("courseId")) {
-            courseSelection.setCourseId(Long.parseLong(courseSelectionMap.get("courseId").toString()));
-        }
-        if (courseSelectionMap.containsKey("termInfo")) {
-            courseSelection.setTermInfo(courseSelectionMap.get("termInfo").toString());
-        }
-        if (courseSelectionMap.containsKey("status")) {
-            courseSelection.setStatus(courseSelectionMap.get("status").toString());
-        }
-        if (courseSelectionMap.containsKey("regularScore")) {
-            courseSelection.setRegularScore(new BigDecimal(courseSelectionMap.get("regularScore").toString()));
-        }
-        if (courseSelectionMap.containsKey("midtermScore")) {
-            courseSelection.setMidtermScore(new BigDecimal(courseSelectionMap.get("midtermScore").toString()));
-        }
-        if (courseSelectionMap.containsKey("finalExamScore")) {
-            courseSelection.setFinalExamScore(new BigDecimal(courseSelectionMap.get("finalExamScore").toString()));
-        }
-        if (courseSelectionMap.containsKey("scoreValue")) {
-            courseSelection.setScoreValue(new BigDecimal(courseSelectionMap.get("scoreValue").toString()));
-        }
-        if (courseSelectionMap.containsKey("grade")) {
-            courseSelection.setGrade(courseSelectionMap.get("grade").toString());
-        }
-        if (courseSelectionMap.containsKey("gpa")) {
-            courseSelection.setGpa(new BigDecimal(courseSelectionMap.get("gpa").toString()));
-        }
-
-        courseSelection.setUpdateTime(new Date());
-
-        return this.updateById(courseSelection);
+        fillAssociationInfo(pageResult.getRecords());
+        return pageResult;
     }
 
     @Override
@@ -285,8 +129,7 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionDao, 
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getUserId, userId)
                 .eq(CourseSelection::getCourseId, courseId)
-                .eq(CourseSelection::getTermInfo, termInfo)
-                .eq(CourseSelection::getStatus, "1"); // Assuming "1" represents Selected
+                .eq(CourseSelection::getTermInfo, termInfo);
         return this.count(queryWrapper) > 0;
     }
 
@@ -295,7 +138,9 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionDao, 
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getUserId, userId)
                 .eq(CourseSelection::getTermInfo, termInfo);
-        return this.list(queryWrapper);
+        List<CourseSelection> selections = this.list(queryWrapper);
+        fillAssociationInfo(selections);
+        return selections;
     }
 
     @Override
@@ -303,15 +148,48 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionDao, 
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getCourseId, courseId)
                 .eq(CourseSelection::getTermInfo, termInfo);
-        return this.list(queryWrapper);
+        List<CourseSelection> selections = this.list(queryWrapper);
+        fillAssociationInfo(selections);
+        return selections;
     }
 
     @Override
     public int getCourseSelectionCount(Long courseId, String termInfo) {
         LambdaQueryWrapper<CourseSelection> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CourseSelection::getCourseId, courseId)
-                .eq(CourseSelection::getTermInfo, termInfo)
-                .eq(CourseSelection::getStatus, "1"); // Assuming "1" represents Selected
-        return Math.toIntExact(this.count(queryWrapper));
+                .eq(CourseSelection::getTermInfo, termInfo);
+        return (int) this.count(queryWrapper);
+    }
+
+    private void fillAssociationInfo(List<CourseSelection> selections) {
+        if (selections == null || selections.isEmpty()) {
+            return;
+        }
+        Set<Long> courseIds = selections.stream().map(CourseSelection::getCourseId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Long> userIds = selections.stream().map(CourseSelection::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        Map<Long, Course> courseMap = new HashMap<>();
+        if (!courseIds.isEmpty()) {
+            courseMap = courseDao.selectBatchIds(courseIds).stream().collect(Collectors.toMap(Course::getId, c -> c));
+        }
+        Map<Long, User> userMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            userMap = userDao.selectBatchIds(userIds).stream().collect(Collectors.toMap(User::getId, u -> u));
+        }
+
+        for (CourseSelection selection : selections) {
+            if (selection.getCourseId() != null) {
+                Course course = courseMap.get(selection.getCourseId());
+                if (course != null) {
+                    selection.setCourseName(course.getCourseName());
+                }
+            }
+            if (selection.getUserId() != null) {
+                User user = userMap.get(selection.getUserId());
+                if (user != null) {
+                    selection.setStudentName(user.getRealName() != null ? user.getRealName() : user.getUsername());
+                }
+            }
+        }
     }
 } 

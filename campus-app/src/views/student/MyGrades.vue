@@ -235,7 +235,7 @@
 <script>
 import {onBeforeUnmount, onMounted, reactive, ref, watch} from 'vue'
 import {ElMessage} from 'element-plus'
-import {getGradeStats, getStudentGrades} from '@/api/grade'
+import {getMyScores} from '@/api/grade'
 import * as echarts from 'echarts/core'
 import {BarChart, PieChart} from 'echarts/charts'
 import {GridComponent, LegendComponent, TitleComponent, TooltipComponent} from 'echarts/components'
@@ -305,64 +305,67 @@ export default {
     }
 
     // 监听选项卡切换
-    watch(activeTab, () => {
-      if (activeTab.value === 'stats') {
-        fetchGradeStats()
-        // 等待DOM更新后初始化图表
-        setTimeout(() => {
-          initCharts()
-        }, 100)
-      }
-    })
+    // watch(activeTab, () => {
+    //   if (activeTab.value === 'stats') {
+    //     fetchGradeStats()
+    //     setTimeout(() => {
+    //       initCharts()
+    //     }, 100)
+    //   }
+    // })
 
     const fetchGrades = () => {
       const params = {
         page: currentPage.value - 1,
         size: pageSize.value,
-        ...filter
+        semester: filter.semester || null,
+        gradeType: filter.gradeType || null
       }
 
-      getStudentGrades(params).then(response => {
-        grades.value = response.data.content
-        total.value = response.data.totalElements
+      getMyScores(params).then(response => {
+        grades.value = response.data?.content || response.data || []
+        total.value = response.data?.totalElements || 0
       }).catch(error => {
         console.error('获取成绩失败', error)
         ElMessage.error('获取成绩失败')
       })
     }
 
-    const fetchGradeStats = () => {
-      getGradeStats(filter).then(response => {
-        // 学期统计
-        semesterStats.totalCredit = response.data.semester.totalCredit
-        semesterStats.averageGrade = response.data.semester.averageGrade
-        semesterStats.gpa = response.data.semester.gpa
-        semesterStats.totalCourses = response.data.semester.totalCourses
-
-        // 总体统计
-        overallStats.totalCredit = response.data.overall.totalCredit
-        overallStats.averageGrade = response.data.overall.averageGrade
-        overallStats.gpa = response.data.overall.gpa
-        overallStats.totalCourses = response.data.overall.totalCourses
-
-        // 更新图表数据
-        updateCharts(response.data)
-      }).catch(error => {
-        console.error('获取成绩统计失败', error)
-        ElMessage.error('获取成绩统计失败')
-      })
-    }
+    // Comment out the function call and related logic for stats
+    // const fetchGradeStats = () => {
+    //   getGradeStats(filter).then(response => {
+    //     // 学期统计
+    //     semesterStats.totalCredit = response.data.semester.totalCredit
+    //     semesterStats.averageGrade = response.data.semester.averageGrade
+    //     semesterStats.gpa = response.data.semester.gpa
+    //     semesterStats.totalCourses = response.data.semester.totalCourses
+    //
+    //     // 总体统计
+    //     overallStats.totalCredit = response.data.overall.totalCredit
+    //     overallStats.averageGrade = response.data.overall.averageGrade
+    //     overallStats.gpa = response.data.overall.gpa
+    //     overallStats.totalCourses = response.data.overall.totalCourses
+    //
+    //     // 更新图表数据
+    //     updateCharts(response.data)
+    //   }).catch(error => {
+    //     console.error('获取成绩统计失败', error)
+    //     ElMessage.error('获取成绩统计失败')
+    //   })
+    // }
 
     const handleTabChange = () => {
       currentPage.value = 1
+      // Comment out stats logic in tab change if any
     }
 
     const handleFilterChange = () => {
       currentPage.value = 1
       fetchGrades()
-      if (activeTab.value === 'stats') {
-        fetchGradeStats()
-      }
+      // Comment out stats logic in filter change
+      // if (activeTab.value === 'stats') {
+      //   fetchGradeStats()
+      // }
     }
 
     const handleCurrentChange = (page) => {

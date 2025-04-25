@@ -1,508 +1,219 @@
 package com.campus.controller;
 
-import com.campus.service.FileService;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.utils.Result;
-import jakarta.servlet.http.HttpServletResponse;
+import com.campus.entity.FileRecord;
+import com.campus.entity.User;
+import com.campus.service.FileService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 /**
  * 文件管理控制器
  */
+@Slf4j
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/file") // 统一前缀
 public class FileController {
 
     @Autowired
     private FileService fileService;
 
-    @Value("${file.upload.path:uploads}")
-    private String uploadPath;
-    
     /**
-     * 上传图片
-     *
-     * @param file 图片文件
-     * @return 上传结果
+     * 通用文件上传接口
+     * 前端需要指定 contextType，对于课程资料还需指定 courseId
+     * @param file 上传的文件
+     * @param contextType 上下文类型 (如 personal, course)
+     * @param contextId   关联ID (如 courseId)
+     * @param user        当前登录用户
+     * @return 上传结果，包含文件记录信息
      */
-    @PostMapping("/upload/image")
-    public Result<String> uploadImage(@RequestParam("file") MultipartFile file) {
-        try {
-            String filePath = fileService.uploadImage(file);
-            return Result.success("图片上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("图片上传失败: " + e.getMessage());
-            return Result.error("图片上传失败: " + e.getMessage());
+    @PostMapping("/upload")
+    public Result<FileRecord> uploadFile(@RequestParam("file") MultipartFile file,
+                                         @RequestParam("contextType") String contextType,
+                                         @RequestParam(value = "contextId", required = false) Long contextId,
+                                         @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return Result.error(401, "用户未登录");
         }
-    }
-    
-    /**
-     * 上传特定类型的图片
-     *
-     * @param file 图片文件
-     * @param type 图片类型
-     * @return 上传结果
-     */
-    @PostMapping("/upload/image/{type}")
-    public Result<String> uploadImageByType(@RequestParam("file") MultipartFile file, @PathVariable("type") String type) {
         try {
-            String filePath = fileService.uploadImage(file, type);
-            return Result.success("图片上传成功", filePath);
+            // 校验 contextType
+            if (!("personal".equals(contextType) || "course".equals(contextType))) {
+                // 可以根据需要扩展支持的类型
+                return Result.error(400, "无效的文件上下文类型");
+            }
+            if ("course".equals(contextType) && contextId == null) {
+                return Result.error(400, "上传课程资料必须指定课程ID");
+            }
+            if ("personal".equals(contextType)) {
+                contextId = null; // 个人文件不需要 contextId
+            }
+
+            FileRecord record = fileService.uploadFile(file, user.getId(), contextType, contextId);
+            return Result.success(record);
+        } catch (IOException e) {
+            log.error("文件上传失败", e);
+            return Result.error(500, "文件上传处理失败: " + e.getMessage());
         } catch (Exception e) {
-            System.out.println("图片上传失败: " + e.getMessage());
-            return Result.error("图片上传失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 上传活动海报
-     *
-     * @param file 海报文件
-     * @return 上传结果
-     */
-    @PostMapping("/upload/activity/poster")
-    public Result<String> uploadActivityPoster(@RequestParam("file") MultipartFile file) {
-        try {
-            String filePath = fileService.uploadActivityPoster(file);
-            return Result.success("活动海报上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("活动海报上传失败: " + e.getMessage());
-            return Result.error("活动海报上传失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 上传用户头像
-     *
-     * @param file 头像文件
-     * @param userId 用户ID
-     * @return 上传结果
-     */
-    @PostMapping("/upload/avatar/{userId}")
-    public Result<String> uploadUserAvatar(@RequestParam("file") MultipartFile file, @PathVariable("userId") Long userId) {
-        try {
-            String filePath = fileService.uploadUserAvatar(file, userId);
-            return Result.success("用户头像上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("用户头像上传失败: " + e.getMessage());
-            return Result.error("用户头像上传失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 上传帖子图片
-     *
-     * @param file 图片文件
-     * @return 上传结果
-     */
-    @PostMapping("/upload/post/image")
-    public Result<String> uploadPostImage(@RequestParam("file") MultipartFile file) {
-        try {
-            String filePath = fileService.uploadPostImage(file);
-            return Result.success("帖子图片上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("帖子图片上传失败: " + e.getMessage());
-            return Result.error("帖子图片上传失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 上传文档
-     *
-     * @param file 文档文件
-     * @return 上传结果
-     */
-    @PostMapping("/upload/document")
-    public Result<String> uploadDocument(@RequestParam("file") MultipartFile file) {
-        try {
-            String filePath = fileService.uploadDocument(file);
-            return Result.success("文档上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("文档上传失败: " + e.getMessage());
-            return Result.error("文档上传失败: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 上传课程材料
-     *
-     * @param file 课程材料文件
-     * @param courseId 课程ID
-     * @return 上传结果 (文件相对路径)
-     */
-    @PostMapping("/upload/course/material/{courseId}")
-    public Result<String> uploadCourseMaterial(@RequestParam("file") MultipartFile file, @PathVariable("courseId") Long courseId) {
-        try {
-            String filePath = fileService.uploadCourseMaterial(file, courseId);
-            return Result.success("课程材料上传成功", filePath);
-        } catch (Exception e) {
-            System.out.println("课程材料上传失败: " + e.getMessage());
-            return Result.error("课程材料上传失败: " + e.getMessage());
+            log.error("文件上传时发生未知错误", e);
+            return Result.error(500, "文件上传失败: " + e.getMessage());
         }
     }
 
     /**
-     * 上传通知附件
-     *
-     * @param file 附件文件
-     * @return 上传结果 (包含 name 和 url 的 Map)
+     * 获取当前登录用户的个人文件列表
+     * @param page 页码
+     * @param size 每页数量
+     * @param user 当前登录用户
+     * @return 文件列表分页数据
      */
-    @PostMapping("/upload/notice/attachment")
-    public Result<Map<String, String>> uploadNoticeAttachment(@RequestParam("file") MultipartFile file) {
-        try {
-            Map<String, String> fileInfo = fileService.uploadNoticeAttachment(file);
-            return Result.success("通知附件上传成功", fileInfo);
-        } catch (IOException e) {
-            System.out.println("通知附件上传失败: IO Error - " + e.getMessage());
-            return Result.error("通知附件上传失败: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("通知附件上传失败: Invalid Argument - " + e.getMessage());
-            return Result.error("通知附件上传失败: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("通知附件上传失败: Unexpected Error - " + e.getMessage());
-            return Result.error("通知附件上传失败，请稍后重试");
+    @GetMapping("/my")
+    public Result<IPage<FileRecord>> getMyFiles(@RequestParam(defaultValue = "1") int page,
+                                                @RequestParam(defaultValue = "10") int size,
+                                                @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return Result.error(401, "用户未登录");
         }
+        IPage<FileRecord> filePage = fileService.getMyPersonalFiles(page, size, user.getId());
+        return Result.success(filePage);
     }
-    
+
     /**
-     * 删除文件
+     * 获取学生可见的课程资源列表
      *
-     * @param filePath 文件相对路径 (e.g., uploads/images/uuid.jpg)
-     * @return 删除结果
+     * @param page     页码
+     * @param size     每页数量
+     * @param courseId 课程ID (可选, 筛选特定课程)
+     * @param user     当前登录用户 (必须是学生)
+     * @return 课程资源列表分页数据
      */
-    @DeleteMapping("/delete")
-    public Result<Boolean> deleteFile(@RequestParam("filePath") String filePath) {
+    @GetMapping("/resource/list") // 复用前端已有的路径
+    public Result<IPage<FileRecord>> getCourseResources(@RequestParam(defaultValue = "1") int page,
+                                                        @RequestParam(defaultValue = "10") int size,
+                                                        @RequestParam(required = false) Long courseId,
+                                                        @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return Result.error(401, "用户未登录");
+        }
+        // 假设学生的用户类型枚举值为 UserType.STUDENT 或类似
+        // 转换为字符串进行比较
+        if (!"student".equalsIgnoreCase(String.valueOf(user.getUserType()))) {
+            return Result.error(403, "只有学生可以查看课程资源");
+        }
+
+        IPage<FileRecord> resourcePage = fileService.getCourseResourcesForStudent(page, size, user.getId(), courseId);
+        return Result.success(resourcePage);
+    }
+
+    /**
+     * 删除文件记录 (软删除)
+     *
+     * @param id   文件记录ID
+     * @param user 当前登录用户
+     * @return 操作结果
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<?> deleteFile(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return Result.error(401, "用户未登录");
+        }
         try {
-            boolean success = fileService.deleteFile(filePath);
-            if (success) {
-                return Result.success("文件删除成功", true);
+            boolean deleted = fileService.deleteFileRecord(id, user.getId());
+            if (deleted) {
+                return Result.success("文件删除成功");
             } else {
-                // Consider differentiating between "not found" and "failed to delete"
-                return Result.error("文件删除失败或文件不存在"); 
+                // 这种情况可能是文件已删除或不存在，但也可能更新失败
+                log.warn("删除文件记录操作返回 false: fileId={}, userId={}", id, user.getId());
+                return Result.error(404, "文件不存在或删除失败");
             }
         } catch (Exception e) {
-            System.out.println("删除文件时发生异常, path: " + filePath + ", error: " + e.getMessage());
-            return Result.error("文件删除失败: " + e.getMessage());
+            log.error("删除文件失败: fileId={}, userId={}", id, user.getId(), e);
+            return Result.error(500, "删除文件失败: " + e.getMessage());
         }
     }
-    
-    /**
-     * 获取文件信息
-     *
-     * @param filePath 文件路径
-     * @return 文件信息
-     */
-    @GetMapping("/info")
-    public Result<String> getFileInfo(@RequestParam("filePath") String filePath) {
-        try {
-            String fileInfo = fileService.getFileInfo(filePath);
-            return Result.success("获取文件信息成功", fileInfo);
-        } catch (Exception e) {
-            System.out.println("获取文件信息失败: " + e.getMessage());
-            return Result.error("获取文件信息失败: " + e.getMessage());
-        }
-    }
-    
+
     /**
      * 下载文件
-     *
-     * @param filePath 文件路径
-     * @param response HTTP响应
+     * @param id 文件记录ID
+     * @param user 当前登录用户
+     * @return 文件流或错误响应
      */
-    @GetMapping("/download")
-    public void downloadFile(@RequestParam("filePath") String filePath, HttpServletResponse response) {
-        try {
-            // 获取文件名
-            String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
-            
-            // 设置响应头
-            response.setContentType("application/octet-stream");
-            response.setCharacterEncoding("UTF-8");
-            response.setHeader("Content-Disposition", "attachment; filename=" +
-                    URLEncoder.encode(fileName, StandardCharsets.UTF_8));
-            
-            // 使用输出流下载文件
-            OutputStream outputStream = response.getOutputStream();
-            boolean success = fileService.downloadFile(filePath, outputStream);
-            
-            if (!success) {
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                outputStream.write("文件不存在或下载失败".getBytes(StandardCharsets.UTF_8));
-            }
-            
-            outputStream.flush();
-        } catch (IOException e) {
-            System.out.println("文件下载失败: " + e.getMessage());
-            try {
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                response.getOutputStream().write(("文件下载失败: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
-            } catch (IOException ex) {
-                System.out.println("设置错误响应失败: " + ex.getMessage());
-            }
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        if (user == null) {
+            // 或者重定向到登录页
+            return ResponseEntity.status(401).build();
         }
-    }
-    
-    /**
-     * 生成临时访问URL
-     *
-     * @param filePath 文件路径
-     * @param expireTime 过期时间（毫秒）
-     * @return 临时URL
-     */
-    @GetMapping("/temp-url")
-    public Result<String> generateTempUrl(@RequestParam("filePath") String filePath, 
-                                 @RequestParam(value = "expireTime", defaultValue = "3600000") long expireTime) {
         try {
-            String tempUrl = fileService.generateTempUrl(filePath, expireTime);
-            return Result.success("临时URL生成成功", tempUrl);
-        } catch (Exception e) {
-            System.out.println("生成临时URL失败: " + e.getMessage());
-            return Result.error("生成临时URL失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 获取文件列表（目录结构）
-     *
-     * @param directory 请求的相对目录，默认为空（即根目录）
-     * @return 目录下的文件和子目录列表
-     */
-    @GetMapping("/file/manager/list")
-    public Result listDirectory(@RequestParam(value = "directory", defaultValue = "") String directory) {
-        System.out.println("Listing directory: '" + directory + "' relative to upload path: '" + uploadPath + "'");
-        try {
-            // -- 修复 Windows 路径问题 --
-            Path baseUploadPath;
-            // 检查 uploadPath 是否是绝对路径 (Windows or Unix-like)
-            if (Paths.get(uploadPath).isAbsolute()) {
-                baseUploadPath = Paths.get(uploadPath).normalize();
-            } else {
-                // 如果是相对路径，则相对于当前工作目录解析
-                baseUploadPath = Paths.get(System.getProperty("user.dir"), uploadPath).normalize();
+            FileRecord fileRecord = fileService.getFileRecordById(id);
+            if (fileRecord == null) {
+                return ResponseEntity.notFound().build();
             }
-            System.out.println("Resolved base upload path object: " + baseUploadPath);
 
-            // 确保基础上传目录存在
-            if (!Files.exists(baseUploadPath)) {
-                System.out.println("Base upload directory does not exist, attempting to create: " + baseUploadPath);
+            // --- 权限校验 --- 
+            // 1. 个人文件：仅限本人下载
+            if ("personal".equals(fileRecord.getContextType()) && !Objects.equals(fileRecord.getUserId(), user.getId())) {
+                log.warn("无权下载个人文件: fileId={}, ownerId={}, operatorId={}", id, fileRecord.getUserId(), user.getId());
+                return ResponseEntity.status(403).build();
+            }
+            // 2. 课程资料：需要校验学生是否选了该课 (或者教师是否是授课教师)
+            if ("course".equals(fileRecord.getContextType())) {
+                // TODO: 实现学生选课或教师授课的权限校验逻辑
+                // 简化处理：暂时允许所有登录用户下载课程资料 (需要修复)
+                log.warn("课程资料下载权限校验未实现: fileId={}, courseId={}", id, fileRecord.getContextId());
+                // boolean hasPermission = checkCoursePermission(user, fileRecord.getContextId());
+                // if (!hasPermission) { return ResponseEntity.status(403).build(); }
+            }
+            // --- 权限校验结束 --- 
+
+            Path filePath = Paths.get(fileRecord.getFilePath());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                // 尝试获取文件MIME类型，如果获取不到，使用通用类型
+                String contentType = null;
                 try {
-                    Files.createDirectories(baseUploadPath);
-                } catch (IOException ioException) {
-                    System.out.println("Failed to create base upload directory: " + baseUploadPath);
-                    return Result.error("基础上传目录不存在且无法创建");
+                    contentType = Files.probeContentType(filePath);
+                } catch (IOException e) {
+                    log.warn("无法获取文件类型: {}", filePath, e);
                 }
-            }
-            // -- 修复结束 --
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
+                }
 
-            // 解析请求的相对目录路径，并清理可能存在的路径遍历字符
-            String cleanDirectory = directory.replace("..", ""); // Basic sanitation
-            Path targetDirectoryPath = baseUploadPath.resolve(cleanDirectory).normalize();
-            System.out.println("Target directory path object: " + targetDirectoryPath);
-
-            // 安全检查：确保目标目录仍在基础上传路径之下
-            if (!targetDirectoryPath.startsWith(baseUploadPath)) {
-                System.out.println("Access denied: Attempt to access directory outside base upload path. Target: " + targetDirectoryPath);
-                return Result.error("无权访问该目录");
-            }
-
-            File targetDir = targetDirectoryPath.toFile();
-            System.out.println("Target directory file object: " + targetDir + ", Exists: " + targetDir.exists() + ", IsDirectory: " + targetDir.isDirectory());
-
-            if (!targetDir.exists() || !targetDir.isDirectory()) {
-                System.out.println("Directory not found or not a directory: " + targetDirectoryPath);
-                return Result.error("目录不存在或不是一个有效的目录");
-            }
-
-            // 获取文件和子目录列表
-            List<Map<String, Object>> fileList;
-            try (Stream<Path> stream = Files.list(targetDirectoryPath)) {
-                fileList = stream.map(path -> {
-                            File file = path.toFile();
-                            Map<String, Object> fileInfo = new HashMap<>();
-                            fileInfo.put("name", file.getName());
-                            // 生成相对于 baseUploadPath 的相对路径，并统一使用 / 作为分隔符
-                            String relativePath = baseUploadPath.relativize(path).toString().replace('\\', '/');
-                            fileInfo.put("path", relativePath);
-                            fileInfo.put("isDirectory", file.isDirectory());
-                            fileInfo.put("size", file.isDirectory() ? 0 : file.length());
-                            fileInfo.put("lastModified", file.lastModified());
-                            // 可以添加更多信息，如类型、权限等
-                            return fileInfo;
-                        })
-                        .collect(Collectors.toList());
-            }
-
-            System.out.println("Successfully listed " + fileList.size() + " items in directory: " + targetDirectoryPath);
-            // 返回当前目录的相对路径和文件列表
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("currentPath", baseUploadPath.relativize(targetDirectoryPath).toString().replace('\\', '/'));
-            responseData.put("files", fileList);
-
-            return Result.success("获取目录结构成功", responseData);
-
-        } catch (IOException e) {
-            System.out.println("获取目录 '" + directory + "' 结构失败: IO Error");
-            // 提供更具体的错误信息给前端可能没有必要，但日志需要详细
-            return Result.error("获取目录结构失败，请检查服务器日志");
-        } catch (InvalidPathException e) {
-            System.out.println("获取目录 '" + directory + "' 结构失败: Invalid Path Syntax for '" + uploadPath + "' or '" + directory + "'");
-            return Result.error("获取目录结构失败: 路径包含非法字符或格式错误");
-        } catch (Exception e) {
-            System.out.println("获取目录 '" + directory + "' 结构失败: Unexpected Error");
-            return Result.error("获取目录结构失败，请联系管理员");
-        }
-    }
-
-    /**
-     * 批量删除文件
-     *
-     * @param filePaths 文件相对路径列表 (相对于 uploadPath)
-     * @return 删除结果
-     */
-    @DeleteMapping("/manager/batch-delete")
-    public Result batchDeleteFiles(@RequestBody List<String> filePaths) {
-        if (filePaths == null || filePaths.isEmpty()) {
-            return Result.error("未选择任何文件");
-        }
-
-        List<String> successList = new ArrayList<>();
-        List<String> failList = new ArrayList<>();
-
-        for (String filePath : filePaths) {
-            boolean success = fileService.deleteFile(filePath);
-            if (success) {
-                successList.add(filePath);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        // 设置 Content-Disposition 让浏览器提示下载，并使用原始文件名
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileRecord.getFilename() + "\"")
+                        .body(resource);
             } else {
-                failList.add(filePath);
+                log.error("无法读取文件或文件不存在: fileId={}, path={}", id, filePath);
+                return ResponseEntity.notFound().build();
             }
-        }
-
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("success", successList);
-        resultMap.put("fail", failList);
-
-        if (failList.isEmpty()) {
-            return Result.success("所有文件删除成功", resultMap);
-        } else if (successList.isEmpty()) {
-            return Result.error("所有文件删除失败");
-        } else {
-            return Result.success("部分文件删除成功", resultMap);
-        }
-    }
-
-    /**
-     * 获取文件统计信息
-     *
-     * @return 统计信息
-     */
-    @GetMapping("/file/manager/stats")
-    public Result getFileStats() {
-        try {
-            File baseDir = new File(uploadPath);
-            if (!baseDir.exists()) {
-                return Result.error("文件存储目录不存在");
-            }
-
-            // 统计不同类型文件数量和大小
-            Map<String, Long> countByType = new HashMap<>();
-            Map<String, Long> sizeByType = new HashMap<>();
-            long totalSize = 0;
-            int totalCount = 0;
-
-            // 递归统计所有文件
-            List<File> allFiles = getAllFiles(baseDir);
-            for (File file : allFiles) {
-                if (file.isFile()) {
-                    totalCount++;
-                    totalSize += file.length();
-
-                    String extension = getFileExtension(file.getName()).toLowerCase();
-                    if (extension.startsWith(".")) {
-                        extension = extension.substring(1);
-                    }
-
-                    // 更新计数
-                    countByType.put(extension, countByType.getOrDefault(extension, 0L) + 1);
-                    sizeByType.put(extension, sizeByType.getOrDefault(extension, 0L) + file.length());
-                }
-            }
-
-            // 格式化结果
-            List<Map<String, Object>> typeStats = new ArrayList<>();
-            for (String type : countByType.keySet()) {
-                Map<String, Object> stat = new HashMap<>();
-                stat.put("type", type);
-                stat.put("count", countByType.get(type));
-                stat.put("size", sizeByType.get(type));
-                typeStats.add(stat);
-            }
-
-            // 按文件数量降序排序
-            typeStats.sort((a, b) -> ((Long) b.get("count")).compareTo((Long) a.get("count")));
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("totalCount", totalCount);
-            result.put("totalSize", totalSize);
-            result.put("typeStats", typeStats);
-
-            return Result.success(result);
+        } catch (MalformedURLException e) {
+            log.error("文件路径格式错误: fileId={}", id, e);
+            return ResponseEntity.status(500).build();
         } catch (Exception e) {
-            System.out.println("获取文件统计信息失败: " + e.getMessage());
-            return Result.error("获取文件统计信息失败: " + e.getMessage());
+            log.error("下载文件时发生错误: fileId={}", id, e);
+            return ResponseEntity.status(500).build();
         }
     }
 
-    /**
-     * 获取指定目录下的所有文件（递归）
-     *
-     * @param directory 目录
-     * @return 文件列表
-     */
-    private List<File> getAllFiles(File directory) {
-        List<File> files = new ArrayList<>();
-        File[] fileList = directory.listFiles();
-
-        if (fileList != null) {
-            for (File file : fileList) {
-                if (file.isDirectory()) {
-                    files.addAll(getAllFiles(file));
-                } else {
-                    files.add(file);
-                }
-            }
-        }
-
-        return files;
-    }
-
-    /**
-     * 获取文件扩展名
-     *
-     * @param filename 文件名
-     * @return 扩展名
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null || filename.lastIndexOf(".") == -1) {
-            return "";
-        }
-        return filename.substring(filename.lastIndexOf(".")).toLowerCase();
-    }
+    // TODO: 实现课程资料下载权限校验方法
+    // private boolean checkCoursePermission(User user, Long courseId) { ... }
 } 

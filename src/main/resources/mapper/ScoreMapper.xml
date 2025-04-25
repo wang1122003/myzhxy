@@ -13,22 +13,22 @@
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <!-- 关联属性 -->
-        <association property="student" javaType="com.campus.entity.Student">
+        <association property="student" javaType="com.campus.entity.User">
             <id column="s_id" property="id"/>
-            <result column="student_no" property="studentNo"/>
-            <result column="class_name" property="className"/>
+            <result column="student_no" property="userNo"/>
+            <result column="class_name" property="clazz"/>
             <result column="major" property="major"/>
-            <result column="grade" property="grade"/>
-            <result column="enrollment_year" property="enrollmentYear"/>
+            <result column="student_grade" property="description"/>
+            <result column="enrollment_year" property="createTime"/>
         </association>
         <association property="course" javaType="com.campus.entity.Course">
             <id column="c_id" property="id"/>
-            <result column="course_code" property="courseCode"/>
-            <result column="course_name" property="name"/>
-            <result column="credits" property="credits"/>
-            <result column="hours" property="hours"/>
-            <result column="course_type" property="type"/>
-            <result column="department" property="department"/>
+            <result column="course_code" property="courseNo"/>
+            <result column="course_name" property="courseName"/>
+            <result column="credits" property="credit"/>
+            <result column="hours" property="introduction"/>
+            <result column="course_type" property="courseType"/>
+            <result column="department" property="status"/>
         </association>
     </resultMap>
 

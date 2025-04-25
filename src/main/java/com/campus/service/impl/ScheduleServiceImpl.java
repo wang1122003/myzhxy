@@ -1,26 +1,30 @@
 package com.campus.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ScheduleDao;
 import com.campus.dao.UserDao;
 import com.campus.entity.Schedule;
 import com.campus.entity.User;
-import com.campus.exception.CustomException;
+import com.campus.enums.UserType;
 import com.campus.service.ScheduleService;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-import java.sql.Time;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
-import java.util.Arrays;
 
 /**
  * 课表服务实现类
@@ -37,52 +41,73 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
 
     @Override
     public Schedule getScheduleById(Long id) {
-        return scheduleDao.findById(id);
+        return getById(id);
     }
 
     @Override
     public List<Schedule> getSchedulesByCourseId(Long courseId) {
-        return scheduleDao.findByCourseId(courseId);
+        if (courseId == null) return Collections.emptyList();
+        return list(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getCourseId, courseId));
     }
 
     @Override
     public List<Schedule> getSchedulesByTeacherId(Long teacherId) {
-        return scheduleDao.findByTeacherId(teacherId);
+        if (teacherId == null) return Collections.emptyList();
+        return list(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getTeacherId, teacherId));
     }
 
     @Override
     public List<Schedule> getSchedulesByClassroomId(Long classroomId) {
-        return scheduleDao.findByClassroomId(classroomId);
+        if (classroomId == null) return Collections.emptyList();
+        return list(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getClassroomId, classroomId));
     }
 
     @Override
-    public List<Schedule> getSchedulesByTeacherIdAndTerm(Long teacherId, String termInfo) {
-        return scheduleDao.findByTeacherIdAndTerm(teacherId, termInfo);
+    public List<Schedule> getSchedulesByTeacherIdAndTerm(Long teacherId, String termCode) {
+        if (teacherId == null || !StringUtils.hasText(termCode)) return Collections.emptyList();
+        return list(Wrappers.<Schedule>lambdaQuery()
+                .eq(Schedule::getTeacherId, teacherId)
+                .eq(Schedule::getTermInfo, termCode)
+                .orderByAsc(Schedule::getDayOfWeek, Schedule::getStartTime));
     }
 
     @Override
-    public List<Schedule> getSchedulesByClassroomIdAndTerm(Long classroomId, String termInfo) {
-        LambdaQueryWrapper<Schedule> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Schedule::getClassroomId, classroomId)
-                .eq(Schedule::getTermInfo, termInfo);
-        queryWrapper.orderByAsc(Schedule::getDayOfWeek).orderByAsc(Schedule::getStartTime);
-        return list(queryWrapper);
+    public List<Schedule> getSchedulesByClassroomIdAndTerm(Long classroomId, String termCode) {
+        if (classroomId == null || !StringUtils.hasText(termCode)) return Collections.emptyList();
+        return list(Wrappers.<Schedule>lambdaQuery()
+                .eq(Schedule::getClassroomId, classroomId)
+                .eq(Schedule::getTermInfo, termCode)
+                .orderByAsc(Schedule::getDayOfWeek, Schedule::getStartTime));
     }
 
     @Override
     @Transactional
     public boolean addSchedule(Schedule schedule) {
-        schedule.setStatus("Active");
-        schedule.setCreateTime(new Date());
-        schedule.setUpdateTime(new Date());
+        if (schedule == null) throw new IllegalArgumentException("排课信息不能为空");
+
+        if (checkTimeConflict(schedule)) {
+            throw new RuntimeException("排课冲突：教师或教室在该时间段已有安排");
+        }
+
+        schedule.setStatus(StringUtils.hasText(schedule.getStatus()) ? schedule.getStatus() : "Active");
+        Date now = new Date();
+        schedule.setCreateTime(now);
+        schedule.setUpdateTime(now);
         return save(schedule);
     }
 
     @Override
     @Transactional
     public boolean updateSchedule(Schedule schedule) {
+        if (schedule == null || schedule.getId() == null)
+            throw new IllegalArgumentException("更新排课信息时ID不能为空");
+
+        if (checkTimeConflict(schedule)) {
+            throw new RuntimeException("排课冲突：教师或教室在该时间段已有安排");
+        }
+
         schedule.setUpdateTime(new Date());
-        if (schedule.getStatus() == null) {
+        if (!StringUtils.hasText(schedule.getStatus())) {
             schedule.setStatus("Active");
         }
         return updateById(schedule);
@@ -91,62 +116,101 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
     @Override
     @Transactional
     public boolean deleteSchedule(Long id) {
+        if (id == null) return false;
         return removeById(id);
     }
 
     @Override
     @Transactional
     public boolean batchDeleteSchedules(Long[] ids) {
+        if (ids == null || ids.length == 0) return true;
         return removeByIds(Arrays.asList(ids));
     }
 
     @Override
     public boolean checkTimeConflict(Schedule schedule) {
-        return isTimeConflict(schedule);
+        if (schedule == null || schedule.getClassroomId() == null || schedule.getTeacherId() == null ||
+                !StringUtils.hasText(schedule.getDayOfWeek()) || schedule.getStartTime() == null || schedule.getEndTime() == null ||
+                !StringUtils.hasText(schedule.getTermInfo()) || schedule.getStartWeek() == null || schedule.getEndWeek() == null) {
+            log.error("检查时间冲突时，必要参数不足: {}", schedule);
+            throw new IllegalArgumentException("检查时间冲突时，缺少必要参数（教室、教师、星期、时间、学期、周次）");
+        }
+
+        Integer classroomConflicts = scheduleDao.countClassroomTimeConflict(
+                schedule.getClassroomId(),
+                schedule.getDayOfWeek(),
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                schedule.getTermInfo(),
+                schedule.getStartWeek(),
+                schedule.getEndWeek(),
+                schedule.getId()
+        );
+        if (classroomConflicts != null && classroomConflicts > 0) {
+            log.info("教室时间冲突: classroomId={}, schedule={}", schedule.getClassroomId(), schedule);
+            return true;
+        }
+
+        Integer teacherConflicts = scheduleDao.countTeacherTimeConflict(
+                schedule.getTeacherId(),
+                schedule.getDayOfWeek(),
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                schedule.getTermInfo(),
+                schedule.getStartWeek(),
+                schedule.getEndWeek(),
+                schedule.getId()
+        );
+        if (teacherConflicts != null && teacherConflicts > 0) {
+            log.info("教师时间冲突: teacherId={}, schedule={}", schedule.getTeacherId(), schedule);
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public List<Schedule> getSchedulesByPage(int pageNum, int pageSize) {
-        int offset = (pageNum - 1) * pageSize;
-        Page<Schedule> page = new Page<>(pageNum, pageSize);
-        return page(page).getRecords();
-    }
-    
-    @Override
     public int getScheduleCount() {
-        return scheduleDao.getCount();
+        return (int) this.count();
     }
-    
+
     @Override
     public int getTeacherScheduleCount(Long teacherId) {
-        return scheduleDao.getTeacherScheduleCount(teacherId);
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("teacher_id", teacherId);
+        return (int) this.count(queryWrapper);
     }
-    
+
     @Override
     public int getClassroomScheduleCount(Long classroomId) {
-        return scheduleDao.getClassroomScheduleCount(classroomId);
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("classroom_id", classroomId);
+        return (int) this.count(queryWrapper);
     }
-    
+
     @Override
     public int getCourseScheduleCount(Long courseId) {
-        return scheduleDao.getCourseScheduleCount(courseId);
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("course_id", courseId);
+        return (int) this.count(queryWrapper);
     }
-    
+
     @Override
-    public int getTermScheduleCount(String termInfo) {
-        return scheduleDao.getTermScheduleCount(termInfo);
+    public int getTermScheduleCount(String termCode) {
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("term_info", termCode);
+        return (int) this.count(queryWrapper);
     }
-    
+
     @Override
-    public List<Map<String, Object>> getTeacherScheduleTimeDistribution(Long teacherId, String termInfo) {
-        return scheduleDao.getTeacherScheduleTimeDistribution(teacherId, termInfo);
+    public List<Map<String, Object>> getTeacherScheduleTimeDistribution(Long teacherId, String termCode) {
+        return scheduleDao.getTeacherScheduleTimeDistribution(teacherId, termCode);
     }
-    
+
     @Override
-    public List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId, String termInfo) {
-        return scheduleDao.getClassroomScheduleTimeDistribution(classroomId, termInfo);
+    public List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId, String termCode) {
+        return scheduleDao.getClassroomScheduleTimeDistribution(classroomId, termCode);
     }
-    
+
     @Override
     @Transactional
     public boolean updateScheduleStatus(Long id, String status) {
@@ -158,25 +222,25 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
     }
 
     @Override
-    public Map<String, Object> getClassroomWeeklySchedule(Long classroomId, String termInfo) {
-        List<Schedule> schedules = getSchedulesByClassroomIdAndTerm(classroomId, termInfo);
-        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, classroomId, termInfo, "classroom");
+    public Map<String, Object> getClassroomWeeklySchedule(Long classroomId, String termCode) {
+        List<Schedule> schedules = getSchedulesByClassroomIdAndTerm(classroomId, termCode);
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, classroomId, termCode, "classroom");
         return weeklySchedule;
     }
-    
+
     @Override
-    public Map<String, Object> getTeacherWeeklySchedule(Long teacherId, String termInfo) {
-        List<Schedule> schedules = getSchedulesByTeacherIdAndTerm(teacherId, termInfo);
-        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, teacherId, termInfo, "teacher");
+    public Map<String, Object> getTeacherWeeklySchedule(Long teacherId, String termCode) {
+        List<Schedule> schedules = getSchedulesByTeacherIdAndTerm(teacherId, termCode);
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, teacherId, termCode, "teacher");
         return weeklySchedule;
     }
-    
+
     @Override
-    public Map<String, Object> getStudentWeeklySchedule(Long studentId, String termInfo) {
+    public Map<String, Object> getStudentWeeklySchedule(Long studentId, String termCode) {
         User student = userDao.selectById(studentId);
 
         Long classId = null;
-        if (student != null && "Student".equals(student.getUserType())) {
+        if (student != null && UserType.STUDENT.equals(student.getUserType())) {
             classId = getClassIdForStudent(studentId);
         }
 
@@ -184,34 +248,38 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             log.warn("无法找到学生或学生未分配班级, studentId: {}", studentId);
             Map<String, Object> emptySchedule = new HashMap<>();
             emptySchedule.put("schedules", new ArrayList<>());
-            emptySchedule.put("termInfo", termInfo);
+            emptySchedule.put("termInfo", termCode);
             emptySchedule.put("type", "student");
             emptySchedule.put("studentId", studentId);
             emptySchedule.put("classId", null);
             return emptySchedule;
         }
 
-        List<Schedule> schedules = getSchedulesByUserIdAndTerm(studentId, termInfo);
-        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, studentId, termInfo, "student");
+        List<Schedule> schedules = getSchedulesByUserIdAndTerm(studentId, termCode);
+        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, studentId, termCode, "student");
         weeklySchedule.put("classId", classId);
         return weeklySchedule;
     }
-    
+
     @Override
     public Map<String, Object> checkScheduleConflict(Schedule schedule) {
         Map<String, Object> result = new HashMap<>();
         result.put("conflict", isTimeConflict(schedule));
         return result;
     }
-    
+
     @Override
     public List<Schedule> getSchedulesByUserId(Long userId) {
-        return scheduleDao.findByUserId(userId);
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        log.warn("getSchedulesByUserId needs verification based on actual DB schema relationship.");
+        return new ArrayList<>();
     }
 
     @Override
     public boolean isCourseScheduled(Long courseId) {
-        return scheduleDao.countByCourseId(courseId) > 0;
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("course_id", courseId);
+        return this.count(queryWrapper) > 0;
     }
 
     @Override
@@ -227,14 +295,26 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         Page<Schedule> pageRequest = new Page<>(page, size);
         QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
 
-        if (params.containsKey("termInfo") && params.get("termInfo") != null) {
-            queryWrapper.eq("term_info", params.get("termInfo"));
+        if (params.containsKey("termCode") && params.get("termCode") != null && !params.get("termCode").toString().isEmpty()) {
+            queryWrapper.eq("term_info", params.get("termCode").toString());
+        } else if (params.containsKey("termInfo") && params.get("termInfo") != null && !params.get("termInfo").toString().isEmpty()) {
+            queryWrapper.eq("term_info", params.get("termInfo").toString());
         }
         if (params.containsKey("courseId") && params.get("courseId") != null) {
-            queryWrapper.eq("course_id", params.get("courseId"));
+            try {
+                Long courseId = Long.parseLong(params.get("courseId").toString());
+                queryWrapper.eq("course_id", courseId);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid courseId format in params: {}", params.get("courseId"));
+            }
         }
         if (params.containsKey("teacherId") && params.get("teacherId") != null) {
-            queryWrapper.eq("teacher_id", params.get("teacherId"));
+            try {
+                Long teacherId = Long.parseLong(params.get("teacherId").toString());
+                queryWrapper.eq("teacher_id", teacherId);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid teacherId format in params: {}", params.get("teacherId"));
+            }
         }
 
         return this.page(pageRequest, queryWrapper);
@@ -245,20 +325,13 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         return false;
     }
 
-    private Time convertToSqlTime(Date date) {
-        if (date == null) return null;
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        return new Time(date.getTime());
-    }
-
-    private Map<String, Object> buildWeeklyScheduleMap(List<Schedule> schedules, Long primaryId, String termInfo, String type) {
+    private Map<String, Object> buildWeeklyScheduleMap(List<Schedule> schedules, Long primaryId, String termCode, String type) {
         Map<String, Object> weeklySchedule = new HashMap<>();
         weeklySchedule.put("type", type);
         weeklySchedule.put("id", primaryId);
-        weeklySchedule.put("termInfo", termInfo);
+        weeklySchedule.put("termInfo", termCode);
 
-        Map<String, List<Schedule>> scheduleByDay = new HashMap<>();
+        Map<String, List<Map<String, Object>>> scheduleByDay = new HashMap<>();
         for (int i = 1; i <= 7; i++) {
             scheduleByDay.put(String.valueOf(i), new ArrayList<>());
         }
@@ -269,44 +342,108 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             String dayValue = schedule.getDayOfWeek();
             String dayKey = null;
             if (dayValue != null) {
-                dayKey = convertDayNameToNumberString(dayValue); 
+                dayKey = convertDayNameToNumberString(dayValue);
             }
 
             if (dayKey != null && scheduleByDay.containsKey(dayKey)) {
-                scheduleByDay.get(dayKey).add(schedule);
+                Map<String, Object> scheduleDetails = convertScheduleToMap(schedule, timeFormat);
+                scheduleByDay.get(dayKey).add(scheduleDetails);
             }
         }
 
-        for (List<Schedule> dailySchedules : scheduleByDay.values()) {
-            dailySchedules.sort(Comparator.comparing(Schedule::getStartTime));
+        for (List<Map<String, Object>> dailySchedules : scheduleByDay.values()) {
+            dailySchedules.sort(Comparator.comparing(map -> (LocalTime) map.getOrDefault("startTimeObj", LocalTime.MIN)));
         }
 
         weeklySchedule.put("schedule", scheduleByDay);
         return weeklySchedule;
     }
 
+    private Map<String, Object> convertScheduleToMap(Schedule schedule, SimpleDateFormat timeFormat) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", schedule.getId());
+        map.put("courseId", schedule.getCourseId());
+        map.put("teacherId", schedule.getTeacherId());
+        map.put("classroomId", schedule.getClassroomId());
+        map.put("dayOfWeek", schedule.getDayOfWeek());
+        map.put("startTime", schedule.getStartTime() != null ? timeFormat.format(schedule.getStartTime()) : null);
+        map.put("endTime", schedule.getEndTime() != null ? timeFormat.format(schedule.getEndTime()) : null);
+        map.put("startWeek", schedule.getStartWeek());
+        map.put("endWeek", schedule.getEndWeek());
+        map.put("termInfo", schedule.getTermInfo());
+        map.put("status", schedule.getStatus());
+
+        try {
+            if (schedule.getStartTime() != null) {
+                Instant startInstant = schedule.getStartTime().toInstant();
+                map.put("startTimeObj", LocalTime.ofInstant(startInstant, ZoneId.systemDefault()));
+            }
+            if (schedule.getEndTime() != null) {
+                Instant endInstant = schedule.getEndTime().toInstant();
+                map.put("endTimeObj", LocalTime.ofInstant(endInstant, ZoneId.systemDefault()));
+            }
+        } catch (Exception e) {
+            log.error("Error parsing time for schedule {}", schedule.getId(), e);
+            map.putIfAbsent("startTimeObj", LocalTime.MIN);
+            map.putIfAbsent("endTimeObj", LocalTime.MAX);
+        }
+
+        return map;
+    }
+
     private String convertDayNameToNumberString(String dayValue) {
         if (dayValue == null) return null;
         String lowerDay = dayValue.trim().toLowerCase();
         switch (lowerDay) {
-            case "monday": case "1": return "1";
-            case "tuesday": case "2": return "2";
-            case "wednesday": case "3": return "3";
-            case "thursday": case "4": return "4";
-            case "friday": case "5": return "5";
-            case "saturday": case "6": return "6";
-            case "sunday": case "7": return "7";
+            case "monday":
+            case "周一":
+            case "1":
+                return "1";
+            case "tuesday":
+            case "周二":
+            case "2":
+                return "2";
+            case "wednesday":
+            case "周三":
+            case "3":
+                return "3";
+            case "thursday":
+            case "周四":
+            case "4":
+                return "4";
+            case "friday":
+            case "周五":
+            case "5":
+                return "5";
+            case "saturday":
+            case "周六":
+            case "6":
+                return "6";
+            case "sunday":
+            case "周日":
+            case "7":
+                return "7";
             default:
+                log.warn("Unknown day of week value: {}", dayValue);
                 return null;
         }
     }
 
     private Long getClassIdForStudent(Long studentId) {
-        return 1L;
+        log.warn("getClassIdForStudent is not fully implemented.");
+        return null;
     }
 
-    private List<Schedule> getSchedulesByUserIdAndTerm(Long userId, String termInfo) {
-        log.warn("getSchedulesByUserIdAndTerm is not fully implemented.");
+    private List<Schedule> getSchedulesByUserIdAndTerm(Long userId, String termCode) {
+        log.warn("getSchedulesByUserIdAndTerm is not fully implemented. userId: {}, termCode: {}", userId, termCode);
         return new ArrayList<>();
+    }
+
+    @Override
+    public boolean isAnyClassroomScheduled(List<Long> classroomIds) {
+        if (classroomIds == null || classroomIds.isEmpty()) {
+            return false;
+        }
+        return count(Wrappers.<Schedule>lambdaQuery().in(Schedule::getClassroomId, classroomIds)) > 0;
     }
 }

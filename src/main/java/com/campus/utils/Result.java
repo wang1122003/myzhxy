@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 /**
  * 统一返回结果类
+ *
  * @param <T> 数据类型
  */
 public class Result<T> implements Serializable {
@@ -13,17 +14,17 @@ public class Result<T> implements Serializable {
      * 是否成功
      */
     private boolean success;
-    
+
     /**
      * 状态码
      */
     private Integer code;
-    
+
     /**
      * 消息
      */
     private String message;
-    
+
     /**
      * 数据
      */
@@ -47,6 +48,7 @@ public class Result<T> implements Serializable {
 
     /**
      * 成功返回结果
+     *
      * @return 成功结果
      */
     public static <T> Result<T> success() {
@@ -55,6 +57,7 @@ public class Result<T> implements Serializable {
 
     /**
      * 成功返回结果
+     *
      * @param message 提示信息
      * @return 成功结果
      */
@@ -64,6 +67,7 @@ public class Result<T> implements Serializable {
 
     /**
      * 成功返回结果
+     *
      * @param data 数据
      * @return 成功结果
      */
@@ -73,8 +77,9 @@ public class Result<T> implements Serializable {
 
     /**
      * 成功返回结果
+     *
      * @param message 提示信息
-     * @param data 数据
+     * @param data    数据
      * @return 成功结果
      */
     public static <T> Result<T> success(String message, T data) {
@@ -83,6 +88,7 @@ public class Result<T> implements Serializable {
 
     /**
      * 失败返回结果
+     *
      * @return 失败结果
      */
     public static <T> Result<T> error() {
@@ -91,6 +97,7 @@ public class Result<T> implements Serializable {
 
     /**
      * 失败返回结果
+     *
      * @param message 提示信息
      * @return 失败结果
      */
@@ -100,34 +107,38 @@ public class Result<T> implements Serializable {
 
     /**
      * 失败返回结果
-     * @param code 状态码
+     *
+     * @param code    状态码
      * @param message 提示信息
      * @return 失败结果
      */
     public static <T> Result<T> error(Integer code, String message) {
         return new Result<T>(false, code, message);
     }
-    
+
     /**
      * 参数验证失败返回结果
+     *
      * @param message 提示信息
      * @return 参数验证失败结果
      */
     public static <T> Result<T> validateFailed(String message) {
         return new Result<T>(false, 400, message);
     }
-    
+
     /**
      * 未登录返回结果
+     *
      * @param message 提示信息
      * @return 未登录结果
      */
     public static <T> Result<T> unauthorized(String message) {
         return new Result<T>(false, 401, message);
     }
-    
+
     /**
      * 未授权返回结果
+     *
      * @param message 提示信息
      * @return 未授权结果
      */

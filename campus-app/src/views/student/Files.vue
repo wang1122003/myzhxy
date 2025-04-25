@@ -4,16 +4,12 @@
       <h2>文件管理</h2>
       <div class="actions">
         <el-upload
-            :action="uploadUrl"
-            :auto-upload="true"
-            :before-upload="beforeUpload"
-            :headers="headers"
-            :limit="1"
-            :on-error="handleUploadError"
-            :on-success="handleUploadSuccess"
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            :show-file-list="false"
             class="upload-button"
         >
-          <el-button type="primary">
+          <el-button :loading="uploadLoading" type="primary">
             <el-icon>
               <Upload/>
             </el-icon>
@@ -260,8 +256,7 @@ import {
   ElUpload
 } from 'element-plus';
 import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
-import {FILE_API} from '@/api/api-endpoints';
-import {deleteFile, downloadFile, getFileList, getResourceList} from '@/api/file';
+import {deleteFile, downloadFile, getMyFiles, getResourceList, uploadFile as apiUploadFile} from '@/api/file';
 import {getStudentCourses} from '@/api/course';
 import {useRouter} from 'vue-router';
 
@@ -289,20 +284,14 @@ const courses = ref([])
 const courseFilter = ref(null)
 const loadingCourses = ref(false)
 
-// 从 request.js 或环境变量获取 baseURL
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/campus/api';
-// 在 baseURL 基础上拼接上传路径
-const uploadUrl = `${baseURL}${FILE_API.UPLOAD_FILE || '/file/upload'}`;
-
-const headers = computed(() => ({
-  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-}));
+// 上传相关状态
+const uploadLoading = ref(false);
 
 // 获取文件列表
 const fetchFiles = async () => {
   loading.value = true
   try {
-    const res = await getFileList({
+    const res = await getMyFiles({
       page: currentPage.value,
       size: pageSize.value,
       type: 'personal'
@@ -349,6 +338,14 @@ const fetchCourses = async () => {
   }
 }
 
+// Triggered when a file is selected in el-upload
+const handleFileChange = (uploadFile) => {
+  if (uploadFile.status === 'ready') {
+    handleUpload(uploadFile.raw);
+  }
+};
+
+// Handles the actual file upload using our API function
 // 文件上传成功处理
 const handleUploadSuccess = (response) => {
   if (response.code === 200) {

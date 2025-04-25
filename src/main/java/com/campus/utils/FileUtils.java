@@ -4,11 +4,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+import java.text.Normalizer;
 
 /**
  * 文件工具类，用于处理文件上传、下载等操作 (无状态)
@@ -34,7 +36,7 @@ public class FileUtils {
     /**
      * 上传文件
      *
-     * @param file 文件
+     * @param file            文件
      * @param targetDirectory 目标目录 (应为完整绝对路径)
      * @return 保存后的文件的完整绝对路径
      */
@@ -54,8 +56,12 @@ public class FileUtils {
         if (originalFilename == null) {
             throw new IllegalArgumentException("原始文件名不能为空");
         }
-        String extension = getFileExtension(originalFilename);
-        String uniqueName = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
+        String extension = "";
+        int i = originalFilename.lastIndexOf('.');
+        if (i > 0) {
+            extension = originalFilename.substring(i + 1);
+        }
+        String uniqueName = UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension);
 
         Path filePath = directoryPath.resolve(uniqueName);
 
@@ -171,8 +177,8 @@ public class FileUtils {
 
         String fileType = getFileType(fileName).toLowerCase();
         return fileType.equals("jpg") || fileType.equals("jpeg") ||
-               fileType.equals("png") || fileType.equals("gif") ||
-               fileType.equals("bmp") || fileType.equals("webp");
+                fileType.equals("png") || fileType.equals("gif") ||
+                fileType.equals("bmp") || fileType.equals("webp");
     }
 
     /**
@@ -187,13 +193,14 @@ public class FileUtils {
         }
         String fileType = getFileType(fileName).toLowerCase();
         return fileType.equals("doc") || fileType.equals("docx") ||
-               fileType.equals("pdf") || fileType.equals("txt") ||
-               fileType.equals("xls") || fileType.equals("xlsx") ||
-               fileType.equals("ppt") || fileType.equals("pptx");
+                fileType.equals("pdf") || fileType.equals("txt") ||
+                fileType.equals("xls") || fileType.equals("xlsx") ||
+                fileType.equals("ppt") || fileType.equals("pptx");
     }
 
     /**
      * 从完整路径获取文件名
+     *
      * @param filePath 完整文件路径
      * @return 文件名，如果路径无效则返回null
      */
@@ -211,6 +218,7 @@ public class FileUtils {
 
     /**
      * 安全地读取文件输入流
+     *
      * @param filePath 完整文件路径
      * @return InputStream, 如果文件不存在或不可读则返回null
      * @throws IOException 如果发生IO错误
@@ -229,8 +237,9 @@ public class FileUtils {
 
     /**
      * 将输入流写入文件
+     *
      * @param inputStream 输入流 (此方法会关闭输入流)
-     * @param filePath 目标文件的完整路径
+     * @param filePath    目标文件的完整路径
      * @return 是否写入成功
      */
     public static boolean writeToFile(InputStream inputStream, String filePath) {
@@ -267,5 +276,29 @@ public class FileUtils {
             return "";
         }
         return filename.substring(filename.lastIndexOf('.') + 1);
+    }
+
+    /**
+     * 生成安全的文件名，移除或替换特殊字符
+     */
+    public static String sanitizeFileName(String originalFilename) {
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            return "";
+        }
+
+        int lastDotIndex = originalFilename.lastIndexOf(".");
+        String extensionPart = lastDotIndex != -1 ? originalFilename.substring(lastDotIndex) : "";
+        String fileNameOnly = lastDotIndex != -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
+
+        String normalized = Normalizer.normalize(fileNameOnly, Normalizer.Form.NFD);
+        String sanitized = normalized.replaceAll("[^\\p{ASCII}]", "")
+                .replaceAll("[^a-zA-Z0-9.\\-_]", "_");
+
+        int maxLen = 200;
+        if (sanitized.length() > maxLen) {
+            sanitized = sanitized.substring(0, maxLen);
+        }
+
+        return sanitized + extensionPart;
     }
 } 

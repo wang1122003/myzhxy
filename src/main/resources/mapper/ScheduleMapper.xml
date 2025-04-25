@@ -92,8 +92,8 @@
         AND start_week &lt;= #{endWeek} AND end_week >= #{startWeek}
             AND (
         (start_time
-        <
-        #{endTime} AND end_time > #{startTime})
+        &lt;
+        #{endTime} AND end_time &gt; #{startTime})
             )
         <if test="id != null">
             AND id != #{id}
@@ -111,8 +111,8 @@
         AND start_week &lt;= #{endWeek} AND end_week >= #{startWeek}
             AND (
         (start_time
-        <
-        #{endTime} AND end_time > #{startTime})
+        &lt;
+        #{endTime} AND end_time &gt; #{startTime})
             )
         <if test="id != null">
             AND id != #{id}
@@ -278,6 +278,9 @@
     LEFT JOIN course c ON s.course_id = c.id
     LEFT JOIN user u ON s.teacher_id = u.id
     LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        WHERE s.id = #{id}
+    </select>
+
     <!-- 查找给定课程ID列表中已被排课的课程ID (匹配 DAO 接口中的 findScheduledCourseIds) -->
     <select id="findScheduledCourseIds" resultType="java.lang.Long">
         SELECT DISTINCT course_id

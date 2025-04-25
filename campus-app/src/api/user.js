@@ -1,28 +1,157 @@
-import request from '../utils/request'
-import {USER_API} from './api-endpoints'
+import request from '@/utils/request'
 
-// 用户登录
-export function login(data) {
-    return request({
-        url: USER_API.LOGIN,
-        method: 'post',
-        data: data
-    })
+// 统一存放API端点，代替原来的 api-endpoints.js 中的 USER_API 部分
+const API = {
+    LOGIN: '/users/login',
+    REGISTER: '/users/register',
+    GET_CURRENT_USER: '/users/check-session',
+    UPDATE_CURRENT_USER: '/users/profile',
+    CHANGE_PASSWORD: '/users/change-password',
+    GET_USER_LIST: '/users',
+    ADD_USER: '/users/register',
+    UPDATE_USER: (id) => `/users/${id}`,
+    DELETE_USER: (id) => `/users/${id}`,
+    RESET_PASSWORD: (id) => `/users/${id}/reset-password`,
+    CHECK_PERMISSION: '/users/check-permission', // Assuming backend endpoint exists based on api-endpoints.js
+    GET_PERMISSIONS: '/users/permissions', // Assuming backend endpoint exists based on api-endpoints.js
+    LOGOUT: '/users/logout',
+    UPLOAD_AVATAR: '/users/upload-avatar'
 }
 
-// 用户注册
-export function register(data) {
+// 登录
+export function login(data) {
     return request({
-        url: USER_API.REGISTER,
+        url: API.LOGIN,
         method: 'post',
         data
     })
 }
 
+// 注册
+export function register(data) {
+    return request({
+        url: API.REGISTER,
+        method: 'post',
+        data
+    })
+}
+
+// 获取当前用户信息
+export function getCurrentUser() {
+    return request({
+        url: API.GET_CURRENT_USER,
+        method: 'get'
+    })
+}
+
+// 更新当前用户信息 (Profile)
+export function updateCurrentUser(data) {
+    return request({
+        url: API.UPDATE_CURRENT_USER,
+        method: 'put', // Assuming PUT for profile update
+        data
+    })
+}
+
+// 修改密码
+export function changePassword(data) {
+    return request({
+        url: API.CHANGE_PASSWORD,
+        method: 'post',
+        params: data
+    })
+}
+
+// 获取用户列表 (分页或全量，根据后端实现调整)
+export function getUserList(params) {
+    return request({
+        url: API.GET_USER_LIST,
+        method: 'get',
+        params // Pass query params like page, size, filters
+    })
+}
+
+// 添加用户
+export function addUser(data) {
+    return request({
+        url: API.ADD_USER,
+        method: 'post',
+        data
+    })
+}
+
+// 更新用户信息
+export function updateUser(id, data) {
+    return request({
+        url: API.UPDATE_USER(id),
+        method: 'put',
+        data
+    })
+}
+
+// 删除用户
+export function deleteUser(id) {
+    return request({
+        url: API.DELETE_USER(id),
+        method: 'delete'
+    })
+}
+
+// 重置用户密码
+export function resetPassword(id, data) {
+    return request({
+        url: API.RESET_PASSWORD(id),
+        method: 'post',
+        data
+    })
+}
+
+// 检查权限 (根据后端实现调整)
+export function checkPermission(operation) {
+    return request({
+        url: API.CHECK_PERMISSION,
+        method: 'get', // Or POST?
+        params: {operation}
+    });
+}
+
+// 获取权限列表 (根据后端实现调整)
+export function getPermissions() {
+    return request({
+        url: API.GET_PERMISSIONS,
+        method: 'get'
+    });
+}
+
+// 登出
+export function logout() {
+    return request({
+        url: API.LOGOUT,
+        method: 'post' // Assuming POST for logout
+    })
+}
+
+// --- 以下为示例，根据原有 user.js 或 controller 实际情况增删改 ---
+
+// export function fetchUserRoles(userId) {
+//   return request({
+//     url: `/users/${userId}/roles`, // Example: Endpoint might not exist in api-endpoints.js yet
+//     method: 'get'
+//   })
+// }
+
+// export function updateUserStatus(userId, status) {
+//   return request({
+//     url: `/users/${userId}/status`, // Example: Endpoint might not exist in api-endpoints.js yet
+//     method: 'put',
+//     data: { status }
+//   })
+// }
+
 // 更新学生个人信息 (使用通用接口)
 export function updateStudentProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -31,7 +160,7 @@ export function updateStudentProfile(data) {
 // 更新教师个人信息 (使用通用接口)
 export function updateTeacherProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
@@ -40,12 +169,11 @@ export function updateTeacherProfile(data) {
 // 更新管理员个人信息 (使用通用接口)
 export function updateAdminProfile(data) {
     return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
+        url: API.UPDATE_CURRENT_USER, // 改为使用通用更新接口
         method: 'put',
         data
     })
 }
-
 
 // --- 管理员操作 --- 
 
@@ -54,106 +182,9 @@ export function getTeacherSelectList(params) {
     // Assuming getUserList can filter by role or a new endpoint exists
     // e.g., GET /api/users/teachers
     return request({
-        url: USER_API.GET_USER_LIST, // Reusing GET_USER_LIST
+        url: API.GET_USER_LIST, // Reusing GET_USER_LIST
         method: 'get',
         params: {...params, role: 'teacher'} // Add role filter if supported
-    })
-}
-
-// 更新用户信息 (管理员用)
-export function updateUser(id, data) {
-    return request({
-        url: USER_API.UPDATE_USER.replace(':id', id),
-        method: 'put',
-        data
-    })
-}
-
-// 修改密码 (个人用)
-export function changePassword(data) {
-    return request({
-        url: USER_API.CHANGE_PASSWORD,
-        method: 'put',
-        data
-    })
-}
-
-// 获取用户列表 (管理员用)
-export function getUserList(params) {
-    return request({
-        url: USER_API.GET_USER_LIST,
-        method: 'get',
-        params
-    })
-}
-
-// 添加用户 (管理员用)
-export function addUser(data) {
-    return request({
-        url: USER_API.ADD_USER,
-        method: 'post',
-        data
-    })
-}
-
-// 删除用户 (管理员用)
-export function deleteUser(id) {
-    return request({
-        url: USER_API.DELETE_USER.replace(':id', id),
-        method: 'delete'
-    })
-}
-
-// 重置用户密码 (管理员用)
-export function resetPassword(id) {
-    return request({
-        url: USER_API.RESET_PASSWORD.replace(':id', id), // 使用刚添加的 RESET_PASSWORD
-        method: 'put'
-    })
-}
-
-// --- 权限和登出 --- 
-
-// 检查权限 (可能已废弃，使用后端 Filter)
-export function checkPermission(permission) {
-    return request({
-        url: USER_API.CHECK_PERMISSION,
-        method: 'get',
-        params: {permission}
-    })
-}
-
-// 获取权限列表 (可能已废弃)
-export function getPermissions() {
-    return request({
-        url: USER_API.GET_PERMISSIONS,
-        method: 'get'
-    })
-}
-
-// 登出
-export function logout() {
-    return request({
-        url: USER_API.LOGOUT,
-        method: 'post'
-    })
-}
-
-// 更新用户个人信息 (通用 profile 接口) - 改用 updateCurrentUser
-export function updateCurrentUserProfile(data) { // 重命名以避免与通用更新混淆，或直接调用通用更新
-    return request({
-        url: USER_API.UPDATE_CURRENT_USER, // 使用通用更新接口
-        method: 'put',
-        data
-    })
-}
-
-// 更新用户状态 (管理员用)
-export function updateUserStatus(id, status) {
-    return request({
-        url: `${USER_API.UPDATE_USER.replace(':id', id)}/status`,
-        method: 'put',
-        data: {status}
     })
 }
 
@@ -198,40 +229,13 @@ export function updateUserProfile(data) {
 }
 
 /**
- * 上传用户头像
- * @param {FormData} formData 包含头像文件的表单数据
- * @returns {Promise} 请求响应promise
- */
-export function uploadAvatar(formData) {
-    return request({
-        url: '/users/upload-avatar',
-        method: 'post',
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
-}
-
-/**
- * 获取当前登录用户信息
- * @returns {Promise} 请求响应promise
- */
-export function getCurrentUserProfile() {
-    return request({
-        url: USER_API.GET_CURRENT_USER,
-        method: 'get'
-    })
-}
-
-/**
  * 获取用户个人资料 (可能用于管理员视角)
  * @param {number} userId 用户ID
  * @returns {Promise} 请求响应promise
  */
 export function getUserProfileById(userId) {
     return request({
-        url: USER_API.UPDATE_USER.replace(':id', userId), // 使用管理员更新接口的路径，但方法是GET
+        url: API.UPDATE_USER(userId), // 使用管理员更新接口的路径，但方法是GET
         method: 'get'
     })
 }
@@ -243,7 +247,7 @@ export function getUserProfileById(userId) {
  */
 export function getUserById(userId) {
     return request({
-        url: USER_API.UPDATE_USER.replace(':id', userId), // 使用管理员更新接口的路径，但方法是GET
+        url: API.UPDATE_USER(userId), // 使用管理员更新接口的路径，但方法是GET
         method: 'get'
     })
 }
@@ -267,7 +271,7 @@ export function getUserByUsername(username) {
  */
 export function getTeacherList(params) {
     return request({
-        url: USER_API.GET_USER_LIST, // 使用通用用户列表接口
+        url: API.GET_USER_LIST, // 使用通用用户列表接口
         method: 'get',
         params: { ...params, userType: 'Teacher' } // 通过参数指定用户类型
     })

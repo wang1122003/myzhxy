@@ -66,7 +66,7 @@
         </div>
         <div v-if="fileStats.typeStats && fileStats.typeStats.length > 0" class="stats-types">
           <h4>文件类型分布:</h4>
-          <BaseTable :table-data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
+          <el-table :table-data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
             <el-table-column label="类型" prop="type" width="100"></el-table-column>
             <el-table-column label="数量" prop="count" width="80"></el-table-column>
             <el-table-column label="大小" prop="size">
@@ -74,7 +74,7 @@
                 {{ formatFileSize(scope.row.size) }}
               </template>
             </el-table-column>
-          </BaseTable>
+          </el-table>
         </div>
       </div>
     </el-card>
@@ -148,7 +148,7 @@
             </el-button>
           </template>
         </el-table-column>
-        </BaseTable>
+      </el-table>
     </div>
 
     <!-- 当目录为空时显示 -->
@@ -161,7 +161,6 @@
 
 <script>
 import {batchDeleteFiles, downloadFileByPath, getFileStats, listDirectory} from '@/api/file';
-import {FILE_API} from '@/api/api-endpoints';
 
 export default {
   name: 'FileManager',
@@ -174,7 +173,7 @@ export default {
       selectedFiles: [],
       showStats: true,
       fileStats: null,
-      uploadUrl: process.env.VUE_APP_BASE_API + FILE_API.UPLOAD_DOCUMENT
+      uploadUrl: (process.env.VUE_APP_BASE_API || '') + '/file/upload/document'
     }
   },
   created() {

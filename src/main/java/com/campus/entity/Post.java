@@ -24,31 +24,31 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class Post implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 帖子ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-    
+
     /**
      * 帖子标题
      */
     @TableField("title")
     private String title;
-    
+
     /**
      * 帖子内容
      */
     @TableField("content")
     private String content;
-    
+
     /**
      * 作者ID
      */
     @TableField("user_id")
     private Long userId;
-    
+
     /**
      * 板块类型 / 分类
      * 例如：学习交流、校园生活、招聘信息等
@@ -57,31 +57,24 @@ public class Post implements Serializable {
     private String category;
 
     /**
-     * 板块颜色代码 (非数据库字段)
-     * 用于前端显示
-     */
-    @TableField(exist = false)
-    private String forumColor;
-
-    /**
      * 标签列表
      * 使用JSON数组形式存储
      */
     @TableField(value = "tags", typeHandler = JacksonTypeHandler.class)
     private List<String> tags;
-    
+
     /**
      * 浏览次数
      */
     @TableField("view_count")
     private Integer viewCount;
-    
+
     /**
      * 评论次数
      */
     @TableField("comment_count")
     private Integer commentCount;
-    
+
     /**
      * 点赞次数
      */
@@ -100,32 +93,32 @@ public class Post implements Serializable {
      */
     @TableField(exist = false)
     private List<Map<String, Object>> comments;
-    
+
     /**
      * 是否置顶：0-否，1-是
      */
     @TableField("is_top")
     private Integer isTop;
-    
+
     /**
      * 是否精华：0-否，1-是
      */
     @TableField("is_essence")
     private Integer isEssence;
-    
+
     /**
      * 状态：1-正常，0-禁用，2-隐藏
      */
     @TableField("status")
     private Integer status;
-    
+
     /**
      * 创建时间
      */
     @TableField("creation_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date creationTime;
-    
+
     /**
      * 更新时间
      */
@@ -144,10 +137,4 @@ public class Post implements Serializable {
      */
     @TableField(exist = false)
     private String authorAvatar;
-
-    /**
-     * 论坛版块名称（非数据库字段）
-     */
-    @TableField(exist = false)
-    private String forumTypeName;
 }

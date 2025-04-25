@@ -168,7 +168,7 @@
 import {onMounted, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {Upload} from '@element-plus/icons-vue';
-import {getCurrentUserProfile, updateUserProfile} from '@/api/user';
+import {getCurrentUser, updateUserProfile} from '@/api/user';
 import {logout, setUserInfo, userAvatar, userInfo} from '@/utils/auth';
 import {useRouter} from 'vue-router';
 
@@ -205,7 +205,7 @@ export default {
     const fetchProfile = async () => {
       loading.value = true;
       try {
-        const response = await getCurrentUserProfile(); 
+        const response = await getCurrentUser(); 
         if (response.code === 200 && response.data) {
           profile.value = {...response.data};
           setUserInfo(response.data);

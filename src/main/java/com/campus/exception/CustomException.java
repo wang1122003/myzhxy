@@ -37,8 +37,9 @@ public class CustomException extends RuntimeException {
 
     /**
      * 带原因的构造函数
+     *
      * @param message 异常消息
-     * @param cause 原因
+     * @param cause   原因
      */
     public CustomException(String message, Throwable cause) {
         super(message, cause);
@@ -59,6 +60,7 @@ public class CustomException extends RuntimeException {
 
     /**
      * 获取错误码
+     *
      * @return 错误码
      */
     public Integer getCode() {

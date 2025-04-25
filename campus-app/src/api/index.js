@@ -1,5 +1,17 @@
 import axios from 'axios'
 import {ElMessage} from 'element-plus'
+import * as userApi from './user';
+import * as courseApi from './course';
+import * as scheduleApi from './schedule';
+import * as classroomApi from './classroom';
+import * as activityApi from './activity';
+import * as noticeApi from './notice';
+import * as forumApi from './post'; // Assuming post.js now contains all forum APIs
+import * as fileApi from './file';
+import * as commonApi from './common';
+import * as gradeApi from './grade';
+import * as termApi from './term';
+import * as courseSelectionApi from './courseSelection';
 
 // 创建axios实例
 const instance = axios.create({
@@ -49,4 +61,36 @@ instance.interceptors.response.use(
     }
 )
 
-export default instance 
+// Re-export all APIs
+export {
+    userApi,
+    courseApi,
+    scheduleApi,
+    classroomApi,
+    activityApi,
+    noticeApi,
+    forumApi, // Exported as forumApi, although file is post.js
+    fileApi,
+    commonApi,
+    gradeApi,
+    termApi,
+    courseSelectionApi
+};
+
+// Optionally, export a single object containing all APIs
+const api = {
+    user: userApi,
+    course: courseApi,
+    schedule: scheduleApi,
+    classroom: classroomApi,
+    activity: activityApi,
+    notice: noticeApi,
+    forum: forumApi, // Consistent naming
+    file: fileApi,
+    common: commonApi,
+    grade: gradeApi,
+    term: termApi,
+    courseSelection: courseSelectionApi
+};
+
+export default api; 

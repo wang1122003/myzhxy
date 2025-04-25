@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import { FORUM_API } from './api-endpoints'
+import {FORUM_API} from './api-endpoints'
 
 // 获取帖子列表
 export function getPosts(params) {

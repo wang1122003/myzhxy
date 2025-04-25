@@ -20,12 +20,6 @@ public interface ScheduleService extends IService<Schedule> {
     Schedule getScheduleById(Long id);
     
     /**
-     * 查询所有课程表
-     * @return 课程表列表
-     */
-    List<Schedule> getAllSchedules();
-    
-    /**
      * 根据教师ID查询课程表
      * @param teacherId 教师ID
      * @return 课程表列表
@@ -45,13 +39,6 @@ public interface ScheduleService extends IService<Schedule> {
      * @return 课程表列表
      */
     List<Schedule> getSchedulesByClassroomId(Long classroomId);
-    
-    /**
-     * 根据学期ID查询课程表
-     * @param termId 学期ID
-     * @return 课程表列表
-     */
-    List<Schedule> getSchedulesByTermId(Long termId);
     
     /**
      * 添加课程表
@@ -82,11 +69,11 @@ public interface ScheduleService extends IService<Schedule> {
     boolean batchDeleteSchedules(Long[] ids);
     
     /**
-     * 根据学生ID查询课程表
-     * @param studentId 学生ID
-     * @return 课程表列表
+     * 根据学生用户ID查询课程表
+     * @param userId 学生用户ID
+     * @return 课表列表
      */
-    List<Schedule> getSchedulesByStudentId(Long studentId);
+    List<Schedule> getSchedulesByUserId(Long userId);
     
     /**
      * 检查课程表时间冲突
@@ -98,57 +85,42 @@ public interface ScheduleService extends IService<Schedule> {
     /**
      * 获取教师的周课表
      * @param teacherId 教师ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 周课表数据
      */
-    Map<String, Object> getTeacherWeeklySchedule(Long teacherId, Long termId);
+    Map<String, Object> getTeacherWeeklySchedule(Long teacherId, String termInfo);
     
     /**
      * 获取学生的周课表
      * @param studentId 学生ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 周课表数据
      */
-    Map<String, Object> getStudentWeeklySchedule(Long studentId, Long termId);
+    Map<String, Object> getStudentWeeklySchedule(Long studentId, String termInfo);
     
     /**
      * 获取教室的周课表
      * @param classroomId 教室ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 周课表数据
      */
-    Map<String, Object> getClassroomWeeklySchedule(Long classroomId, Long termId);
-    
-    /**
-     * 根据班级ID查询课表
-     * @param classId 班级ID
-     * @return 课表列表
-     */
-    List<Schedule> getSchedulesByClassId(Long classId);
+    Map<String, Object> getClassroomWeeklySchedule(Long classroomId, String termInfo);
     
     /**
      * 根据教师ID和学期ID查询课表
      * @param teacherId 教师ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 课表列表
      */
-    List<Schedule> getSchedulesByTeacherIdAndTermId(Long teacherId, Long termId);
-    
-    /**
-     * 根据班级ID和学期ID查询课表
-     * @param classId 班级ID
-     * @param termId 学期ID
-     * @return 课表列表
-     */
-    List<Schedule> getSchedulesByClassIdAndTermId(Long classId, Long termId);
+    List<Schedule> getSchedulesByTeacherIdAndTerm(Long teacherId, String termInfo);
     
     /**
      * 根据教室ID和学期ID查询课表
      * @param classroomId 教室ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 课表列表
      */
-    List<Schedule> getSchedulesByClassroomIdAndTermId(Long classroomId, Long termId);
+    List<Schedule> getSchedulesByClassroomIdAndTerm(Long classroomId, String termInfo);
     
     /**
      * 检查时间冲突
@@ -179,13 +151,6 @@ public interface ScheduleService extends IService<Schedule> {
     int getTeacherScheduleCount(Long teacherId);
     
     /**
-     * 获取班级课程数统计
-     * @param classId 班级ID
-     * @return 课程数
-     */
-    int getClassScheduleCount(Long classId);
-    
-    /**
      * 获取教室课程数统计
      * @param classroomId 教室ID
      * @return 课程数
@@ -201,31 +166,25 @@ public interface ScheduleService extends IService<Schedule> {
     
     /**
      * 获取学期课程数统计
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 课程数
      */
-    int getTermScheduleCount(Long termId);
+    int getTermScheduleCount(String termInfo);
     
     /**
      * 获取教师课程时间分布统计
      * @param teacherId 教师ID
      * @return 时间分布统计
      */
-    List<Map<String, Object>> getTeacherScheduleTimeDistribution(Long teacherId);
-    
-    /**
-     * 获取班级课程时间分布统计
-     * @param classId 班级ID
-     * @return 时间分布统计
-     */
-    List<Map<String, Object>> getClassScheduleTimeDistribution(Long classId);
+    List<Map<String, Object>> getTeacherScheduleTimeDistribution(Long teacherId, String termInfo);
     
     /**
      * 获取教室课程时间分布统计
      * @param classroomId 教室ID
+     * @param termInfo 学期信息 (String)
      * @return 时间分布统计
      */
-    List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId);
+    List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId, String termInfo);
     
     /**
      * 检查课程是否已被排课
@@ -243,11 +202,14 @@ public interface ScheduleService extends IService<Schedule> {
      */
     List<Long> findScheduledCourseIds(List<Long> courseIds);
 
-    List<Schedule> getScheduleByClassIdAndTermId(Long classId, Long termId);
-
-    List<Schedule> getScheduleByTeacherIdAndTermId(Long teacherId, Long termId);
-
-    List<Schedule> getScheduleByCourseIdAndTermId(Long courseId, Long termId);
+    /**
+     * 更新课表状态
+     *
+     * @param id     课表ID
+     * @param status 状态 (String)
+     * @return 是否成功
+     */
+    boolean updateScheduleStatus(Long id, String status);
 
     /**
      * 分页查询课表 (支持筛选)

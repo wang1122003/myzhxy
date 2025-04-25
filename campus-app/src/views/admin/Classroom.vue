@@ -66,16 +66,15 @@
 
     <!-- 教室列表 -->
     <el-card class="classroom-list-card">
-      <BaseTable :table-data="classroomList"
+      <base-table
+          :table-data="classroomList"
           v-loading="loading"
-          :data="classroomList"
-          style="width: 100%"
-      >
-        <BaseTable -column :table-data="classroomList"
+          style="width: 100%">
+        <base-table-column
             label="教室编号/名称"
             prop="name"
-            min-width="180"
-        />
+            min-width="180"/>
+      </base-table>
         <BaseTable -column :table-data="classroomList"
             label="教学楼"
             prop="building"
@@ -252,8 +251,6 @@ import {
   ElOption,
   ElPagination,
   ElSelect,
-  ElTable,
-  ElTableColumn,
   ElTag
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
@@ -489,3 +486,8 @@ onMounted(() => {
   text-align: right;
 }
 </style>
+export default {
+name: 'AdminClassroom',
+// ... existing code ...
+}
+</script>

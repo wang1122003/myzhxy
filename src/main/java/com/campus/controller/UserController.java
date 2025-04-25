@@ -2,19 +2,18 @@ package com.campus.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.User;
+import com.campus.enums.UserStatus;
+import com.campus.enums.UserType;
 import com.campus.service.AuthService;
 import com.campus.service.UserService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,9 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-
-    // 显式声明 logger
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -62,19 +58,17 @@ public class UserController {
     
     /**
      * 检查会话有效性
-     * @param request HTTP请求
-     * @return 会话检查结果
      */
     @GetMapping("/check-session")
     public Result checkSession(HttpServletRequest request) {
-        User user = authService.getCurrentUserFromRequest(request); // 使用修正的方法名
+        User user = authService.getCurrentUserFromRequest(request);
         
         if (user != null) {
             Map<String, Object> data = new HashMap<>();
             data.put("userId", user.getId());
             data.put("username", user.getUsername());
-            data.put("userType", user.getUserType());
-            data.put("role", "Admin".equals(user.getUserType()) ? "ADMIN" : ("Student".equals(user.getUserType()) ? "STUDENT" : "TEACHER"));
+            // Return the string value ('Admin', 'Student', 'Teacher')
+            data.put("userType", user.getUserType() != null ? user.getUserType().getValue() : null);
             
             return Result.success("会话有效", data);
         } else {
@@ -111,35 +105,31 @@ public class UserController {
     }
     
     /**
-     * 获取用户权限
-     * @param request HTTP请求
-     * @return 用户权限信息
+     * 获取用户权限 
      */
     @GetMapping("/permissions")
     public Result getUserPermissions(HttpServletRequest request) {
-        // 从请求属性中获取用户信息
-        Long userId = (Long) request.getAttribute("userId");
-        Integer userType = (Integer) request.getAttribute("userType");
-        
-        if (userId != null && userType != null) {
+        User currentUser = authService.getCurrentUserFromRequest(request);
+        if (currentUser != null && currentUser.getUserType() != null) {
             Map<String, Boolean> permissions = new HashMap<>();
-            
-            // 根据用户类型设置不同权限
-            if (userType == 0) { // 管理员
+            UserType userType = currentUser.getUserType(); // Get Enum from User object
+
+            // Use Enum for comparison
+            if (userType == UserType.ADMIN) { 
                 permissions.put("user_manage", true);
                 permissions.put("course_manage", true);
                 permissions.put("classroom_manage", true);
                 permissions.put("activity_manage", true);
                 permissions.put("forum_manage", true);
                 permissions.put("system_config", true);
-            } else if (userType == 2) { // 教师
+            } else if (userType == UserType.TEACHER) { 
                 permissions.put("user_manage", false);
                 permissions.put("course_manage", true);
                 permissions.put("classroom_manage", false);
                 permissions.put("activity_manage", true);
                 permissions.put("forum_manage", false);
                 permissions.put("system_config", false);
-            } else { // 学生
+            } else { // Assuming STUDENT
                 permissions.put("user_manage", false);
                 permissions.put("course_manage", false);
                 permissions.put("classroom_manage", false);
@@ -156,33 +146,27 @@ public class UserController {
     
     /**
      * 检查特定操作权限
-     * @param request HTTP请求
-     * @param operation 操作名称
-     * @return 权限检查结果
      */
     @GetMapping("/check-permission")
     public Result checkPermission(
             HttpServletRequest request,
             @RequestParam String operation) {
-        // 从请求属性中获取用户类型
-        Integer userType = (Integer) request.getAttribute("userType");
-        
-        if (userType != null) {
+        User currentUser = authService.getCurrentUserFromRequest(request);
+
+        if (currentUser != null && currentUser.getUserType() != null) {
             boolean hasPermission = false;
-            
-            // 管理员拥有所有权限
-            if (userType == 0) {
+            UserType userType = currentUser.getUserType(); // Get Enum from User object
+
+            if (userType == UserType.ADMIN) {
                 hasPermission = true;
-            } else if (userType == 2) { // 教师
-                // 教师特定权限
+            } else if (userType == UserType.TEACHER) {
                 if ("course_edit".equals(operation) || 
                     "grade_manage".equals(operation) || 
                     "activity_create".equals(operation) ||
                     "post_create".equals(operation)) {
                     hasPermission = true;
                 }
-            } else { // 学生
-                // 学生特定权限
+            } else { // Assuming STUDENT
                 if ("course_select".equals(operation) || 
                     "activity_join".equals(operation) || 
                     "post_create".equals(operation)) {
@@ -209,10 +193,12 @@ public class UserController {
             return Result.error("用户名已存在");
         }
 
-        user.setStatus("Active"); 
+        if (user.getUserType() == null) {
+            return Result.error("用户类型不能为空");
+        }
+        user.setStatus(UserStatus.ACTIVE);
         user.setCreateTime(new Date());
         user.setUpdateTime(new Date());
-        // 密码直接使用 user 对象中的明文密码
         boolean success = userService.addUser(user);
         
         if (success) {
@@ -271,24 +257,18 @@ public class UserController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String userType) {
 
-        try {
-            IPage<User> userPage = userService.findUsersPage(page, size, keyword, userType);
-
-            // 清除密码等敏感信息
-            if (userPage.getRecords() != null) {
-                userPage.getRecords().forEach(u -> u.setPassword(null));
+        UserType userTypeEnum = null;
+        if (userType != null && !userType.isEmpty()) {
+            try {
+                userTypeEnum = UserType.fromValue(userType);
+            } catch (IllegalArgumentException e) {
+                return Result.error("无效的用户类型: " + userType);
             }
-
-            // 包装成前端需要的格式
-            Map<String, Object> data = new HashMap<>();
-            data.put("rows", userPage.getRecords());
-            data.put("total", userPage.getTotal());
-
-            return Result.success("获取用户列表成功", data);
-        } catch (Exception e) {
-            log.error("Error fetching user list", e);
-            return Result.error("获取用户列表失败: " + e.getMessage());
         }
+
+        IPage<User> userPage = userService.findUsersPage(page, size, keyword, userTypeEnum);
+        userPage.getRecords().forEach(u -> u.setPassword(null));
+        return Result.success("查询成功", userPage);
     }
 
     /**
@@ -299,20 +279,9 @@ public class UserController {
      */
     @PutMapping("/{id}")
     public Result updateUser(@PathVariable Long id, @RequestBody User user) {
-        // 确保不更新密码字段，密码修改有专门的接口
-        user.setPassword(null); 
         user.setId(id);
-        user.setUpdateTime(new Date());
-        
         boolean success = userService.updateUser(user);
-        
-        if (success) {
-            User updatedUser = userService.getUserById(id); // 获取更新后的信息
-            if (updatedUser != null) updatedUser.setPassword(null);
-            return Result.success("更新成功", updatedUser);
-        } else {
-            return Result.error("更新失败");
-        }
+        return success ? Result.success("更新成功") : Result.error("更新失败");
     }
 
     /**
@@ -322,13 +291,15 @@ public class UserController {
      * @return 更新结果
      */
     @PutMapping("/{id}/status")
-    public Result updateUserStatus(@PathVariable Long id, @RequestParam String status) { // 前端传的是字符串 'Active'/'Inactive'
-        boolean success = userService.updateUserStatus(id, status);
-        if (success) {
-            return Result.success("用户状态更新成功");
-        } else {
-            return Result.error("用户状态更新失败");
+    public Result updateUserStatus(@PathVariable Long id, @RequestParam String status) {
+        UserStatus statusEnum;
+        try {
+            statusEnum = UserStatus.fromValue(status);
+        } catch (IllegalArgumentException e) {
+            return Result.error("无效的状态值: " + status);
         }
+        boolean success = userService.updateUserStatus(id, statusEnum);
+        return success ? Result.success("状态更新成功") : Result.error("状态更新失败");
     }
     
     /**
@@ -403,23 +374,15 @@ public class UserController {
             return Result.error("未授权的操作");
         }
 
-        // 验证是否在更新自己的资料
-        // if (!currentUserId.equals(user.getId())) { // 如果请求体中也包含id
-        //     return Result.error("只能修改自己的资料");
-        // }
-
-        // 设置要更新的用户ID，防止意外更新他人资料
         user.setId(currentUserId);
-
-        // 不允许通过此接口修改密码、用户名、用户类型或状态
         user.setPassword(null);
         user.setUsername(null);
         user.setUserType(null);
         user.setStatus(null);
-        user.setCreateTime(null); // 不应修改创建时间
-        user.setUpdateTime(new Date()); // 更新修改时间
+        user.setCreateTime(null);
+        user.setUpdateTime(new Date());
 
-        boolean success = userService.updateUserProfile(user); // 可能需要一个只更新允许字段的方法
+        boolean success = userService.updateUserProfile(user);
 
         if (success) {
             User updatedUser = userService.getUserById(currentUserId); // 获取更新后的信息

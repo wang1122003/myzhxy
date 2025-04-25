@@ -3,33 +3,40 @@
 <mapper namespace="com.campus.dao.ScheduleDao">
     <!-- 结果映射 -->
     <resultMap id="BaseResultMap" type="com.campus.entity.Schedule">
-        <id column="id" property="id" jdbcType="INTEGER"/>
-        <result column="course_id" property="courseId" jdbcType="INTEGER"/>
-        <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
-        <result column="teacher_id" property="teacherId" jdbcType="INTEGER"/>
-        <result column="teacher_name" property="teacherName" jdbcType="VARCHAR"/>
-        <result column="classroom_id" property="classroomId" jdbcType="INTEGER"/>
-        <result column="classroom_name" property="classroomName" jdbcType="VARCHAR"/>
-        <result column="week_day" property="weekDay" jdbcType="INTEGER"/>
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="course_id" property="courseId" jdbcType="BIGINT"/>
+        <result column="term_info" property="termInfo" jdbcType="VARCHAR"/>
+        <result column="teacher_id" property="teacherId" jdbcType="BIGINT"/>
+        <result column="classroom_id" property="classroomId" jdbcType="BIGINT"/>
+        <result column="day_of_week" property="dayOfWeek" jdbcType="VARCHAR"/>
         <result column="start_time" property="startTime" jdbcType="TIME"/>
         <result column="end_time" property="endTime" jdbcType="TIME"/>
         <result column="start_week" property="startWeek" jdbcType="INTEGER"/>
         <result column="end_week" property="endWeek" jdbcType="INTEGER"/>
-        <result column="term_id" property="termId" jdbcType="BIGINT"/>
-        <result column="term_name" property="termName" jdbcType="VARCHAR"/>
-        <result column="class_id" property="classId" jdbcType="BIGINT"/>
-        <result column="class_name" property="className" jdbcType="VARCHAR"/>
-        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="week_parity" property="weekParity" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
+        <result column="teacher_name" property="teacherName" jdbcType="VARCHAR"/>
+        <result column="classroom_name" property="classroomName" jdbcType="VARCHAR"/>
+        <result column="building" property="classroomBuilding" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        s.id, s.course_id, c.course_name as course_name, s.teacher_id, u.real_name as teacher_name,
-        s.classroom_id, cr.name as classroom_name, s.week_day, s.start_time, s.end_time,
-        s.start_week, s.end_week, s.term_id, tm.term_name as term_name, s.class_id, cl.name as class_name,
+        s.id, s.course_id, s.term_info, s.teacher_id, s.classroom_id, s.day_of_week,
+        s.start_time, s.end_time, s.start_week, s.end_week, s.week_parity,
         s.status, s.create_time, s.update_time
+    </sql>
+
+    <!-- 关联查询结果列 -->
+    <sql id="Columns_With_Details">
+        <include refid="Base_Column_List"/>,
+        c.course_name as course_name,
+        u.real_name as teacher_name,
+        cr.name as classroom_name,
+        cr.building as building
     </sql>
 
     <!-- 查询所有课程表 -->
@@ -48,14 +55,12 @@
     <!-- 分页查询课程表 -->
     <select id="findByPage" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>
+        <include refid="Columns_With_Details"/>
         FROM schedule s
         LEFT JOIN course c ON s.course_id = c.id
         LEFT JOIN user u ON s.teacher_id = u.id
         LEFT JOIN classroom cr ON s.classroom_id = cr.id
-        LEFT JOIN term tm ON s.term_id = tm.id
-        LEFT JOIN clazz cl ON s.class_id = cl.id
-        ORDER BY s.term_id DESC, s.week_day, s.start_time
+        ORDER BY s.term_info DESC, s.day_of_week, s.start_time
         limit #{offset}, #{limit}
     </select>
 
@@ -67,16 +72,14 @@
     <!-- 根据时间段查询课程表 -->
     <select id="findByTimeSlot" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>
+        <include refid="Columns_With_Details"/>
         FROM schedule s
         LEFT JOIN course c ON s.course_id = c.id
         LEFT JOIN user u ON s.teacher_id = u.id
         LEFT JOIN classroom cr ON s.classroom_id = cr.id
-        LEFT JOIN term tm ON s.term_id = tm.id
-        LEFT JOIN clazz cl ON s.class_id = cl.id
-        WHERE s.week_day = #{weekDay}
-        AND s.start_time = #{timeSlot}
-        ORDER BY s.term_id DESC
+        WHERE s.day_of_week = #{dayOfWeek}
+        AND s.start_time = #{startTime} AND s.end_time = #{endTime}
+        ORDER BY s.term_info DESC
     </select>
 
     <!-- 检查教师时间冲突 -->
@@ -84,26 +87,36 @@
         SELECT EXISTS (
             SELECT 1 FROM schedule
             WHERE teacher_id = #{teacherId}
-            AND week_day = #{weekDay}
+        AND day_of_week = #{dayOfWeek}
+        AND term_info = #{termInfo}
+        AND start_week &lt;= #{endWeek} AND end_week >= #{startWeek}
             AND (
-                (start_time &lt;= #{startTime} AND end_time &gt;= #{startTime})
-                OR (start_time &lt;= #{endTime} AND end_time &gt;= #{endTime})
-                OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+        (start_time
+        <
+        #{endTime} AND end_time > #{startTime})
             )
+        <if test="id != null">
+            AND id != #{id}
+        </if>
         )
     </select>
 
-    <!-- 检查班级时间冲突 -->
-    <select id="checkClassTimeConflict" resultType="java.lang.Boolean">
+    <!-- 检查教室时间冲突 -->
+    <select id="checkClassroomTimeConflict" resultType="java.lang.Boolean">
         SELECT EXISTS (
             SELECT 1 FROM schedule
-            WHERE class_id = #{classId}
-            AND week_day = #{weekDay}
+        WHERE classroom_id = #{classroomId}
+        AND day_of_week = #{dayOfWeek}
+        AND term_info = #{termInfo}
+        AND start_week &lt;= #{endWeek} AND end_week >= #{startWeek}
             AND (
-                (start_time &lt;= #{startTime} AND end_time &gt;= #{startTime})
-                OR (start_time &lt;= #{endTime} AND end_time &gt;= #{endTime})
-                OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+        (start_time
+        <
+        #{endTime} AND end_time > #{startTime})
             )
+        <if test="id != null">
+            AND id != #{id}
+        </if>
         )
     </select>
 
@@ -111,12 +124,6 @@
     <select id="getTeacherScheduleCount" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM schedule
         WHERE teacher_id = #{teacherId}
-    </select>
-
-    <!-- 获取班级课程数统计 -->
-    <select id="getClassScheduleCount" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM schedule
-        WHERE class_id = #{classId}
     </select>
 
     <!-- 获取教室课程数统计 -->
@@ -134,51 +141,41 @@
     <!-- 获取学期课程数统计 -->
     <select id="getTermScheduleCount" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM schedule
-        WHERE term_id = #{termId}
+        WHERE term_info = #{termInfo}
     </select>
 
     <!-- 获取教师课程时间分布统计 -->
     <select id="getTeacherScheduleTimeDistribution" resultType="java.util.Map">
-        SELECT 
-            week_day,
+        SELECT s.day_of_week,
             COUNT(*) as schedule_count,
-            GROUP_CONCAT(DISTINCT course_name) as courses
-        FROM schedule
-        WHERE teacher_id = #{teacherId}
-        GROUP BY week_day
-        ORDER BY week_day
-    </select>
-
-    <!-- 获取班级课程时间分布统计 -->
-    <select id="getClassScheduleTimeDistribution" resultType="java.util.Map">
-        SELECT 
-            week_day,
-            COUNT(*) as schedule_count,
-            GROUP_CONCAT(DISTINCT course_name) as courses
-        FROM schedule
-        WHERE class_id = #{classId}
-        GROUP BY week_day
-        ORDER BY week_day
+               GROUP_CONCAT(DISTINCT c.course_name) as courses
+        FROM schedule s
+                 JOIN course c on s.course_id = c.id
+        WHERE s.teacher_id = #{teacherId}
+          AND s.term_info = #{termInfo}
+        GROUP BY s.day_of_week
+        ORDER BY s.day_of_week
     </select>
 
     <!-- 获取教室课程时间分布统计 -->
     <select id="getClassroomScheduleTimeDistribution" resultType="java.util.Map">
-        SELECT 
-            week_day,
+        SELECT s.day_of_week,
             COUNT(*) as schedule_count,
-            GROUP_CONCAT(DISTINCT course_name) as courses
-        FROM schedule
-        WHERE classroom_id = #{classroomId}
-        GROUP BY week_day
-        ORDER BY week_day
+               GROUP_CONCAT(DISTINCT c.course_name) as courses
+        FROM schedule s
+                 JOIN course c on s.course_id = c.id
+        WHERE s.classroom_id = #{classroomId}
+          AND s.term_info = #{termInfo}
+        GROUP BY s.day_of_week
+        ORDER BY s.day_of_week
     </select>
 
     <!-- 更新课程表状态 -->
     <update id="updateStatus">
         UPDATE schedule
-        SET status = #{status},
+        SET status = #{status, jdbcType=TINYINT},
             update_time = NOW()
-        WHERE id = #{id}
+        WHERE id = #{id, jdbcType=BIGINT}
     </update>
 
     <!-- 根据教室ID统计课表数量 -->
@@ -191,14 +188,13 @@
     <!-- 根据教师ID和学期查询课表 -->
     <select id="findByTeacherIdAndTerm" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>
+        <include refid="Columns_With_Details"/>
         FROM schedule s
         LEFT JOIN course c ON s.course_id = c.id
         LEFT JOIN user u ON s.teacher_id = u.id
         LEFT JOIN classroom cr ON s.classroom_id = cr.id
-        LEFT JOIN term tm ON s.term_id = tm.id
-        LEFT JOIN clazz cl ON s.class_id = cl.id
-        WHERE s.teacher_id = #{teacherId} AND s.term_id = #{termId}
+        WHERE s.teacher_id = #{teacherId} AND s.term_info = #{termInfo}
+        ORDER BY s.day_of_week, s.start_time
     </select>
 
     <!-- 根据课程ID统计课表数量 -->
@@ -218,20 +214,70 @@
         </foreach>
     </select>
 
-    <!-- 根据学生ID查询其所有课表安排 -->
-    <select id="findByStudentId" resultType="com.campus.entity.Schedule">
-        SELECT s.*
+    <!-- 根据学生用户ID查询课程表 -->
+    <select id="findByUserId" resultType="com.campus.entity.Schedule">
+        SELECT s.*,
+               c.course_name as courseName,
+               u.real_name   as teacherName,
+               cr.name       as classroomName,
+               cr.building   as classroomBuilding
         FROM schedule s
-                 JOIN course_selection cs ON s.course_id = cs.course_id
-        WHERE cs.student_id = (
-            -- 假设 studentId 参数是 user 表的 ID, 需要通过 student 表关联
-            SELECT st.id
-            FROM student st
-            WHERE st.user_id = #{studentId})
-        -- 可以添加排序，例如按星期、开始时间
-        ORDER BY s.week_day ASC, s.start_time ASC
+                 JOIN course_selection cs ON s.course_id = cs.course_id AND s.term_info = cs.term_info
+                 LEFT JOIN course c ON s.course_id = c.id
+                 LEFT JOIN user u ON s.teacher_id = u.id
+                 LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        WHERE cs.user_id = #{userId}
+          AND cs.status = 1
+          AND s.status = 1
+        ORDER BY s.day_of_week, s.start_time
     </select>
 
+    <!-- 添加排课 -->
+    <insert id="insert" parameterType="com.campus.entity.Schedule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO schedule (course_id, term_info, teacher_id, classroom_id, day_of_week, start_time, end_time,
+                              start_week, end_week, week_parity, status, create_time, update_time)
+        VALUES (#{courseId,jdbcType=BIGINT}, #{termInfo,jdbcType=VARCHAR}, #{teacherId,jdbcType=BIGINT},
+                #{classroomId,jdbcType=BIGINT}, #{dayOfWeek,jdbcType=VARCHAR},
+                #{startTime,jdbcType=TIME}, #{endTime,jdbcType=TIME}, #{startWeek,jdbcType=INTEGER},
+                #{endWeek,jdbcType=INTEGER}, #{weekParity,jdbcType=TINYINT},
+                #{status,jdbcType=TINYINT}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新排课 -->
+    <update id="update" parameterType="com.campus.entity.Schedule">
+        UPDATE schedule
+        <set>
+            <if test="courseId != null">course_id = #{courseId,jdbcType=BIGINT},</if>
+            <if test="termInfo != null">term_info = #{termInfo,jdbcType=VARCHAR},</if>
+            <if test="teacherId != null">teacher_id = #{teacherId,jdbcType=BIGINT},</if>
+            <if test="classroomId != null">classroom_id = #{classroomId,jdbcType=BIGINT},</if>
+            <if test="dayOfWeek != null">day_of_week = #{dayOfWeek,jdbcType=VARCHAR},</if>
+            <if test="startTime != null">start_time = #{startTime,jdbcType=TIME},</if>
+            <if test="endTime != null">end_time = #{endTime,jdbcType=TIME},</if>
+            <if test="startWeek != null">start_week = #{startWeek,jdbcType=INTEGER},</if>
+            <if test="endWeek != null">end_week = #{endWeek,jdbcType=INTEGER},</if>
+            <if test="weekParity != null">week_parity = #{weekParity,jdbcType=TINYINT},</if>
+            <if test="status != null">status = #{status,jdbcType=TINYINT},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 删除排课 -->
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE
+        FROM schedule
+        WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <!-- 根据ID查询排课 -->
+    <select id="findById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Columns_With_Details"/>
+    FROM schedule s
+    LEFT JOIN course c ON s.course_id = c.id
+    LEFT JOIN user u ON s.teacher_id = u.id
+    LEFT JOIN classroom cr ON s.classroom_id = cr.id
     <!-- 查找给定课程ID列表中已被排课的课程ID (匹配 DAO 接口中的 findScheduledCourseIds) -->
     <select id="findScheduledCourseIds" resultType="java.lang.Long">
         SELECT DISTINCT course_id

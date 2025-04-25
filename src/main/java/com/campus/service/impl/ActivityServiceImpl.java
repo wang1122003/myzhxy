@@ -5,16 +5,15 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ActivityDao;
-import com.campus.dao.ActivityParticipantDao;
-import com.campus.dao.ActivityRegistrationDao;
 import com.campus.dao.UserDao;
 import com.campus.entity.Activity;
-import com.campus.entity.ActivityParticipant;
-import com.campus.entity.ActivityRegistration;
 import com.campus.entity.User;
 import com.campus.service.ActivityService;
-import com.campus.vo.ActivityRegistrationVO;
-import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,20 +28,17 @@ import java.util.stream.Collectors;
  * 包括活动的增删改查、状态管理等功能
  */
 @Service
-@Slf4j
 public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> implements ActivityService {
+
+    private static final Logger log = LoggerFactory.getLogger(ActivityServiceImpl.class);
 
     @Autowired
     private ActivityDao activityDao;
 
     @Autowired
-    private ActivityParticipantDao activityParticipantDao;
-
-    @Autowired(required = false)
-    private ActivityRegistrationDao activityRegistrationDao;
-
-    @Autowired
     private UserDao userDao;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     /**
      * 根据ID查询活动
@@ -51,7 +47,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
      */
     @Override
     public Activity getActivityById(Long id) {
-        return activityDao.findById(id) != null ? activityDao.findById(id) : getById(id);
+        return activityDao.findById(id);
     }
     
     /**
@@ -61,55 +57,27 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
      */
     @Override
     public List<Activity> getAllActivities() {
-        try {
-            List<Activity> activities = activityDao.findAll();
-            if (activities != null && !activities.isEmpty()) {
-                return activities;
-            }
-        } catch (Exception e) {
-            // 记录日志或处理异常
-        }
-        
-        // 如果自定义方法失败，则使用MyBatis-Plus的方法
-        LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.orderByDesc(Activity::getStartTime);
-        return list(queryWrapper);
+        return activityDao.findAll();
     }
     
     /**
      * 根据活动类型查询活动
-     * @param activityType 活动类型
+     * @param type 活动类型 (String)
      * @return 活动列表
      */
     @Override
-    public List<Activity> getActivitiesByType(Integer activityType) {
-        try {
-            return activityDao.findByActivityType(activityType);
-        } catch (Exception e) {
-            // 记录日志或处理异常
-            LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Activity::getType, String.valueOf(activityType))
-                       .orderByDesc(Activity::getStartTime);
-            return list(queryWrapper);
-        }
+    public List<Activity> getActivitiesByType(String type) {
+        return activityDao.findByType(type);
     }
     
     /**
      * 根据状态查询活动
-     * @param status 状态
+     * @param status 状态 (String)
      * @return 活动列表
      */
     @Override
-    public List<Activity> getActivitiesByStatus(Integer status) {
-        try {
-            return activityDao.findByStatus(status);
-        } catch (Exception e) {
-            // 记录日志或处理异常
-            LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Activity::getStatus, status)
-                       .orderByDesc(Activity::getStartTime);
-            return list(queryWrapper);
-        }
+    public List<Activity> getActivitiesByStatus(String status) {
+        return activityDao.findByStatus(status);
     }
     
     /**
@@ -122,7 +90,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
         try {
             return activityDao.findOngoing();
         } catch (Exception e) {
-            // 记录日志或处理异常
+            // 异常处理
             Date now = new Date();
             LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.le(Activity::getStartTime, now)
@@ -142,7 +110,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
         try {
             return activityDao.findUpcoming(days);
         } catch (Exception e) {
-            // 记录日志或处理异常
+            // 异常处理
             Date now = new Date();
             // 计算指定天数后的日期
             Date future = new Date(now.getTime() + days * 24 * 60 * 60 * 1000L);
@@ -165,7 +133,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
     public boolean addActivity(Activity activity) {
         // Basic validation
         if (activity == null || !StringUtils.hasText(activity.getTitle())) {
-            log.warn("Attempted to add an activity with missing title.");
             return false;
         }
         // Ensure create/update times are set
@@ -187,13 +154,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
         }
         */
 
-        boolean success = save(activity);
-        if (success) {
-            log.info("Activity added successfully: {}", activity.getTitle());
-        } else {
-            log.error("Failed to add activity: {}", activity.getTitle());
-        }
-        return success;
+        return save(activity);
     }
     
     /**
@@ -211,7 +172,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
             int result = activityDao.update(activity);
             return result > 0;
         } catch (Exception e) {
-            // 记录日志或处理异常
+            // 异常处理
             return updateById(activity);
         }
     }
@@ -227,7 +188,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
             int result = activityDao.delete(id);
             return result > 0;
         } catch (Exception e) {
-            // 记录日志或处理异常
+            // 异常处理
             return removeById(id);
         }
     }
@@ -243,277 +204,57 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityDao, Activity> impl
             int result = activityDao.batchDelete(ids);
             return result > 0;
         } catch (Exception e) {
-            // 记录日志或处理异常
+            // 异常处理
             // 将数组转为集合
             List<Long> idList = java.util.Arrays.asList(ids);
             return removeByIds(idList);
         }
     }
-    
+
     /**
      * 更新活动状态
      * @param id 活动ID
-     * @param status 状态值
+     * @param status 状态 (String)
      * @return 是否成功
      */
     @Override
-    public boolean updateActivityStatus(Long id, Integer status) {
-        Activity activity = getById(id);
-        if (activity == null) {
-            log.warn("Attempted to update status for non-existent activity: {}", id);
-            return false;
-        }
-        if (status == null) {
-            log.warn("Attempted to update status with null value for activity: {}", id);
-            return false; // Or throw exception?
-        }
-        // Linter Fix: Convert Integer status to String before setting
-        activity.setStatus(String.valueOf(status));
-        activity.setUpdateTime(new Date());
-        boolean success = updateById(activity);
-        if (success) {
-            log.info("Activity status updated successfully for id: {}, new status: {}", id, status);
-        } else {
-            log.error("Failed to update activity status for id: {}", id);
-        }
-        return success;
+    public boolean updateActivityStatus(Long id, String status) {
+        return activityDao.updateStatus(id, status) > 0;
     }
 
     /**
-     * 获取指定学生参加的所有活动
-     *
-     * @param studentId 学生ID
-     * @return 活动列表
+     * 分页查询活动
+     * @param pageNo 页码
+     * @param pageSize 每页大小
+     * @param keyword 关键字
+     * @param type 活动类型 (String)
+     * @param status 状态 (String)
+     * @return 分页结果
      */
     @Override
-    public List<Activity> getStudentEnrolledActivities(Long studentId) {
-        // 1. 从 activity_participant 表查询该用户参与的所有活动 ID
-        LambdaQueryWrapper<ActivityParticipant> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ActivityParticipant::getUserId, studentId)
-                .select(ActivityParticipant::getActivityId); // 只查询 activityId
-        List<Object> activityIdObjects = activityParticipantDao.selectObjs(queryWrapper);
-
-        if (activityIdObjects == null || activityIdObjects.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 转换 ID 列表类型
-        List<Long> activityIds = activityIdObjects.stream()
-                .map(obj -> Long.valueOf(obj.toString()))
-                .collect(Collectors.toList());
-
-        // 2. 根据活动 ID 列表查询活动信息
-        return activityDao.selectBatchIds(activityIds);
-    }
-
-    /**
-     * 分页并按条件查询活动列表
-     *
-     * @param pageNo       页码
-     * @param pageSize     每页数量
-     * @param keyword      关键词 (可选, 搜索标题或描述)
-     * @param activityType 活动类型 (可选)
-     * @param status       活动状态 (可选)
-     * @return 分页后的活动列表
-     */
-    @Override
-    public IPage<Activity> getActivityPage(int pageNo, int pageSize, String keyword, Integer activityType, Integer status) {
+    public IPage<Activity> getActivityPage(int pageNo, int pageSize, String keyword, String type, String status) {
         Page<Activity> page = new Page<>(pageNo, pageSize);
         LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 添加关键词搜索条件 (标题或描述)
+        // 根据关键字查询
         if (StringUtils.hasText(keyword)) {
-            // Use a nested query to ensure (title LIKE keyword OR description LIKE keyword)
-            queryWrapper.and(qw -> qw.like(Activity::getTitle, keyword).or().like(Activity::getDescription, keyword));
+            queryWrapper.like(Activity::getTitle, keyword)
+                    .or(w -> w.like(Activity::getDescription, keyword));
         }
 
-        // 添加活动类型过滤
-        if (activityType != null) {
-            // Revert back to lambda expression for type
-            queryWrapper.eq(Activity::getType, activityType);
+        // 根据活动类型查询
+        if (StringUtils.hasText(type)) {
+            queryWrapper.eq(Activity::getType, type);
         }
 
-        // 添加活动状态过滤
+        // 根据状态查询
         if (status != null) {
-            // Revert back to lambda expression for status
-            queryWrapper.eq(Activity::getStatus, String.valueOf(status));
+            queryWrapper.eq(Activity::getStatus, status);
         }
 
-        // 默认按创建时间降序排序
-        queryWrapper.orderByDesc(Activity::getCreateTime);
+        // 按开始时间降序排序
+        queryWrapper.orderByDesc(Activity::getStartTime);
 
-        return page(page, queryWrapper);
+        return this.page(page, queryWrapper);
     }
-
-    @Override
-    @Transactional
-    public boolean joinActivity(Long activityId, Long userId) {
-        // 1. 检查活动是否存在且有效
-        Activity activity = getActivityById(activityId);
-        // Linter Fix: Compare status (String) with "0" (String)
-        if (activity == null || Objects.equals(activity.getStatus(), "0")) { // 0表示已取消
-            log.warn("尝试加入不存在或已取消的活动, activityId: {}, userId: {}", activityId, userId);
-            return false;
-        }
-
-        // 2. 检查活动是否已满员
-        if (activity.getMaxParticipants() != null && activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
-            log.info("活动已满员, activityId: {}, userId: {}", activityId, userId);
-            return false;
-        }
-
-        // 3. 检查用户是否已加入 (使用新的 DAO)
-        if (isUserJoined(activityId, userId)) {
-            log.info("用户 {} 已加入活动 {}, 无需重复加入", userId, activityId);
-            return true; // 假设重复加入不算失败
-        }
-
-        // 4. 增加活动表中的当前参与人数
-        activity.setCurrentParticipants(activity.getCurrentParticipants() + 1);
-        activity.setUpdateTime(new Date());
-        boolean updateSuccess = updateById(activity);
-
-        if (!updateSuccess) {
-            log.error("更新活动参与人数失败, activityId: {}, userId: {}", activityId, userId);
-            // Consider throwing exception for transaction rollback
-            // throw new RuntimeException("Failed to update participant count in Activity table");
-            return false;
-        }
-
-        // 5. 在 activity_participant 表中插入参与记录
-        ActivityParticipant participant = new ActivityParticipant(activityId, userId, new Date());
-        int insertResult = activityParticipantDao.insert(participant);
-
-        if (insertResult <= 0) {
-            log.error("插入活动参与记录失败, activityId: {}, userId: {}", activityId, userId);
-            // Consider throwing exception for transaction rollback
-            // throw new RuntimeException("Failed to insert participant record");
-            return false;
-        }
-
-        log.info("用户 {} 成功加入活动 {}", userId, activityId);
-        return true;
-    }
-
-    @Override
-    public boolean isUserJoined(Long activityId, Long userId) {
-        // Adapt this if using ActivityRegistrationDao
-        LambdaQueryWrapper<ActivityParticipant> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ActivityParticipant::getActivityId, activityId)
-                .eq(ActivityParticipant::getUserId, userId);
-        // return activityParticipantDao.selectCount(queryWrapper) > 0;
-        // Assuming ActivityParticipantDao is the correct one for now
-        // If ActivityRegistrationDao is used, replace above line with:
-        return activityRegistrationDao.selectCount(new LambdaQueryWrapper<ActivityRegistration>()
-                .eq(ActivityRegistration::getActivityId, activityId)
-                .eq(ActivityRegistration::getUserId, userId)) > 0;
-    }
-
-    @Override
-    @Transactional
-    public boolean quitActivity(Long activityId, Long userId) {
-        // 1. 检查用户是否已加入 (使用新的 DAO)
-        if (!isUserJoined(activityId, userId)) {
-            log.warn("用户 {} 尝试退出未加入的活动 {}", userId, activityId);
-            return false;
-        }
-
-        // 2. 检查活动是否存在
-        Activity activity = getActivityById(activityId);
-        // If activity exists, decrease count. If not, still try to remove participant record.
-        if (activity != null && activity.getCurrentParticipants() > 0) {
-            // 3. 减少活动表中的当前参与人数
-            activity.setCurrentParticipants(activity.getCurrentParticipants() - 1);
-            activity.setUpdateTime(new Date());
-            boolean updateSuccess = updateById(activity);
-            if (!updateSuccess) {
-                log.error("更新活动参与人数失败 (退出), activityId: {}, userId: {}", activityId, userId);
-                // Consider throwing exception for transaction rollback
-                // throw new RuntimeException("Failed to decrease participant count in Activity table");
-                return false;
-            }
-        } else if (activity != null) {
-            log.warn("活动 {} 参与人数已为0或负数，但仍尝试退出", activityId);
-        } else {
-            log.warn("尝试退出不存在的活动 {}, 但仍尝试删除参与记录", activityId);
-        }
-
-        // 4. 从 activity_participant 表中删除参与记录
-        LambdaQueryWrapper<ActivityParticipant> deleteWrapper = new LambdaQueryWrapper<>();
-        deleteWrapper.eq(ActivityParticipant::getActivityId, activityId)
-                .eq(ActivityParticipant::getUserId, userId);
-        int deleteResult = activityParticipantDao.delete(deleteWrapper);
-
-        if (deleteResult <= 0) {
-            log.error("删除活动参与记录失败, activityId: {}, userId: {}", activityId, userId);
-            // Consider throwing exception for transaction rollback
-            // throw new RuntimeException("Failed to delete participant record");
-            // Decide if this is a failure case. Maybe the record was already gone?
-            // For now, let's consider it success if the count was updated or activity didn't exist.
-        }
-
-        log.info("用户 {} 成功退出活动 {} (删除记录数: {})", userId, activityId, deleteResult);
-        return true;
-    }
-
-    @Override
-    public List<Activity> getUserActivities(Long userId) {
-        // 复用 getStudentEnrolledActivities 的逻辑
-        return getStudentEnrolledActivities(userId);
-    }
-
-    @Override
-    public List<ActivityRegistrationVO> getRegistrationsByActivityId(Long activityId) {
-        if (activityRegistrationDao == null) {
-            log.warn("ActivityRegistrationDao is not available, cannot fetch registrations.");
-            return Collections.emptyList();
-        }
-        if (activityId == null) {
-            return Collections.emptyList();
-        }
-
-        // 1. Find all registrations for the activity
-        LambdaQueryWrapper<ActivityRegistration> regQuery = new LambdaQueryWrapper<>();
-        regQuery.eq(ActivityRegistration::getActivityId, activityId)
-                .orderByDesc(ActivityRegistration::getRegistrationTime); // Order by registration time
-        List<ActivityRegistration> registrations = activityRegistrationDao.selectList(regQuery);
-
-        if (registrations.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 2. Extract user IDs
-        List<Long> userIds = registrations.stream()
-                .map(ActivityRegistration::getUserId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (userIds.isEmpty()) {
-            // Should not happen if registrations list is not empty and userId is not null
-            log.warn("No valid user IDs found for activity registrations: {}", activityId);
-            // Return registrations without user info in this case, or an empty list
-            return registrations.stream()
-                    .map(reg -> new ActivityRegistrationVO(reg, null))
-                    .collect(Collectors.toList());
-        }
-
-        // 3. Fetch user details
-        List<User> users = userDao.selectBatchIds(userIds);
-        Map<Long, User> userMap = users.stream()
-                .collect(Collectors.toMap(User::getId, user -> user));
-
-        // 4. Create VO list
-        List<ActivityRegistrationVO> voList = new ArrayList<>();
-        for (ActivityRegistration reg : registrations) {
-            User user = userMap.get(reg.getUserId());
-            // Only add if user info is found (or handle missing user case differently)
-            // if (user != null) { 
-            voList.add(new ActivityRegistrationVO(reg, user));
-            // }
-        }
-
-        return voList;
-    }
-
 }

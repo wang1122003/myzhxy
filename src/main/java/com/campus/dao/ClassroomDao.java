@@ -6,7 +6,6 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 教室数据访问接口
@@ -48,13 +47,6 @@ public interface ClassroomDao extends BaseMapper<Classroom> {
     List<Classroom> findByType(String type);
     
     /**
-     * 根据教室类型查询教室（Integer类型）
-     * @param roomType 教室类型（Integer）
-     * @return 教室列表
-     */
-    List<Classroom> findByRoomType(Integer roomType);
-    
-    /**
      * 根据容量范围查询教室
      * @param minCapacity 最小容量
      * @param maxCapacity 最大容量
@@ -65,11 +57,11 @@ public interface ClassroomDao extends BaseMapper<Classroom> {
     
     /**
      * 查询可用教室
-     * @param dayOfWeek 星期几
+     * @param dayOfWeek 星期几 (String)
      * @param timeSlot 时间段
      * @return 教室列表
      */
-    List<Classroom> findAvailable(@Param("dayOfWeek") Integer dayOfWeek, 
+    List<Classroom> findAvailable(@Param("dayOfWeek") String dayOfWeek, 
                                  @Param("timeSlot") Integer timeSlot);
     
     /**
@@ -117,10 +109,10 @@ public interface ClassroomDao extends BaseMapper<Classroom> {
     /**
      * 更新教室状态
      * @param id 教室ID
-     * @param status 教室状态
+     * @param status 教室状态 (String)
      * @return 影响行数
      */
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
     
     /**
      * 搜索教室
@@ -145,39 +137,27 @@ public interface ClassroomDao extends BaseMapper<Classroom> {
     
     /**
      * 获取教室状态教室数
-     * @param status 教室状态
+     * @param status 教室状态 (String)
      * @return 教室数量
      */
-    int getStatusClassroomCount(Integer status);
-    
-    /**
-     * 获取教室使用率统计
-     * @return 教室使用率统计
-     */
-    List<Map<String, Object>> getClassroomUsageStatistics();
-    
-    /**
-     * 获取教室容量统计
-     * @return 教室容量统计
-     */
-    List<Map<String, Object>> getClassroomCapacityStatistics();
+    int getStatusClassroomCount(String status);
     
     /**
      * 检查教室编号是否存在
      * @param roomNumber 教室编号
      * @return 是否存在
      */
-    boolean isRoomNumberExists(String roomNumber);
+    boolean checkRoomNumberExists(String roomNumber);
 
     /**
      * 分页并按条件查询教室 (由 PageHelper 拦截)
      *
      * @param keyword  关键词 (教室编号/名称)
      * @param building 教学楼
-     * @param status   状态
+     * @param status   状态 (String)
      * @return 教室列表 (当前页数据)
      */
     List<Classroom> findPageByCondition(@Param("keyword") String keyword,
                                         @Param("building") String building,
-                                        @Param("status") Integer status);
+                                        @Param("status") String status);
 }

@@ -38,7 +38,7 @@ public interface ClassroomService extends IService<Classroom> {
      * @param size 每页数量
      * @param keyword 关键词 (搜索教室编号/名称)
      * @param building 教学楼 (可选)
-     * @param status 状态 (可选, 0:禁用, 1:正常)
+     * @param status 状态 (可选, Integer)
      * @return 分页后的教室列表
      */
     IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status);
@@ -75,15 +75,15 @@ public interface ClassroomService extends IService<Classroom> {
      * @param classroomId 教室ID
      * @param startTime 开始时间
      * @param endTime 结束时间
-     * @param weekDay 星期几
+     * @param dayOfWeek 星期几 (String)
      * @return 是否可用
      */
-    boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, Integer weekDay);
+    boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek);
 
     /**
      * 批量更新教室状态
      * @param ids 教室ID列表
-     * @param status 状态值
+     * @param status 状态值 (Integer)
      */
     void batchUpdateStatus(List<Long> ids, Integer status);
 }

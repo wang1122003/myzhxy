@@ -3,13 +3,13 @@ package com.campus.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Activity;
 import com.campus.entity.User;
+import com.campus.exception.AuthenticationException;
 import com.campus.exception.CustomException;
 import com.campus.service.ActivityService;
 import com.campus.service.AuthService;
 import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +23,6 @@ import java.util.Map;
 /**
  * 校园活动控制器
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/activities")
 public class ActivityController {
@@ -36,6 +35,9 @@ public class ActivityController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private HttpServletRequest request;
     
     /**
      * 获取活动详情
@@ -58,20 +60,22 @@ public class ActivityController {
      * @param pageSize 每页数量, 默认为10 (注意前端请求的是pageSize)
      * @param keyword 关键词 (可选)
      * @param activityType 活动类型 (可选)
-     * @param status 活动状态 (可选)
+     * @param statusInt 活动状态 (可选, Integer for request param)
      * @return 分页后的活动列表及分页信息
      */
     @GetMapping
-    public Result getAllActivities(
+    public Result<Map<String, Object>> getAllActivities(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize, // 保持参数名为 pageSize
+            @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Integer activityType,
-            @RequestParam(required = false) Integer status
+            @RequestParam(required = false) String activityType,
+            @RequestParam(required = false) Integer statusInt
     ) {
         try {
+            String status = (statusInt != null) ? String.valueOf(statusInt) : null;
+
             IPage<Activity> activityPage = activityService.getActivityPage(page, pageSize, keyword, activityType, status);
-            // 将 IPage 转换为包含 list 和 total 的 Map，以便前端处理
+
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("list", activityPage.getRecords());
             responseData.put("total", activityPage.getTotal());
@@ -81,7 +85,6 @@ public class ActivityController {
 
             return Result.success(responseData);
         } catch (Exception e) {
-            // log.error("获取活动列表失败", e);
             return Result.error("获取活动列表失败: " + e.getMessage());
         }
     }
@@ -92,17 +95,18 @@ public class ActivityController {
      * @return 活动列表
      */
     @GetMapping("/type/{activityType}")
-    public ResponseEntity<List<Activity>> getActivitiesByType(@PathVariable Integer activityType) {
+    public ResponseEntity<List<Activity>> getActivitiesByType(@PathVariable String activityType) {
         return ResponseEntity.ok(activityService.getActivitiesByType(activityType));
     }
     
     /**
      * 根据状态获取活动
-     * @param status 活动状态
+     * @param statusInt 活动状态
      * @return 活动列表
      */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Activity>> getActivitiesByStatus(@PathVariable Integer status) {
+    @GetMapping("/status/{statusInt}")
+    public ResponseEntity<List<Activity>> getActivitiesByStatus(@PathVariable Integer statusInt) {
+        String status = String.valueOf(statusInt);
         return ResponseEntity.ok(activityService.getActivitiesByStatus(status));
     }
     
@@ -154,7 +158,6 @@ public class ActivityController {
                 return Result.error("上传失败，无法获取URL");
             }
         } catch (IOException e) {
-            log.error("海报上传失败", e);
             return Result.error("上传失败: " + e.getMessage());
         }
     }
@@ -167,26 +170,24 @@ public class ActivityController {
      * @return 创建结果
      */
     @PostMapping("/with-poster")
-    public Result addActivityWithPoster(@RequestPart("activity") Activity activity,
+    public Result<Activity> addActivityWithPoster(@RequestPart("activity") Activity activity,
                                         @RequestPart(value = "posterFile", required = false) MultipartFile posterFile,
                                         HttpServletRequest request) {
         try {
             // 1. Upload poster if provided
             if (posterFile != null && !posterFile.isEmpty()) {
-                // Assume fileService.uploadActivityPoster returns String directly
                 String posterUrl = fileService.uploadActivityPoster(posterFile);
                 if (posterUrl != null) {
-                    activity.setPosterUrl(posterUrl); // Assuming setPosterUrl exists
+                    activity.setPosterUrl(posterUrl);
                 } else {
-                    log.error("海报上传失败:未能获取URL");
                     return Result.error("海报上传失败: 未能获取URL");
                 }
             }
 
-            // 2. Set publisher ID from authenticated user
-            User currentUser = authService.getCurrentUserFromRequest(request); // Assuming method exists
+            // 2. Set organizer ID from authenticated user
+            User currentUser = authService.getCurrentUserFromRequest(request);
             if (currentUser != null) {
-                activity.setPublisherId(currentUser.getId()); // Assuming setPublisherId exists
+                activity.setOrganizerId(currentUser.getId());
             } else {
                 return Result.error("无法获取发布者信息，请登录");
             }
@@ -195,13 +196,10 @@ public class ActivityController {
             boolean result = activityService.addActivity(activity);
             return result ? Result.success("活动添加成功", activity) : Result.error("活动添加失败");
         } catch (IOException e) {
-            log.error("处理文件或添加活动时出错", e);
             return Result.error("处理文件或添加活动时发生错误: " + e.getMessage());
         } catch (CustomException e) {
-            log.error("活动添加失败: {}", e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("活动添加时发生未知错误", e);
             return Result.error("添加活动时发生未知错误");
         }
     }
@@ -213,10 +211,30 @@ public class ActivityController {
      * @return 更新结果
      */
     @PutMapping("/{id}")
-    public Result updateActivity(@PathVariable Long id, @RequestBody Activity activity) {
-        activity.setId(id);
-        boolean result = activityService.updateActivity(activity);
-        return result ? Result.success("更新成功") : Result.error("更新失败");
+    public Result<Object> updateActivity(@PathVariable Long id, @RequestBody Activity activity) {
+        try {
+            // Permission Check: Only organizer or admin can update
+            Activity existingActivity = activityService.getActivityById(id);
+            if (existingActivity == null) {
+                return Result.error("活动不存在");
+            }
+            User currentUser = authService.getCurrentUserFromRequest(request);
+            if (currentUser == null) {
+                throw new AuthenticationException("用户未登录");
+            }
+            // Basic check: Organizer can update. Add admin check if needed.
+            if (!existingActivity.getOrganizerId().equals(currentUser.getId()) /* && !authService.isAdmin(currentUser) */) {
+                return Result.error("无权修改此活动");
+            }
+
+            activity.setId(id);
+            boolean result = activityService.updateActivity(activity);
+            return result ? Result.success("更新成功") : Result.error("更新失败");
+        } catch (AuthenticationException ae) {
+            return Result.error(401, ae.getMessage());
+        } catch (Exception e) {
+            return Result.error("更新活动时发生错误: " + e.getMessage());
+        }
     }
     
     /**
@@ -226,10 +244,29 @@ public class ActivityController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteActivity(@PathVariable Long id) {
-        if (activityService.deleteActivity(id)) {
-            return ResponseEntity.ok("活动删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("活动删除失败");
+        try {
+            // Permission Check: Only organizer or admin can delete
+            Activity existingActivity = activityService.getActivityById(id);
+            if (existingActivity == null) {
+                return ResponseEntity.ok("活动不存在或已被删除"); // Already deleted
+            }
+            User currentUser = authService.getCurrentUserFromRequest(request);
+            if (currentUser == null) {
+                // Use ResponseEntity for consistency
+                return ResponseEntity.status(401).body("用户未登录");
+            }
+            // Basic check: Organizer can delete. Add admin check if needed.
+            if (!existingActivity.getOrganizerId().equals(currentUser.getId()) /* && !authService.isAdmin(currentUser) */) {
+                return ResponseEntity.status(403).body("无权删除此活动");
+            }
+
+            if (activityService.deleteActivity(id)) {
+                return ResponseEntity.ok("活动删除成功");
+            } else {
+                return ResponseEntity.badRequest().body("活动删除失败");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("删除活动时发生错误: " + e.getMessage());
         }
     }
     
@@ -240,107 +277,74 @@ public class ActivityController {
      */
     @DeleteMapping("/batch")
     public ResponseEntity<String> batchDeleteActivities(@RequestBody Long[] ids) {
-        if (activityService.batchDeleteActivities(ids)) {
-            return ResponseEntity.ok("批量删除成功");
-        } else {
-            return ResponseEntity.badRequest().body("批量删除失败");
+        // TODO: Implement fine-grained permission check for batch delete (e.g., check each ID or require admin)
+        // Simple admin check example (requires authService.isAdmin method)
+        /*
+        User currentUser = authService.getCurrentUserFromRequest(request);
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body("用户未登录");
+        }
+        if (!authService.isAdmin(currentUser)) {
+            return ResponseEntity.status(403).body("无权执行批量删除操作");
+        }
+        */
+        try {
+            if (activityService.batchDeleteActivities(ids)) {
+                return ResponseEntity.ok("批量删除成功");
+            } else {
+                return ResponseEntity.badRequest().body("批量删除失败 (部分活动可能不存在)");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("批量删除活动时发生错误: " + e.getMessage());
         }
     }
     
     /**
      * 更新活动状态
      * @param id 活动ID
-     * @param status 活动状态
+     * @param statusInt 活动状态
      * @return 更新结果
      */
-    @PutMapping("/{id}/status/{status}")
-    public ResponseEntity<String> updateActivityStatus(@PathVariable Long id, @PathVariable Integer status) {
+    @PutMapping("/{id}/status/{statusInt}")
+    public ResponseEntity<String> updateActivityStatus(@PathVariable Long id, @PathVariable Integer statusInt) {
+        // TODO: Add permission check (e.g., only organizer or admin)
+        String status = String.valueOf(statusInt);
         if (activityService.updateActivityStatus(id, status)) {
-            return ResponseEntity.ok("状态更新成功");
+            return ResponseEntity.ok("活动状态更新成功");
         } else {
-            return ResponseEntity.badRequest().body("状态更新失败");
+            return ResponseEntity.badRequest().body("活动状态更新失败");
         }
     }
 
     /**
-     * 获取当前学生参加的活动列表
-     *
-     * @param request HTTP请求，用于获取当前用户
+     * 获取学生已报名的活动
+     * @param request HTTP请求 (获取当前用户)
      * @return 活动列表
      */
     @GetMapping("/student/my")
-    public Result getStudentActivities(HttpServletRequest request) {
-        User currentUser = authService.getCurrentUserFromRequest(request);
-        if (currentUser == null) {
-            return Result.error("未登录或无法获取用户信息");
-        }
-
-        // 权限检查：确保是学生
-        // 注意：User 类中表示学生类型的字段需要确认，假设是 1
-        // if (currentUser.getUserType() == null || currentUser.getUserType() != 1) {
-        //     return Result.error("非学生用户无权访问此接口");
-        // }
-
-        try {
-            Long studentId = currentUser.getId();
-            List<Activity> activities = activityService.getStudentEnrolledActivities(studentId);
-            return Result.success(activities);
-        } catch (Exception e) {
-            // logger.error("获取学生参加的活动列表失败, studentId: {}", currentUser.getId(), e);
-            return Result.error("获取活动列表失败: " + e.getMessage());
-        }
+    public Result<List<Activity>> getStudentActivities(HttpServletRequest request) {
+        return Result.error(501, "获取已报名活动功能暂未实现");
     }
 
     /**
      * 学生报名参加活动
-     *
      * @param activityId 活动ID
-     * @param request    HTTP请求
+     * @param request    HTTP请求 (获取当前用户)
      * @return 报名结果
      */
     @PostMapping("/join/{activityId}")
-    public Result joinActivity(@PathVariable Long activityId, HttpServletRequest request) {
-        User currentUser = authService.getCurrentUserFromRequest(request);
-        if (currentUser == null) {
-            return Result.error(401, "用户未登录或认证失败");
-        }
-        try {
-            boolean success = activityService.joinActivity(activityId, currentUser.getId());
-            return success ? Result.success("报名成功") : Result.error("报名失败，可能已报名或活动不存在");
-        } catch (CustomException e) {
-            log.error("Join activity error for activity {} and user {}: {}", activityId, currentUser.getId(), e.getMessage());
-            return Result.error(e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error joining activity {} for user {}: {}", activityId, currentUser.getId(), e.getMessage(), e);
-            return Result.error("报名时发生未知错误");
-        }
+    public Result<Object> joinActivity(@PathVariable Long activityId, HttpServletRequest request) {
+        return Result.error(501, "报名活动功能暂未实现");
     }
 
     /**
      * 学生退出活动
-     *
      * @param id      活动ID
-     * @param request HTTP请求
+     * @param request HTTP请求 (获取当前用户)
      * @return 退出结果
      */
     @PostMapping("/quit/{id}")
-    public Result quitActivity(@PathVariable Long id, HttpServletRequest request) {
-        User currentUser = null; // 将声明移到 try 块外部
-        try {
-            // 获取当前用户信息
-            currentUser = authService.getCurrentUserFromRequest(request);
-            if (currentUser == null) {
-                return Result.error(401, "用户未登录");
-            }
-
-            boolean success = activityService.quitActivity(id, currentUser.getId());
-            return success ? Result.success("退出成功") : Result.error("退出失败，可能未报名或活动不存在");
-        } catch (CustomException e) {
-            log.error("Quit activity error for activity {} and user {}: {}", id, currentUser.getId(), e.getMessage());
-            return Result.error(e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error quitting activity {} for user {}: {}", id, currentUser.getId(), e.getMessage(), e);
-            return Result.error("退出时发生未知错误");
-        }
+    public Result<Object> quitActivity(@PathVariable Long id, HttpServletRequest request) {
+        return Result.error(501, "退出活动功能暂未实现");
     }
 }

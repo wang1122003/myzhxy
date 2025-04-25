@@ -26,18 +26,18 @@ public interface NotificationService extends IService<Notification> {
     
     /**
      * 根据通知类型获取通知列表
-     * @param noticeType 通知类型
+     * @param type 通知类型 (String)
      * @return 通知列表
      */
-    List<Notification> getNotificationsByType(Integer noticeType);
+    List<Notification> getNotificationsByType(String type);
 
     /**
      * 根据状态获取通知列表
      *
-     * @param status 状态
+     * @param status 状态 (String)
      * @return 通知列表
      */
-    List<Notification> getNotificationsByStatus(Integer status);
+    List<Notification> getNotificationsByStatus(String status);
 
     /**
      * 获取最近N条通知
@@ -111,7 +111,7 @@ public interface NotificationService extends IService<Notification> {
     /**
      * 更新通知状态
      * @param id 通知ID
-     * @param status 新状态 (String, e.g., "Active", "Recalled")
+     * @param status 新状态 (String)
      * @return 是否成功
      */
     boolean updateNotificationStatus(Long id, String status);
@@ -124,14 +124,26 @@ public interface NotificationService extends IService<Notification> {
     boolean incrementViewCount(Long id);
 
     /**
-     * 分页获取通知列表
+     * 分页查询通知
      *
-     * @param pageNo       页码
-     * @param pageSize     每页数量
-     * @param notification 查询条件
-     * @return 分页结果
+     * @param pageNo 页码
+     * @param pageSize 每页大小
+     * @param notification 通知条件
+     * @return 分页通知
      */
     IPage<Notification> getNotificationPage(int pageNo, int pageSize, Notification notification);
+
+    /**
+     * 分页查询通知（支持关键词和类型过滤）
+     *
+     * @param pageNo   页码
+     * @param pageSize 每页大小
+     * @param type     通知类型 (String)
+     * @param keyword  标题关键词
+     * @param status   通知状态 (String)
+     * @return 分页通知
+     */
+    IPage<Notification> getNotificationPage(int pageNo, int pageSize, String type, String keyword, String status);
 
     /**
      * 发送通知给指定用户
@@ -152,61 +164,10 @@ public interface NotificationService extends IService<Notification> {
     boolean sendNotificationByUserType(Notification notification, String userType);
 
     /**
-     * 发送通知给指定部门
-     * @param notification 通知对象
-     * @param departmentIds 部门ID列表
-     * @return 是否成功
-     */
-    boolean sendNotificationToDepartments(Notification notification, List<Long> departmentIds);
-
-    /**
      * 发送通知给全体用户
      *
      * @param notification 通知对象
      * @return 是否成功
      */
     boolean sendNotificationToAll(Notification notification);
-
-    /**
-     * 获取用户未读通知数量
-     *
-     * @param userId 用户ID
-     * @return 未读数量
-     */
-    int getUnreadNotificationCount(Long userId);
-
-    /**
-     * 获取用户未读通知列表（分页）
-     *
-     * @param pageNo   页码
-     * @param pageSize 每页数量
-     * @param userId   用户ID
-     * @return 分页结果
-     */
-    IPage<Notification> getUnreadNotifications(int pageNo, int pageSize, Long userId);
-
-    /**
-     * 获取用户已读通知列表（分页）
-     *
-     * @param pageNo   页码
-     * @param pageSize 每页数量
-     * @param userId   用户ID
-     * @return 分页结果
-     */
-    IPage<Notification> getReadNotifications(int pageNo, int pageSize, Long userId);
-
-    /**
-     * 标记通知为已读
-     * @param userId 用户ID
-     * @param notificationId 通知ID
-     * @return 是否成功
-     */
-    boolean markNotificationAsRead(Long userId, Long notificationId);
-
-    /**
-     * 标记用户所有通知为已读
-     * @param userId 用户ID
-     * @return 是否成功
-     */
-    boolean markAllNotificationsAsRead(Long userId);
 } 

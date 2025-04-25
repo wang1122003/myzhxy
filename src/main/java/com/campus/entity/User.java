@@ -4,31 +4,26 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.campus.enums.UserStatus;
+import com.campus.enums.UserType;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 用户实体类
  */
 @Data
 @TableName("user")
-public class User implements Serializable, UserDetails {
+public class User implements UserDetails {
 
-    @Override
     public Long getId() {
         return this.id;
-    }
-
-    public String getUserType() {
-        return this.userType;
     }
 
     @Override
@@ -75,21 +70,22 @@ public class User implements Serializable, UserDetails {
     private String email;
     
     /**
-     * 头像URL
-     */
-    @TableField("avatar_url")
-    private String avatarUrl;
-    
-    /**
      * 用户类型 (Student, Teacher, Admin)
      */
-    @TableField("user_type")
-    private String userType;
+    @TableField(value = "user_type")
+    private UserType userType;
     
     /**
      * 状态 (Active, Inactive)
      */
-    private String status;
+    @TableField(value = "status")
+    private UserStatus status;
+
+    /**
+     * 学工号
+     */
+    @TableField("user_no")
+    private String userNo;
     
     /**
      * 创建时间
@@ -104,16 +100,28 @@ public class User implements Serializable, UserDetails {
     private Date updateTime;
 
     /**
-     * 学生信息 (非数据库字段, 当 userType 为 Student 时)
+     * 头像URL
      */
-    @TableField(exist = false)
-    private Student studentInfo;
+    @TableField("avatar_url")
+    private String avatarUrl;
 
     /**
-     * 教师信息 (非数据库字段, 当 userType 为 Teacher 时)
+     * 部门ID (外键, 可选)
+     */
+    @TableField("department_id")
+    private Long departmentId;
+
+    /**
+     * 班级ID (外键, 可选, 主要用于学生)
+     */
+    @TableField("class_id")
+    private Long classId;
+
+    /**
+     * 记住我选项 (非数据库字段)
      */
     @TableField(exist = false)
-    private Teacher teacherInfo;
+    private Boolean remember;
 
     // --- UserDetails 实现 --- 
 
@@ -126,11 +134,11 @@ public class User implements Serializable, UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 根据 userType 返回对应的角色权限
         String roleName = null;
-        if ("Admin".equals(this.userType)) {
+        if (this.userType == UserType.ADMIN) {
             roleName = "ROLE_ADMIN";
-        } else if ("Student".equals(this.userType)) {
+        } else if (this.userType == UserType.STUDENT) {
             roleName = "ROLE_STUDENT";
-        } else if ("Teacher".equals(this.userType)) {
+        } else if (this.userType == UserType.TEACHER) {
             roleName = "ROLE_TEACHER";
         }
 
@@ -158,6 +166,6 @@ public class User implements Serializable, UserDetails {
     @Override
     public boolean isEnabled() {
         // 根据 status 字段判断账户是否启用
-        return "Active".equalsIgnoreCase(this.status);
+        return this.status == UserStatus.ACTIVE;
     }
 }

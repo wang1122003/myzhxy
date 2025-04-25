@@ -300,14 +300,14 @@ import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {ArrowLeft, ChatDotRound, ChatLineRound, MoreFilled, Star, View} from '@element-plus/icons-vue'
 import {
-  getPostById,
-  likePost,
-  cancelLikePost,
-  deleteComment,
-  likeComment,
   cancelLikeComment,
+  cancelLikePost,
+  createComment,
+  deleteComment,
+  getPostById,
   getPostComments,
-  createComment
+  likeComment,
+  likePost
 } from '@/api/post'
 import {formatDistance} from 'date-fns'
 import {zhCN} from 'date-fns/locale'

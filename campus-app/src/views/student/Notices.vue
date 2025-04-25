@@ -206,12 +206,13 @@ const downloadLoading = ref(null)
 const fetchNotices = async () => {
   loading.value = true
   try {
-    const res = await getNoticeList({
+    const params = {
       page: currentPage.value,
       size: pageSize.value,
-      type: filter.type,
-      keyword: filter.keyword
-    })
+      type: filter.type || null,
+      keyword: filter.keyword || null
+    };
+    const res = await getNoticeList(params);
     notices.value = res.data.list || []
     total.value = res.data.total || 0
   } catch (error) {

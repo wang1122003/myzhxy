@@ -1,34 +1,27 @@
 package com.campus.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.campus.entity.Term;
+// import com.baomidou.mybatisplus.extension.service.IService;
+// import com.campus.entity.Term; // Term class is missing
 
-import java.util.List;
+// import java.util.List;
 
 /**
  * 学期服务接口
+ * TODO: [学期功能] - Interface commented out as Term will be managed via config file, not DB entity.
  */
+/*
 public interface TermService extends IService<Term> {
-
-    /**
-     * 获取所有学期列表
-     * @param orderByCreateTimeDesc 是否按创建时间降序排序
-     * @return 学期列表
-     */
-    List<Term> getAllTerms(boolean orderByCreateTimeDesc);
-
-    /**
-     * 获取当前学期
-     * @return 当前学期对象，如果未设置则返回null
-     */
+    
+    // 获取所有学期列表
+    List<Term> getAllTerms(boolean sortByCreateDesc);
+    
+    // 获取当前学期
     Term getCurrentTerm();
 
-    /**
-     * 根据学期代码获取学期
-     * @param code 学期代码 (e.g., "2023-2024-1")
-     * @return 对应的学期对象，如果找不到则返回null
-     */
-    Term getByCode(String code);
+    // 根据学期代码获取学期
+    Term getByCode(String termCode);
 
-    // 未来可以添加更多方法，例如按状态查询、设置当前学期等
-} 
+    // 设置当前学期
+    boolean setCurrentTerm(Long termId);
+}
+*/ 

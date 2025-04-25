@@ -89,22 +89,16 @@ public class Notification implements Serializable {
     private Long publisherId;
 
     /**
-     * 发布者姓名
-     */
-    @TableField("publisher_name")
-    private String publisherName;
-
-    /**
      * 目标类型（如：全体、学院、班级、个人）
      */
     @TableField("target_type")
     private String targetType;
 
     /**
-     * 目标ID
+     * 目标ID列表，JSON格式
      */
     @TableField("target_ids")
-    private String targetId;
+    private String targetIds;
 
     /**
      * 发送时间
@@ -131,9 +125,15 @@ public class Notification implements Serializable {
     private Date updateTime;
 
     /**
-     * 附件信息 (JSON 字符串)
-     * 存储 List<AttachmentInfo> 的 JSON 格式，例如:
-     * "[{\"name\": \"file1.pdf\", \"url\": \"/uploads/uuid1.pdf\"}, {\"name\": \"image.png\", \"url\": \"/uploads/uuid2.png\"}]"
+     * 通知接收者JSON数据，替代原来的NotificationReceiver实体
+     * 格式: [{receiverId: 1, isRead: 0, readTime: null}, ...]
+     */
+    @TableField("receivers_json")
+    private String receiversJson;
+
+    /**
+     * 附件JSON数据，替代原来的NotificationAttachment实体
+     * 格式: [{name: "file1.pdf", url: "/uploads/file1.pdf"}, ...]
      */
     @TableField("attachments_json")
     private String attachmentsJson;

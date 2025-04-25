@@ -108,7 +108,7 @@ import {nextTick, onMounted, reactive, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ArrowLeft, Plus} from '@element-plus/icons-vue'
-import RichTextEditor from '@/components/RichTextEditor.vue'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import {createPost, getForumCategories} from '@/api/post'
 
 export default {

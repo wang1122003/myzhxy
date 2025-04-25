@@ -136,18 +136,18 @@ import {
   ElCard,
   ElDialog,
   ElEmpty,
+  ElInput,
   ElInputNumber,
   ElMessage,
   ElMessageBox,
+  ElOption,
   ElPageHeader,
   ElPagination,
+  ElSelect,
   ElTable,
   ElTableColumn,
   ElTag,
-  ElUpload,
-  ElSelect,
-  ElOption,
-  ElInput
+  ElUpload
 } from 'element-plus';
 import {exportGrades, getCourseScores, importGrades, recordStudentScore} from '@/api/grade';
 import {formatDateTime} from '@/utils/formatters';

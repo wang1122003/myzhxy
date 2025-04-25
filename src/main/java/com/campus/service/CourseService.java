@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Course;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 课程服务接口
@@ -23,7 +22,7 @@ public interface CourseService {
      * @param courseNo 课程编号
      * @return 课程实体
      */
-    Course getCourseByCourseNo(String courseNo);
+    Course getCourseByCourseCode(String courseNo);
     
     /**
      * 查询所有课程 (分页)
@@ -39,13 +38,6 @@ public interface CourseService {
      * @return 课程列表
      */
     List<Course> getCoursesByCourseType(Integer courseType);
-    
-    /**
-     * 根据学院ID查询课程列表
-     * @param collegeId 学院ID
-     * @return 课程列表
-     */
-    List<Course> getCoursesByCollegeId(Long collegeId);
     
     /**
      * 添加课程
@@ -101,35 +93,5 @@ public interface CourseService {
      * @param courseNo 课程编号
      * @return 是否存在
      */
-    boolean isCourseNoExists(String courseNo);
-    
-    /**
-     * 获取课程统计信息
-     * @return 统计信息 Map
-     */
-    Map<String, Object> getCourseStats();
-    
-    /**
-     * 获取课程类型统计
-     * @return 课程类型统计列表 (List<Map<String, Object>>)
-     */
-    List<Map<String, Object>> getCourseTypeStats();
-    
-    /**
-     * 获取学院课程统计
-     * @return 学院课程统计列表 (List<Map<String, Object>>)
-     */
-    List<Map<String, Object>> getCollegeCourseStats();
-    
-    /**
-     * 获取学分分布统计
-     * @return 学分分布统计列表 (List<Map<String, Object>>)
-     */
-    List<Map<String, Object>> getCreditDistribution();
-    
-    /**
-     * 获取课程状态统计
-     * @return 课程状态统计列表 (List<Map<String, Object>>)
-     */
-    List<Map<String, Object>> getCourseStatusStats();
+    boolean checkCourseCodeExists(String courseNo);
 }

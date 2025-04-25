@@ -187,7 +187,7 @@ import {Calendar, Collection, Location, Reading, Star} from '@element-plus/icons
 import {getStudentSchedule} from '@/api/schedule' // 假设有获取学生课表API
 import {getNoticeList} from '@/api/notice' // 修正导入
 import {getActivityList} from '@/api/activity' // 假设获取活动列表API
-import NoticeDetailDialog from '@/components/NoticeDetailDialog.vue' // 引入通知详情组件
+import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue' // 引入通知详情组件
 import {userAvatar, userId, userRealName} from '@/utils/auth'
 
 const router = useRouter()

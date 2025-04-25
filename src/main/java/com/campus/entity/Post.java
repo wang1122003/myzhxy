@@ -13,9 +13,10 @@ import lombok.ToString;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 论坛帖子实体类 (已集成标签和论坛板块功能)
+ * 论坛帖子实体类 (已集成标签、论坛板块和评论功能)
  */
 @Data
 @TableName(value = "post", autoResultMap = true)
@@ -86,24 +87,37 @@ public class Post implements Serializable {
      */
     @TableField("like_count")
     private Integer likeCount;
+
+    /**
+     * 评论JSON数据
+     * 格式: [{id: 1, userId: 2, content: "评论内容", creationTime: "2023-01-01 10:00:00", likeCount: 0, status: 1}]
+     */
+    @TableField("comments_json")
+    private String commentsJson;
+
+    /**
+     * 评论列表对象 (非数据库字段，从JSON解析得到)
+     */
+    @TableField(exist = false)
+    private List<Map<String, Object>> comments;
     
     /**
      * 是否置顶：0-否，1-是
      */
     @TableField("is_top")
-    private Boolean isTop;
+    private Integer isTop;
     
     /**
      * 是否精华：0-否，1-是
      */
     @TableField("is_essence")
-    private Boolean isEssence;
+    private Integer isEssence;
     
     /**
-     * 状态：1-正常，0-禁用
+     * 状态：1-正常，0-禁用，2-隐藏
      */
     @TableField("status")
-    private String status;
+    private Integer status;
     
     /**
      * 创建时间

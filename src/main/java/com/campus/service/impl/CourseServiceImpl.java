@@ -12,10 +12,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 课程服务实现类
@@ -29,8 +28,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     }
 
     @Override
-    public Course getCourseByCourseNo(String courseNo) {
-        return baseMapper.findByCourseNo(courseNo);
+    public Course getCourseByCourseCode(String courseNo) {
+        return baseMapper.findByCourseCode(courseNo);
     }
 
     @Override
@@ -42,11 +41,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     @Override
     public List<Course> getCoursesByCourseType(Integer courseType) {
         return this.list(new LambdaQueryWrapper<Course>().eq(Course::getCourseType, courseType));
-    }
-
-    @Override
-    public List<Course> getCoursesByCollegeId(Long collegeId) {
-        return baseMapper.findByDepartment(String.valueOf(collegeId));
     }
 
     @Override
@@ -63,7 +57,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
         course.setCreateTime(now);
         course.setUpdateTime(now);
         if (course.getStatus() == null) {
-            course.setStatus(1);
+            course.setStatus("1");
         }
 
         return this.save(course);
@@ -86,7 +80,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
 
         course.setUpdateTime(new Date());
         if (course.getStatus() == null) {
-            course.setStatus(1);
+            course.setStatus("1");
         }
 
         return this.updateById(course);
@@ -117,59 +111,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     
     @Override
     public List<Course> searchCourses(String keyword) {
-        return baseMapper.searchCourses(keyword);
+        return baseMapper.searchCoursesByKeyword(keyword);
     }
     
     @Override
-    public boolean isCourseNoExists(String courseNo) {
-        return this.count(new LambdaQueryWrapper<Course>().eq(Course::getCourseNo, courseNo)) > 0;
-    }
-    
-    @Override
-    public Map<String, Object> getCourseStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalCourses", (int) this.count());
-        stats.put("activeCourses", getActiveCourseCount());
-        stats.put("inactiveCourses", getInactiveCourseCount());
-        stats.put("departmentCount", getDepartmentCount());
-        stats.put("averageCredits", getAverageCredits());
-        return stats;
-    }
-    
-    @Override
-    public List<Map<String, Object>> getCourseTypeStats() {
-        return baseMapper.getCourseTypeStats();
-    }
-    
-    @Override
-    public List<Map<String, Object>> getCollegeCourseStats() {
-        return baseMapper.getDepartmentStats();
-    }
-    
-    @Override
-    public List<Map<String, Object>> getCreditDistribution() {
-        return baseMapper.getCreditDistribution();
-    }
-    
-    @Override
-    public List<Map<String, Object>> getCourseStatusStats() {
-        return baseMapper.getStatusStats();
-    }
-    
-    private int getActiveCourseCount() {
-        return baseMapper.getStatusCount(1);
-    }
-    
-    private int getInactiveCourseCount() {
-        return baseMapper.getStatusCount(0);
-    }
-    
-    private int getDepartmentCount() {
-        return baseMapper.getDepartmentCount();
-    }
-    
-    private double getAverageCredits() {
-        return baseMapper.getAverageCredits();
+    public boolean checkCourseCodeExists(String courseNo) {
+        return baseMapper.checkCourseCodeExists(courseNo);
     }
 
     private void validateCourse(Course course) {
@@ -182,7 +129,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
         if (StringUtils.isBlank(course.getCourseName())) {
             throw new CustomException("课程名称不能为空");
         }
-        if (course.getCredit() == null || course.getCredit() < 0) {
+        if (course.getCredit() == null || course.getCredit().compareTo(BigDecimal.ZERO) < 0) {
             throw new CustomException("学分不能为空且必须为非负数");
         }
     }

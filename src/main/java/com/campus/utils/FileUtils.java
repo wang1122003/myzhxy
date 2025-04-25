@@ -1,10 +1,7 @@
 package com.campus.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -17,7 +14,6 @@ import java.util.UUID;
  * 文件工具类，用于处理文件上传、下载等操作 (无状态)
  */
 public class FileUtils {
-    private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
     /**
      * 创建目录（如果不存在）
@@ -29,9 +25,8 @@ public class FileUtils {
         if (!Files.exists(path)) {
             try {
                 Files.createDirectories(path);
-                logger.info("创建目录成功: {}", dirPath);
             } catch (IOException e) {
-                logger.error("创建目录失败: {}", dirPath, e);
+                // 创建目录失败
             }
         }
     }
@@ -56,17 +51,18 @@ public class FileUtils {
         createDirectoryIfNotExists(targetDirectory);
 
         String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("原始文件名不能为空");
+        }
+        String extension = getFileExtension(originalFilename);
+        String uniqueName = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
 
-        String uniqueFileName = generateUniqueFileName(originalFilename);
-
-        Path filePath = directoryPath.resolve(uniqueFileName);
+        Path filePath = directoryPath.resolve(uniqueName);
 
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
-            logger.info("文件上传成功: {}", filePath.toString());
             return filePath.toString();
         } catch (IOException e) {
-            logger.error("文件上传失败: {}", filePath.toString(), e);
             throw e;
         }
     }
@@ -102,14 +98,8 @@ public class FileUtils {
         Path path = Paths.get(filePath);
         try {
             boolean deleted = Files.deleteIfExists(path);
-            if (deleted) {
-                logger.info("文件删除成功: {}", filePath);
-            } else {
-                logger.warn("尝试删除文件但文件不存在: {}", filePath);
-            }
             return deleted;
         } catch (IOException e) {
-            logger.error("文件删除失败: {}", filePath, e);
             return false;
         }
     }
@@ -162,10 +152,8 @@ public class FileUtils {
                 Files.createDirectories(targetDir);
             }
             Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-            logger.info("文件复制成功: {} -> {}", sourcePath, targetPath);
             return true;
         } catch (IOException e) {
-            logger.error("文件复制失败: {} -> {}", sourcePath, targetPath, e);
             return false;
         }
     }
@@ -217,7 +205,6 @@ public class FileUtils {
             Path path = Paths.get(filePath);
             return path.getFileName().toString();
         } catch (Exception e) {
-            logger.error("从路径提取文件名失败: {}", filePath, e);
             return null;
         }
     }
@@ -236,7 +223,6 @@ public class FileUtils {
         if (Files.exists(path) && Files.isReadable(path)) {
             return Files.newInputStream(path);
         } else {
-            logger.warn("尝试读取文件但文件不存在或不可读: {}", filePath);
             return null;
         }
     }
@@ -251,25 +237,35 @@ public class FileUtils {
         if (inputStream == null || filePath == null || filePath.isEmpty()) {
             return false;
         }
-        Path targetPath = Paths.get(filePath);
-        Path parentDir = targetPath.getParent();
-        if (parentDir != null) {
-            createDirectoryIfNotExists(parentDir.toString());
-        }
-
         try {
-            Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
-            logger.info("输入流成功写入文件: {}", filePath);
+            Path path = Paths.get(filePath);
+            Path parentDir = path.getParent();
+            if (parentDir != null && !Files.exists(parentDir)) {
+                Files.createDirectories(parentDir);
+            }
+            Files.copy(inputStream, path, StandardCopyOption.REPLACE_EXISTING);
             return true;
         } catch (IOException e) {
-            logger.error("将输入流写入文件失败: {}", filePath, e);
             return false;
         } finally {
             try {
                 inputStream.close();
             } catch (IOException e) {
-                logger.error("关闭输入流失败", e);
+                // 关闭流失败
             }
         }
+    }
+
+    /**
+     * 获取文件扩展名
+     *
+     * @param filename 文件名
+     * @return 扩展名（不含点），如果没有扩展名则返回空字符串
+     */
+    public static String getFileExtension(String filename) {
+        if (filename == null || filename.lastIndexOf('.') == -1) {
+            return "";
+        }
+        return filename.substring(filename.lastIndexOf('.') + 1);
     }
 } 

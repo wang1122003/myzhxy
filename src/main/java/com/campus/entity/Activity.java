@@ -66,12 +66,6 @@ public class Activity implements Serializable {
     private Long organizerId;
 
     /**
-     * 组织者姓名 (冗余字段，方便显示)
-     */
-    @TableField("organizer_name")
-    private String organizerName;
-
-    /**
      * 活动联系方式
      */
     @TableField("contact")
@@ -90,13 +84,7 @@ public class Activity implements Serializable {
     private Integer maxParticipants;
 
     /**
-     * 当前已报名人数
-     */
-    @TableField("current_participants")
-    private Integer currentParticipants;
-
-    /**
-     * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等) (修改为字符串类型以适应数据库或前端数据)
+     * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等)
      */
     @TableField("status")
     private String status;
@@ -108,28 +96,21 @@ public class Activity implements Serializable {
     private Date createTime;
 
     /**
-     * 记录更新时间
+     * 更新时间
      */
     @TableField("update_time")
     private Date updateTime;
 
     /**
-     * 活动发布者ID (关联用户表)
+     * 报名截止时间
      */
-    @TableField("publisher_id")
-    private Long publisherId;
+    @TableField("registration_deadline")
+    private Date registrationDeadline;
 
     /**
      * 设置活动海报URL (显式setter)
      */
     public void setPosterUrl(String posterUrl) {
         this.posterUrl = posterUrl;
-    }
-
-    /**
-     * 设置发布者ID (显式setter)
-     */
-    public void setPublisherId(Long publisherId) {
-        this.publisherId = publisherId;
     }
 }

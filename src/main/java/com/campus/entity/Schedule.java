@@ -72,22 +72,10 @@ public class Schedule implements Serializable {
     private Integer endWeek;
     
     /**
-     * 学期ID (关联 term 表)
+     * 学期信息 (数据库字段)
      */
-    @TableField("term_id")
-    private Long termId;
-    
-    /**
-     * 班级ID (关联 class 表)
-     */
-    @TableField("class_id")
-    private Long classId;
-    
-    /**
-     * 班级名称 (非数据库字段, 通过JOIN查询得到)
-     */
-    @TableField(exist = false)
-    private String className;
+    @TableField("term_info")
+    private String termInfo;
     
     /**
      * 课程名称 (非数据库字段, 通过JOIN查询得到)
@@ -102,22 +90,16 @@ public class Schedule implements Serializable {
     private String teacherName;
 
     /**
-     * 学期名称 (非数据库字段, 通过JOIN查询得到)
-     */
-    @TableField(exist = false)
-    private String termName;
-
-    /**
      * 教室名称 (非数据库字段, 通过JOIN查询得到)
      */
     @TableField(exist = false)
     private String classroomName;
 
     /**
-     * 课表状态 (例如: 1-正常, 0-已取消, 2-待定等)
+     * 状态 (e.g., "Active", "Inactive")
      */
     @TableField("status")
-    private Integer status;
+    private String status;
     
     /**
      * 记录创建时间
@@ -150,29 +132,19 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * 设置学期名称 (显式Setter)
-     *
-     * @param termName 学期名称
-     */
-    public void setTermName(String termName) {
-        this.termName = termName;
-    }
-
-    /**
-     * 设置班级名称 (显式Setter)
-     *
-     * @param className 班级名称
-     */
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    /**
      * 设置教室名称 (显式Setter)
      *
      * @param classroomName 教室名称
      */
     public void setClassroomName(String classroomName) {
         this.classroomName = classroomName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

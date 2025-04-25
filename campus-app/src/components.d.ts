@@ -8,11 +8,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppHeader: typeof import('./components/AppHeader.vue')['default']
+      AppHeader: typeof import('./components/common/AppHeader.vue')['default']
+      BaseTable: typeof import('./components/common/BaseTable.vue')['default']
     CategoryManagement: typeof import('./components/forum/CategoryManagement.vue')['default']
     CommentManagement: typeof import('./components/forum/CommentManagement.vue')['default']
     CreatePost: typeof import('./components/forum/CreatePost.vue')['default']
-    DataDisplay: typeof import('./components/DataDisplay.vue')['default']
+      DataDisplay: typeof import('./components/common/DataDisplay.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -59,13 +60,14 @@ declare module 'vue' {
     ElTabs: typeof import('element-plus/es')['ElTabs']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElUpload: typeof import('element-plus/es')['ElUpload']
-    FormPanel: typeof import('./components/FormPanel.vue')['default']
-    NavMenu: typeof import('./components/NavMenu.vue')['default']
-    NoticeDetailDialog: typeof import('./components/NoticeDetailDialog.vue')['default']
-    PageHeader: typeof import('./components/PageHeader.vue')['default']
+      FormPanel: typeof import('./components/common/FormPanel.vue')['default']
+      NavMenu: typeof import('./components/common/NavMenu.vue')['default']
+      NoticeDetailDialog: typeof import('./components/common/NoticeDetailDialog.vue')['default']
+      PageHeader: typeof import('./components/common/PageHeader.vue')['default']
+      RichTextEditor: typeof import('./components/common/RichTextEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    StatsCard: typeof import('./components/StatsCard.vue')['default']
+      StatsCard: typeof import('./components/common/StatsCard.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

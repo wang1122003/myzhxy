@@ -5,8 +5,6 @@ import com.campus.utils.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,8 +19,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AuthService {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -101,7 +97,6 @@ public class AuthService {
                 try {
                     return (User) userDetailsService.loadUserByUsername((String) principal);
                 } catch (UsernameNotFoundException e) {
-                    log.warn("Could not find user details for username: {}", principal);
                 }
             }
         }

@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import AppHeader from './components/AppHeader.vue'
+import AppHeader from './components/common/AppHeader.vue'
 import {computed, onMounted} from 'vue'
 import {fetchUserInfo} from '@/utils/auth'
 

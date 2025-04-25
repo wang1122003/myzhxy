@@ -386,8 +386,6 @@ import {
   ElPagination,
   ElRow,
   ElSelect,
-  ElTable,
-  ElTableColumn,
   ElTimeSelect,
 } from 'element-plus';
 import {addSchedule, deleteSchedule, getScheduleById, getScheduleList, updateSchedule} from '@/api/schedule';
@@ -396,7 +394,7 @@ import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherSelectList} from '@/api/user';
 import {getAvailableClassrooms} from '@/api/classroom';
 import {getTermList} from '@/api/term';
-import {Search, Plus} from '@element-plus/icons-vue';
+import {Plus, Search} from '@element-plus/icons-vue';
 
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);

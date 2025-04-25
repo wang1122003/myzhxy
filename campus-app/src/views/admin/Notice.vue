@@ -78,9 +78,9 @@
 
     <!-- 通知列表 -->
     <el-card class="notice-list-card">
-      <BaseTable :table-data="noticeList"
+      <BaseTable
+          :table-data="noticeList"
           v-loading="loading"
-          :data="noticeList"
           style="width: 100%"
       >
         <el-table-column
@@ -305,7 +305,6 @@ import {
   ElOption,
   ElPagination,
   ElSelect,
-  ElTable,
   ElTableColumn,
   ElTag,
   ElUpload

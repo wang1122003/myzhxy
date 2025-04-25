@@ -30,17 +30,17 @@ public interface NotificationDao extends BaseMapper<Notification> {
     
     /**
      * 根据类型查询通知列表
-     * @param noticeType 通知类型
+     * @param type 通知类型 (String)
      * @return 通知列表
      */
-    List<Notification> findByType(@Param("noticeType") Integer noticeType);
+    List<Notification> findByType(@Param("type") String type);
     
     /**
      * 根据状态查询通知列表
-     * @param status 状态
+     * @param status 状态 (改为 String)
      * @return 通知列表
      */
-    List<Notification> findByStatus(@Param("status") Integer status);
+    List<Notification> findByStatus(@Param("status") String status);
     
     /**
      * 查询最新的N条通知
@@ -66,10 +66,10 @@ public interface NotificationDao extends BaseMapper<Notification> {
      * 批量更新通知状态
      *
      * @param ids    通知ID列表
-     * @param status 新状态
+     * @param status 新状态 (改为 String)
      * @return 影响行数
      */
-    int updateStatusBatch(@Param("ids") List<Long> ids, @Param("status") Integer status);
+    int updateStatusBatch(@Param("ids") List<Long> ids, @Param("status") String status);
 
     /**
      * 增加阅读次数
@@ -87,30 +87,4 @@ public interface NotificationDao extends BaseMapper<Notification> {
      * @return 分页结果
      */
     IPage<Notification> findPage(Page<Notification> page, @Param("ew") com.baomidou.mybatisplus.core.conditions.Wrapper<Notification> queryWrapper);
-
-    /**
-     * 查询用户未读通知数量
-     *
-     * @param userId 用户ID
-     * @return 未读数量
-     */
-    int countUnread(@Param("userId") Long userId);
-
-    /**
-     * 查询用户已读通知列表（分页）
-     *
-     * @param page   分页对象
-     * @param userId 用户ID
-     * @return 分页结果
-     */
-    IPage<Notification> findReadNotifications(Page<Notification> page, @Param("userId") Long userId);
-
-    /**
-     * 查询用户未读通知列表（分页）
-     *
-     * @param page   分页对象
-     * @param userId 用户ID
-     * @return 分页结果
-     */
-    IPage<Notification> findUnreadNotifications(Page<Notification> page, @Param("userId") Long userId);
 }

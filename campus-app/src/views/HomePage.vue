@@ -261,13 +261,16 @@ const fetchNotices = async () => {
   loadingNotices.value = true
   try {
     const res = await getRecentNotifications()
-    if (res.code === 200 && res.data) {
-      notices.value = res.data.slice(0, 5)
+    if (res.code === 200 || res.success === true) {
+      // 确保res.data存在且是数组
+      notices.value = Array.isArray(res.data) ? res.data.slice(0, 5) : []
     } else {
       console.error('获取最近通知失败:', res.message)
+      notices.value = []
     }
   } catch (error) {
     console.error('获取最近通知异常:', error)
+    notices.value = []
   } finally {
     loadingNotices.value = false
   }
@@ -318,7 +321,7 @@ const handleLogin = () => {
         console.log('[HomePage] Redirecting based on role from authLogin:', loggedInRole);
 
         if (loggedInRole === 'admin') {
-          router.push('/admin')
+          router.push('/admin/notice')
         } else if (loggedInRole === 'teacher') {
           router.push('/teacher')
         } else if (loggedInRole === 'student') {

@@ -284,9 +284,7 @@ import {
   ElOption,
   ElPagination,
   ElSelect,
-  ElSwitch,
-  ElTable,
-  ElTableColumn
+  ElSwitch
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';

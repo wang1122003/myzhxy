@@ -3,14 +3,12 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:flyway="http://flywaydb.org/schema/flyway"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context
        http://www.springframework.org/schema/context/spring-context.xsd
        http://www.springframework.org/schema/tx
-       http://www.springframework.org/schema/tx/spring-tx.xsd
-       http://flywaydb.org/schema/flyway http://flywaydb.org/schema/flyway/flyway-spring.xsd">
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
 
     <!-- 扫描service包下所有使用注解的类型 -->
     <context:component-scan base-package="com.campus.service" />
@@ -23,14 +21,24 @@
         <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
     </context:component-scan>
 
-    <!-- 扫描配置类 -->
-    <context:component-scan base-package="com.campus.config"/>
+    <!-- 扫描配置类 (部分配置已迁移或移除) -->
+    <!-- <context:component-scan base-package="com.campus.config"/> -->
+    <!-- 保留对特定配置Bean的扫描或显式定义 -->
+
+    <!-- 配置MyBatis Mapper扫描 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.campus.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
 
     <!-- 配置数据库和应用属性 -->
     <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties" />
 
     <!-- 显式定义 StorageProperties Bean -->
     <bean id="storageProperties" class="com.campus.config.StorageProperties"/>
+
+    <!-- 配置密码编码器 -->
+    <bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
 
     <!-- 配置数据源 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
@@ -115,6 +123,5 @@
     <!-- 恢复 JwtUtil Bean 定义 -->
     <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
 
-    <!-- 配置 ObjectMapper Bean，使其在根上下文可用 -->
-    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
+    <!-- ObjectMapper Bean 定义移至 spring-mvc.xml -->
 </beans>

@@ -5,7 +5,6 @@ import com.campus.entity.Notification;
 import com.campus.exception.CustomException;
 import com.campus.service.NotificationService;
 import com.campus.utils.Result;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +13,6 @@ import java.util.List;
 /**
  * 通知公告控制器
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -39,7 +37,6 @@ public class NotificationController {
                 return Result.error("通知不存在");
             }
         } catch (Exception e) {
-            log.error("获取通知详情失败, ID: {}", id, e);
             return Result.error("获取通知详情失败");
         }
     }
@@ -63,7 +60,7 @@ public class NotificationController {
      */
     @GetMapping("/type/{noticeType}")
     public Result<List<Notification>> getNotificationsByType(@PathVariable Integer noticeType) {
-        List<Notification> notifications = notificationService.getNotificationsByType(noticeType);
+        List<Notification> notifications = notificationService.getNotificationsByType(String.valueOf(noticeType));
         return Result.success("获取成功", notifications);
     }
 
@@ -75,7 +72,7 @@ public class NotificationController {
      */
     @GetMapping("/status/{status}")
     public Result<List<Notification>> getNotificationsByStatus(@PathVariable Integer status) {
-        List<Notification> notifications = notificationService.getNotificationsByStatus(status);
+        List<Notification> notifications = notificationService.getNotificationsByStatus(String.valueOf(status));
         return Result.success("获取成功", notifications);
     }
 
@@ -128,10 +125,8 @@ public class NotificationController {
             notificationService.addNotification(notification);
             return Result.success("添加成功");
         } catch (CustomException ce) {
-            log.warn("添加通知失败: {}", ce.getMessage());
             return Result.error(ce.getMessage());
         } catch (Exception e) {
-            log.error("添加通知时发生错误", e);
             return Result.error("添加失败: " + e.getMessage());
         }
     }
@@ -149,10 +144,8 @@ public class NotificationController {
             notificationService.updateNotification(notification);
             return Result.success("更新成功");
         } catch (CustomException ce) {
-            log.warn("更新通知失败: {}", ce.getMessage());
             return Result.error(ce.getMessage());
         } catch (Exception e) {
-            log.error("更新通知时发生错误", e);
             return Result.error("更新失败: " + e.getMessage());
         }
     }
@@ -170,7 +163,6 @@ public class NotificationController {
             notificationService.updateNotificationStatus(id, status);
             return Result.success("更新状态成功");
         } catch (Exception e) {
-            log.error("更新通知状态失败, ID: {}, Status: {}", id, status, e);
             return Result.error("更新状态失败: " + e.getMessage());
         }
     }
@@ -187,7 +179,6 @@ public class NotificationController {
             notificationService.deleteNotification(id);
             return Result.success("删除成功");
         } catch (Exception e) {
-            log.error("删除通知失败, ID: {}", id, e);
             return Result.error("删除失败: " + e.getMessage());
         }
     }
@@ -204,29 +195,35 @@ public class NotificationController {
             notificationService.batchDeleteNotifications(ids);
             return Result.success("批量删除成功");
         } catch (Exception e) {
-            log.error("批量删除通知失败, IDs: {}", ids, e);
             return Result.error("批量删除失败: " + e.getMessage());
         }
     }
 
     /**
-     * 分页获取通知列表
+     * 分页查询通知
      *
-     * @param pageNo       页码
-     * @param pageSize     每页数量
-     * @param notification 查询条件 (可选)
+     * @param pageNo 页码
+     * @param pageSize 每页大小
+     * @param type 通知类型（可选）
+     * @param keyword 关键词（可选）
+     * @param status 通知状态（可选）
      * @return 分页结果
      */
     @GetMapping("/page")
-    public Result<IPage<Notification>> getNotificationPage(@RequestParam(defaultValue = "1") int pageNo,
-                                                           @RequestParam(defaultValue = "10") int pageSize,
-                                                           Notification notification) {
+    public Result getNotificationPage(
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Integer type,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer status) {
         try {
-            IPage<Notification> page = notificationService.getNotificationPage(pageNo, pageSize, notification);
-            return Result.success("查询成功", page);
+            String typeStr = (type != null) ? String.valueOf(type) : null;
+            String statusStr = (status != null) ? String.valueOf(status) : null;
+            IPage<Notification> page = notificationService.getNotificationPage(pageNo, pageSize, typeStr, keyword, statusStr);
+            return Result.success("获取通知列表成功", page);
         } catch (Exception e) {
-            log.error("分页查询通知失败", e);
-            return Result.error("查询失败");
+            e.printStackTrace(); // 打印详细错误信息以便调试
+            return Result.error("获取通知分页数据失败: " + e.getMessage());
         }
     }
 } 

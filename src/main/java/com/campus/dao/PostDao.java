@@ -36,18 +36,11 @@ public interface PostDao extends BaseMapper<Post> {
     List<Post> findByAuthorId(Long authorId);
     
     /**
-     * 根据论坛ID查询帖子
-     * @param forumId 论坛ID
-     * @return 帖子列表
-     */
-    List<Post> findByForumId(Long forumId);
-    
-    /**
      * 根据状态查询帖子
      * @param status 帖子状态
      * @return 帖子列表
      */
-    List<Post> findByStatus(Integer status);
+    List<Post> findByStatus(String status);
     
     /**
      * 查询置顶帖子
@@ -67,20 +60,6 @@ public interface PostDao extends BaseMapper<Post> {
      * @return 帖子列表
      */
     List<Post> getHotPosts(@Param("limit") Integer limit);
-    
-    /**
-     * 根据分类查询帖子
-     * @param category 分类
-     * @return 帖子列表
-     */
-    List<Post> findByCategory(String category);
-    
-    /**
-     * 根据标签ID查询帖子
-     * @param tagId 标签ID
-     * @return 帖子列表
-     */
-    List<Post> findByTagId(Long tagId);
     
     /**
      * 分页查询帖子
@@ -130,7 +109,7 @@ public interface PostDao extends BaseMapper<Post> {
      * @param status 帖子状态
      * @return 影响行数
      */
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
     
     /**
      * 更新帖子浏览数
@@ -178,20 +157,6 @@ public interface PostDao extends BaseMapper<Post> {
     int getUserPostCount(Long userId);
     
     /**
-     * 获取分类帖子数
-     * @param category 分类
-     * @return 帖子数量
-     */
-    int getCategoryPostCount(String category);
-    
-    /**
-     * 获取标签帖子数
-     * @param tagId 标签ID
-     * @return 帖子数量
-     */
-    int getTagPostCount(Long tagId);
-    
-    /**
      * 获取帖子总数
      * @return 帖子总数
      */
@@ -216,7 +181,7 @@ public interface PostDao extends BaseMapper<Post> {
      * @param status 状态
      * @return 帖子总数
      */
-    int countByStatus(Integer status);
+    int countByStatus(String status);
     
     /**
      * 根据作者ID分页查询帖子
@@ -276,27 +241,27 @@ public interface PostDao extends BaseMapper<Post> {
      * @return 影响行数
      */
     int deleteLike(@Param("postId") Long postId, @Param("userId") Long userId);
-    
+
     /**
-     * 根据帖子ID查询标签
-     * @param postId 帖子ID
-     * @return 标签列表
+     * 根据分类查询帖子
+     * @param category 分类名称
+     * @return 帖子列表
      */
-    List<Map<String, Object>> findTagsByPostId(Long postId);
-    
+    List<Post> findByCategory(@Param("category") String category);
+
     /**
-     * 插入帖子标签
-     * @param postId 帖子ID
-     * @param tagIds 标签ID数组
-     * @return 影响行数
+     * 根据分类分页查询帖子
+     * @param category 分类名称
+     * @param offset 偏移量
+     * @param limit 数量限制
+     * @return 帖子列表
      */
-    int insertPostTags(@Param("postId") Long postId, @Param("tagIds") Long[] tagIds);
-    
+    List<Post> findByCategoryAndPage(@Param("category") String category, @Param("offset") int offset, @Param("limit") int limit);
+
     /**
-     * 删除帖子标签
-     * @param postId 帖子ID
-     * @param tagId 标签ID
-     * @return 影响行数
+     * 根据分类获取帖子总数
+     * @param category 分类名称
+     * @return 帖子总数
      */
-    int deletePostTag(@Param("postId") Long postId, @Param("tagId") Long tagId);
+    int countByCategory(@Param("category") String category);
 }

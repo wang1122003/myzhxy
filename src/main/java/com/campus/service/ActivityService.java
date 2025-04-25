@@ -3,7 +3,6 @@ package com.campus.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Activity;
-import com.campus.vo.ActivityRegistrationVO;
 
 import java.util.List;
 
@@ -27,17 +26,17 @@ public interface ActivityService extends IService<Activity> {
     
     /**
      * 根据活动类型查询活动
-     * @param activityType 活动类型
+     * @param type 活动类型 (String)
      * @return 活动列表
      */
-    List<Activity> getActivitiesByType(Integer activityType);
+    List<Activity> getActivitiesByType(String type);
     
     /**
      * 根据状态查询活动
-     * @param status 状态
+     * @param status 状态 (String)
      * @return 活动列表
      */
-    List<Activity> getActivitiesByStatus(Integer status);
+    List<Activity> getActivitiesByStatus(String status);
     
     /**
      * 查询进行中的活动
@@ -83,10 +82,10 @@ public interface ActivityService extends IService<Activity> {
     /**
      * 更新活动状态
      * @param id 活动ID
-     * @param status 状态值
+     * @param status 状态值 (String)
      * @return 是否成功
      */
-    boolean updateActivityStatus(Long id, Integer status);
+    boolean updateActivityStatus(Long id, String status);
 
     /**
      * 分页并按条件查询活动列表
@@ -94,60 +93,9 @@ public interface ActivityService extends IService<Activity> {
      * @param page         页码
      * @param size         每页数量
      * @param keyword      关键词 (可选, 搜索标题或描述)
-     * @param activityType 活动类型 (可选)
-     * @param status       活动状态 (可选)
+     * @param type 活动类型 (可选, String)
+     * @param status       活动状态 (可选, String)
      * @return 分页后的活动列表
      */
-    IPage<Activity> getActivityPage(int page, int size, String keyword, Integer activityType, Integer status);
-
-    /**
-     * 获取指定学生参加的所有活动
-     *
-     * @param studentId 学生ID
-     * @return 活动列表
-     */
-    List<Activity> getStudentEnrolledActivities(Long studentId);
-
-    /**
-     * 用户加入活动
-     *
-     * @param activityId 活动ID
-     * @param userId     用户ID
-     * @return 是否成功
-     */
-    boolean joinActivity(Long activityId, Long userId);
-
-    /**
-     * 用户退出活动
-     *
-     * @param activityId 活动ID
-     * @param userId     用户ID
-     * @return 是否成功
-     */
-    boolean quitActivity(Long activityId, Long userId);
-
-    /**
-     * 获取用户参加的活动列表
-     *
-     * @param userId 用户ID
-     * @return 活动列表
-     */
-    List<Activity> getUserActivities(Long userId);
-
-    /**
-     * 判断用户是否已参加活动
-     *
-     * @param activityId 活动ID
-     * @param userId     用户ID
-     * @return 是否参加
-     */
-    boolean isUserJoined(Long activityId, Long userId);
-
-    /**
-     * 获取活动报名列表 (包含报名者信息)
-     *
-     * @param activityId 活动ID
-     * @return 报名视图对象列表
-     */
-    List<ActivityRegistrationVO> getRegistrationsByActivityId(Long activityId);
+    IPage<Activity> getActivityPage(int page, int size, String keyword, String type, String status);
 }

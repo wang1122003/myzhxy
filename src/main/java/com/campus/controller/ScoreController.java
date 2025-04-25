@@ -5,10 +5,9 @@ import com.campus.entity.Score;
 import com.campus.entity.User;
 import com.campus.service.AuthService;
 import com.campus.service.ScoreService;
+// import com.campus.service.TermService; // Removed Term dependency
 import com.campus.utils.Result;
-import com.campus.vo.ScoreVO;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +18,6 @@ import java.util.Map;
  * 成绩管理控制器 (已重构)
  * 提供简化后的成绩查询和管理 API。
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/scores")
 public class ScoreController {
@@ -30,6 +28,9 @@ public class ScoreController {
     @Autowired
     private AuthService authService;
 
+    // @Autowired
+    // private TermService termService; // Removed TermService injection
+
     // --- 核心 CRUD 操作 --- 
 
     /**
@@ -39,7 +40,7 @@ public class ScoreController {
      * @return 操作结果
      */
     @PostMapping // 处理创建
-    public Result recordOrUpdateScore(@RequestBody Score score) {
+    public Result<String> recordOrUpdateScore(@RequestBody Score score) {
         // 在调用Service前进行基本验证
         if (score.getStudentId() == null || score.getCourseId() == null || score.getTotalScore() == null) {
             return Result.error("请求参数错误：缺少 studentId, courseId 或 totalScore");
@@ -48,7 +49,6 @@ public class ScoreController {
             boolean result = scoreService.recordScore(score);
             return result ? Result.success("操作成功") : Result.error("操作失败");
         } catch (Exception e) {
-            log.error("记录/更新成绩出错: {}", e.getMessage(), e);
             return Result.error("操作失败: " + e.getMessage());
         }
     }
@@ -59,12 +59,11 @@ public class ScoreController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
-    public Result deleteScore(@PathVariable Long id) {
+    public Result<String> deleteScore(@PathVariable Long id) {
         try {
             boolean result = scoreService.deleteScore(id);
             return result ? Result.success("删除成功") : Result.error("删除失败或成绩不存在");
         } catch (Exception e) {
-            log.error("删除成绩 ID {} 出错: {}", id, e.getMessage(), e);
             return Result.error("删除失败: " + e.getMessage());
         }
     }
@@ -75,12 +74,11 @@ public class ScoreController {
      * @return 删除结果
      */
     @DeleteMapping("/batch")
-    public Result batchDeleteScores(@RequestBody Long[] ids) {
+    public Result<String> batchDeleteScores(@RequestBody Long[] ids) {
         try {
             boolean result = scoreService.batchDeleteScores(ids);
             return result ? Result.success("批量删除成功") : Result.error("批量删除失败");
         } catch (Exception e) {
-            log.error("批量删除成绩出错: {}", e.getMessage(), e);
             return Result.error("批量删除失败: " + e.getMessage());
         }
     }
@@ -88,14 +86,26 @@ public class ScoreController {
     // --- 查询操作 --- 
 
     /**
-     * 获取指定学生指定课程的成绩
-     * @param studentId 学生ID
-     * @param courseId 课程ID
+     * 根据选课ID获取成绩
+     * @param selectionId 选课ID
      * @return 成绩对象
      */
+    @GetMapping("/selection/{selectionId}")
+    public Result<Score> getScoreBySelectionId(@PathVariable Long selectionId) {
+        Score score = scoreService.getScoreBySelectionId(selectionId);
+        return score != null ? Result.success(score) : Result.error("未找到成绩记录");
+    }
+
+    /**
+     * 获取指定学生指定课程的成绩
+     *
+     * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
+     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
+     */
     @GetMapping("/student/{studentId}/course/{courseId}")
-    public Result getStudentCourseScore(@PathVariable Long studentId, @PathVariable Long courseId) {
-        Score score = scoreService.getStudentCourseScore(studentId, courseId);
+    public Result<Score> getStudentCourseScore(@PathVariable Long studentId, @PathVariable Long courseId,
+                                               @RequestParam(required = false) String termInfo) {
+        Score score = scoreService.getStudentCourseScore(studentId, courseId, termInfo);
         return score != null ? Result.success(score) : Result.error("未找到成绩记录");
     }
 
@@ -105,8 +115,20 @@ public class ScoreController {
      * @return 学生的成绩列表
      */
     @GetMapping("/student/{studentId}")
-    public Result getStudentScores(@PathVariable Long studentId) {
-        List<ScoreVO> scores = scoreService.getStudentScores(studentId);
+    public Result<List<Score>> getStudentScores(@PathVariable Long studentId) {
+        List<Score> scores = scoreService.getStudentScores(studentId);
+        return Result.success(scores);
+    }
+
+    /**
+     * 获取指定学生在指定学期的所有成绩
+     *
+     * @param termInfo 学期信息 (字符串如 "2023-2024-1")
+     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
+     */
+    @GetMapping("/student/{studentId}/term")
+    public Result<List<Score>> getStudentTermScores(@PathVariable Long studentId, @RequestParam String termInfo) {
+        List<Score> scores = scoreService.getStudentTermScores(studentId, termInfo);
         return Result.success(scores);
     }
 
@@ -116,39 +138,66 @@ public class ScoreController {
      * @return 课程的成绩列表
      */
     @GetMapping("/course/{courseId}")
-    public Result getCourseScores(@PathVariable Long courseId) {
+    public Result<List<Score>> getCourseScores(@PathVariable Long courseId) {
         List<Score> scores = scoreService.getCourseScores(courseId);
         return Result.success(scores);
     }
 
     /**
-     * 获取当前登录学生的成绩
+     * 获取指定课程在指定学期的所有成绩
      *
-     * @param request HTTP请求
-     * @return 学生的成绩列表
+     * @param termInfo 学期信息 (字符串如 "2023-2024-1")
+     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
-    @GetMapping("/me")
-    public Result getMyScores(HttpServletRequest request) {
-        User currentUser = authService.getCurrentUserFromRequest(request); // 使用修正后的方法名
-        if (currentUser == null) {
-            return Result.error(401, "用户未认证");
-        }
-        // 假设学生有特定的 userType 或根据登录用户ID检索
-        // if (currentUser.getUserType() != 3) { ... return Result.error(403, ...); }
-
-        List<ScoreVO> scores = scoreService.getStudentScores(currentUser.getId());
+    @GetMapping("/course/{courseId}/term")
+    public Result<List<Score>> getCourseTermScores(@PathVariable Long courseId, @RequestParam String termInfo) {
+        List<Score> scores = scoreService.getCourseTermScores(courseId, termInfo);
         return Result.success(scores);
     }
 
     /**
-     * 获取指定课程的成绩统计信息
+     * 获取当前登录学生的成绩
+     */
+    @GetMapping("/me")
+    public Result<List<Score>> getMyScores(HttpServletRequest request) {
+        User currentUser = authService.getCurrentUserFromRequest(request);
+        if (currentUser == null) {
+            return Result.error(401, "用户未认证");
+        }
+        if (currentUser.getUserType() == null || !currentUser.getUserType().name().equals("STUDENT")) { // Use Enum
+            return Result.error(403, "权限不足，只有学生可以查看自己的成绩");
+        }
+
+        try {
+            List<Score> scores = scoreService.getStudentScores(currentUser.getId());
+            return Result.success(scores);
+        } catch (Exception e) {
+            return Result.error("获取成绩失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 计算学生GPA
      *
-     * @param courseId 课程ID
-     * @return 统计信息Map
+     * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
+     *                 // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
+     */
+    @GetMapping("/gpa/student/{studentId}")
+    public Result<Double> calculateStudentGPA(@PathVariable Long studentId,
+                                              @RequestParam(required = false) String termInfo) {
+        double gpa = scoreService.calculateStudentGPA(studentId, termInfo);
+        return Result.success(gpa);
+    }
+
+    /**
+     * 获取指定课程的成绩统计信息
+     * @param termInfo 学期信息 (可选, 字符串如 "2023-2024-1")
+     * // TODO: [学期功能] Ensure termInfo string is handled correctly by service layer
      */
     @GetMapping("/stats/course/{courseId}")
-    public Result getCourseScoreStatistics(@PathVariable Long courseId) {
-        Map<String, Object> stats = scoreService.getScoreStatistics(courseId);
+    public Result<Map<String, Object>> getCourseScoreStatistics(@PathVariable Long courseId,
+                                                                @RequestParam(required = false) String termInfo) {
+        Map<String, Object> stats = scoreService.getScoreStatistics(courseId, termInfo);
         return Result.success(stats);
     }
 

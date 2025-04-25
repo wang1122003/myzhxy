@@ -3,8 +3,8 @@ package com.campus.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.campus.dto.PageResult;
 import com.campus.entity.Post;
+import com.campus.utils.PageUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -72,10 +72,11 @@ public interface PostService extends IService<Post> {
     
     /**
      * 删除评论
+     * @param postId 帖子ID
      * @param commentId 评论ID
      * @return 是否成功
      */
-    boolean deleteComment(Long commentId);
+    boolean deleteComment(Long postId, String commentId);
     
     /**
      * 获取热门帖子
@@ -125,11 +126,11 @@ public interface PostService extends IService<Post> {
     List<Post> getPostsByAuthorId(Long authorId);
     
     /**
-     * 根据板块ID查询帖子
-     * @param forumId 板块ID
+     * 根据板块类别查询帖子
+     * @param category 板块类别
      * @return 帖子列表
      */
-    List<Post> getPostsByForumId(Long forumId);
+    List<Post> getPostsByCategory(String category);
     
     /**
      * 根据状态查询帖子
@@ -224,33 +225,33 @@ public interface PostService extends IService<Post> {
     boolean deletePost(Long id);
 
     /**
-     * 分页查询帖子列表
+     * 分页查询帖子列表并返回为Map结构
      *
      * @param params 查询参数 (包含过滤条件)
      * @param page   当前页码
      * @param size   每页数量
-     * @return 分页结果
+     * @return 分页结果的Map表示
      */
-    PageResult<Post> findPage(Map<String, Object> params, int page, int size);
+    Map<String, Object> findPageMap(Map<String, Object> params, int page, int size);
 
     /**
-     * 根据板块ID获取帖子
+     * 根据板块类别获取帖子
      *
-     * @param forumId 板块ID
+     * @param category 板块类别
      * @param page    页码
      * @param size    每页大小
      * @return 帖子分页数据 (Map 格式，适配 Controller)
      */
-    Map<String, Object> getPostsByForumId(Long forumId, int page, int size);
+    Map<String, Object> getPostsByCategory(String category, int page, int size);
 
     /**
-     * 分页查询帖子列表
+     * 根据类别分页查询帖子列表
      *
      * @param page    分页参数
-     * @param forumId 板块ID
-     * @return 帖子分页列表
+     * @param category 板块类别
+     * @return 分页结果
      */
-    IPage<Post> getPostPage(Page<Post> page, Long forumId);
+    IPage<Post> getPostPageByCategory(Page<Post> page, String category);
 
     /**
      * 根据ID获取帖子详情
@@ -284,4 +285,14 @@ public interface PostService extends IService<Post> {
      * @return 热门标签列表
      */
     List<String> getHotTags(int limit);
+
+    /**
+     * 分页查询帖子
+     *
+     * @param params 查询参数
+     * @param page   页码
+     * @param size   每页大小
+     * @return 分页结果
+     */
+    PageUtils.PageResult<Post> findPage(Map<String, Object> params, int page, int size);
 }

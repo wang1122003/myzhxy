@@ -145,7 +145,6 @@ import {
   ElPagination,
   ElSelect,
   ElSwitch,
-  ElTable,
   ElTableColumn,
   ElTag
 } from 'element-plus';

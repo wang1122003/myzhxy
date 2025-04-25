@@ -2,6 +2,7 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.User;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * 用户数据访问接口
  */
+@Mapper
 @Repository
 public interface UserDao extends BaseMapper<User> {
     /**
@@ -18,6 +20,14 @@ public interface UserDao extends BaseMapper<User> {
      * @return 用户对象
      */
     User findByUsername(String username);
+
+    /**
+     * 根据学工号查询用户
+     *
+     * @param userNo 学工号
+     * @return 用户对象
+     */
+    User findByUserNo(String userNo);
     
     /**
      * 根据用户类型查询用户
@@ -31,7 +41,7 @@ public interface UserDao extends BaseMapper<User> {
      * @param status 状态
      * @return 用户列表
      */
-    List<User> findByStatus(Integer status);
+    List<User> findByStatus(String status);
     
     /**
      * 用户登录
@@ -53,7 +63,7 @@ public interface UserDao extends BaseMapper<User> {
      * @param status 状态
      * @return 用户数量
      */
-    int getStatusUserCount(Integer status);
+    int getStatusUserCount(String status);
     
     /**
      * 检查用户名是否存在
@@ -77,13 +87,21 @@ public interface UserDao extends BaseMapper<User> {
     boolean isPhoneExists(String phone);
 
     /**
+     * 检查学工号是否存在
+     *
+     * @param userNo 学工号
+     * @return 是否存在
+     */
+    boolean isUserNoExists(String userNo);
+
+    /**
      * 更新用户状态
      *
      * @param id     用户ID
      * @param status 状态值
      * @return 影响行数
      */
-    int updateUserStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateUserStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
      * 更新密码
@@ -101,15 +119,6 @@ public interface UserDao extends BaseMapper<User> {
      * @return 删除数量
      */
     int deleteBatchIds(@Param("ids") List<Long> ids);
-
-    /**
-     * 根据部门ID列表查询用户ID列表
-     * (假设 User 表或关联表中有 department_id 字段)
-     *
-     * @param departmentIds 部门ID列表
-     * @return 用户ID列表
-     */
-    List<Long> findUserIdsByDepartmentIds(@Param("departmentIds") List<Long> departmentIds);
 
     /**
      * 查询所有有效的用户ID列表

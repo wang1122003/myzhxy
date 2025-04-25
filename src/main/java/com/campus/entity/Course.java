@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -39,25 +40,13 @@ public class Course implements Serializable {
      * 课程学分
      */
     @TableField("credit")
-    private Float credit;
+    private BigDecimal credit;
     
     /**
-     * 课程类型：1-必修课，2-选修课
+     * 课程类型：1-必修课，2-选修课，3-通识等
      */
     @TableField("course_type")
     private Integer courseType;
-    
-    /**
-     * 课程所属学院ID
-     */
-    @TableField(exist = false) // 非数据库字段
-    private Long collegeId;
-    
-    /**
-     * 课程所属学院名称
-     */
-    @TableField(exist = false) // 非数据库字段
-    private String collegeName;
     
     /**
      * 课程简介
@@ -78,16 +67,10 @@ public class Course implements Serializable {
     private String teacherName;
 
     /**
-     * 课时数(非数据库字段)
+     * 课程状态 (String, e.g., "Active", "Inactive")
      */
-    @TableField(exist = false)
-    private Integer hours;
-
-    /**
-     * 课程状态(非数据库字段)
-     */
-    @TableField(exist = false)
-    private Integer status;
+    @TableField("status")
+    private String status;
     
     /**
      * 创建时间
@@ -102,16 +85,8 @@ public class Course implements Serializable {
     private Date updateTime;
 
     /**
-     * 课程代码
+     * 学期信息
      */
-    @TableField("course_code")
-    private String courseCode;
-
-    // 由于 Lombok 问题，显式添加可能缺失的 getter 方法
-    public String getCourseCode() {
-        return this.courseCode;
-    }
-
-    // 如果需要，稍后添加显式 setter 方法
-    // public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+    @TableField("term_info")
+    private String termInfo;
 }

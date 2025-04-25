@@ -16,7 +16,7 @@ const routes = [
             if (token && userRole) {
                 // 已登录用户根据角色重定向到对应的首页
                 if (userRole === 'admin') {
-                    next('/admin')
+                    next('/admin/notice')
                 } else if (userRole === 'teacher') {
                     next('/teacher')
                 } else if (userRole === 'student') {
@@ -38,7 +38,7 @@ const routes = [
     {
         path: '/forum',
         name: 'Forum',
-        component: () => import('../views/Forum.vue')
+        component: () => import('../views/forum/Forum.vue')
     },
     {
         path: '/forum/post/:id',

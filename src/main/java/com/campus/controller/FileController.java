@@ -3,8 +3,6 @@ package com.campus.controller;
 import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -32,9 +30,7 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("/api")
 public class FileController {
-    
-    private static final Logger logger = LoggerFactory.getLogger(FileController.class);
-    
+
     @Autowired
     private FileService fileService;
 
@@ -53,7 +49,7 @@ public class FileController {
             String filePath = fileService.uploadImage(file);
             return Result.success("图片上传成功", filePath);
         } catch (Exception e) {
-            logger.error("图片上传失败", e);
+            System.out.println("图片上传失败: " + e.getMessage());
             return Result.error("图片上传失败: " + e.getMessage());
         }
     }
@@ -71,7 +67,7 @@ public class FileController {
             String filePath = fileService.uploadImage(file, type);
             return Result.success("图片上传成功", filePath);
         } catch (Exception e) {
-            logger.error("图片上传失败", e);
+            System.out.println("图片上传失败: " + e.getMessage());
             return Result.error("图片上传失败: " + e.getMessage());
         }
     }
@@ -88,7 +84,7 @@ public class FileController {
             String filePath = fileService.uploadActivityPoster(file);
             return Result.success("活动海报上传成功", filePath);
         } catch (Exception e) {
-            logger.error("活动海报上传失败", e);
+            System.out.println("活动海报上传失败: " + e.getMessage());
             return Result.error("活动海报上传失败: " + e.getMessage());
         }
     }
@@ -106,7 +102,7 @@ public class FileController {
             String filePath = fileService.uploadUserAvatar(file, userId);
             return Result.success("用户头像上传成功", filePath);
         } catch (Exception e) {
-            logger.error("用户头像上传失败", e);
+            System.out.println("用户头像上传失败: " + e.getMessage());
             return Result.error("用户头像上传失败: " + e.getMessage());
         }
     }
@@ -123,7 +119,7 @@ public class FileController {
             String filePath = fileService.uploadPostImage(file);
             return Result.success("帖子图片上传成功", filePath);
         } catch (Exception e) {
-            logger.error("帖子图片上传失败", e);
+            System.out.println("帖子图片上传失败: " + e.getMessage());
             return Result.error("帖子图片上传失败: " + e.getMessage());
         }
     }
@@ -140,7 +136,7 @@ public class FileController {
             String filePath = fileService.uploadDocument(file);
             return Result.success("文档上传成功", filePath);
         } catch (Exception e) {
-            logger.error("文档上传失败", e);
+            System.out.println("文档上传失败: " + e.getMessage());
             return Result.error("文档上传失败: " + e.getMessage());
         }
     }
@@ -158,7 +154,7 @@ public class FileController {
             String filePath = fileService.uploadCourseMaterial(file, courseId);
             return Result.success("课程材料上传成功", filePath);
         } catch (Exception e) {
-            logger.error("课程材料上传失败", e);
+            System.out.println("课程材料上传失败: " + e.getMessage());
             return Result.error("课程材料上传失败: " + e.getMessage());
         }
     }
@@ -175,13 +171,13 @@ public class FileController {
             Map<String, String> fileInfo = fileService.uploadNoticeAttachment(file);
             return Result.success("通知附件上传成功", fileInfo);
         } catch (IOException e) {
-            logger.error("通知附件上传失败: IO Error", e);
+            System.out.println("通知附件上传失败: IO Error - " + e.getMessage());
             return Result.error("通知附件上传失败: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            logger.warn("通知附件上传失败: Invalid Argument - {}", e.getMessage());
+            System.out.println("通知附件上传失败: Invalid Argument - " + e.getMessage());
             return Result.error("通知附件上传失败: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("通知附件上传失败: Unexpected Error", e);
+            System.out.println("通知附件上传失败: Unexpected Error - " + e.getMessage());
             return Result.error("通知附件上传失败，请稍后重试");
         }
     }
@@ -203,7 +199,7 @@ public class FileController {
                 return Result.error("文件删除失败或文件不存在"); 
             }
         } catch (Exception e) {
-            logger.error("删除文件时发生异常, path: {}", filePath, e);
+            System.out.println("删除文件时发生异常, path: " + filePath + ", error: " + e.getMessage());
             return Result.error("文件删除失败: " + e.getMessage());
         }
     }
@@ -220,7 +216,7 @@ public class FileController {
             String fileInfo = fileService.getFileInfo(filePath);
             return Result.success("获取文件信息成功", fileInfo);
         } catch (Exception e) {
-            logger.error("获取文件信息失败", e);
+            System.out.println("获取文件信息失败: " + e.getMessage());
             return Result.error("获取文件信息失败: " + e.getMessage());
         }
     }
@@ -254,12 +250,12 @@ public class FileController {
             
             outputStream.flush();
         } catch (IOException e) {
-            logger.error("文件下载失败", e);
+            System.out.println("文件下载失败: " + e.getMessage());
             try {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getOutputStream().write(("文件下载失败: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
             } catch (IOException ex) {
-                logger.error("设置错误响应失败", ex);
+                System.out.println("设置错误响应失败: " + ex.getMessage());
             }
         }
     }
@@ -278,7 +274,7 @@ public class FileController {
             String tempUrl = fileService.generateTempUrl(filePath, expireTime);
             return Result.success("临时URL生成成功", tempUrl);
         } catch (Exception e) {
-            logger.error("生成临时URL失败", e);
+            System.out.println("生成临时URL失败: " + e.getMessage());
             return Result.error("生成临时URL失败: " + e.getMessage());
         }
     }
@@ -291,7 +287,7 @@ public class FileController {
      */
     @GetMapping("/file/manager/list")
     public Result listDirectory(@RequestParam(value = "directory", defaultValue = "") String directory) {
-        logger.info("Listing directory: '{}' relative to upload path: '{}'", directory, uploadPath);
+        System.out.println("Listing directory: '" + directory + "' relative to upload path: '" + uploadPath + "'");
         try {
             // -- 修复 Windows 路径问题 --
             Path baseUploadPath;
@@ -302,15 +298,15 @@ public class FileController {
                 // 如果是相对路径，则相对于当前工作目录解析
                 baseUploadPath = Paths.get(System.getProperty("user.dir"), uploadPath).normalize();
             }
-            logger.debug("Resolved base upload path object: {}", baseUploadPath);
+            System.out.println("Resolved base upload path object: " + baseUploadPath);
 
             // 确保基础上传目录存在
             if (!Files.exists(baseUploadPath)) {
-                logger.warn("Base upload directory does not exist, attempting to create: {}", baseUploadPath);
+                System.out.println("Base upload directory does not exist, attempting to create: " + baseUploadPath);
                 try {
                     Files.createDirectories(baseUploadPath);
                 } catch (IOException ioException) {
-                    logger.error("Failed to create base upload directory: {}", baseUploadPath, ioException);
+                    System.out.println("Failed to create base upload directory: " + baseUploadPath);
                     return Result.error("基础上传目录不存在且无法创建");
                 }
             }
@@ -319,19 +315,19 @@ public class FileController {
             // 解析请求的相对目录路径，并清理可能存在的路径遍历字符
             String cleanDirectory = directory.replace("..", ""); // Basic sanitation
             Path targetDirectoryPath = baseUploadPath.resolve(cleanDirectory).normalize();
-            logger.debug("Target directory path object: {}", targetDirectoryPath);
+            System.out.println("Target directory path object: " + targetDirectoryPath);
 
             // 安全检查：确保目标目录仍在基础上传路径之下
             if (!targetDirectoryPath.startsWith(baseUploadPath)) {
-                logger.warn("Access denied: Attempt to access directory outside base upload path. Target: {}", targetDirectoryPath);
+                System.out.println("Access denied: Attempt to access directory outside base upload path. Target: " + targetDirectoryPath);
                 return Result.error("无权访问该目录");
             }
 
             File targetDir = targetDirectoryPath.toFile();
-            logger.debug("Target directory file object: {}, Exists: {}, IsDirectory: {}", targetDir, targetDir.exists(), targetDir.isDirectory());
+            System.out.println("Target directory file object: " + targetDir + ", Exists: " + targetDir.exists() + ", IsDirectory: " + targetDir.isDirectory());
 
             if (!targetDir.exists() || !targetDir.isDirectory()) {
-                logger.warn("Directory not found or not a directory: {}", targetDirectoryPath);
+                System.out.println("Directory not found or not a directory: " + targetDirectoryPath);
                 return Result.error("目录不存在或不是一个有效的目录");
             }
 
@@ -354,7 +350,7 @@ public class FileController {
                         .collect(Collectors.toList());
             }
 
-            logger.info("Successfully listed {} items in directory: {}", fileList.size(), targetDirectoryPath);
+            System.out.println("Successfully listed " + fileList.size() + " items in directory: " + targetDirectoryPath);
             // 返回当前目录的相对路径和文件列表
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("currentPath", baseUploadPath.relativize(targetDirectoryPath).toString().replace('\\', '/'));
@@ -363,14 +359,14 @@ public class FileController {
             return Result.success("获取目录结构成功", responseData);
 
         } catch (IOException e) {
-            logger.error("获取目录 '{}' 结构失败: IO Error", directory, e);
+            System.out.println("获取目录 '" + directory + "' 结构失败: IO Error");
             // 提供更具体的错误信息给前端可能没有必要，但日志需要详细
             return Result.error("获取目录结构失败，请检查服务器日志");
         } catch (InvalidPathException e) {
-            logger.error("获取目录 '{}' 结构失败: Invalid Path Syntax for '{}' or '{}'", directory, uploadPath, directory, e);
+            System.out.println("获取目录 '" + directory + "' 结构失败: Invalid Path Syntax for '" + uploadPath + "' or '" + directory + "'");
             return Result.error("获取目录结构失败: 路径包含非法字符或格式错误");
         } catch (Exception e) {
-            logger.error("获取目录 '{}' 结构失败: Unexpected Error", directory, e);
+            System.out.println("获取目录 '" + directory + "' 结构失败: Unexpected Error");
             return Result.error("获取目录结构失败，请联系管理员");
         }
     }
@@ -469,7 +465,7 @@ public class FileController {
 
             return Result.success(result);
         } catch (Exception e) {
-            logger.error("获取文件统计信息失败", e);
+            System.out.println("获取文件统计信息失败: " + e.getMessage());
             return Result.error("获取文件统计信息失败: " + e.getMessage());
         }
     }

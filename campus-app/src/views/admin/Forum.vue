@@ -352,7 +352,6 @@ import {
   ElOption,
   ElPagination,
   ElSelect,
-  ElTable,
   ElTableColumn,
   ElTabPane,
   ElTabs,

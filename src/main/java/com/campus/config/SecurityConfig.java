@@ -86,16 +86,6 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * 配置密码编码器，用于密码存储和验证 (保留)
-     *
-     * @return PasswordEncoder
-     */
-    @Bean
-    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-    }
-
     // 其他 Bean 定义，如 AuthenticationManager 等 (后续添加)
 
 }

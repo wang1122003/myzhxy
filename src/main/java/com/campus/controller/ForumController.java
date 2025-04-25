@@ -1,16 +1,12 @@
 package com.campus.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.campus.dto.PageResult;
-import com.campus.entity.Comment;
+// import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+// import com.campus.entity.Comment; // Removed Comment dependency
 import com.campus.entity.Post;
-import com.campus.service.CommentService;
+// import com.campus.service.CommentService; // Removed CommentService dependency
 import com.campus.service.ForumService;
 import com.campus.service.PostService;
 import com.campus.utils.Result;
-import com.campus.vo.CommentVO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +24,11 @@ import java.util.Map;
 @RequestMapping("/api/forum")
 public class ForumController {
 
-    private static final Logger log = LoggerFactory.getLogger(ForumController.class);
-
     @Autowired
     private PostService postService;
 
-    @Autowired
-    private CommentService commentService;
+    // @Autowired
+    // private CommentService commentService; // Removed CommentService injection
 
     @Autowired
     private ForumService forumService;
@@ -121,11 +115,8 @@ public class ForumController {
         }
         params.put("sortBy", sortBy);
 
-        PageResult<Post> pageResult = postService.findPage(params, page, size);
-        Map<String, Object> result = new HashMap<>();
-        result.put("total", pageResult.getTotal());
-        result.put("rows", pageResult.getRecords());
-        return Result.success(result);
+        Map<String, Object> pageResult = postService.findPageMap(params, page, size);
+        return Result.success(pageResult);
     }
 
     /**
@@ -148,7 +139,7 @@ public class ForumController {
      * @return 更新结果
      */
     @PutMapping("/posts/{id}")
-    public Result updatePost(@PathVariable Long id, @RequestBody Post post) {
+    public Result<String> updatePost(@PathVariable Long id, @RequestBody Post post) {
         Post existingPost = postService.getPostById(id);
         if (existingPost == null) {
             return Result.error("帖子不存在");
@@ -168,7 +159,7 @@ public class ForumController {
      * @return 删除结果
      */
     @DeleteMapping("/posts/{id}")
-    public Result deletePost(@PathVariable Long id) {
+    public Result<Void> deletePost(@PathVariable Long id) {
         boolean success = postService.deletePost(id);
         return success ? Result.success() : Result.error("删除帖子失败");
     }
@@ -181,7 +172,7 @@ public class ForumController {
      * @return 我的帖子列表
      */
     @GetMapping("/posts/my")
-    public Result getMyPosts(
+    public Result<Map<String, Object>> getMyPosts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         Map<String, Object> result = postService.getMyPosts(page, size);
@@ -197,7 +188,7 @@ public class ForumController {
      * @return 用户帖子列表
      */
     @GetMapping("/posts/user/{userId}")
-    public Result getUserPosts(
+    public Result<Map<String, Object>> getUserPosts(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -214,7 +205,7 @@ public class ForumController {
      * @return 搜索结果
      */
     @GetMapping("/posts/search")
-    public Result searchPosts(
+    public Result<Map<String, Object>> searchPosts(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -229,7 +220,7 @@ public class ForumController {
      * @return 点赞结果
      */
     @PostMapping("/posts/{id}/like")
-    public Result likePost(@PathVariable Long id) {
+    public Result<Void> likePost(@PathVariable Long id) {
         boolean success = postService.likePost(id);
         return success ? Result.success() : Result.error("点赞失败");
     }
@@ -241,7 +232,7 @@ public class ForumController {
      * @return 取消点赞结果
      */
     @DeleteMapping("/posts/{id}/unlike")
-    public Result unlikePost(@PathVariable Long id) {
+    public Result<Void> unlikePost(@PathVariable Long id) {
         boolean success = postService.unlikePost(id);
         return success ? Result.success() : Result.error("取消点赞失败");
     }
@@ -253,7 +244,7 @@ public class ForumController {
      * @return 增加结果
      */
     @PostMapping("/posts/{id}/view")
-    public Result incrementViewCount(@PathVariable Long id) {
+    public Result<Void> incrementViewCount(@PathVariable Long id) {
         boolean success = postService.incrementViews(id);
         return success ? Result.success() : Result.error("操作失败");
     }
@@ -271,142 +262,95 @@ public class ForumController {
     }
 
     /**
-     * 获取帖子评论
-     *
-     * @param postId 帖子ID
-     * @return 评论列表
+     * 获取帖子的评论 (已注释)
      */
+    /*
     @GetMapping("/posts/{postId}/comments")
-    public Result getPostComments(@PathVariable Long postId) {
-        List<Comment> comments = commentService.getCommentsByPostId(postId);
-        return Result.success(comments);
+    public Result<List<Comment>> getPostComments(@PathVariable Long postId) {
+        // List<Comment> comments = commentService.getCommentsByPostId(postId);
+        // return Result.success(comments);
+        return Result.error("评论功能暂未实现");
     }
+    */
 
     /**
-     * 发表评论
-     *
-     * @param postId 帖子ID
-     * @param comment 评论内容
-     * @return 评论结果
+     * 发表评论 (已注释)
      */
+    /*
     @PostMapping("/posts/{postId}/comments")
-    public Result addComment(@PathVariable Long postId, @RequestBody Comment comment) {
-        // User currentUser = authService.getCurrentUserFromRequest(request); // 已移除: 用户应在Service层设置
-        // if (currentUser == null) {
-        //     return Result.error(401, "请先登录");
-        // }
-
-        comment.setPostId(postId); // 保留设置 postId
-        // 让Service层处理设置 authorId 和时间戳
-        // comment.setAuthorId(currentUser.getId());
-        // comment.setCreateTime(new Date());
-        // comment.setUpdateTime(new Date());
-        // comment.setLikeCount(0);
-        // if (comment.getStatus() == null) {
-        //     comment.setStatus(1); // 默认为正常状态
-        // }
-
-        boolean result = commentService.addComment(comment);
-        return result ? Result.success("评论成功", comment) : Result.error("评论失败");
+    public Result<Comment> addComment(@PathVariable Long postId, @RequestBody Comment comment) {
+        comment.setPostId(postId);
+        // boolean success = commentService.addComment(comment);
+        // return success ? Result.success(comment) : Result.error("发表评论失败");
+        return Result.error("评论功能暂未实现");
     }
+    */
 
     /**
-     * 删除评论
-     *
-     * @param commentId 评论ID
-     * @return 删除结果
+     * 删除评论 (已注释)
      */
+    /*
     @DeleteMapping("/comments/{commentId}")
-    public Result deleteComment(@PathVariable Long commentId) {
-        boolean success = commentService.deleteComment(commentId);
-        return success ? Result.success() : Result.error("删除评论失败");
+    public Result<Void> deleteComment(@PathVariable Long commentId) {
+        // boolean success = commentService.deleteComment(commentId);
+        // return success ? Result.success() : Result.error("删除评论失败");
+         return Result.error("评论功能暂未实现");
     }
+    */
 
     /**
-     * 点赞评论
-     *
-     * @param commentId 评论ID
-     * @return 点赞结果
+     * 点赞评论 (已注释)
      */
+    /*
     @PostMapping("/comments/{commentId}/like")
-    public Result likeComment(@PathVariable Long commentId) {
-        boolean success = commentService.likeComment(commentId);
-        return success ? Result.success() : Result.error("点赞失败");
+    public Result<Void> likeComment(@PathVariable Long commentId) {
+        // boolean success = commentService.likeComment(commentId, getCurrentUserId()); // Assuming a method to get current user ID
+        // return success ? Result.success() : Result.error("点赞失败");
+         return Result.error("评论功能暂未实现");
     }
+    */
 
     /**
-     * 取消点赞评论
-     *
-     * @param commentId 评论ID
-     * @return 取消点赞结果
+     * 取消点赞评论 (已注释)
      */
+    /*
     @DeleteMapping("/comments/{commentId}/unlike")
-    public Result unlikeComment(@PathVariable Long commentId) {
-        boolean success = commentService.cancelLikeComment(commentId);
-        return success ? Result.success() : Result.error("取消点赞失败");
+    public Result<Void> unlikeComment(@PathVariable Long commentId) {
+        // boolean success = commentService.unlikeComment(commentId, getCurrentUserId()); // Assuming a method to get current user ID
+        // return success ? Result.success() : Result.error("取消点赞失败");
+         return Result.error("评论功能暂未实现");
     }
+    */
 
-    // =============== 评论相关 API ===============
-
+    // =============== 管理端评论 API (移除或注释掉) ===============
     /**
-     * 获取所有评论（分页，管理端使用）
+     * 获取所有评论（管理端分页） (已注释)
      */
-    @GetMapping("/comments/all")
-    public Result<PageResult<CommentVO>> getAllComments( // 修改返回类型
-                                                         @RequestParam(defaultValue = "1") int page,
-                                                         @RequestParam(defaultValue = "10") int size,
-                                                         @RequestParam(required = false) Long postId,
-                                                         @RequestParam(required = false) Long authorId,
-                                                         @RequestParam(required = false) String keyword) {
-        // 调用返回 PageResult<CommentVO> 的服务方法
-        PageResult<CommentVO> pageResult = commentService.getAllCommentsPaginated(page, size, postId, authorId, keyword);
-        return Result.success(pageResult); // 返回成功结果
-    }
-
-    /**
-     * [新增] 获取所有评论（管理端），支持分页和筛选
-     *
-     * @param page    页码
-     * @param size    每页数量
-     * @param status  评论状态 (可选, 1: Approved, -1: Deleted/Pending)
-     * @param keyword 搜索关键词 (用户名或评论内容, 可选)
-     * @return
-     */
+    /*
     @GetMapping("/comments/manage")
     public Result<Page<Map<String, Object>>> getAllCommentsManaged(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String keyword) {
-        try {
-            // 调用 Service 层的新方法来处理获取所有评论的逻辑
-            Page<Map<String, Object>> commentPage = commentService.getAllCommentsManaged(page, size, status, keyword);
-            return Result.success("获取评论管理列表成功", commentPage);
-        } catch (Exception e) {
-            log.error("获取评论管理列表失败", e);
-            return Result.error("获取评论管理列表失败: " + e.getMessage());
-        }
+        // Page<Map<String, Object>> resultPage = commentService.getAllCommentsManaged(page, size, status, keyword);
+        // return Result.success(resultPage);
+        return Result.error("评论功能暂未实现");
     }
+    */
 
     /**
-     * 获取指定用户的评论分页列表
-     * @param userId 用户ID
-     * @param page 页码
-     * @param size 每页数量
-     * @return
+     * 获取指定用户的评论（管理端分页） (已注释)
      */
+    /*
     @GetMapping("/comments/user/{userId}")
     public Result<Page<Map<String, Object>>> getUserComments(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        try {
-            // This method remains for fetching specific user's comments if needed elsewhere
-            Page<Map<String, Object>> commentPage = commentService.getCommentsByUserIdWithPostInfo(userId, page, size);
-            return Result.success("获取用户评论列表成功", commentPage);
-        } catch (Exception e) {
-            log.error("获取用户 {} 的评论列表失败", userId, e);
-            return Result.error("获取评论列表失败");
-        }
+        // Page<Map<String, Object>> resultPage = commentService.getCommentsByUserIdWithPostInfo(userId, page, size);
+        // return Result.success(resultPage);
+        return Result.error("评论功能暂未实现");
     }
-} 
+    */
+}

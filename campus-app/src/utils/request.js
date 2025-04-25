@@ -30,75 +30,59 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
     response => {
-        const res = response.data
-        const config = response.config // Get request config
+        const res = response.data;
+        // 记录请求日志以便调试
+        console.log('API Response:', res);
 
-        // 开发环境下添加响应日志，帮助调试
-        console.log(`响应数据 for ${config.url}:`, res)
-
-        // 如果响应成功，直接返回数据 - 增加更多可能的成功码或不严格检查code
-        if (res.code === 0 || res.code === 200 || !res.code || res.data) {
-            return res
+        // 处理成功响应
+        if (res.code === 0 || res.code === 200) {
+            return res;
         }
 
-        // 处理业务错误码
-        console.warn(`业务错误 for ${config.url}: code=${res.code}, message=${res.message}`); // 添加警告日志
-        switch (res.code) {
-            case 401: // 未授权 (业务码)
-                console.error(`触发 handleUnauthorized due to res.code === 401 for ${config.url}`); // 明确日志来源
-                handleUnauthorized()
-                break
-            case 403: // 禁止访问
-                ElMessage.error('您没有权限访问该资源')
-                break
-            case 400: // 请求参数错误
-                ElMessage.error(res.message || '请求参数错误')
-                break
-            default:
-                ElMessage.error(res.message || '请求失败')
+        // 处理特殊情况：有些接口返回success=true且data为空数组也是正常的
+        if (res.success === true) {
+            return res;
         }
-        
-        return Promise.reject(new Error(res.message || '请求失败'))
+
+        // 处理业务逻辑错误
+        if (res.message) {
+            ElMessage.error(res.message);
+        } else {
+            ElMessage.error('请求失败，请联系管理员');
+        }
+        return Promise.reject(new Error(res.message || '未知错误'));
     },
     error => {
-        const config = error.config // Get request config
-        // console.error('请求失败:', error.message) // 可以保留或注释
-
+        // 处理HTTP错误
+        let message = '服务器连接失败';
         if (error.response) {
-            // console.error('状态码:', error.response.status) // 可以保留或注释
-            // console.error('响应数据:', error.response.data) // 可以保留或注释
-            console.warn(`HTTP错误 for ${config?.url}: status=${error.response.status}`); // 添加警告日志
-
-            // 根据HTTP状态码处理不同错误
-            switch (error.response.status) {
-                case 401: // 未授权 (HTTP状态码)
-                    console.error(`触发 handleUnauthorized due to error.response.status === 401 for ${config?.url}`); // 明确日志来源
-                    handleUnauthorized()
-                    break
-                case 403: // 禁止访问
-                    ElMessage.error('您没有权限访问该资源')
-                    break
-                case 404: // 资源不存在
-                    ElMessage.error('请求的资源不存在')
-                    break
-                case 500: // 服务器错误
-                    ElMessage.error('服务器错误，请稍后重试')
-                    break
-                default:
-                    ElMessage.error('请求失败，请稍后重试')
+            if (error.response.status === 401) {
+                message = '登录已过期，请重新登录';
+                ElMessage.error(message);
+                // 清除登录状态并跳转到登录页
+                window.localStorage.removeItem('token');
+                window.localStorage.removeItem('user');
+                router.push('/login');
+            } else if (error.response.status === 403) {
+                message = '无权访问该资源';
+            } else if (error.response.status === 404) {
+                message = '请求的资源不存在';
+            } else if (error.response.status === 500) {
+                message = '服务器内部错误';
+            } else {
+                message = `请求错误(${error.response.status})`;
             }
-        } else if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
-            // 处理请求超时
-            ElMessage.error('请求超时，请检查网络连接')
-        } else if (!window.navigator.onLine) {
-            // 处理网络断开
-            ElMessage.error('网络连接已断开，请检查网络设置')
-        } else {
-            // 其他错误
-            ElMessage.error(error.message || '网络错误')
+            // 如果有详细错误信息，优先使用详细信息
+            if (error.response.data && error.response.data.message) {
+                message = error.response.data.message;
+            }
+        } else if (error.request) {
+            message = '服务器未响应';
         }
 
-        return Promise.reject(error)
+        console.error('请求错误:', error);
+        ElMessage.error(message);
+        return Promise.reject(error);
     }
 )
 

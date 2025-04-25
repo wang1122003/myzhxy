@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.campus.enums.ClassroomStatus;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -42,10 +43,10 @@ public class Classroom implements Serializable {
     private Integer capacity;
     
     /**
-     * 状态：0-禁用，1-正常
+     * 教室状态：0-禁用，1-正常，2-维护中
      */
     @TableField("status")
-    private Integer status;
+    private ClassroomStatus status;
 
     /**
      * 教室类型：1-普通教室，2-多媒体教室，3-实验室

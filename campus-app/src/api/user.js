@@ -214,13 +214,36 @@ export function uploadAvatar(formData) {
 }
 
 /**
- * 根据ID获取用户信息
+ * 获取当前登录用户信息
+ * @returns {Promise} 请求响应promise
+ */
+export function getCurrentUserProfile() {
+    return request({
+        url: USER_API.GET_CURRENT_USER,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取用户个人资料 (可能用于管理员视角)
+ * @param {number} userId 用户ID
+ * @returns {Promise} 请求响应promise
+ */
+export function getUserProfileById(userId) {
+    return request({
+        url: USER_API.UPDATE_USER.replace(':id', userId), // 使用管理员更新接口的路径，但方法是GET
+        method: 'get'
+    })
+}
+
+/**
+ * 根据ID获取用户信息 (管理员用)
  * @param {number} userId 用户ID
  * @returns {Promise} 请求响应promise
  */
 export function getUserById(userId) {
     return request({
-        url: `/users/${userId}`,
+        url: USER_API.UPDATE_USER.replace(':id', userId), // 使用管理员更新接口的路径，但方法是GET
         method: 'get'
     })
 }

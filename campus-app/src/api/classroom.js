@@ -1,5 +1,5 @@
 import request from '../utils/request'
-import { CLASSROOM_API } from './api-endpoints' // 引入 API 定义
+import {CLASSROOM_API} from './api-endpoints' // 引入 API 定义
 
 // 获取教室列表（分页）
 export function getClassroomList(params) {

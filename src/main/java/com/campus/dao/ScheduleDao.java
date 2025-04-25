@@ -2,9 +2,11 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Schedule;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -14,22 +16,13 @@ import java.util.Map;
 @Repository
 public interface ScheduleDao extends BaseMapper<Schedule> {
 
-    @Override
-    default Schedule selectById(Serializable id) {
-        return selectOne(Wrappers.<Schedule>query().eq("id", id));
-    }
-
-    @Override
-    default List<Schedule> selectList(Wrapper<Schedule> wrapper) {
-        return selectAll(wrapper);
-    }
     /**
      * 根据ID查询课程表
      * @param id 课程表ID
      * @return 课程表对象
      */
-    
-    
+    Schedule findById(Long id);
+
     /**
      * 根据课程ID查询课程表
      * @param courseId 课程ID
@@ -52,71 +45,72 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
     List<Schedule> findByClassroomId(Long classroomId);
     
     /**
-     * 根据班级ID查询课程表
-     * @param classId 班级ID
-     * @return 课程表列表
-     */
-    List<Schedule> findByClassId(Long classId);
-    
-    /**
-     * 根据学期ID查询课程表
-     * @param termId 学期ID
-     * @return 课程表列表
-     */
-    List<Schedule> findByTermId(Long termId);
-    
-    /**
-     * 根据教师ID和学期ID查询课程表
+     * 根据教师ID和学期信息查询课程表
      * @param teacherId 教师ID
-     * @param termId 学期ID
+     * @param termInfo 学期信息
      * @return 课程表列表
      */
-    List<Schedule> findByTeacherIdAndTermId(@Param("teacherId") Long teacherId, @Param("termId") Long termId);
+    List<Schedule> findByTeacherIdAndTerm(@Param("teacherId") Long teacherId, @Param("termInfo") String termInfo);
     
     /**
-     * 根据班级ID和学期ID查询课程表
-     * @param classId 班级ID
-     * @param termId 学期ID
-     * @return 课程表列表
-     */
-    List<Schedule> findByClassIdAndTermId(@Param("classId") Long classId, @Param("termId") Long termId);
-    
-    /**
-     * 根据教室ID和学期ID查询课程表
+     * 检查教室时间冲突
      * @param classroomId 教室ID
-     * @param termId 学期ID
-     * @return 课程表列表
-     */
-    List<Schedule> findByClassroomIdAndTermId(@Param("classroomId") Long classroomId, @Param("termId") Long termId);
-    
-    /**
-     * 检查时间冲突
-     * @param classroomId 教室ID
-     * @param weekDay 星期几
-     * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param dayOfWeek 星期几 (String)
+     * @param startTime 开始时间 (Time)
+     * @param endTime 结束时间 (Time)
+     * @param termInfo 学期信息
+     * @param startWeek 开始周
+     * @param endWeek 结束周
+     * @param id 要排除的排课ID (可选, 更新时使用)
      * @return 是否冲突
      */
-    boolean checkTimeConflict(@Param("classroomId") Integer classroomId, 
-                            @Param("weekDay") Integer weekDay,
-                            @Param("startTime") Integer startTime,
-                            @Param("endTime") Integer endTime);
-    
+    boolean checkClassroomTimeConflict(@Param("classroomId") Long classroomId,
+                                       @Param("dayOfWeek") String dayOfWeek,
+                                       @Param("startTime") Date startTime,
+                                       @Param("endTime") Date endTime,
+                                       @Param("termInfo") String termInfo,
+                                       @Param("startWeek") Integer startWeek,
+                                       @Param("endWeek") Integer endWeek,
+                                       @Param("id") Long id);
     
     /**
-     * 批量删除课程表
-     * @param ids 课程表ID数组
-     * @return 影响行数
+     * 检查教师时间冲突
+     * @param teacherId 教师ID
+     * @param dayOfWeek 星期几 (String)
+     * @param startTime 开始时间 (Time)
+     * @param endTime 结束时间 (Time)
+     * @param termInfo 学期信息
+     * @param startWeek 开始周
+     * @param endWeek 结束周
+     * @param id 要排除的排课ID (可选, 更新时使用)
+     * @return 是否冲突
      */
-    int batchDelete(Long[] ids);
-    
+    boolean checkTeacherTimeConflict(@Param("teacherId") Long teacherId,
+                                     @Param("dayOfWeek") String dayOfWeek,
+                                     @Param("startTime") Date startTime,
+                                     @Param("endTime") Date endTime,
+                                     @Param("termInfo") String termInfo,
+                                     @Param("startWeek") Integer startWeek,
+                                     @Param("endWeek") Integer endWeek,
+                                     @Param("id") Long id);
+
     /**
      * 分页查询课程表
      * @param offset 偏移量
      * @param limit 数量限制
      * @return 课程表列表
      */
-    List<Schedule> selectAll(@Param("ew") Wrapper<Schedule> wrapper);
+    List<Schedule> findByPage(@Param("offset") Integer offset, @Param("limit") Integer limit);
+
+    /**
+     * 根据时间段查询课程表
+     *
+     * @param dayOfWeek 星期几 (String)
+     * @param startTime 开始时间 (Time)
+     * @param endTime   结束时间 (Time)
+     * @return 课程表列表
+     */
+    List<Schedule> findByTimeSlot(@Param("dayOfWeek") String dayOfWeek, @Param("startTime") Date startTime, @Param("endTime") Date endTime);
     
     /**
      * 获取课程表总数
@@ -125,60 +119,11 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
     int getCount();
     
     /**
-     * 根据时间段查询课程表
-     * @param weekDay 星期几
-     * @param timeSlot 时间段
-     * @return 课程表列表
-     */
-    List<Schedule> findByTimeSlot(@Param("weekDay") Integer weekDay, @Param("timeSlot") Integer timeSlot);
-    
-    /**
-     * 根据课程ID和学期ID查询课程表
-     * @param courseId 课程ID
-     * @param termId 学期ID
-     * @return 课程表列表
-     */
-    List<Schedule> findByCourseIdAndTermId(@Param("courseId") Long courseId, @Param("termId") Long termId);
-    
-    /**
-     * 检查教师时间冲突
-     * @param teacherId 教师ID
-     * @param weekDay 星期几
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 是否冲突
-     */
-    boolean checkTeacherTimeConflict(@Param("teacherId") Long teacherId,
-                                   @Param("weekDay") Integer weekDay,
-                                   @Param("startTime") Integer startTime,
-                                   @Param("endTime") Integer endTime);
-    
-    /**
-     * 检查班级时间冲突
-     * @param classId 班级ID
-     * @param weekDay 星期几
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 是否冲突
-     */
-    boolean checkClassTimeConflict(@Param("classId") Long classId,
-                                 @Param("weekDay") Integer weekDay,
-                                 @Param("startTime") Integer startTime,
-                                 @Param("endTime") Integer endTime);
-    
-    /**
      * 获取教师课程数统计
      * @param teacherId 教师ID
      * @return 课程数
      */
     int getTeacherScheduleCount(Long teacherId);
-    
-    /**
-     * 获取班级课程数统计
-     * @param classId 班级ID
-     * @return 课程数
-     */
-    int getClassScheduleCount(Long classId);
     
     /**
      * 获取教室课程数统计
@@ -196,39 +141,34 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
     
     /**
      * 获取学期课程数统计
-     * @param termId 学期ID
+     * @param termInfo 学期信息 (String)
      * @return 课程数
      */
-    int getTermScheduleCount(Long termId);
+    int getTermScheduleCount(String termInfo);
     
     /**
      * 获取教师课程时间分布统计
      * @param teacherId 教师ID
+     * @param termInfo 学期信息 (String)
      * @return 时间分布统计
      */
-    List<Map<String, Object>> getTeacherScheduleTimeDistribution(Long teacherId);
-    
-    /**
-     * 获取班级课程时间分布统计
-     * @param classId 班级ID
-     * @return 时间分布统计
-     */
-    List<Map<String, Object>> getClassScheduleTimeDistribution(Long classId);
+    List<Map<String, Object>> getTeacherScheduleTimeDistribution(@Param("teacherId") Long teacherId, @Param("termInfo") String termInfo);
     
     /**
      * 获取教室课程时间分布统计
      * @param classroomId 教室ID
+     * @param termInfo 学期信息 (String)
      * @return 时间分布统计
      */
-    List<Map<String, Object>> getClassroomScheduleTimeDistribution(Long classroomId);
+    List<Map<String, Object>> getClassroomScheduleTimeDistribution(@Param("classroomId") Long classroomId, @Param("termInfo") String termInfo);
     
     /**
      * 更新课程表状态
      * @param id 课程表ID
-     * @param status 状态
+     * @param status 状态 (String)
      * @return 影响行数
      */
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
      * 根据教室ID统计课表数量
@@ -255,10 +195,21 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
     List<Long> findScheduledCourseIds(@Param("courseIds") List<Long> courseIds);
 
     /**
-     * 根据学生ID查询其所有课表安排
-     *
-     * @param studentId 学生ID (通常是 user 表的 ID)
-     * @return 该学生参与的课表列表
+     * 根据学生用户ID查询课程表
+     * @param userId 学生用户ID
+     * @return 课程表列表
      */
-    List<Schedule> findByStudentId(@Param("studentId") Long studentId);
+    List<Schedule> findByUserId(@Param("userId") Long userId);
+
+    /**
+     * 添加 Mapper 中新增的 insert, update, delete 方法
+     *
+     * @param schedule 课程表对象
+     * @return 影响行数
+     */
+    int insert(Schedule schedule);
+
+    int update(Schedule schedule);
+
+    int delete(Long id);
 }

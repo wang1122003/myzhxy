@@ -7,8 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,8 +25,6 @@ import java.io.IOException;
  */
 @Component // 注册为 Spring Bean，方便注入
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -62,7 +58,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                         // 将 Authentication 对象设置到 SecurityContextHolder
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("用户 '{}' 已通过JWT认证，权限: {}", username, userDetails.getAuthorities());
 
                         // 尝试将 User 实体存入请求属性 (如果 UserDetails 是 User 的实例)
                         if (userDetails instanceof User userEntity) {
@@ -70,20 +65,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             request.setAttribute("userId", userEntity.getId());
                             request.setAttribute("userType", userEntity.getUserType());
                         }
-                    } else {
-                        logger.warn("JWT Token 对用户 '{}' 无效", username);
                     }
-                } else if (username == null) {
-                    logger.warn("无法从 JWT Token 中提取用户名");
-                }
-            } else {
-                // 如果没有 token 或 token 无效
-                if (StringUtils.hasText(jwt)) {
-                    logger.debug("JWT Token 无效或已过期");
                 }
             }
         } catch (Exception ex) {
-            logger.error("JWT认证过滤器处理失败: {}", ex.getMessage(), ex); // 打印完整异常
+            // 异常处理
         }
 
         // 继续执行过滤器链中的下一个过滤器
@@ -102,4 +88,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-} 
+}

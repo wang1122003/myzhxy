@@ -8,12 +8,12 @@
         <result column="content" property="content" jdbcType="LONGVARCHAR"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="category" property="category" jdbcType="VARCHAR"/>
-        <result column="forum_color" property="forumColor" jdbcType="VARCHAR"/>
         <result column="tags" property="tags"
                 typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
         <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
         <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
         <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
+        <result column="comments_json" property="commentsJson" jdbcType="LONGVARCHAR"/>
         <result column="is_top" property="isTop" jdbcType="TINYINT"/>
         <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
         <result column="status" property="status" jdbcType="TINYINT"/>
@@ -23,27 +23,31 @@
             <id column="u_id" property="id"/>
             <result column="username" property="username"/>
             <result column="real_name" property="realName"/>
-            <result column="avatar_url" property="avatarUrl"/>
         </association>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        p.id, p.title, p.content, p.user_id, p.category, p.forum_color, p.tags,
-        p.view_count, p.like_count, p.comment_count, p.is_top, p.is_essence, p.status, 
+        p.id, p.title, p.content, p.user_id, p.category, p.tags,
+        p.view_count, p.like_count, p.comment_count, p.comments_json, p.is_top, p.is_essence, p.status, 
         p.creation_time, p.last_update_time
+    </sql>
+
+    <!-- 添加带作者信息的列 -->
+    <sql id="Columns_With_Author">
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name
     </sql>
 
     <!-- 获取所有帖子（分页） -->
     <select id="getAllPosts" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=VARCHAR}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
             <if test="category != null">
                 AND p.category = #{category,jdbcType=VARCHAR}
@@ -61,7 +65,7 @@
         FROM post p
         <where>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=VARCHAR}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
             <if test="category != null">
                 AND p.category = #{category,jdbcType=VARCHAR}
@@ -75,8 +79,7 @@
     <!-- 根据ID获取帖子 -->
     <select id="getPostById" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.id = #{id,jdbcType=BIGINT}
@@ -85,13 +88,12 @@
     <!-- 根据作者ID获取帖子（分页） -->
     <select id="getPostsByAuthorId" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.user_id = #{authorId,jdbcType=BIGINT}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=VARCHAR}
+            AND p.status = #{status,jdbcType=TINYINT}
         </if>
         ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
@@ -102,13 +104,12 @@
     <!-- 根据论坛类型获取帖子（分页） -->
     <select id="getPostsByForumType" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.category = #{forumType,jdbcType=VARCHAR}
         <if test="status != null">
-            AND p.status = #{status,jdbcType=VARCHAR}
+            AND p.status = #{status,jdbcType=TINYINT}
         </if>
         ORDER BY p.creation_time DESC
     </select>
@@ -116,13 +117,12 @@
     <!-- 根据标签获取帖子 -->
     <select id="getPostsByTag" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE JSON_CONTAINS(p.tags, JSON_ARRAY(#{tag}))
         <if test="status != null">
-            AND p.status = #{status,jdbcType=VARCHAR}
+            AND p.status = #{status,jdbcType=TINYINT}
         </if>
         ORDER BY p.creation_time DESC
         <if test="offset != null and limit != null">
@@ -133,11 +133,10 @@
     <!-- 获取热门帖子 -->
     <select id="getHotPosts" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
-        WHERE p.status = 'Active'
+        WHERE p.status = 1 -- TINYINT 1 for Active
         ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
         limit #{limit,jdbcType=INTEGER}
     </select>
@@ -145,8 +144,7 @@
     <!-- 搜索帖子（分页） -->
     <select id="searchPosts" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        u.id as u_id, u.username, u.real_name, u.avatar_url
+        <include refid="Columns_With_Author"/>
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         <where>
@@ -158,7 +156,7 @@
                 )
             </if>
             <if test="status != null">
-                AND p.status = #{status,jdbcType=VARCHAR}
+                AND p.status = #{status,jdbcType=TINYINT}
             </if>
             <if test="category != null">
                 AND p.category = #{category,jdbcType=VARCHAR}
@@ -175,15 +173,16 @@
 
     <!-- 添加帖子 -->
     <insert id="addPost" parameterType="com.campus.entity.Post" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO post (title, content, user_id, category, forum_color, tags,
-                          view_count, like_count, comment_count, is_top, is_essence, status,
+        INSERT INTO post (title, content, user_id, category, tags,
+                          view_count, like_count, comment_count, comments_json, is_top, is_essence, status,
                           creation_time, last_update_time
         )
         VALUES (#{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{userId,jdbcType=BIGINT},
-                #{category,jdbcType=VARCHAR}, #{forumColor,jdbcType=VARCHAR},
+                #{category,jdbcType=VARCHAR},
                 #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
                 #{viewCount,jdbcType=INTEGER}, #{likeCount,jdbcType=INTEGER}, #{commentCount,jdbcType=INTEGER},
-                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=VARCHAR},
+                #{commentsJson,jdbcType=LONGVARCHAR},
+                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
                 NOW(), NOW()
         )
     </insert>
@@ -191,14 +190,18 @@
     <!-- 更新帖子 -->
     <update id="updatePost" parameterType="com.campus.entity.Post">
         UPDATE post
-        SET
-            title = #{title,jdbcType=VARCHAR},
-            content = #{content,jdbcType=LONGVARCHAR},
-            category  = #{category,jdbcType=VARCHAR},
-            forum_color = #{forumColor,jdbcType=VARCHAR},
-            tags        = #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
-            status      = #{status,jdbcType=VARCHAR},
+        <set>
+            <if test="title != null">title = #{title,jdbcType=VARCHAR},</if>
+            <if test="content != null">content = #{content,jdbcType=LONGVARCHAR},</if>
+            <if test="category != null">category = #{category,jdbcType=VARCHAR},</if>
+            <if test="tags != null">tags =
+                #{tags,typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            </if>
+            <if test="status != null">status = #{status,jdbcType=TINYINT},</if>
+            <if test="isTop != null">is_top = #{isTop,jdbcType=TINYINT},</if>
+            <if test="isEssence != null">is_essence = #{isEssence,jdbcType=TINYINT},</if>
             last_update_time = NOW()
+        </set>
         WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
@@ -218,15 +221,33 @@
                            p.tags,
                            '$[*]' COLUMNS (tags_element VARCHAR(50) PATH '$')
                    ) AS tj
-              WHERE p.status = 'Active') t
+              WHERE p.status = 1) t -- TINYINT 1 for Active
         GROUP BY tag
         ORDER BY count DESC
         limit #{limit, jdbcType=INTEGER}
     </select>
 
-    <!-- 根据分类获取不同的颜色 -->
-    <select id="getForumCategories" resultType="com.campus.entity.Post">
-        SELECT DISTINCT category, forum_color FROM post
-        WHERE category IS NOT NULL AND category != ''
+    <!-- 根据分类查询帖子 -->
+    <select id="findByCategory" resultType="com.campus.entity.Post">
+        SELECT *
+        FROM post
+        WHERE category = #{category}
+        ORDER BY creation_time DESC
+    </select>
+
+    <!-- 根据分类分页查询帖子 -->
+    <select id="findByCategoryAndPage" resultType="com.campus.entity.Post">
+        SELECT *
+        FROM post
+        WHERE category = #{category}
+        ORDER BY creation_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据分类获取帖子总数 -->
+    <select id="countByCategory" resultType="int">
+        SELECT count(*)
+        FROM post
+        WHERE category = #{category}
     </select>
 </mapper>

@@ -18,7 +18,7 @@ public interface CourseDao extends BaseMapper<Course> {
      * @param id 课程ID
      * @return 课程对象
      */
-    
+    Course findById(Long id);
     
     /**
      * 根据教师ID查询课程
@@ -32,21 +32,14 @@ public interface CourseDao extends BaseMapper<Course> {
      * @param courseNo 课程代码
      * @return 课程对象
      */
-    Course findByCourseNo(String courseNo);
-    
-    /**
-     * 根据部门/学院查询课程
-     * @param department 部门/学院
-     * @return 课程列表
-     */
-    List<Course> findByDepartment(String department);
+    Course findByCourseCode(String courseCode);
     
     /**
      * 根据课程类型查询课程
-     * @param courseType 课程类型
+     * @param courseType 课程类型 (Integer for TINYINT)
      * @return 课程列表
      */
-    List<Course> findByCourseType(String courseType);
+    List<Course> findByCourseType(Integer courseType);
     
     /**
      * 分页查询课程
@@ -93,86 +86,37 @@ public interface CourseDao extends BaseMapper<Course> {
     /**
      * 更新课程状态
      * @param id 课程ID
-     * @param status 课程状态
+     * @param status 课程状态 (String)
      * @return 影响行数
      */
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
     
     /**
-     * 搜索课程
-     * @param keyword 关键词
-     * @return 课程列表
-     */
-    List<Course> searchCourses(@Param("keyword") String keyword);
-    
-    /**
-     * 获取教师课程数
-     * @param teacherId 教师ID
-     * @return 课程数量
-     */
-    int getTeacherCourseCount(Long teacherId);
-    
-    /**
-     * 获取课程类型课程数
-     * @param courseType 课程类型
-     * @return 课程数量
-     */
-    int getCourseTypeCount(String courseType);
-    
-    /**
-     * 检查课程代码是否存在
+     * 检查课程代码是否存在 (修改方法名以匹配 Mapper)
      * @param courseCode 课程代码
-     * @return 影响行数 (通常 > 0 表示存在)
+     * @return 是否存在 (改为 boolean)
      */
-    int countByCourseCode(String courseCode);
+    boolean checkCourseCodeExists(String courseCode);
     
     /**
-     * 获取指定状态的课程数量
-     * @param status 课程状态
-     * @return 课程数量
-     */
-    int getStatusCount(int status);
-    
-    /**
-     * 获取不同部门/学院的数量
-     * @return 部门/学院数量
-     */
-    int getDepartmentCount();
-    
-    /**
-     * 获取课程平均学分
-     * @return 平均学分
-     */
-    double getAverageCredits();
-    
-    /**
-     * 获取课程类型统计
-     * @return 课程类型统计列表
-     */
-    List<Map<String, Object>> getCourseTypeStats();
-    
-    /**
-     * 获取部门/学院统计
-     * @return 部门/学院统计列表
-     */
-    List<Map<String, Object>> getDepartmentStats();
-    
-    /**
-     * 获取学分分布统计
-     * @return 学分分布统计列表
-     */
-    List<Map<String, Object>> getCreditDistribution();
-    
-    /**
-     * 获取课程状态统计
-     * @return 课程状态统计列表
-     */
-    List<Map<String, Object>> getStatusStats();
-    
-    /**
-     * 通过关键词搜索课程（另一种实现）
+     * 通过关键词搜索课程
      * @param keyword 关键词
      * @return 课程列表
      */
     List<Course> searchCoursesByKeyword(@Param("keyword") String keyword);
+
+    /**
+     * 获取课程名称
+     *
+     * @param courseId 课程ID
+     * @return 课程名称
+     */
+    String getCourseNameById(@Param("courseId") Long courseId);
+
+    /**
+     * 获取所有课程ID和名称
+     *
+     * @return 课程ID和名称列表
+     */
+    List<Map<String, Object>> getAllCourseIdsAndNames();
 }

@@ -4,7 +4,6 @@ package com.campus.controller;
 import com.campus.service.FileService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +19,6 @@ import java.util.*;
  * 公共API控制器
  * 处理不需要认证的公共接口
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/common")
 public class CommonController {
@@ -33,7 +31,7 @@ public class CommonController {
      * @return 系统状态信息
      */
     @GetMapping("/status")
-    public Result getSystemStatus() {
+    public Result<Map<String, Object>> getSystemStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("name", "智慧校园服务系统");
         status.put("version", "1.0.0");
@@ -48,7 +46,7 @@ public class CommonController {
      * @return 通知公告列表
      */
     @GetMapping("/notices/recent")
-    public Result getRecentNotices(@RequestParam(required = false, defaultValue = "5") Integer limit) {
+    public Result<List<Map<String, Object>>> getRecentNotices(@RequestParam(required = false, defaultValue = "5") Integer limit) {
         try {
             // 这里应该连接数据库获取通知公告
             // 为了演示，返回模拟数据
@@ -86,7 +84,6 @@ public class CommonController {
             
             return Result.success(notices);
         } catch (Exception e) {
-            log.error("获取最近通知公告失败", e);
             return Result.error("获取最近通知公告失败: " + e.getMessage());
         }
     }
@@ -97,7 +94,7 @@ public class CommonController {
      * @return 通知类型列表
      */
     @GetMapping("/notice-types")
-    public Result getNoticeTypes() {
+    public Result<List<Map<String, Object>>> getNoticeTypes() {
         try {
             // 实际应用中，这些类型可能来自数据库或枚举
             // 修改键名以匹配前端 ElOption 的期望 (typeCode, typeName)
@@ -112,7 +109,6 @@ public class CommonController {
 
             return Result.success("获取通知类型成功", noticeTypes);
         } catch (Exception e) {
-            log.error("获取通知类型失败", e);
             return Result.error("获取通知类型失败: " + e.getMessage());
         }
     }
@@ -164,12 +160,11 @@ public class CommonController {
             
             outputStream.flush();
         } catch (IOException e) {
-            log.error("文件访问失败", e);
             try {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().write("文件访问失败: " + e.getMessage());
             } catch (IOException ex) {
-                log.error("设置错误响应失败", ex);
+                // 无法设置响应，忽略
             }
         }
     }
@@ -179,7 +174,7 @@ public class CommonController {
      * @return 系统配置信息
      */
     @GetMapping("/config")
-    public Result getSystemConfig() {
+    public Result<Map<String, Object>> getSystemConfig() {
         Map<String, Object> config = new HashMap<>();
         
         // 系统基本配置
@@ -214,7 +209,7 @@ public class CommonController {
      * @return 学期列表
      */
     @GetMapping("/terms")
-    public Result getTerms() {
+    public Result<List<Map<String, String>>> getTerms() {
         try {
             // 在实际应用中，学期列表可能来自数据库或更复杂的配置
             // 这里提供一个简单的硬编码示例
@@ -227,7 +222,6 @@ public class CommonController {
 
             return Result.success("获取学期列表成功", terms);
         } catch (Exception e) {
-            log.error("获取学期列表失败", e);
             return Result.error("获取学期列表失败: " + e.getMessage());
         }
     }
@@ -238,7 +232,7 @@ public class CommonController {
      * @return 时间段列表
      */
     @GetMapping("/time-slots")
-    public Result getTimeSlots() {
+    public Result<List<Map<String, Object>>> getTimeSlots() {
         try {
             List<Map<String, Object>> timeSlots = new ArrayList<>();
             // value 对应数据库存储， label 用于显示， slot 是节次
@@ -255,7 +249,6 @@ public class CommonController {
 
             return Result.success("获取时间段成功", timeSlots);
         } catch (Exception e) {
-            log.error("获取时间段失败", e);
             return Result.error("获取时间段失败: " + e.getMessage());
         }
     }
@@ -266,7 +259,7 @@ public class CommonController {
      * @return 星期列表
      */
     @GetMapping("/weekdays")
-    public Result getWeekdays() {
+    public Result<List<Map<String, Object>>> getWeekdays() {
         try {
             List<Map<String, Object>> weekdays = new ArrayList<>();
             // value 对应数据库存储 (通常 1-7), label 用于显示
@@ -280,7 +273,6 @@ public class CommonController {
 
             return Result.success("获取星期成功", weekdays);
         } catch (Exception e) {
-            log.error("获取星期失败", e);
             return Result.error("获取星期失败: " + e.getMessage());
         }
     }

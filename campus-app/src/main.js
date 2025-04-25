@@ -9,11 +9,12 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import './assets/styles/global.scss'
 
 // 导入全局通用组件
-import PageHeader from './components/PageHeader.vue'
-import StatsCard from './components/StatsCard.vue'
-import FormPanel from './components/FormPanel.vue'
-import NavMenu from './components/NavMenu.vue'
-import DataDisplay from './components/DataDisplay.vue'
+import PageHeader from './components/common/PageHeader.vue'
+import StatsCard from './components/common/StatsCard.vue'
+import FormPanel from './components/common/FormPanel.vue'
+import NavMenu from './components/common/NavMenu.vue'
+import DataDisplay from './components/common/DataDisplay.vue'
+import BaseTable from './components/common/BaseTable.vue'
 
 // 添加Vue特性标志配置
 window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false
@@ -35,6 +36,7 @@ app.component('StatsCard', StatsCard)
 app.component('FormPanel', FormPanel)
 app.component('NavMenu', NavMenu)
 app.component('DataDisplay', DataDisplay)
+app.component('BaseTable', BaseTable)
 
 // app.use(pinia) // 移除使用 Pinia
 app.use(router)

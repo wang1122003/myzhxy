@@ -10,9 +10,9 @@
         <result column="gender" property="gender" jdbcType="TINYINT"/>
         <result column="email" property="email" jdbcType="VARCHAR"/>
         <result column="phone" property="phone" jdbcType="VARCHAR"/>
-        <result column="avatar_url" property="avatarUrl" jdbcType="VARCHAR"/>
         <result column="user_type" property="userType" jdbcType="VARCHAR"/>
-        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="user_no" property="userNo" jdbcType="VARCHAR"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -20,7 +20,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         u.id, u.username, u.password, u.real_name, u.gender, u.email, u.phone,
-        u.avatar_url, u.user_type, u.status, u.create_time, u.update_time
+        u.user_type, u.status, u.user_no, u.create_time, u.update_time
     </sql>
 
     <!-- 获取所有用户（分页） -->
@@ -73,6 +73,7 @@
     </select>
 
     <!-- 根据角色获取用户（分页） -->
+    <!-- 
     <select id="getUsersByRole" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>,
@@ -88,6 +89,7 @@
             LIMIT #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
         </if>
     </select>
+     -->
 
     <!-- 根据状态获取用户（分页） -->
     <select id="getUsersByStatus" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -141,29 +143,29 @@
 
     <!-- 添加用户 -->
     <insert id="addUser" parameterType="com.campus.entity.User" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user (
-            username, password, real_name, gender, email, phone, avatar_url,
-            user_type, status, create_time, update_time
+        INSERT INTO user (username, password, real_name, gender, email, phone,
+                          user_type, status, user_no, create_time, update_time
         )
         VALUES (
             #{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{realName,jdbcType=VARCHAR},
-            #{gender,jdbcType=TINYINT}, #{email,jdbcType=VARCHAR}, #{phone,jdbcType=VARCHAR}, #{avatarUrl,jdbcType=VARCHAR},
-            #{userType,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, NOW(), NOW()
+            #{gender,jdbcType=TINYINT}, #{email,jdbcType=VARCHAR}, #{phone,jdbcType=VARCHAR},
+            #{userType,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{userNo,jdbcType=VARCHAR}, NOW(), NOW()
         )
     </insert>
 
     <!-- 批量添加用户 -->
     <insert id="batchAddUsers" parameterType="java.util.List">
         INSERT INTO user (
-            username, password, real_name, gender, email, phone, avatar_url,
-            user_type, status, create_time, update_time
+        username, password, real_name, gender, email, phone,
+        user_type, status, user_no, create_time, update_time
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
             (
                 #{item.username,jdbcType=VARCHAR}, #{item.password,jdbcType=VARCHAR}, #{item.realName,jdbcType=VARCHAR},
-                #{item.gender,jdbcType=TINYINT}, #{item.email,jdbcType=VARCHAR}, #{item.phone,jdbcType=VARCHAR}, #{item.avatarUrl,jdbcType=VARCHAR},
-                #{item.userType,jdbcType=VARCHAR}, #{item.status,jdbcType=VARCHAR}, NOW(), NOW()
+            #{item.gender,jdbcType=TINYINT}, #{item.email,jdbcType=VARCHAR}, #{item.phone,jdbcType=VARCHAR},
+            #{item.userType,jdbcType=VARCHAR}, #{item.status,jdbcType=VARCHAR}, #{item.userNo,jdbcType=VARCHAR}, NOW(),
+            NOW()
             )
         </foreach>
     </insert>
@@ -171,16 +173,17 @@
     <!-- 更新用户 -->
     <update id="updateUser" parameterType="com.campus.entity.User">
         UPDATE user
-        SET
-            username = #{username,jdbcType=VARCHAR},
-            real_name = #{realName,jdbcType=VARCHAR},
-            gender = #{gender,jdbcType=TINYINT},
-            email = #{email,jdbcType=VARCHAR},
-            phone = #{phone,jdbcType=VARCHAR},
-            avatar_url = #{avatarUrl,jdbcType=VARCHAR},
-            user_type = #{userType,jdbcType=VARCHAR},
-            status = #{status,jdbcType=VARCHAR},
+        <set>
+            <if test="username != null">username = #{username,jdbcType=VARCHAR},</if>
+            <if test="realName != null">real_name = #{realName,jdbcType=VARCHAR},</if>
+            <if test="gender != null">gender = #{gender,jdbcType=TINYINT},</if>
+            <if test="email != null">email = #{email,jdbcType=VARCHAR},</if>
+            <if test="phone != null">phone = #{phone,jdbcType=VARCHAR},</if>
+            <if test="userType != null">user_type = #{userType,jdbcType=VARCHAR},</if>
+            <if test="status != null">status = #{status,jdbcType=VARCHAR},</if>
+            <if test="userNo != null">user_no = #{userNo,jdbcType=VARCHAR},</if>
             update_time = NOW()
+        </set>
         WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
@@ -230,6 +233,7 @@
     </update>
 
     <!-- 获取角色用户数 -->
+    <!-- 
     <select id="getRoleUserCount" parameterType="java.lang.String" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM user u
@@ -237,6 +241,7 @@
         LEFT JOIN role r ON ur.role_id = r.id
         WHERE r.name = #{role,jdbcType=VARCHAR}
     </select>
+     -->
 
     <!-- 获取状态用户数 -->
     <select id="getStatusUserCount" parameterType="java.lang.String" resultType="java.lang.Long">

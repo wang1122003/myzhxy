@@ -2,12 +2,9 @@ package com.campus.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.Activity;
-
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -39,27 +36,11 @@ public interface ActivityDao extends BaseMapper<Activity> {
     List<Activity> findByType(String type);
     
     /**
-     * 根据活动类型查询活动（Integer类型）
-     * @param activityType
-     * @return 活动列表
-     */
-    List<Activity> findByActivityType(Integer activityType);
-    
-    /**
-     * 根据日期范围查询活动
-     * @param startDate 开始日期
-     * @param endDate 结束日期
-     * @return 活动列表
-     */
-    List<Activity> findByDateRange(@Param("startDate") Date startDate, 
-                                  @Param("endDate") Date endDate);
-    
-    /**
      * 根据状态查询活动
-     * @param status 活动状态
+     * @param status 活动状态 (改为 String)
      * @return 活动列表
      */
-    List<Activity> findByStatus(Integer status);
+    List<Activity> findByStatus(String status);
     
     /**
      * 查询正在进行中的活动
@@ -119,10 +100,10 @@ public interface ActivityDao extends BaseMapper<Activity> {
     /**
      * 更新活动状态
      * @param id 活动ID
-     * @param status 活动状态
+     * @param status 活动状态 (改为 String)
      * @return 影响行数
      */
-    int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
     
     /**
      * 搜索活动
@@ -151,13 +132,6 @@ public interface ActivityDao extends BaseMapper<Activity> {
     List<Map<String, Object>> getActivityStatusStatistics();
     
     /**
-     * 获取活动参与人数统计
-     * @param activityId 活动ID
-     * @return 参与人数
-     */
-    int getActivityParticipantCount(Long activityId);
-    
-    /**
      * 获取活动类型活动数
      * @param type 活动类型
      * @return 活动数量
@@ -166,10 +140,10 @@ public interface ActivityDao extends BaseMapper<Activity> {
     
     /**
      * 获取活动状态活动数
-     * @param status 活动状态
+     * @param status 活动状态 (改为 String)
      * @return 活动数量
      */
-    int getActivityStatusCount(Integer status);
+    int getActivityStatusCount(String status);
     
     /**
      * 检查活动名称是否存在
@@ -177,13 +151,6 @@ public interface ActivityDao extends BaseMapper<Activity> {
      * @return 是否存在
      */
     boolean isActivityNameExists(String name);
-    
-    /**
-     * 获取学生参与的活动
-     * @param studentId 学生ID
-     * @return 活动列表
-     */
-    List<Activity> getStudentActivities(Long studentId);
     
     /**
      * 获取组织者的活动

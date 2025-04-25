@@ -6,28 +6,20 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.PostDao;
-import com.campus.dao.UserDao;
-import com.campus.dto.PageResult;
 import com.campus.entity.Post;
 import com.campus.entity.User;
 import com.campus.exception.AuthenticationException;
+import com.campus.exception.CustomException;
 import com.campus.service.PostService;
 import com.campus.service.UserService;
+import com.campus.utils.PageUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -36,13 +28,8 @@ import java.util.stream.Collectors;
 @Service
 public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostService {
 
-    private static final Logger log = LoggerFactory.getLogger(PostServiceImpl.class);
-
     @Autowired
     private PostDao postDao;
-
-    @Autowired
-    private UserDao userDao;
 
     @Autowired
     private UserService userService;
@@ -55,82 +42,136 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Post post = getById(id);
         if (post != null) {
             loadAuthorInfo(post);
+            // TODO: [评论功能] Need to decide how to handle comments_json field loading
+            // loadComments(post); // Commented out as it likely uses JsonUtils or Comment entity
         }
         return post;
     }
 
     @Override
     public List<Post> getAllPosts() {
-        return postDao.findAll();
+        List<Post> posts = postDao.findAll();
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     public List<Post> getPostsByAuthorId(Long authorId) {
-        return postDao.findByAuthorId(authorId);
+        List<Post> posts = postDao.findByAuthorId(authorId);
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
-    public List<Post> getPostsByForumId(Long forumId) {
-        return postDao.findByForumId(forumId);
+    public List<Post> getPostsByCategory(String category) {
+        List<Post> posts = postDao.findByCategory(category);
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     public List<Post> getPostsByStatus(Integer status) {
-        return postDao.findByStatus(status);
+        String statusStr = String.valueOf(status);
+        List<Post> posts = postDao.findByStatus(statusStr);
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     public List<Post> getTopPosts() {
-        return postDao.findTop();
+        List<Post> posts = postDao.findTop();
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     public List<Post> getEssencePosts() {
-        return postDao.findEssence();
+        List<Post> posts = postDao.findEssence();
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     public List<Post> getHotPosts(int limit) {
-        return postDao.getHotPosts(limit);
+        List<Post> posts = postDao.getHotPosts(limit);
+        posts.forEach(this::loadAuthorInfo);
+        return posts;
     }
 
     @Override
     @Transactional
     public boolean addPost(Post post) {
+        Long currentUserId = getCurrentUserIdFromRequest();
+        if (currentUserId == null) {
+            throw new AuthenticationException("无法获取当前用户信息，请登录后再发帖");
+        }
+        post.setUserId(currentUserId);
+
         post.setCreationTime(new Date());
         post.setLastUpdateTime(new Date());
         if (post.getViewCount() == null) post.setViewCount(0);
         if (post.getCommentCount() == null) post.setCommentCount(0);
         if (post.getLikeCount() == null) post.setLikeCount(0);
-        if (post.getStatus() == null) post.setStatus("Active");
-        if (post.getIsTop() == null) post.setIsTop(false);
-        if (post.getIsEssence() == null) post.setIsEssence(false);
+
+        if (post.getStatus() == null) post.setStatus(1);
+        if (post.getIsTop() == null) post.setIsTop(0);
+        if (post.getIsEssence() == null) post.setIsEssence(0);
+
+        if (post.getCommentsJson() == null) post.setCommentsJson("[]");
+
         return save(post);
     }
 
     @Override
     @Transactional
     public boolean updatePost(Post post) {
+        Post existingPost = getById(post.getId());
+        if (existingPost == null) {
+            return false;
+        }
+        Long currentUserId = getCurrentUserIdFromRequest();
+        if (!existingPost.getUserId().equals(currentUserId)) {
+            throw new AuthenticationException("无权修改此帖子");
+        }
+
         post.setLastUpdateTime(new Date());
+        post.setUserId(existingPost.getUserId());
+        post.setCreationTime(existingPost.getCreationTime());
+        post.setViewCount(existingPost.getViewCount());
+        post.setCommentCount(existingPost.getCommentCount());
+        post.setLikeCount(existingPost.getLikeCount());
+
         return updateById(post);
     }
 
     @Override
     @Transactional
     public boolean deletePost(Long id) {
+        Post existingPost = getById(id);
+        if (existingPost == null) {
+            return true;
+        }
+        Long currentUserId = getCurrentUserIdFromRequest();
+        if (!existingPost.getUserId().equals(currentUserId)) {
+            throw new AuthenticationException("无权删除此帖子");
+        }
         return removeById(id);
     }
 
     @Override
     @Transactional
     public boolean batchDeletePosts(Long[] ids) {
+        if (ids == null || ids.length == 0) {
+            return true;
+        }
         return postDao.batchDelete(ids) > 0;
     }
 
     @Override
     @Transactional
     public boolean updatePostStatus(Long id, Integer status) {
-        return postDao.updateStatus(id, status) > 0;
+        String statusStr = String.valueOf(status);
+        return postDao.updateStatus(id, statusStr) > 0;
     }
 
     @Override
@@ -138,9 +179,9 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean setPostTop(Long id, Integer isTop) {
         Post post = new Post();
         post.setId(id);
-        post.setIsTop(isTop == 1);
+        post.setIsTop(isTop);
         post.setLastUpdateTime(new Date());
-        
+
         return postDao.update(post) > 0;
     }
 
@@ -149,22 +190,16 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean setPostEssence(Long id, Integer isEssence) {
         Post post = new Post();
         post.setId(id);
-        post.setIsEssence(isEssence == 1);
+        post.setIsEssence(isEssence);
         post.setLastUpdateTime(new Date());
-        
+
         return postDao.update(post) > 0;
     }
 
     @Override
     @Transactional
     public boolean incrementViewCount(Long id) {
-        Post post = postDao.findById(id);
-        if (post != null) {
-            post.setViewCount(post.getViewCount() + 1);
-            post.setLastUpdateTime(new Date());
-            return postDao.update(post) > 0;
-        }
-        return false;
+        return postDao.incrementViews(id) > 0;
     }
 
     @Override
@@ -172,9 +207,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean incrementCommentCount(Long id) {
         Post post = postDao.findById(id);
         if (post != null) {
-            post.setCommentCount(post.getCommentCount() + 1);
-            post.setLastUpdateTime(new Date());
-            return postDao.update(post) > 0;
+            return postDao.updateCommentCount(id, post.getCommentCount() + 1) > 0;
         }
         return false;
     }
@@ -184,9 +217,7 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean incrementLikeCount(Long id) {
         Post post = postDao.findById(id);
         if (post != null) {
-            post.setLikeCount(post.getLikeCount() + 1);
-            post.setLastUpdateTime(new Date());
-            return postDao.update(post) > 0;
+            return postDao.updateLikeCount(id, post.getLikeCount() + 1) > 0;
         }
         return false;
     }
@@ -194,13 +225,10 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     public Map<String, Object> getAllPosts(int page, int size) {
         Map<String, Object> result = new HashMap<>();
-        // 计算偏移量
         int offset = (page - 1) * size;
-        
-        // 获取总数和分页数据
         int total = postDao.countAll();
         List<Post> posts = postDao.findByPage(offset, size);
-        
+        posts.forEach(this::loadAuthorInfo);
         result.put("total", total);
         result.put("rows", posts);
         return result;
@@ -209,13 +237,10 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     public Map<String, Object> getPostsByUserId(Long userId, int page, int size) {
         Map<String, Object> result = new HashMap<>();
-        // 计算偏移量
         int offset = (page - 1) * size;
-        
-        // 获取总数和分页数据
         int total = postDao.countByAuthorId(userId);
         List<Post> posts = postDao.findByAuthorIdAndPage(userId, offset, size);
-        
+        posts.forEach(this::loadAuthorInfo);
         result.put("total", total);
         result.put("rows", posts);
         return result;
@@ -226,14 +251,13 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         Long currentUserId = getCurrentUserIdFromRequest();
         if (currentUserId == null) {
             throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
-            // Or return empty map: return Map.of("total", 0, "rows", List.of());
         }
         return getPostsByUserId(currentUserId, page, size);
     }
 
-    // Helper method to get current user ID from request attribute
     private Long getCurrentUserIdFromRequest() {
         Object userIdAttr = request.getAttribute("userId");
+        if (userIdAttr == null) return null;
         if (userIdAttr instanceof Long) {
             return (Long) userIdAttr;
         } else if (userIdAttr instanceof Number) {
@@ -242,15 +266,14 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
             try {
                 return Long.parseLong((String) userIdAttr);
             } catch (NumberFormatException e) {
-                log.warn("Failed to parse userId from request attribute: {}", userIdAttr);
+                log.warn("Failed to parse userId from request attribute: " + userIdAttr);
                 return null;
             }
         }
-        log.warn("User ID not found or invalid type in request attribute: {}", userIdAttr);
+        log.warn("Unexpected type for userId request attribute: " + userIdAttr.getClass().getName());
         return null;
     }
 
-    // Helper method to get current username from request attribute
     private String getCurrentUsernameFromRequest() {
         Object usernameAttr = request.getAttribute("username");
         return (usernameAttr instanceof String) ? (String) usernameAttr : null;
@@ -258,67 +281,76 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     
     @Override
     public Map<String, Object> searchPosts(String keyword, int page, int size) {
-        // Use the generic findPage method for searching
-        Map<String, Object> params = new HashMap<>();
-        if (StringUtils.hasText(keyword)) {
-            params.put("keyword", keyword);
-        }
-        // Assuming searchPosts should only return published posts
-        // params.put("status", 1); // Or remove this line if status shouldn't be fixed
-
-        PageResult<Post> pageResult = findPage(params, page, size);
-
         Map<String, Object> result = new HashMap<>();
-        result.put("total", pageResult.getTotal());
-        result.put("rows", pageResult.getRecords());
+        int offset = (page - 1) * size;
+        int total = postDao.countByKeyword(keyword);
+        List<Post> posts = postDao.searchPosts(keyword);
+        posts.forEach(this::loadAuthorInfo);
+        result.put("total", total);
+        result.put("rows", posts);
         return result;
     }
     
     @Override
     public List<Map<String, Object>> getCommentsByPostId(Long postId) {
-        return postDao.findCommentsByPostId(postId);
+        Post post = getById(postId);
+        if (post != null && StringUtils.hasText(post.getCommentsJson())) {
+            return parseCommentsJson(post.getCommentsJson());
+        }
+        return Collections.emptyList();
     }
-    
+
+    private List<Map<String, Object>> parseCommentsJson(String json) {
+        log.warn("JsonUtils not implemented - cannot parse comments JSON");
+        throw new CustomException("评论功能暂未实现 (JsonUtils missing)");
+    }
+
+    private String serializeCommentsJson(List<Map<String, Object>> comments) {
+        log.warn("JsonUtils not implemented - cannot serialize comments JSON");
+        throw new CustomException("评论功能暂未实现 (JsonUtils missing)");
+    }
+
     @Override
     @Transactional
     public boolean addComment(Long postId, String content) {
         Long currentUserId = getCurrentUserIdFromRequest();
-        String authorName = getCurrentUsernameFromRequest(); // 获取用户名
-
-        if (currentUserId == null) {
-            // 如果无法获取用户ID，也无法获取用户名，抛出异常
-            throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
-        }
-        if (authorName == null) {
-            // 如果能获取ID但无法获取用户名（理论上不应发生），记录警告，但可能继续（取决于业务逻辑）
-            log.warn("添加评论时无法获取用户 ID: {} 的用户名", currentUserId);
-            // 可以选择抛出异常，或使用默认值/占位符
-            // throw new AuthenticationException("无法获取当前用户名"); 
-            // authorName = "未知用户"; // 或者设置占位符
+        String currentUsername = getCurrentUsernameFromRequest();
+        if (currentUserId == null || currentUsername == null) {
+            throw new AuthenticationException("无法获取当前用户信息，请重新登录后评论");
         }
 
-        // TODO: 考虑添加 authorName 到 comment (已添加 authorName 参数调用)
-        // 1. 确认评论表 (e.g., tb_comment) 已添加 author_name 字段。
-        // 2. 确认 PostDao.insertComment 方法签名和 SQL 实现已添加 authorName 参数。
-
-        // 调用包含 authorName 的 DAO 方法
-        boolean result = postDao.insertComment(postId, currentUserId, authorName, content) > 0; 
-        
-        if (result) {
-            incrementCommentCount(postId); // 评论数 +1
+        int affectedRows = postDao.insertComment(postId, currentUserId, currentUsername, content);
+        if (affectedRows > 0) {
+            incrementCommentCount(postId);
+            return true;
         }
-        return result;
+        return false;
     }
     
     @Override
     @Transactional
-    public boolean deleteComment(Long commentId) {
-        return postDao.deleteComment(commentId) > 0;
+    public boolean deleteComment(Long postId, String commentIdStr) {
+        Long commentId;
+        try {
+            commentId = Long.parseLong(commentIdStr);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid comment ID format: " + commentIdStr);
+            return false;
+        }
+        int affectedRows = postDao.deleteComment(commentId);
+        if (affectedRows > 0) {
+            Post post = getById(postId);
+            if (post != null && post.getCommentCount() > 0) {
+                postDao.updateCommentCount(postId, post.getCommentCount() - 1);
+            }
+            return true;
+        }
+        return false;
     }
     
     @Override
     public boolean incrementViews(Long id) {
-        return postDao.incrementViews(id) > 0;
+        return incrementViewCount(id);
     }
     
     @Override
@@ -326,14 +358,23 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean likePost(Long id) {
         Long currentUserId = getCurrentUserIdFromRequest();
         if (currentUserId == null) {
-            throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
-            // return false;
+            throw new AuthenticationException("请登录后点赞");
         }
-        boolean result = postDao.insertLike(id, currentUserId) > 0;
-        if (result) {
-            incrementLikeCount(id);
+        try {
+            int inserted = postDao.insertLike(id, currentUserId);
+            if (inserted > 0) {
+                Post post = getById(id);
+                if (post != null) {
+                    postDao.updateLikeCount(id, post.getLikeCount() + 1);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to insert like (may already exist): " + e.getMessage());
+            return false;
         }
-        return result;
     }
     
     @Override
@@ -341,208 +382,160 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     public boolean unlikePost(Long id) {
         Long currentUserId = getCurrentUserIdFromRequest();
         if (currentUserId == null) {
-            throw new AuthenticationException("无法获取当前用户信息，请重新登录后尝试");
-            // return false;
+            throw new AuthenticationException("请登录");
         }
-        return postDao.deleteLike(id, currentUserId) > 0;
+        int deleted = postDao.deleteLike(id, currentUserId);
+        if (deleted > 0) {
+            Post post = getById(id);
+            if (post != null && post.getLikeCount() > 0) {
+                postDao.updateLikeCount(id, post.getLikeCount() - 1);
+            }
+            return true;
+        }
+        return false;
     }
     
     @Override
     public Map<String, Object> getPostStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", postDao.countAll());
-        stats.put("published", postDao.countByStatus(1));
-        stats.put("draft", postDao.countByStatus(0));
-        stats.put("deleted", postDao.countByStatus(2));
+        stats.put("totalPosts", postDao.countAll());
+        stats.put("activePosts", postDao.countByStatus("1"));
+        stats.put("topPosts", count(new LambdaQueryWrapper<Post>().eq(Post::getIsTop, 1)));
+        stats.put("essencePosts", count(new LambdaQueryWrapper<Post>().eq(Post::getIsEssence, 1)));
         return stats;
     }
 
     @Override
-    @SuppressWarnings("unchecked") // Suppress warning for potential raw type usage with Mybatis-Plus Page/IPage
-    public PageResult<Post> findPage(Map<String, Object> params, int page, int size) {
-        // 1. 创建分页对象
+    @SuppressWarnings("unchecked")
+    public PageUtils.PageResult<Post> findPage(Map<String, Object> params, int page, int size) {
         Page<Post> pageRequest = new Page<>(page, size);
-
-        // 2. 构建查询条件 (使用LambdaQueryWrapper更安全)
         LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 处理查询参数 (示例)
         String title = (String) params.get("title");
-        if (StringUtils.hasText(title)) {
-            queryWrapper.like(Post::getTitle, title);
-        }
+        String category = (String) params.get("category");
+        Integer status = params.get("status") != null ? Integer.parseInt(params.get("status").toString()) : null;
+        Long userId = params.get("userId") != null ? Long.parseLong(params.get("userId").toString()) : null;
 
-        Long authorId = (Long) params.get("authorId");
-        if (authorId != null) {
-            queryWrapper.eq(Post::getUserId, authorId);
-        }
+        queryWrapper.like(StringUtils.hasText(title), Post::getTitle, title);
+        queryWrapper.eq(StringUtils.hasText(category), Post::getCategory, category);
+        queryWrapper.eq(status != null, Post::getStatus, status);
+        queryWrapper.eq(userId != null, Post::getUserId, userId);
 
-        String forumType = (String) params.get("category");
-        if (StringUtils.hasText(forumType)) {
-            queryWrapper.eq(Post::getCategory, forumType);
-        }
-
-        Integer status = (Integer) params.get("status");
-        if (status != null) {
-            queryWrapper.eq(Post::getStatus, status);
-        }
-
-        // 3. 添加排序 (示例：按创建时间降序)
         queryWrapper.orderByDesc(Post::getCreationTime);
 
-        // 4. 执行分页查询
-        IPage<Post> postPage = this.page(pageRequest, queryWrapper);
+        IPage<Post> resultPage = this.page(pageRequest, queryWrapper);
+        resultPage.getRecords().forEach(this::loadAuthorInfo);
 
-        // 5. 加载作者信息
-        if (postPage.getRecords() != null && !postPage.getRecords().isEmpty()) {
-            // 批量获取作者ID
-            List<Long> authorIds = postPage.getRecords().stream()
-                    .map(Post::getUserId)
-                    .distinct()
-                    .collect(Collectors.toList());
-            // 批量查询用户信息
-            Map<Long, User> userMap = userService.getUsersByIds(authorIds.stream().collect(Collectors.toSet()))
-                    .stream()
-                    .collect(Collectors.toMap(User::getId, user -> user));
-
-            // 填充作者姓名和头像
-            postPage.getRecords().forEach(post -> {
-                User author = userMap.get(post.getUserId());
-                if (author != null) {
-                    post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
-                    post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法
-                } else {
-                    post.setAuthorName("未知用户"); // 或者其他默认值
-                }
-                // 可以在这里添加填充 forumTypeName 的逻辑，如果需要的话
-            });
-        }
-
-        // 6. 封装并返回结果 - 使用正确的构造函数参数
-        return new PageResult<>(postPage.getTotal(), postPage.getRecords(), postPage.getCurrent(), postPage.getSize());
+        return new PageUtils.PageResult<Post>(
+                resultPage.getTotal(),
+                resultPage.getCurrent(),
+                resultPage.getSize(),
+                resultPage.getRecords()
+        );
     }
 
     @Override
-    public Map<String, Object> getPostsByForumId(Long forumId, int page, int size) {
-        // This method relied on the non-existent forumId.
-        // Returning empty as it needs redesign based on forumType.
-        log.warn("getPostsByForumId is called but forumId is deprecated. Redesign needed.");
+    public Map<String, Object> getPostsByCategory(String category, int page, int size) {
         Map<String, Object> result = new HashMap<>();
-        result.put("total", 0L);
-        result.put("rows", List.of());
+        int offset = (page - 1) * size;
+        int total = postDao.countByCategory(category);
+        List<Post> posts = postDao.findByCategoryAndPage(category, offset, size);
+        posts.forEach(this::loadAuthorInfo);
+        result.put("total", total);
+        result.put("rows", posts);
         return result;
     }
 
     @Override
-    public IPage<Post> getPostPage(Page<Post> page, Long forumId) {
-        // This method relied on the non-existent forumId.
-        // Returning empty page as it needs redesign based on forumType.
-        log.warn("getPostPage is called but forumId is deprecated. Redesign needed.");
-        return new Page<>(page.getCurrent(), page.getSize(), 0);
-        // Original logic that would fail:
-        // LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
-        // wrapper.eq(Post::getForumId, forumId); // Error: getForumId not found
-        // wrapper.eq(Post::getStatus, 1);
-        // wrapper.orderByDesc(Post::getCreationTime);
-        // return postDao.selectPage(page, wrapper);
+    public IPage<Post> getPostPageByCategory(Page<Post> page, String category) {
+        LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Post::getCategory, category);
+        queryWrapper.orderByDesc(Post::getCreationTime);
+        IPage<Post> resultPage = this.page(page, queryWrapper);
+        resultPage.getRecords().forEach(this::loadAuthorInfo);
+        return resultPage;
     }
 
     @Override
     public Post getPostDetail(Long id) {
-        Post post = this.getById(id);
-
+        Post post = getById(id);
         if (post != null) {
-            // 增加浏览量
-            this.incrementViewCount(id);
-
-            // 在实际项目中，这里应该通过用户服务获取作者信息并填充
-            // 可以使用MapStruct或BeanUtils等工具进行对象映射
+            incrementViewCount(id);
+            loadAuthorInfo(post);
         }
-
         return post;
     }
 
     @Override
     @Transactional
     public boolean createPost(Post post) {
-        log.info("Creating post with title: {}", post.getTitle());
-
-        // 设置默认值并验证必填字段
-        if (post.getUserId() == null && request != null) {
-            post.setUserId(getCurrentUserIdFromRequest()); // 从当前请求获取用户ID
+        Long currentUserId = getCurrentUserIdFromRequest();
+        if (currentUserId == null) {
+            throw new AuthenticationException("无法获取当前用户信息，请登录后再发帖");
         }
+        post.setUserId(currentUserId);
 
-        if (post.getUserId() == null) {
-            log.warn("Cannot create post without author ID");
-            return false;
-        }
+        post.setCreationTime(new Date());
+        post.setLastUpdateTime(new Date());
+        if (post.getViewCount() == null) post.setViewCount(0);
+        if (post.getCommentCount() == null) post.setCommentCount(0);
+        if (post.getLikeCount() == null) post.setLikeCount(0);
+        if (post.getStatus() == null) post.setStatus(1);
+        if (post.getIsTop() == null) post.setIsTop(0);
+        if (post.getIsEssence() == null) post.setIsEssence(0);
+        if (post.getCommentsJson() == null) post.setCommentsJson("[]");
 
-        // 设置创建和更新时间
-        Date now = new Date();
-        post.setCreationTime(now);
-        post.setLastUpdateTime(now);
-        
-        // 设置默认值
-        post.setViewCount(post.getViewCount() == null ? 0 : post.getViewCount());
-        post.setLikeCount(post.getLikeCount() == null ? 0 : post.getLikeCount());
-        post.setCommentCount(post.getCommentCount() == null ? 0 : post.getCommentCount());
-        post.setStatus(post.getStatus() == null ? "Active" : post.getStatus());
-        post.setIsTop(post.getIsTop() != null && post.getIsTop());
-        post.setIsEssence(post.getIsEssence() != null && post.getIsEssence());
-
-        // 修复类型不匹配问题
-        boolean result = save(post);
-
-        if (result) {
-            log.info("Post created successfully with ID: {}", post.getId());
-        } else {
-            log.warn("Failed to create post");
-        }
-
-        return result;
+        boolean saved = save(post);
+        return saved;
     }
 
     @Override
     public IPage<Post> getPostsByTag(String tag, Page<Post> page) {
-        // 使用JSON_CONTAINS函数查询包含特定标签的帖子
-        // 注意：根据数据库不同，可能需要调整SQL语法
-        String sql = "JSON_CONTAINS(tags, JSON_ARRAY(?))";
-
-        return this.page(page, new LambdaQueryWrapper<Post>()
-                .eq(Post::getStatus, 1)
-                .apply(sql, tag)
-                .orderByDesc(Post::getCreationTime));
+        LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(Post::getTags, '"' + tag + '"');
+        queryWrapper.orderByDesc(Post::getCreationTime);
+        IPage<Post> resultPage = this.page(page, queryWrapper);
+        resultPage.getRecords().forEach(this::loadAuthorInfo);
+        return resultPage;
     }
 
     @Override
     public List<String> getHotTags(int limit) {
-        // 这里需要根据数据库类型编写适当的SQL
-        // 以MySQL为例，使用JSON_TABLE函数展开JSON数组
-        String sql = "SELECT tag, COUNT(*) as count FROM " +
-                "(SELECT JSON_UNQUOTE(JSON_EXTRACT(p.tags, '$[*]')) as tag FROM post p WHERE p.status = 1) t " +
-                "GROUP BY tag ORDER BY count DESC LIMIT " + limit;
-
-        // 在实际实现中，你可能需要使用原生SQL查询
-        // 这里用简化方式模拟实现
-        return this.baseMapper.selectMaps(new QueryWrapper<Post>()
-                        .select("DISTINCT JSON_UNQUOTE(JSON_EXTRACT(tags, '$[*]')) as tag")
-                        .eq("status", 1)
-                        .last("LIMIT " + limit))
-                .stream()
-                .map(map -> map.get("tag").toString())
+        List<Post> allPosts = list(new LambdaQueryWrapper<Post>().select(Post::getTags));
+        Map<String, Integer> tagCounts = new HashMap<>();
+        for (Post post : allPosts) {
+            if (post.getTags() != null) {
+                for (String tag : post.getTags()) {
+                    tagCounts.put(tag, tagCounts.getOrDefault(tag, 0) + 1);
+                }
+            }
+        }
+        return tagCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(limit)
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
 
-    // 辅助方法：加载作者信息
     private void loadAuthorInfo(Post post) {
         if (post != null && post.getUserId() != null) {
             User author = userService.getUserById(post.getUserId());
             if (author != null) {
-                post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername()); // 优先用真实姓名
-                post.setAuthorAvatar(author.getAvatarUrl()); // 使用正确的 getter 方法
+                post.setAuthorName(author.getRealName() != null ? author.getRealName() : author.getUsername());
+                post.setAuthorAvatar(author.getAvatarUrl());
             } else {
                 post.setAuthorName("未知用户");
             }
         }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> findPageMap(Map<String, Object> params, int page, int size) {
+        PageUtils.PageResult<Post> pageResult = findPage(params, page, size);
+        Map<String, Object> mapResult = new HashMap<>();
+        mapResult.put("total", pageResult.getTotal());
+        mapResult.put("rows", pageResult.getRecords());
+        return mapResult;
     }
 }

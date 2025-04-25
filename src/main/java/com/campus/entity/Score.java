@@ -23,6 +23,12 @@ public class Score implements Serializable {
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+
+    /**
+     * 选课ID
+     */
+    @TableField("selection_id")
+    private Long selectionId;
     
     /**
      * 学生ID
@@ -37,9 +43,27 @@ public class Score implements Serializable {
     private Long courseId;
     
     /**
-     * 学期
+     * 学期信息
      */
-    private String term;
+    @TableField("term_info")
+    private String termInfo;
+
+    /**
+     * 总成绩
+     */
+    @TableField("total_score")
+    private BigDecimal totalScore;
+
+    /**
+     * 等级成绩 (A, B+, C等)
+     */
+    @TableField("grade")
+    private String grade;
+
+    /**
+     * 绩点
+     */
+    private BigDecimal gpa;
     
     /**
      * 平时成绩
@@ -60,15 +84,21 @@ public class Score implements Serializable {
     private BigDecimal finalScore;
     
     /**
-     * 总成绩
+     * 成绩类型
      */
-    @TableField("total_score")
-    private BigDecimal totalScore;
+    @TableField("score_type")
+    private String scoreType;
     
     /**
-     * 绩点
+     * 评语
      */
-    private BigDecimal gpa;
+    private String comment;
+
+    /**
+     * 评定日期
+     */
+    @TableField("evaluation_date")
+    private Date evaluationDate;
     
     /**
      * 创建时间
@@ -85,6 +115,10 @@ public class Score implements Serializable {
     // 非数据库字段
     @TableField(exist = false)
     private String courseName; // 课程名称
+
     @TableField(exist = false)
     private String studentName; // 学生名称
+
+    @TableField(exist = false)
+    private CourseSelection courseSelection; // 选课信息
 }

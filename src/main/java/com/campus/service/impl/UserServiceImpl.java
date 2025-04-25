@@ -1,6 +1,7 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,30 +9,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.UserDao;
 import com.campus.entity.User;
+import com.campus.enums.UserStatus;
+import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
 import com.campus.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 用户服务实现类 (使用明文密码)
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
-
-    @Autowired
-    private UserDao userDao;
 
     /**
      * 根据ID查询用户
@@ -75,17 +68,18 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Transactional
     public boolean addUser(User user) {
         if (getUserByUsername(user.getUsername()) != null) {
-            log.error("尝试添加已存在的用户名: {}", user.getUsername());
             throw new CustomException("用户名已存在");
         }
         Date now = new Date();
         user.setCreateTime(now);
         user.setUpdateTime(now);
         if (user.getStatus() == null) {
-            user.setStatus("Active");
+            user.setStatus(UserStatus.ACTIVE);
+        }
+        if (user.getUserType() == null) {
+            throw new CustomException("用户类型不能为空");
         }
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            log.error("尝试添加用户 {} 时密码为空", user.getUsername());
             throw new CustomException("密码不能为空");
         }
         return save(user);
@@ -124,19 +118,15 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     /**
-     * 修改用户状态 (使用 String)
+     * 修改用户状态 (使用 Enum)
      */
     @Override
     @Transactional
-    public boolean updateUserStatus(Long id, String status) {
-        if (!"Active".equalsIgnoreCase(status) && !"Inactive".equalsIgnoreCase(status)) {
-            log.warn("无效的用户状态值: {}", status);
-            return false; // Or throw exception
-        }
+    public boolean updateUserStatus(Long id, UserStatus status) {
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(User::getId, id)
                 .set(User::getStatus, status)
-                .set(User::getUpdateTime, new Date()); // Also update updateTime
+                .set(User::getUpdateTime, new Date());
         return update(updateWrapper);
     }
 
@@ -147,19 +137,14 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     public boolean updatePassword(Long id, String oldPassword, String newPassword) {
         User user = getById(id);
         if (user == null) {
-            log.error("更新密码失败: 用户 {} 不存在", id);
             return false;
         }
         if (!Objects.equals(oldPassword, user.getPassword())) {
-            log.warn("用户 {} 尝试更新密码失败: 旧密码不匹配", id);
             return false;
         }
         user.setPassword(newPassword);
         user.setUpdateTime(new Date());
         boolean success = updateById(user);
-        if (!success) {
-            log.error("更新用户 {} 密码到数据库失败", id);
-        }
         return success;
     }
 
@@ -173,15 +158,12 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         User user = getOne(queryWrapper);
 
         if (user == null) {
-            log.warn("登录失败：用户 {} 不存在", username);
             return null;
         }
         if (!Objects.equals(password, user.getPassword())) {
-            log.warn("用户 {} 登录失败：密码不匹配", username);
             return null;
         }
-        if (!"Active".equalsIgnoreCase(user.getStatus())) {
-            log.warn("用户 {} 登录失败，账户状态为: {}", username, user.getStatus());
+        if (user.getStatus() != UserStatus.ACTIVE) {
             return null;
         }
         return user;
@@ -217,15 +199,11 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     public boolean resetPassword(Long id, String newPassword) {
         User user = getById(id);
         if (user == null) {
-            log.error("重置密码失败: 用户 {} 不存在", id);
             return false;
         }
         user.setPassword(newPassword);
         user.setUpdateTime(new Date());
         boolean success = updateById(user);
-        if (!success) {
-            log.error("重置用户 {} 密码到数据库失败", id);
-        }
         return success;
     }
     
@@ -239,36 +217,36 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
     
     /**
-     * 根据用户类型获取用户数量 (使用 String)
+     * 根据用户类型获取用户数量 (使用 Enum)
      */
     @Override
-    public long getUserCountByType(String userType) {
+    public long getUserCountByType(UserType userType) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(userType)) {
+        if (userType != null) {
             queryWrapper.eq(User::getUserType, userType);
         }
         return count(queryWrapper);
     }
     
     /**
-     * 根据状态获取用户数量 (使用 String)
+     * 根据状态获取用户数量 (使用 Enum)
      */
     @Override
-    public long getUserCountByStatus(String status) {
+    public long getUserCountByStatus(UserStatus status) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(status)) {
+        if (status != null) {
             queryWrapper.eq(User::getStatus, status);
         }
         return count(queryWrapper);
     }
 
     /**
-     * 根据用户类型查询用户 (使用 String)
+     * 根据用户类型查询用户 (使用 Enum)
      */
     @Override
-    public List<User> getUsersByType(String userType) {
+    public List<User> getUsersByType(UserType userType) {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(userType)) {
+        if (userType != null) {
             queryWrapper.eq(User::getUserType, userType);
         }
         return list(queryWrapper);
@@ -276,23 +254,23 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
     @Override
     public List<User> getAllStudents() {
-        return getUsersByType("Student"); // Use String version
+        return getUsersByType(UserType.STUDENT);
     }
 
     @Override
     public List<User> getAllTeachers() {
-        return getUsersByType("Teacher"); // Use String version
+        return getUsersByType(UserType.TEACHER);
     }
 
     @Override
     public Map<String, Object> getUserStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", getUserCount());
-        stats.put("admins", getUserCountByType("Admin")); // Use String version
-        stats.put("students", getUserCountByType("Student")); // Use String version
-        stats.put("teachers", getUserCountByType("Teacher")); // Use String version
-        stats.put("active", getUserCountByStatus("Active")); // Use String version
-        stats.put("inactive", getUserCountByStatus("Inactive")); // Use String version
+        stats.put("admins", getUserCountByType(UserType.ADMIN));
+        stats.put("students", getUserCountByType(UserType.STUDENT));
+        stats.put("teachers", getUserCountByType(UserType.TEACHER));
+        stats.put("active", getUserCountByStatus(UserStatus.ACTIVE));
+        stats.put("inactive", getUserCountByStatus(UserStatus.INACTIVE));
         return stats;
     }
 
@@ -303,7 +281,6 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Transactional
     public boolean updateUserProfile(User user) {
         if (user == null || user.getId() == null) {
-            log.warn("尝试更新个人资料时用户或用户ID为空");
             return false;
         }
         LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
@@ -322,7 +299,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         if (user.getEmail() != null) {
             updateWrapper.set(User::getEmail, user.getEmail());
         }
-        // AvatarURL is often handled by a separate upload endpoint + updateAvatar method
+        // AvatarURL field does not exist, removed related logic
 
         // 总是更新 updateTime
         updateWrapper.set(User::getUpdateTime, new Date());
@@ -330,42 +307,20 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return update(updateWrapper);
     }
 
-    @Override
-    @Transactional
-    public boolean uploadAvatar(Long userId, String avatarUrl) {
-        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(User::getId, userId)
-                .set(User::getAvatarUrl, avatarUrl)
-                .set(User::getUpdateTime, new Date());
-        return update(updateWrapper);
-    }
-
-    public Map<String, String> getUserAvatars(List<Long> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        List<User> users = list(new LambdaQueryWrapper<User>()
-                .in(User::getId, userIds)
-                .select(User::getId, User::getAvatarUrl));
-        return users.stream()
-                .collect(Collectors.toMap(user -> String.valueOf(user.getId()),
-                        u -> u.getAvatarUrl() != null ? u.getAvatarUrl() : ""));
-    }
-
     /**
-     * 分页查询用户列表
+     * 分页查询用户列表 (Use Enum for userType filter)
      */
     @Override
-    public IPage<User> findUsersPage(int page, int size, String keyword, String userType) {
+    public IPage<User> findUsersPage(int page, int size, String keyword, UserType userType) {
         Page<User> pageRequest = new Page<>(page, size);
         LambdaQueryWrapper<User> queryWrapper = Wrappers.lambdaQuery();
 
-        // Use String userType directly
-        if (StringUtils.hasText(userType)) {
+        // Use Enum userType directly
+        if (userType != null) {
             queryWrapper.eq(User::getUserType, userType);
         }
 
-        // 处理关键词搜索
+        // 处理关键词搜索 (Assuming these fields exist)
         if (StringUtils.hasText(keyword)) {
             queryWrapper.and(qw -> qw.like(User::getUsername, keyword)
                     .or().like(User::getRealName, keyword)
@@ -379,49 +334,55 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return this.page(pageRequest, queryWrapper);
     }
 
-
-
     /**
-     * 检查管理员账号是否存在
+     * 检查管理员账号是否存在 (Use Enum)
      */
     @Override
     public boolean checkAdminExists() {
-        return count(Wrappers.<User>lambdaQuery().eq(User::getUserType, "Admin")) > 0;
+        return count(Wrappers.<User>lambdaQuery().eq(User::getUserType, UserType.ADMIN)) > 0;
     }
 
     /**
-     * 添加管理员用户
+     * 添加管理员用户 (Check using Enum)
      */
     @Override
     @Transactional
     public boolean addAdminUser(User admin) {
-        if (!"Admin".equals(admin.getUserType())) {
-            log.error("尝试使用 addAdminUser 方法添加非管理员用户: {}", admin.getUsername());
-            return false;
+        // 校验管理员类型
+        if (admin.getUserType() != UserType.ADMIN) {
+            throw new CustomException("只能添加管理员类型的用户");
         }
+        // 检查用户名是否已存在
         if (getUserByUsername(admin.getUsername()) != null) {
-            log.error("尝试添加已存在的管理员用户名: {}", admin.getUsername());
-            return false;
+            throw new CustomException("用户名 " + admin.getUsername() + " 已存在");
         }
+        // 检查是否已有管理员存在
+        if (checkAdminExists()) {
+            throw new CustomException("系统已存在管理员");
+        }
+
+        // 设置默认值
         Date now = new Date();
         admin.setCreateTime(now);
         admin.setUpdateTime(now);
-        if (admin.getStatus() == null) admin.setStatus("Active");
+        if (admin.getStatus() == null) {
+            admin.setStatus(UserStatus.ACTIVE);
+        }
         if (admin.getPassword() == null || admin.getPassword().isEmpty()) {
-            log.error("尝试添加管理员 {} 时密码为空", admin.getUsername());
             throw new CustomException("管理员密码不能为空");
         }
+        // 保存管理员用户
         return save(admin);
     }
 
     @Override
     public List<User> getUsersByIds(Set<Long> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
+        if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
-        List<User> users = baseMapper.selectBatchIds(ids);
-        users.forEach(user -> user.setPassword(null));
-        return users;
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(User::getId, ids);
+        return list(queryWrapper);
     }
 
     /**
@@ -431,17 +392,28 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
      */
     @Override
     public User findByUsername(String username) {
-        // 这个方法可以直接调用已有的getUserByUsername方法
         return getUserByUsername(username);
     }
 
-    // 移除复杂验证逻辑后的密码重置方法
+    /**
+     * 验证并重置密码 (示例性，具体逻辑可能需要调整)
+     *
+     * @param username    用户名
+     * @param newPassword 新密码
+     */
     public void verifyPasswordReset(String username, String newPassword) {
-        User user = userDao.findByUsername(username);
+        User user = findByUsername(username);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new CustomException("用户不存在");
         }
-        user.setPassword(newPassword); // 明文存储仅用于演示
-        userDao.update(user);
+        // 这里可以添加更多的验证逻辑，例如验证 token 等
+        resetPassword(user.getId(), newPassword);
+    }
+
+    @Override
+    public User getUserByUserNo(String userNo) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUserNo, userNo);
+        return getOne(queryWrapper);
     }
 }

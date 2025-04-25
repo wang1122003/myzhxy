@@ -1,7 +1,5 @@
 package com.campus.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -16,9 +14,7 @@ import java.util.regex.Pattern;
  * 提供系统常用的辅助方法
  */
 public class CommonUtils {
-    
-    private static final Logger logger = LoggerFactory.getLogger(CommonUtils.class);
-    
+
     // 手机号正则表达式
     private static final Pattern MOBILE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
     
@@ -139,75 +135,5 @@ public class CommonUtils {
         }
         
         return str.substring(0, maxLength) + "...";
-    }
-    
-    /**
-     * 获取文件扩展名
-     *
-     * @param fileName 文件名
-     * @return 扩展名
-     */
-    public static String getFileExtension(String fileName) {
-        if (fileName == null || fileName.isEmpty() || !fileName.contains(".")) {
-            return "";
-        }
-        
-        int dotIndex = fileName.lastIndexOf(".");
-        return fileName.substring(dotIndex + 1).toLowerCase();
-    }
-    
-    /**
-     * 是否为图片扩展名
-     *
-     * @param extension 扩展名
-     * @return 是否为图片
-     */
-    public static boolean isImageExtension(String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return false;
-        }
-        
-        String ext = extension.toLowerCase();
-        return ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png") || 
-               ext.equals("gif") || ext.equals("bmp") || ext.equals("webp");
-    }
-    
-    /**
-     * 是否为文档扩展名
-     *
-     * @param extension 扩展名
-     * @return 是否为文档
-     */
-    public static boolean isDocumentExtension(String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return false;
-        }
-        
-        String ext = extension.toLowerCase();
-        return ext.equals("doc") || ext.equals("docx") || ext.equals("pdf") || 
-               ext.equals("xls") || ext.equals("xlsx") || ext.equals("ppt") || 
-               ext.equals("pptx") || ext.equals("txt");
-    }
-    
-    /**
-     * 格式化文件大小
-     *
-     * @param size 文件大小（字节）
-     * @return 格式化后的文件大小
-     */
-    public static String formatFileSize(long size) {
-        if (size < 0) {
-            return "0 B";
-        }
-        
-        if (size < 1024) {
-            return size + " B";
-        } else if (size < 1024 * 1024) {
-            return String.format("%.2f KB", size / 1024.0);
-        } else if (size < 1024 * 1024 * 1024) {
-            return String.format("%.2f MB", size / (1024.0 * 1024));
-        } else {
-            return String.format("%.2f GB", size / (1024.0 * 1024 * 1024));
-        }
     }
 } 

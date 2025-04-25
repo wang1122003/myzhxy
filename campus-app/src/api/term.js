@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import { TERM_API } from './api-endpoints'; // 假设 API 端点定义在 api-endpoints.js
+import {TERM_API} from './api-endpoints'; // 假设 API 端点定义在 api-endpoints.js
 
 /**
  * 获取所有学期列表

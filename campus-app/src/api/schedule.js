@@ -1,5 +1,5 @@
 import request from '../utils/request'
-import { SCHEDULE_API } from './api-endpoints' // 引入 API 定义
+import {SCHEDULE_API} from './api-endpoints' // 引入 API 定义
 
 // 获取所有课表
 export function getAllSchedules(params) {

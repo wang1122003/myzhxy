@@ -8,11 +8,12 @@ import com.campus.dao.ClassroomDao;
 import com.campus.entity.Classroom;
 import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.campus.enums.ClassroomStatus;
 
 import java.util.Date;
 import java.util.List;
@@ -20,12 +21,8 @@ import java.util.List;
 /**
  * 教室服务实现类
  */
-@Slf4j
 @Service
 public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> implements ClassroomService {
-
-    @Autowired
-    private ClassroomDao classroomDao;
 
     @Override
     public Classroom getClassroomById(Long id) {
@@ -54,8 +51,16 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
                     .or()
                     .like(Classroom::getBuilding, keyword));
         }
+        if (StringUtils.isNotBlank(building)) {
+            queryWrapper.eq(Classroom::getBuilding, building);
+        }
         if (status != null) {
-            queryWrapper.eq(Classroom::getStatus, status);
+            ClassroomStatus classroomStatus = ClassroomStatus.fromCode(status);
+            if (classroomStatus != null) {
+                queryWrapper.eq(Classroom::getStatus, classroomStatus);
+            } else {
+                log.warn("Invalid status code provided for classroom search: " + status);
+            }
         }
         queryWrapper.orderByAsc(Classroom::getName);
 
@@ -64,9 +69,8 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
 
     @Override
     public List<Classroom> getAvailableClassrooms() {
-        LambdaQueryWrapper<Classroom> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Classroom::getStatus, 1);
-        queryWrapper.orderByAsc(Classroom::getName);
+        LambdaQueryWrapper<Classroom> queryWrapper = Wrappers.lambdaQuery();
+        queryWrapper.eq(Classroom::getStatus, ClassroomStatus.NORMAL);
         return list(queryWrapper);
     }
 
@@ -96,21 +100,24 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
     }
 
     @Override
-    public boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, Integer weekDay) {
-        log.warn("checkClassroomAvailability 方法尚未完全实现，总是返回 true");
+    public boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek) {
+        // checkClassroomAvailability 方法尚未完全实现，总是返回 true
+        log.warn("checkClassroomAvailability is not fully implemented.");
         return true; 
     }
 
     @Override
-    @Transactional
     public void batchUpdateStatus(List<Long> ids, Integer status) {
-        if (ids == null || ids.isEmpty()) {
-            return;
+        ClassroomStatus classroomStatus = ClassroomStatus.fromCode(status);
+        if (classroomStatus == null) {
+            throw new IllegalArgumentException("Invalid status value: " + status);
         }
-        Classroom classroom = new Classroom();
-        classroom.setStatus(status);
-        LambdaQueryWrapper<Classroom> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(Classroom::getId, ids);
-        update(classroom, wrapper);
+
+        if (ids != null && !ids.isEmpty()) {
+            LambdaUpdateWrapper<Classroom> updateWrapper = Wrappers.lambdaUpdate();
+            updateWrapper.in(Classroom::getId, ids)
+                    .set(Classroom::getStatus, classroomStatus);
+            update(updateWrapper);
+        }
     }
 }

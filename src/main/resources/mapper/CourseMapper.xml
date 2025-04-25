@@ -3,20 +3,24 @@
 <mapper namespace="com.campus.dao.CourseDao">
     <!-- 结果映射 -->
     <resultMap id="BaseResultMap" type="com.campus.entity.Course">
-        <id column="id" property="id" jdbcType="INTEGER"/>
+        <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
+        <result column="course_code" property="courseCode" jdbcType="VARCHAR"/>
         <result column="credit" property="credit" jdbcType="DECIMAL"/>
+        <result column="hours" property="hours" jdbcType="INTEGER"/>
+        <result column="course_type" property="courseType" jdbcType="TINYINT"/>
         <result column="introduction" property="introduction" jdbcType="LONGVARCHAR"/>
-        <result column="teacher_id" property="teacherId" jdbcType="INTEGER"/>
-        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="teacher_id" property="teacherId" jdbcType="BIGINT"/>
+        <result column="term_info" property="termInfo" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, course_name, credit,
-        introduction, teacher_id, create_time, update_time
+        id, course_name, course_code, credit, hours, course_type, 
+        introduction, teacher_id, term_info, status, create_time, update_time
     </sql>
 
     <!-- 获取所有课程 -->
@@ -101,28 +105,23 @@
 
     <!-- 更新课程状态 -->
     <update id="updateCourseStatus">
-        -- This query might be invalid as 'status' is not a DB column in the 'course' table.
-        -- Review if this update operation is necessary or should target a different table/column.
-        -- For now, commenting it out to avoid errors.
-        -- UPDATE course
-        -- SET
-        --     status = #{status,jdbcType=INTEGER},
-        --     update_time = NOW()
-        -- WHERE id = #{id,jdbcType=INTEGER}
+        UPDATE course
+        SET status      = #{status,jdbcType=TINYINT},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
     <!-- 检查课程代码是否存在 -->
     <select id="checkCourseCodeExists" parameterType="java.lang.String" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM course
-        WHERE code = #{courseNo,jdbcType=VARCHAR}
+        WHERE course_code = #{courseCode,jdbcType=VARCHAR}
     </select>
 
     <!-- 获取课程统计信息 -->
     <select id="getCourseStats" resultType="java.util.Map">
         SELECT
             COUNT(*) as total_courses,
-            -- SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_courses, -- Status column does not exist
             COUNT(DISTINCT department) as total_departments, -- Assuming department exists, though not in Base_Column_List
             COUNT(DISTINCT type)       as total_types,       -- Assuming type exists, though not in Base_Column_List
             SUM(credit)                as total_credits
@@ -171,20 +170,20 @@
     </select>
     
     <!-- 根据教师ID查询课程 -->
-    <select id="findByTeacherId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <select id="findByTeacherId" parameterType="java.lang.Long" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM course
-        WHERE teacher_id = #{teacherId,jdbcType=INTEGER}
+        WHERE teacher_id = #{teacherId,jdbcType=BIGINT}
         ORDER BY course_name
     </select>
     
     <!-- 根据课程代码查询课程 -->
-    <select id="findByCourseNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <select id="findByCourseCode" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM course
-        WHERE code = #{courseNo,jdbcType=VARCHAR}
+        WHERE course_code = #{courseCode,jdbcType=VARCHAR}
     </select>
     
     <!-- 根据部门查询课程 -->
@@ -197,11 +196,11 @@
     </select>
     
     <!-- 根据课程类型查询课程 -->
-    <select id="findByCourseType" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <select id="findByCourseType" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM course
-        WHERE type = #{courseType,jdbcType=VARCHAR}
+        WHERE course_type = #{courseType,jdbcType=TINYINT}
         ORDER BY course_name
     </select>
     
@@ -232,10 +231,12 @@
 
     <!-- 插入课程 -->
     <insert id="insert" parameterType="com.campus.entity.Course" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO course (course_name, credit, introduction, teacher_id, status, create_time, update_time
-        )
-        VALUES (#{courseName,jdbcType=VARCHAR}, #{credit,jdbcType=DECIMAL},
-                #{introduction,jdbcType=LONGVARCHAR}, #{teacherId,jdbcType=INTEGER}, #{status,jdbcType=INTEGER},
+        INSERT INTO course (course_name, course_code, credit, hours, course_type, introduction, teacher_id, term_info,
+                            status, create_time, update_time)
+        VALUES (#{courseName,jdbcType=VARCHAR}, #{courseCode,jdbcType=VARCHAR}, #{credit,jdbcType=DECIMAL},
+                #{hours,jdbcType=INTEGER}, #{courseType,jdbcType=TINYINT},
+                #{introduction,jdbcType=LONGVARCHAR}, #{teacherId,jdbcType=BIGINT}, #{termInfo,jdbcType=VARCHAR},
+                #{status,jdbcType=TINYINT},
                 NOW(), NOW()
         )
     </insert>
@@ -243,11 +244,18 @@
     <!-- 更新课程 -->
     <update id="update" parameterType="com.campus.entity.Course">
         UPDATE course
-        SET
-            course_name = #{courseName,jdbcType=VARCHAR},
-            credit = #{credit,jdbcType=DECIMAL},
-            introduction = #{introduction,jdbcType=LONGVARCHAR},
-            update_time = #{updateTime,jdbcType=TIMESTAMP}
+        <set>
+            <if test="courseName != null">course_name = #{courseName,jdbcType=VARCHAR},</if>
+            <if test="courseCode != null">course_code = #{courseCode,jdbcType=VARCHAR},</if>
+            <if test="credit != null">credit = #{credit,jdbcType=DECIMAL},</if>
+            <if test="hours != null">hours = #{hours,jdbcType=INTEGER},</if>
+            <if test="courseType != null">course_type = #{courseType,jdbcType=TINYINT},</if>
+            <if test="introduction != null">introduction = #{introduction,jdbcType=LONGVARCHAR},</if>
+            <if test="teacherId != null">teacher_id = #{teacherId,jdbcType=BIGINT},</if>
+            <if test="termInfo != null">term_info = #{termInfo,jdbcType=VARCHAR},</if>
+            <if test="status != null">status = #{status,jdbcType=TINYINT},</if>
+            update_time = NOW()
+        </set>
         WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
@@ -266,13 +274,6 @@
         </foreach>
     </delete>
 
-    <!-- 检查课程代码是否存在 -->
-    <select id="isCourseCodeExists" parameterType="java.lang.String" resultType="java.lang.Boolean">
-        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
-        FROM course
-        WHERE code = #{courseNo,jdbcType=VARCHAR}
-    </select>
-    
     <!-- 获取指定状态的课程数量 -->
     <select id="getStatusCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
         -- This query is invalid as 'status' is not a DB column in the 'course' table.
@@ -356,7 +357,7 @@
     <select id="countByCourseCode" parameterType="java.lang.String" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM course
-        WHERE code = #{courseNo,jdbcType=VARCHAR}
+        WHERE course_code = #{courseCode,jdbcType=VARCHAR}
     </select>
 
     <!-- 使用MyBatis-Plus查询列表 -->
@@ -426,5 +427,20 @@
                 OR c.introduction LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
+    </select>
+
+    <!-- 根据课程ID查询课程名称 -->
+    <select id="getCourseNameById" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT course_name
+        FROM course
+        WHERE id = #{courseId,jdbcType=INTEGER}
+    </select>
+
+    <!-- 获取所有课程的ID和名称，用于下拉列表 -->
+    <select id="getAllCourseIdsAndNames" resultType="java.util.Map">
+        SELECT id, course_name as name
+        FROM course
+        WHERE status = 1
+        ORDER BY course_name
     </select>
 </mapper> 

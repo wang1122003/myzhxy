@@ -369,7 +369,6 @@ import {
   ElPagination,
   ElRow,
   ElSelect,
-  ElTable,
   ElTableColumn,
   ElTag,
   ElUpload

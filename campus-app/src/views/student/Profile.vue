@@ -168,8 +168,8 @@
 import {onMounted, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {Upload} from '@element-plus/icons-vue';
-import {getUserProfile, updateUserProfile} from '@/api/user';
-import {logout, setUserInfo, userAvatar, userId, userInfo} from '@/utils/auth';
+import {getCurrentUserProfile, updateUserProfile} from '@/api/user';
+import {logout, setUserInfo, userAvatar, userInfo} from '@/utils/auth';
 import {useRouter} from 'vue-router';
 
 export default {
@@ -205,20 +205,22 @@ export default {
     const fetchProfile = async () => {
       loading.value = true;
       try {
-        if (!userId.value) {
-          ElMessage.error('无法获取用户ID，请重新登录');
-          await handleLogout();
-          return;
-        }
-        const response = await getUserProfile(userId.value);
+        const response = await getCurrentUserProfile(); 
         if (response.code === 200 && response.data) {
           profile.value = {...response.data};
+          setUserInfo(response.data);
         } else {
           ElMessage.error(response.message || '获取用户信息失败');
+          if (response.code === 401) {
+            await handleLogout();
+          }
         }
       } catch (error) {
         console.error('获取用户信息异常:', error);
         ElMessage.error('获取用户信息异常');
+        if (error?.response?.status === 401) {
+          await handleLogout();
+        }
       } finally {
         loading.value = false;
       }
@@ -303,11 +305,14 @@ export default {
     const handleLogout = async () => {
       try {
         await logout();
-        router.push('/login');
-      } catch (error) {
-        console.error("登出时出错:", error);
-        logout();
-        router.push('/login');
+      } catch (e) {
+        console.error('登出失败:', e);
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
+        router.push('/');
+        ElMessage.info('请重新登录');
       }
     };
 

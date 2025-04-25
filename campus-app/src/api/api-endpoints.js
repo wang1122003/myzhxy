@@ -54,6 +54,8 @@ export const SCHEDULE_API = {
     BATCH_DELETE: '/schedules/batch',
     BATCH_GENERATE: '/schedules/batch-generate',
     CHECK_CONFLICT: '/schedules/check-conflict',
+    GET_TEACHER: '/schedules/teacher',
+    GET_STUDENT: '/schedules/student',
     GET_TEACHER_WEEKLY: '/schedules/teacher-weekly',
     GET_STUDENT_WEEKLY: '/schedules/student-weekly',
     GET_CLASSROOM_WEEKLY: '/schedules/classroom-weekly'

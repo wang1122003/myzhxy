@@ -1,174 +1,78 @@
 package com.campus.service;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.campus.dto.PageResult;
-import com.campus.entity.Comment;
-import com.campus.vo.CommentVO;
+// import com.baomidou.mybatisplus.core.metadata.IPage;
+// import com.baomidou.mybatisplus.extension.service.IService;
+// import com.campus.entity.Comment; // Comment class is missing
 
-import java.util.List;
-import java.util.Map;
+// import java.util.List;
+// import java.util.Map;
 
 /**
- * 论坛评论服务接口
+ * 评论服务接口
+ * TODO: [评论功能] - Interface commented out due to missing Comment entity.
  */
+/*
 public interface CommentService extends IService<Comment> {
-    
-    /**
-     * 根据ID查询评论信息
-     * @param id 评论ID
-     * @return 评论实体
-     */
-    Comment getCommentById(Long id);
-    
-    /**
-     * 查询所有评论列表
-     * @return 评论列表
-     */
-    List<Comment> getAllComments();
-    
-    /**
-     * 根据帖子ID查询评论列表
-     * @param postId 帖子ID
-     * @return 评论列表
-     */
-    List<Comment> getCommentsByPostId(Long postId);
-    
-    /**
-     * 根据用户ID查询评论列表
-     * @param userId 用户ID
-     * @return 评论列表
-     */
-    List<Comment> getCommentsByUserId(Long userId);
-    
-    /**
-     * 根据父评论ID查询子评论列表
-     * @param parentId 父评论ID
-     * @return 评论列表
-     */
-    List<Comment> getCommentsByParentId(Long parentId);
-    
-    /**
-     * 查询帖子的一级评论列表
-     * @param postId 帖子ID
-     * @return 评论列表
-     */
-    List<Comment> getRootCommentsByPostId(Long postId);
-    
-    /**
-     * 添加评论
-     * @param comment 评论实体
-     * @return 是否成功
-     */
+
+    // 根据帖子ID获取评论（分页）
+    IPage<Comment> getCommentsByPostId(Long postId, int page, int size);
+
+    // 根据用户ID获取评论（分页）
+    IPage<Comment> getCommentsByUserId(Long userId, int page, int size);
+
+    // 获取所有评论（分页）
+    IPage<Comment> getAllComments(int page, int size);
+
+    // 添加评论
     boolean addComment(Comment comment);
-    
-    /**
-     * 更新评论信息
-     * @param comment 评论实体
-     * @return 是否成功
-     */
+
+    // 更新评论
     boolean updateComment(Comment comment);
-    
-    /**
-     * 删除评论
-     * @param id 评论ID
-     * @return 是否成功
-     */
-    boolean deleteComment(Long id);
-    
-    /**
-     * 批量删除评论
-     * @param ids 评论ID数组
-     * @return 是否成功
-     */
-    boolean batchDeleteComments(Long[] ids);
-    
-    /**
-     * 根据帖子ID删除评论
-     * @param postId 帖子ID
-     * @return 是否成功
-     */
-    boolean deleteCommentsByPostId(Long postId);
-    
-    /**
-     * 更新评论状态
-     * @param id 评论ID
-     * @param status 状态值
-     * @return 是否成功
-     */
-    boolean updateCommentStatus(Long id, String status);
-    
-    /**
-     * 增加评论点赞次数
-     * @param id 评论ID
-     * @return 是否成功
-     */
-    boolean incrementLikeCount(Long id);
 
-    /**
-     * 减少评论点赞次数
-     *
-     * @param id 评论ID
-     * @return 是否成功
-     */
-    boolean decrementLikeCount(Long id);
+    // 删除评论
+    boolean deleteComment(Long commentId);
 
-    /**
-     * 点赞评论
-     *
-     * @param commentId 评论ID
-     * @return 是否成功
-     */
-    boolean likeComment(Long commentId);
+    // 批量删除评论
+    boolean batchDeleteComments(List<Long> commentIds);
 
-    /**
-     * 取消点赞评论
-     *
-     * @param commentId 评论ID
-     * @return 是否成功
-     */
-    boolean cancelLikeComment(Long commentId);
+    // 点赞评论
+    boolean likeComment(Long commentId, Long userId);
 
-    List<Comment> getReplies(Long parentId);
+    // 取消点赞评论
+    boolean unlikeComment(Long commentId, Long userId);
 
-    /**
-     * 获取所有评论（分页，管理端使用）
-     *
-     * @param pageNo   页码
-     * @param pageSize 每页数量
-     * @param postId   帖子ID (可选)
-     * @param authorId 作者ID (可选)
-     * @param keyword  关键词 (可选, 搜索内容)
-     * @return 分页评论结果 (包含作者信息)
-     */
-    PageResult<CommentVO> getAllCommentsPaginated(int pageNo, int pageSize, Long postId, Long authorId, String keyword);
+    // 获取评论详情（可能包含点赞信息等）
+    Comment getCommentDetail(Long commentId);
 
-    /**
-     * 发表评论 (包含回复)
-     *
-     * @param comment 评论实体，包含postId, userId, content, parentId
-     * @return 创建后的评论实体
-     */
-    Comment createComment(Comment comment);
+    // 搜索评论
+    IPage<Comment> searchComments(String keyword, int page, int size);
 
-    /**
-     * [新增] 获取所有评论（管理端），支持分页和筛选
-     *
-     * @param page    页码
-     * @param size    每页数量
-     * @param status  评论状态 (可选)
-     * @param keyword 搜索关键词 (可选)
-     * @return 评论分页结果 (Map包含评论信息和帖子信息)
-     */
-    Page<Map<String, Object>> getAllCommentsManaged(int page, int size, Integer status, String keyword);
+    // 更新评论状态
+    boolean updateCommentStatus(Long commentId, String status);
 
-    /**
-     * [新增] 获取指定用户的评论分页列表，并包含关联的帖子信息
-     *
-     * @param userId 用户ID
-     * @param page   页码
-     * @param size   每页数量
-     * @return 评论分页结果 (Map包含评论信息和帖子信息)
-     */
-    Page<Map<String, Object>> getCommentsByUserIdWithPostInfo(Long userId, int page, int size);
+    // 获取评论总数
+    long getTotalCommentCount();
+
+    // 获取指定帖子的评论总数
+    long getCommentCountByPostId(Long postId);
+
+    // 获取指定用户的评论总数
+    long getCommentCountByUserId(Long userId);
+
+    // 获取热门评论（例如按点赞数排序）
+    List<Comment> getHotComments(Long postId, int limit);
+
+    // 获取最新评论
+    List<Comment> getRecentComments(int limit);
+
+    // 获取父评论下的子评论
+    List<Comment> getReplies(Long parentCommentId);
+
+    // Map形式的CRUD（如果需要）
+    Map<String, Object> getMapById(Long id);
+    List<Map<String, Object>> getMapsByPostId(Long postId);
+    IPage<Map<String, Object>> pageQueryMaps(Long current, Long size, Map<String, Object> params);
+    boolean saveByMap(Map<String, Object> commentMap);
+    boolean updateByMap(Map<String, Object> commentMap);
 }
+*/

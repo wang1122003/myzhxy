@@ -11,8 +11,6 @@
         <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
         <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
         <result column="organizer_id" property="organizerId" jdbcType="BIGINT"/>
-        <result column="organizer_name" property="organizerName" jdbcType="VARCHAR"/>
-        <result column="publisher_id" property="publisherId" jdbcType="BIGINT"/>
         <result column="contact" property="contact" jdbcType="VARCHAR"/>
         <result column="poster_url" property="posterUrl" jdbcType="VARCHAR"/>
         <result column="max_participants" property="maxParticipants" jdbcType="INTEGER"/>
@@ -21,13 +19,15 @@
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <result column="registration_deadline" property="registrationDeadline" jdbcType="TIMESTAMP"/>
+        <result column="participants_json" property="participantsJson" jdbcType="LONGVARCHAR"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         id, title, description, type, location, start_time, end_time,
-        organizer_id, organizer_name, publisher_id, contact, poster_url, max_participants,
-        current_participants, status, create_time, update_time, registration_deadline
+        organizer_id, contact, poster_url, max_participants,
+        current_participants, status, create_time, update_time, registration_deadline,
+        participants_json
     </sql>
 
     <!-- 根据ID查询活动 -->
@@ -107,14 +107,16 @@
     <!-- 插入活动 -->
     <insert id="insert" parameterType="com.campus.entity.Activity" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO activity (title, description, type, location, start_time, end_time, registration_deadline,
-                               organizer_id, organizer_name, publisher_id, contact, poster_url, max_participants,
-                               current_participants, status, create_time, update_time
+                              organizer_id, contact, poster_url, max_participants,
+                              current_participants, status, create_time, update_time,
+                              participants_json
         )
         VALUES (#{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR},
             #{location,jdbcType=VARCHAR}, #{startTime,jdbcType=TIMESTAMP}, #{endTime,jdbcType=TIMESTAMP}, #{registrationDeadline,jdbcType=TIMESTAMP},
-            #{organizerId,jdbcType=BIGINT}, #{organizerName,jdbcType=VARCHAR}, #{publisherId,jdbcType=BIGINT}, #{contact,jdbcType=VARCHAR},
+                #{organizerId,jdbcType=BIGINT}, #{contact,jdbcType=VARCHAR},
             #{posterUrl,jdbcType=VARCHAR}, #{maxParticipants,jdbcType=INTEGER}, #{currentParticipants,jdbcType=INTEGER},
-            #{status,jdbcType=VARCHAR}, NOW(), NOW()
+                #{status,jdbcType=VARCHAR}, NOW(), NOW(),
+                #{participantsJson,jdbcType=LONGVARCHAR}
         )
     </insert>
 
@@ -130,13 +132,12 @@
             <if test="endTime != null">end_time = #{endTime,jdbcType=TIMESTAMP},</if>
             <if test="registrationDeadline != null">registration_deadline = #{registrationDeadline,jdbcType=TIMESTAMP},</if>
             <if test="organizerId != null">organizer_id = #{organizerId,jdbcType=BIGINT},</if>
-            <if test="organizerName != null">organizer_name = #{organizerName,jdbcType=VARCHAR},</if>
-            <if test="publisherId != null">publisher_id = #{publisherId,jdbcType=BIGINT},</if>
             <if test="contact != null">contact = #{contact,jdbcType=VARCHAR},</if>
             <if test="posterUrl != null">poster_url = #{posterUrl,jdbcType=VARCHAR},</if>
             <if test="maxParticipants != null">max_participants = #{maxParticipants,jdbcType=INTEGER},</if>
             <if test="currentParticipants != null">current_participants = #{currentParticipants,jdbcType=INTEGER},</if>
             <if test="status != null">status = #{status,jdbcType=VARCHAR},</if>
+            <if test="participantsJson != null">participants_json = #{participantsJson,jdbcType=LONGVARCHAR},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id,jdbcType=BIGINT}
@@ -173,7 +174,6 @@
         WHERE title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR description LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR location LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
-        OR organizer_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         ORDER BY start_time DESC
     </select>
 
@@ -200,16 +200,6 @@
     <select id="getCount" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM activity
-    </select>
-
-    <!-- 获取学生参与的活动 -->
-    <select id="getStudentActivities" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        SELECT a.*
-        FROM activity a
-        JOIN activity_participant ap ON a.id = ap.activity_id
-        JOIN `user` u ON ap.user_id = u.id
-        WHERE u.id = #{studentId,jdbcType=BIGINT}
-        ORDER BY a.start_time DESC
     </select>
 
     <!-- 获取组织者的活动 -->
@@ -247,13 +237,6 @@
         SELECT COUNT(*)
         FROM activity
         WHERE status = #{status,jdbcType=VARCHAR}
-    </select>
-
-    <!-- 获取活动参与人数统计 -->
-    <select id="getActivityParticipantCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
-        SELECT COUNT(*)
-        FROM activity_participant
-        WHERE activity_id = #{activityId,jdbcType=BIGINT}
     </select>
 
     <!-- 检查活动名称是否存在 -->

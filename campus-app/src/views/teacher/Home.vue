@@ -139,7 +139,7 @@ import {Clock, List, Location, Reading, User} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user' // Use getUserInfo or getCurrentUser
 import {getTeacherSchedule} from '@/api/schedule'
 import {getNoticeList} from '@/api/notice' // 修正导入，虽然 Home 本身可能不用 getNoticeById，但引用的 Dialog 会用
-import NoticeDetailDialog from '@/components/NoticeDetailDialog.vue' // 引入通知详情组件
+import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue' // 引入通知详情组件
 
 const router = useRouter()
 

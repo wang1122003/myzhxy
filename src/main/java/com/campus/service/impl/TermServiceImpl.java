@@ -1,53 +1,57 @@
 package com.campus.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.campus.dao.TermDao;
-import com.campus.entity.Term;
-import com.campus.service.TermService;
-import org.springframework.stereotype.Service;
+// import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+// import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+// import com.campus.dao.TermDao; // Missing
+// import com.campus.entity.Term; // Missing
+// import com.campus.service.TermService; // Missing
+// import org.springframework.stereotype.Service;
 
-import java.util.List;
+// import java.util.List;
 
 /**
  * 学期服务实现类
+ * TODO: [学期功能] - Class commented out as Term will be managed via config file, not DB entity.
  */
+/*
 @Service
 public class TermServiceImpl extends ServiceImpl<TermDao, Term> implements TermService {
 
     @Override
     public List<Term> getAllTerms(boolean orderByCreateTimeDesc) {
-        LambdaQueryWrapper<Term> wrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Term> queryWrapper = new LambdaQueryWrapper<>();
         if (orderByCreateTimeDesc) {
-            wrapper.orderByDesc(Term::getCreateTime);
+            queryWrapper.orderByDesc(Term::getCreateTime);
         } else {
-            // 默认可以按 start_date 或 code 排序
-            wrapper.orderByAsc(Term::getStartDate, Term::getCode);
+            queryWrapper.orderByAsc(Term::getStartDate); // Or order by start date
         }
-        return list(wrapper);
+        return list(queryWrapper);
     }
 
     @Override
     public Term getCurrentTerm() {
-        LambdaQueryWrapper<Term> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Term::getCurrent, 1); // 假设 1 表示当前学期
-        wrapper.last("LIMIT 1"); // 理论上只有一个当前学期，加个限制
-        return getOne(wrapper);
+        // Implement logic to determine the current term, e.g., based on current date
+        // or a flag in the database.
+        // For now, return null or a default value.
+        return null; 
     }
 
-    /**
-     * 根据学期代码获取学期
-     * @param code 学期代码
-     * @return 学期对象或null
-     */
     @Override
     public Term getByCode(String code) {
-        if (code == null || code.trim().isEmpty()) {
-            return null;
-        }
-        LambdaQueryWrapper<Term> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Term::getCode, code);
-        wrapper.last("LIMIT 1"); // 学期代码应该是唯一的
-        return getOne(wrapper);
+        return getOne(new LambdaQueryWrapper<Term>().eq(Term::getCode, code));
     }
-} 
+
+    @Override
+    public Long getTermIdBySemesterCode(String semesterCode) {
+        Term term = getByCode(semesterCode);
+        return (term != null) ? term.getId() : null;
+    }
+    
+    @Override
+    public boolean setCurrentTerm(Long termId) {
+        // Implement logic to update the current term flag in the database
+        // This might involve setting is_current=false for the old term and true for the new one.
+        return false; // Placeholder
+    }
+}
+*/ 

@@ -5,7 +5,6 @@ import com.campus.entity.Classroom;
 import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
 import com.campus.utils.Result;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +15,6 @@ import java.util.Map;
 /**
  * 教室管理控制器
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/classrooms")
 public class ClassroomController {
@@ -54,7 +52,6 @@ public class ClassroomController {
             // 返回 IPage 对象，而不是 Map
             return Result.success(pageData);
         } catch (Exception e) {
-            log.error("分页获取教室列表失败", e);
             return Result.error("获取教室列表失败: " + e.getMessage());
         }
     }
@@ -69,7 +66,6 @@ public class ClassroomController {
             List<Classroom> classrooms = classroomService.getAllClassrooms();
             return Result.success(classrooms);
         } catch (Exception e) {
-            log.error("获取教室列表失败", e);
             return Result.error("获取教室列表失败: " + e.getMessage());
         }
     }
@@ -89,7 +85,6 @@ public class ClassroomController {
                 return Result.error("教室不存在");
             }
         } catch (Exception e) {
-            log.error("获取教室详情失败", e);
             return Result.error("获取教室详情失败: " + e.getMessage());
         }
     }
@@ -102,21 +97,17 @@ public class ClassroomController {
      */
     @PostMapping
     public Result<Void> addClassroom(@RequestBody Classroom classroom) {
-        log.debug("添加教室: {}", classroom.getName());
         try {
             // 基本验证 (可以扩展)
             if (classroom.getName() == null || classroom.getName().isEmpty()) {
                 return Result.error("教室名称不能为空");
             }
             boolean result = classroomService.addClassroom(classroom);
-            log.info("教室添加结果: {}", result);
             // 返回 Result<Void>，成功时不带数据体
             return result ? Result.success("添加成功") : Result.error("添加失败，教室名称可能已存在");
         } catch (CustomException e) {
-            log.error("添加教室 '{}' 出错: {}", classroom.getName(), e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("添加教室 '{}' 时发生未知错误", classroom.getName(), e);
             return Result.error("添加教室时发生未知错误");
         }
     }
@@ -130,7 +121,6 @@ public class ClassroomController {
      */
     @PutMapping("/{id}")
     public Result<Void> updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
-        log.debug("更新教室 ID {}: {}", id, classroom.getName());
         // 确保路径中的ID设置到对象上
         classroom.setId(id);
         try {
@@ -139,13 +129,10 @@ public class ClassroomController {
                 return Result.error("教室名称不能为空");
             }
             boolean result = classroomService.updateClassroom(classroom);
-            log.info("教室 ID {} 更新结果: {}", id, result);
             return result ? Result.success("更新成功") : Result.error("更新失败，教室名称可能重复或教室不存在");
         } catch (CustomException e) {
-            log.error("更新教室 ID {} 出错: {}", id, e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            log.error("更新教室 ID {} 时发生未知错误", id, e);
             return Result.error("更新教室时发生未知错误");
         }
     }
@@ -165,10 +152,8 @@ public class ClassroomController {
                 return Result.error("删除教室失败");
             }
         } catch (CustomException ce) {
-            log.warn("删除教室失败 (ID: {}): {}", id, ce.getMessage());
             return Result.error(ce.getMessage());
         } catch (Exception e) {
-            log.error("删除教室失败 (ID: {})", id, e);
             return Result.error("删除教室失败: " + e.getMessage());
         }
     }
@@ -181,7 +166,6 @@ public class ClassroomController {
      */
     @DeleteMapping("/batch")
     public Result<Void> batchDeleteClassrooms(@RequestBody List<Long> ids) {
-        log.debug("批量删除教室，IDs: {}", ids);
         if (ids == null || ids.isEmpty()) {
             return Result.error("请提供要删除的教室ID");
         }
@@ -195,21 +179,17 @@ public class ClassroomController {
                         successCount++;
                     } else {
                         failCount++;
-                        log.warn("删除教室 ID: {} 失败", id);
                     }
                 } catch (Exception e) {
                     failCount++;
-                    log.error("删除教室 ID: {} 时出错", id, e);
                 }
             }
-            log.info("批量删除结果: {} 个成功, {} 个失败.", successCount, failCount);
             if (failCount > 0) {
                 return Result.success(String.format("批量删除完成，%d个成功，%d个失败", successCount, failCount));
             } else {
                 return Result.success("批量删除成功");
             }
         } catch (Exception e) {
-            log.error("批量删除教室时发生未知错误: {}", ids, e);
             return Result.error("批量删除教室时发生未知错误");
         }
     }
@@ -223,7 +203,6 @@ public class ClassroomController {
      */
     @PutMapping("/{id}/status/{status}")
     public Result<Void> updateClassroomStatus(@PathVariable Long id, @PathVariable Integer status) {
-        log.debug("更新教室 ID {} 的状态为 {}", id, status);
         if (status == null) {
             return Result.error("状态值不能为空");
         }
@@ -231,10 +210,8 @@ public class ClassroomController {
         try {
             List<Long> idList = List.of(id);
             classroomService.batchUpdateStatus(idList, status);
-            log.info("教室 ID {} 状态更新成功", id);
             return Result.success("更新状态成功");
         } catch (Exception e) {
-            log.error("更新教室 ID {} 状态出错: {}", id, e.getMessage(), e);
             return Result.error("更新状态失败: " + e.getMessage());
         }
     }
@@ -251,16 +228,13 @@ public class ClassroomController {
         List<Long> ids = (List<Long>) statusUpdateRequest.get("ids");
         Integer status = (Integer) statusUpdateRequest.get("status");
 
-        log.debug("批量更新教室状态，IDs {}，状态 {}", ids, status);
         if (ids == null || ids.isEmpty() || status == null) {
             return Result.error("参数错误：缺少ids或status");
         }
         try {
             classroomService.batchUpdateStatus(ids, status);
-            log.info("批量状态更新成功，IDs: {}", ids);
             return Result.success("批量更新状态成功");
         } catch (Exception e) {
-            log.error("批量状态更新时出错，IDs {}: {}", ids, e.getMessage(), e);
             return Result.error("批量更新状态失败: " + e.getMessage());
         }
     }
@@ -275,7 +249,6 @@ public class ClassroomController {
             List<Classroom> classrooms = classroomService.getAvailableClassrooms();
             return Result.success(classrooms);
         } catch (Exception e) {
-            log.error("获取可用教室列表失败", e);
             return Result.error("获取可用教室列表失败: " + e.getMessage());
         }
     }

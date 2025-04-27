@@ -1,32 +1,35 @@
 <template>
   <el-container class="app-container">
-    <app-header/>
-    <el-main class="app-main">
-      <router-view v-slot="{ Component }">
+    <!-- 移除全局 AppHeader -->
+    <!-- <app-header/> -->
+    <!-- el-main 可能也需要移除或调整，取决于 Index.vue 的结构 -->
+    <el-main class="app-main-global"> <!-- 暂时保留并改名以区分 -->
+      <router-view v-slot="{ Component, route }">
         <transition mode="out-in" name="fade">
-          <keep-alive>
-            <component :is="Component"/>
-          </keep-alive>
+          <component :is="Component" :key="route.fullPath"/>
         </transition>
       </router-view>
     </el-main>
-    <el-footer class="app-footer">
+    <!-- 移除 Footer，通常 Footer 也应在布局组件内 -->
+    <!-- <el-footer class="app-footer">
       <div class="footer-content">
         <p>智慧校园管理系统 © {{ currentYear }} 版权所有</p>
       </div>
-    </el-footer>
+    </el-footer> -->
   </el-container>
 </template>
 
 <script>
-import AppHeader from './components/common/AppHeader.vue'
+// 移除 AppHeader 导入
+// import AppHeader from './components/common/AppHeader.vue'
 import {computed, onMounted} from 'vue'
 import {fetchUserInfo} from '@/utils/auth'
 
 export default {
   name: 'App',
   components: {
-    AppHeader
+    // 移除 AppHeader 注册
+    // AppHeader
   },
   setup() {
     const currentYear = computed(() => new Date().getFullYear())
@@ -49,7 +52,7 @@ export default {
     })
 
     return {
-      currentYear
+      currentYear // 仍然保留，虽然 Footer 移除了
     }
   }
 }
@@ -103,7 +106,12 @@ html, body {
 */
 
 #app {
-  height: 100%;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+  min-height: 100vh;
+  background-color: #f0f2f5;
 }
 
 .app-container {
@@ -112,32 +120,17 @@ html, body {
   flex-direction: column;
 }
 
-.app-main {
+/* 调整或移除 app-main-global 样式 */
+.app-main-global {
   flex: 1;
-  padding: 16px;
-  background-color: #f5f7fa;
+  /* 移除内边距，让 Index.vue 的 el-main 控制 */
+  padding: 0;
+  /* background-color: #f5f7fa; */ /* 背景色也由 Index.vue 控制 */
 }
 
-.app-footer {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
-  border-top: 1px solid #dcdfe6;
-  @media (max-width: 768px) {
-    height: 50px;
-    padding: 0 16px;
-  }
-}
-
-.footer-content {
-  font-size: 14px;
-  color: #606266;
-  @media (max-width: 768px) {
-    font-size: 12px;
-  }
-}
+/* 移除 app-footer 样式 */
+/* .app-footer { ... } */
+/* .footer-content { ... } */
 
 /* 页面过渡动画 */
 .fade-enter-active,
@@ -201,7 +194,7 @@ html, body {
     margin-top: 10vh !important;
   }
 
-  .app-main {
+  .app-main-global {
     padding: 12px;
   }
 
@@ -211,7 +204,7 @@ html, body {
 }
 
 @media (max-width: 480px) {
-  .app-main {
+  .app-main-global {
     padding: 8px;
   }
 

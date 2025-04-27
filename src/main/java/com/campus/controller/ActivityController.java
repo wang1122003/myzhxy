@@ -5,7 +5,6 @@ import com.campus.entity.Activity;
 import com.campus.entity.User;
 import com.campus.entity.FileRecord;
 import com.campus.exception.AuthenticationException;
-import com.campus.exception.CustomException;
 import com.campus.exception.ResourceNotFoundException;
 import com.campus.service.ActivityService;
 import com.campus.service.AuthService;
@@ -20,12 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import com.campus.enums.UserType;
 
 /**
  * 校园活动控制器
@@ -326,18 +325,52 @@ public class ActivityController {
      * 更新活动状态
      *
      * @param id        活动ID
-     * @param statusInt 活动状态
+     * @param statusInt 活动状态 (使用 Integer 接收路径参数)
      * @return 更新结果
      */
     @PutMapping("/{id}/status/{statusInt}")
     public ResponseEntity<String> updateActivityStatus(@PathVariable Long id, @PathVariable Integer statusInt) {
         // TODO: Add permission check (e.g., only organizer or admin)
-        String status = String.valueOf(statusInt);
-        if (activityService.updateActivityStatus(id, status)) {
-            return ResponseEntity.ok("活动状态更新成功");
-        } else {
-            return ResponseEntity.badRequest().body("活动状态更新失败");
+        try {
+            Activity existingActivity = activityService.getActivityById(id);
+            if (existingActivity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("活动不存在");
+            }
+            User currentUser = authService.getCurrentAuthenticatedUser(); // Get current user
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("请登录后操作");
+            }
+            // Check if user is organizer or admin (assuming isAdmin method or role check)
+            if (!existingActivity.getOrganizerId().equals(currentUser.getId()) && !isAdmin(currentUser)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("无权修改活动状态");
+            }
+
+            // Validate statusInt before converting
+            String status;
+            try {
+                // Convert Integer to String status based on your ActivityStatus enum or convention
+                // This example assumes numeric strings like "0", "1", "2" or enum names
+                status = String.valueOf(statusInt); // Or map to enum names if needed
+                // Add validation if statusInt should map to specific enum values
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body("无效的状态值格式");
+            }
+
+            boolean success = activityService.updateActivityStatus(id, status);
+            return success ? ResponseEntity.ok("活动状态更新成功") : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("活动状态更新失败");
+        } catch (Exception e) {
+            log.error("更新活动 {} 状态为 {} 时出错", id, statusInt, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("更新活动状态时发生错误: " + e.getMessage());
         }
+    }
+
+    // Helper method to check admin role (replace with your actual logic)
+    private boolean isAdmin(User user) {
+        // Example: return user.getRoles().contains(UserType.ADMIN);
+        // Assuming UserType enum and User has getRoles() method
+        // Reverting to String comparison as UserType enum is not resolved
+        // return "ADMIN".equalsIgnoreCase(user.getUserType()); // Simplified check using userType
+        return user.getUserType() == UserType.ADMIN; // Corrected comparison
     }
 
     /**
@@ -419,8 +452,6 @@ public class ActivityController {
         }
     }
 
-    // --- Added Stubs for Missing Activity Endpoints --- 
-
     /**
      * 批量删除活动
      *
@@ -430,10 +461,24 @@ public class ActivityController {
     @DeleteMapping("/batch")
     public Result<String> batchDeleteActivities(@RequestBody List<Long> ids) {
         // TODO: Implement batch deletion logic in service
-        System.out.println("Attempting to batch delete activities: " + ids);
-        // boolean success = activityService.batchDeleteActivities(ids);
-        // return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
-        return Result.success("批量删除成功 (Stub)");
+        try {
+            User currentUser = authService.getCurrentAuthenticatedUser();
+            if (currentUser == null) {
+                return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后操作");
+            }
+            // Add permission check here if needed (e.g., only admins can batch delete)
+            // if (!isAdmin(currentUser)) {
+            //     return Result.error(HttpStatus.FORBIDDEN.value(), "无权执行批量删除");
+            // }
+
+            // Convert List<Long> to Long[] before calling service
+            Long[] idArray = ids.toArray(new Long[0]);
+            boolean success = activityService.batchDeleteActivities(idArray);
+            return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
+        } catch (Exception e) {
+            log.error("批量删除活动时出错: {}", ids, e);
+            return Result.error("批量删除时发生错误: " + e.getMessage());
+        }
     }
 
     /**
@@ -445,14 +490,18 @@ public class ActivityController {
      * @return 活动列表
      */
     @GetMapping("/publisher/{publisherId}")
-    public Result<List<Activity>> getActivitiesByPublisher(
+    public Result<IPage<Activity>> getActivitiesByPublisher(
             @PathVariable Long publisherId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
         // TODO: Implement service logic
-        // IPage<Activity> activityPage = activityService.getActivitiesByPublisher(publisherId, page, pageSize);
-        // return Result.success(activityPage.getRecords());
-        return Result.success(List.of()); // Return empty list for now
+        try {
+            IPage<Activity> activityPage = activityService.getActivitiesByPublisher(publisherId, page, pageSize);
+            return Result.success(activityPage);
+        } catch (Exception e) {
+            log.error("根据发布者 {} 获取活动时出错", publisherId, e);
+            return Result.error("获取活动列表失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -463,17 +512,26 @@ public class ActivityController {
      * @return 活动列表
      */
     @GetMapping("/student/my")
-    public Result<List<Activity>> getMyActivities(
+    public Result<IPage<Activity>> getMyActivities(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        User currentUser = getCurrentUser();
+        User currentUser = authService.getCurrentAuthenticatedUser();
         if (currentUser == null) {
-            return Result.error(401, "请登录后查看");
+            return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后查看");
+        }
+        // Reverting to String comparison as UserType enum is not resolved
+        // if (!"STUDENT".equalsIgnoreCase(currentUser.getUserType())) { // Check if user is a student
+        if (currentUser.getUserType() != UserType.STUDENT) { // Corrected check for student type
+            return Result.error(HttpStatus.FORBIDDEN.value(), "只有学生可以查看\'我的活动\'");
         }
         // TODO: Implement service logic to get activities joined by currentUser.getId()
-        // IPage<Activity> activityPage = activityService.getActivitiesJoinedByUser(currentUser.getId(), page, pageSize);
-        // return Result.success(activityPage.getRecords());
-        return Result.success(List.of()); // Return empty list for now
+        try {
+            IPage<Activity> activityPage = activityService.getActivitiesJoinedByUser(currentUser.getId(), page, pageSize);
+            return Result.success(activityPage);
+        } catch (Exception e) {
+            log.error("获取用户 {} 的活动时出错", currentUser.getId(), e);
+            return Result.error("获取我的活动列表失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -485,14 +543,21 @@ public class ActivityController {
      */
     @PostMapping("/rate/{id}")
     public Result<String> rateActivity(@PathVariable Long id, @RequestBody Map<String, Object> ratingData) {
-        User currentUser = getCurrentUser();
+        User currentUser = authService.getCurrentAuthenticatedUser();
         if (currentUser == null) {
-            return Result.error(401, "请登录后评价");
+            return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后评价");
         }
         // TODO: Implement rating logic in service
-        // boolean success = activityService.rateActivity(id, currentUser.getId(), ratingData);
-        // return success ? Result.success("评价成功") : Result.error("评价失败");
-        System.out.println("Rating activity " + id + " with data: " + ratingData);
-        return Result.success("评价成功 (Stub)");
+        try {
+            // Extract rating details from map safely
+            Integer score = (Integer) ratingData.get("score"); // Add validation
+            String comment = (String) ratingData.get("comment"); // Add validation
+
+            boolean success = activityService.rateActivity(id, currentUser.getId(), score, comment);
+            return success ? Result.success("评价成功") : Result.error("评价失败或重复评价");
+        } catch (Exception e) {
+            log.error("评价活动 {} 时出错", id, e);
+            return Result.error("评价活动时发生错误: " + e.getMessage());
+        }
     }
 }

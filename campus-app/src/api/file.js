@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// API Endpoints for File Management
+// 文件管理 API 端点
 const API = {
     UPLOAD_IMAGE: '/file/upload/image',
     UPLOAD_IMAGE_BY_TYPE: (type) => `/file/upload/image/${type}`,
@@ -9,18 +9,18 @@ const API = {
     UPLOAD_POST_IMAGE: '/file/upload/post/image',
     UPLOAD_DOCUMENT: '/file/upload/document',
     UPLOAD_COURSE_MATERIAL: (courseId) => `/file/upload/course/material/${courseId}`,
-    DELETE_FILE: '/file/delete', // Needs file identifier (path/id) in params or data
-    GET_FILE_INFO: '/file/info', // Needs file identifier in params
-    DOWNLOAD_FILE: '/file/download', // Needs file identifier in params or path
-    GET_TEMP_URL: '/file/temp-url', // Needs file identifier in params
-    LIST_DIRECTORY: '/file/manager/list', // Needs directory path in params
+    DELETE_FILE: '/file/delete', // 需要在 params 或 data 中提供文件标识符 (路径/ID)
+    GET_FILE_INFO: '/file/info', // 需要在 params 中提供文件标识符
+    DOWNLOAD_FILE: '/file/download', // 需要在 params 或路径中提供文件标识符
+    GET_TEMP_URL: '/file/temp-url', // 需要在 params 中提供文件标识符
+    LIST_DIRECTORY: '/file/manager/list', // 需要在 params 中提供目录路径
     BATCH_DELETE: '/file/manager/batch-delete',
     GET_FILE_STATS: '/file/manager/stats'
 };
 
-// --- Upload Functions ---
+// --- 上传函数 ---
 
-// Generic file upload helper
+// 通用文件上传助手
 function uploadFile(url, file, fieldName = 'file') {
     const formData = new FormData();
     formData.append(fieldName, file);
@@ -42,7 +42,7 @@ export function uploadImageByType(file, type) {
     return uploadFile(API.UPLOAD_IMAGE_BY_TYPE(type), file);
 }
 
-// 上传活动海报 (Note: activity.js also has uploadActivityPoster, decide where it belongs)
+// 上传活动海报 (注意: activity.js 也有 uploadActivityPoster, 需要确定归属)
 export function uploadActivityPosterFile(file) {
     return uploadFile(API.UPLOAD_ACTIVITY_POSTER, file);
 }
@@ -67,19 +67,19 @@ export function uploadCourseMaterial(file, courseId) {
     return uploadFile(API.UPLOAD_COURSE_MATERIAL(courseId), file);
 }
 
-// --- File Management Functions ---
+// --- 文件管理函数 ---
 
-// 删除文件 (需要后端确定如何标识文件，路径或ID?)
-export function deleteFile(fileIdentifier) { // e.g., { filePath: 'path/to/file.jpg' } or { fileId: 'xyz' }
+// 删除文件 (需要后端确定如何标识文件，例如路径或ID?)
+export function deleteFile(fileIdentifier) { // 例如: { filePath: 'path/to/file.jpg' } 或 { fileId: 'xyz' }
     return request({
         url: API.DELETE_FILE,
-        method: 'delete', // Or POST
-        params: fileIdentifier // Or data: fileIdentifier if using POST/DELETE with body
+        method: 'delete', // 或 POST
+        params: fileIdentifier // 如果使用带请求体的 POST/DELETE, 则为 data: fileIdentifier
     });
 }
 
 // 获取文件信息
-export function getFileInfo(fileIdentifier) { // e.g., { filePath: 'path/to/file.jpg' }
+export function getFileInfo(fileIdentifier) { // 例如: { filePath: 'path/to/file.jpg' }
     return request({
         url: API.GET_FILE_INFO,
         method: 'get',
@@ -88,28 +88,28 @@ export function getFileInfo(fileIdentifier) { // e.g., { filePath: 'path/to/file
 }
 
 // 下载文件 (可能直接通过 <a> 标签实现，或此函数获取下载地址)
-// This function likely gets a temporary URL or triggers download, 
-// actual download might happen via window.location or <a> tag
-export function downloadFile(fileIdentifier) { // e.g., { filePath: 'path/to/file.jpg' }
-    // Option 1: Get download URL/token
-    // return request({ url: API.DOWNLOAD_FILE, method: 'get', params: fileIdentifier }); 
+// 此函数可能获取临时 URL 或触发下载,
+// 实际下载可能通过 window.location 或 <a> 标签发生
+export function downloadFile(fileIdentifier) { // 例如: { filePath: 'path/to/file.jpg' }
+    // 选项 1: 获取下载 URL/令牌
+    // return request({ url: API.DOWNLOAD_FILE, method: 'get', params: fileIdentifier });
 
-    // Option 2: Trigger download directly if backend returns file stream
-    // Requires responseType: 'blob' and handling the blob data
+    // 选项 2: 如果后端返回文件流，则直接触发下载
+    // 需要 responseType: 'blob' 并处理 blob 数据
     return request({
         url: API.DOWNLOAD_FILE,
         method: 'get',
         params: fileIdentifier,
-        responseType: 'blob' // Example if backend sends file directly
+        responseType: 'blob' // 示例: 如果后端直接发送文件
     }).then(response => {
-        // Process blob data (e.g., create Object URL and trigger download)
-        // Placeholder: needs implementation based on actual use case
+        // 处理 blob 数据 (例如, 创建对象 URL 并触发下载)
+        // 占位符: 需要根据实际用例实现
         console.log('Blob received', response);
-        // Example download trigger:
+        // 下载触发示例:
         // const url = window.URL.createObjectURL(new Blob([response]));
         // const link = document.createElement('a');
         // link.href = url;
-        // link.setAttribute('download', 'filename.ext'); // Extract filename
+        // link.setAttribute('download', 'filename.ext'); // 提取文件名
         // document.body.appendChild(link);
         // link.click();
         // link.remove();
@@ -117,7 +117,7 @@ export function downloadFile(fileIdentifier) { // e.g., { filePath: 'path/to/fil
 }
 
 // 获取文件临时访问URL
-export function getTempFileUrl(fileIdentifier) { // e.g., { filePath: 'path/to/file.jpg' }
+export function getTempFileUrl(fileIdentifier) { // 例如: { filePath: 'path/to/file.jpg' }
     return request({
         url: API.GET_TEMP_URL,
         method: 'get',
@@ -126,7 +126,7 @@ export function getTempFileUrl(fileIdentifier) { // e.g., { filePath: 'path/to/f
 }
 
 // 列出目录内容
-export function listDirectory(params) { // e.g., { path: '/uploads/images' }
+export function listDirectory(params) { // 例如: { path: '/uploads/images' }
     return request({
         url: API.LIST_DIRECTORY,
         method: 'get',
@@ -135,11 +135,11 @@ export function listDirectory(params) { // e.g., { path: '/uploads/images' }
 }
 
 // 批量删除文件
-export function batchDeleteFiles(data) { // e.g., { filePaths: ['path1', 'path2'] } or { fileIds: ['id1', 'id2'] }
+export function batchDeleteFiles(data) { // 例如: { filePaths: ['path1', 'path2'] } 或 { fileIds: ['id1', 'id2'] }
     return request({
         url: API.BATCH_DELETE,
-        method: 'delete', // Or POST
-        data // Send identifiers in request body
+        method: 'delete', // 或 POST
+        data // 在请求体中发送标识符
     });
 }
 

@@ -131,4 +131,38 @@ public interface ActivityService extends IService<Activity> {
      * @throws IllegalStateException     如果活动状态不允许取消报名
      */
     boolean cancelJoinActivity(Long activityId, Long userId);
+
+    /**
+     * 根据发布者ID获取活动分页列表
+     *
+     * @param publisherId 发布者ID
+     * @param page        页码
+     * @param size        每页数量
+     * @return 分页后的活动列表
+     */
+    IPage<Activity> getActivitiesByPublisher(Long publisherId, int page, int size);
+
+    /**
+     * 根据用户ID获取其参加的活动分页列表
+     *
+     * @param userId 用户ID
+     * @param page   页码
+     * @param size   每页数量
+     * @return 分页后的活动列表
+     */
+    IPage<Activity> getActivitiesJoinedByUser(Long userId, int page, int size);
+
+    /**
+     * 用户评价活动
+     *
+     * @param activityId 活动ID
+     * @param userId     用户ID
+     * @param rating     评分 (e.g., 1-5)
+     * @param comment    评论内容
+     * @return 是否成功
+     * @throws ResourceNotFoundException 如果活动或用户不存在
+     * @throws IllegalArgumentException  如果评分无效
+     * @throws IllegalStateException     如果用户未参加该活动或活动未结束等
+     */
+    boolean rateActivity(Long activityId, Long userId, Integer rating, String comment);
 }

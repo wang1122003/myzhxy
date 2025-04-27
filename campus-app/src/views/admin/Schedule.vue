@@ -388,12 +388,12 @@ import {
   ElSelect,
   ElTimeSelect,
 } from 'element-plus';
-import {addSchedule, deleteSchedule, getScheduleById, getScheduleList, updateSchedule} from '@/api/schedule';
+import {addSchedule, deleteSchedule, getScheduleById, getSchedulesPage, updateSchedule} from '@/api/schedule';
 import {getClasses, getTerms, getWeekdays} from '@/api/common';
 import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherSelectList} from '@/api/user';
 import {getAvailableClassrooms} from '@/api/classroom';
-import {getTermList} from '@/api/term';
+import {getAllTerms} from '@/api/term';
 import {Plus, Search} from '@element-plus/icons-vue';
 
 const loadingSchedule = ref(false);
@@ -516,26 +516,13 @@ const fetchSchedule = async () => {
   loadingSchedule.value = true;
   try {
     const params = {
-      termId: searchParams.termId,
-      teacherName: searchParams.teacherName || null,
-      courseName: searchParams.courseName || null,
-      className: searchParams.className || null,
       page: currentPage.value,
       size: pageSize.value,
+      ...searchParams
     };
-    Object.keys(params).forEach(key => params[key] == null && delete params[key]);
-
-    const response = await getScheduleList(params);
-    // 修正：后端返回 IPage 对象，包含 records 和 total
-    if (response.data && response.data.records) {
-      scheduleList.value = response.data.records;
-      total.value = response.data.total || 0;
-    } else {
-      // 处理异常情况或旧格式 (如果后端可能不返回 IPage)
-      scheduleList.value = [];
-      total.value = 0;
-    }
-
+    const res = await getSchedulesPage(params);
+    scheduleList.value = res.data.records || [];
+    total.value = res.data.total || 0;
   } catch (error) {
     console.error('获取课表失败', error);
     ElMessage.error('获取课表失败');
@@ -694,7 +681,7 @@ const submitScheduleForm = () => {
 
 const fetchTerms = async () => {
   try {
-    const res = await getTermList();
+    const res = await getAllTerms({sortByCreateDesc: true});
     if (res.code === 200 && res.data) {
       termList.value = res.data;
       // 设置默认选中当前学期

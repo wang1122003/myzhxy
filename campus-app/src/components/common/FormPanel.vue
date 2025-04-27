@@ -254,7 +254,7 @@ export default {
   color: #303133;
 }
 
-.form-actions, .form-footer-actions {
+.form-actions {
   display: flex;
   gap: 8px;
 }

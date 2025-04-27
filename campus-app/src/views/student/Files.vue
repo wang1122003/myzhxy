@@ -239,7 +239,7 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {ref, onMounted} from 'vue';
 import {
   ElButton,
   ElEmpty,
@@ -256,8 +256,9 @@ import {
   ElUpload
 } from 'element-plus';
 import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
-import {deleteFile, downloadFile, getMyFiles, getResourceList, uploadFile as apiUploadFile} from '@/api/file';
+import {getMyFiles, deleteFile as apiDeleteFile} from '@/api/file';
 import {getStudentCourses} from '@/api/course';
+import {formatDateTime, formatDate, formatFileSize} from '@/utils/formatters';
 import {useRouter} from 'vue-router';
 
 const router = useRouter();
@@ -289,22 +290,21 @@ const uploadLoading = ref(false);
 
 // 获取文件列表
 const fetchFiles = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getMyFiles({
+    const response = await getMyFiles({
       page: currentPage.value,
       size: pageSize.value,
-      type: 'personal'
-    })
-    files.value = res.data.list || []
-    total.value = res.data.total || 0
+    });
+    files.value = response.data.records;
+    total.value = response.data.total;
   } catch (error) {
-    console.error('获取文件列表失败', error)
-    ElMessage.error('获取文件列表失败')
+    console.error("Error loading files:", error);
+    ElMessage.error("加载文件列表失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 获取课程资源列表
 const fetchCourseResources = async () => {
@@ -395,7 +395,7 @@ const handleDelete = (file) => {
   }).then(async () => {
     deleteLoading.value = file.id
     try {
-      await deleteFile(file.id)
+      await apiDeleteFile(file.id)
       ElMessage.success('文件删除成功')
       fetchFiles()
     } catch (error) {
@@ -454,26 +454,6 @@ const handleTabChange = (tab) => {
       fetchFiles()
     }
   }
-}
-
-// 格式化文件大小
-const formatFileSize = (size) => {
-  if (size < 1024) {
-    return size + 'B'
-  } else if (size < 1024 * 1024) {
-    return (size / 1024).toFixed(2) + 'KB'
-  } else if (size < 1024 * 1024 * 1024) {
-    return (size / (1024 * 1024)).toFixed(2) + 'MB'
-  } else {
-    return (size / (1024 * 1024 * 1024)).toFixed(2) + 'GB'
-  }
-}
-
-// 格式化日期
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 // 判断文件是否为文档

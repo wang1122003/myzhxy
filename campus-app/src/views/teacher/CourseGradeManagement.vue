@@ -149,10 +149,10 @@ import {
   ElTag,
   ElUpload
 } from 'element-plus';
-import {exportGrades, getCourseScores, importGrades, recordStudentScore} from '@/api/grade';
+import {getCourseScores, recordScore} from '@/api/grade';
 import {formatDateTime} from '@/utils/formatters';
 import {getCourseById} from '@/api/course';
-import {getTermList} from '@/api/term';
+import {getAllTerms} from '@/api/term';
 import {Search} from '@element-plus/icons-vue';
 
 const route = useRoute();
@@ -189,14 +189,11 @@ const fetchCourseInfo = async () => {
 // 获取学期列表
 const fetchTerms = async () => {
   try {
-    const res = await getTermList();
-    if (res.code === 200 && res.data) {
+    const res = await getAllTerms({sortByCreateDesc: true});
+    if (res.code === 200 && Array.isArray(res.data)) {
       termList.value = res.data;
-      // 尝试设置当前学期为默认值
-      const currentTerm = res.data.find(t => t.current === 1);
-      if (currentTerm) {
-        selectedTerm.value = currentTerm.id;
-        // 加载默认学期的成绩
+      if (res.data.length > 0 && !selectedTerm.value) {
+        selectedTerm.value = res.data[0].id;
         fetchGrades();
       }
     } else {
@@ -204,7 +201,7 @@ const fetchTerms = async () => {
     }
   } catch (error) {
     console.error('获取学期列表失败:', error);
-    ElMessage.error('获取学期列表时发生错误');
+    ElMessage.error('获取学期列表失败');
   }
 };
 
@@ -267,7 +264,7 @@ const saveAllChanges = async () => {
         courseId: student.courseId,
         score: student.score
       };
-      await recordStudentScore(payload);
+      await recordScore(payload);
       student.changed = false;
       successCount++;
     } catch (error) {
@@ -414,8 +411,8 @@ const handleSearch = () => {
 };
 
 onMounted(() => {
-  fetchCourseInfo();
   fetchTerms();
+  fetchCourseInfo();
 });
 </script>
 
@@ -450,30 +447,6 @@ export default {
 .pagination-container {
   margin-top: 20px;
   text-align: center;
-}
-
-.score-a {
-  color: #67c23a;
-  font-weight: bold;
-}
-
-.score-b {
-  color: #409eff;
-  font-weight: bold;
-}
-
-.score-c {
-  color: #e6a23c;
-  font-weight: bold;
-}
-
-.score-d {
-  color: #909399;
-}
-
-.score-f {
-  color: #f56c6c;
-  font-weight: bold;
 }
 
 .toolbar {

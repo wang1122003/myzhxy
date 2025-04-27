@@ -1,22 +1,36 @@
 package com.campus.controller;
 
-// import com.campus.dto.CommonStatusDTO; // 移除未使用
+// import com.campus.entity.User;
+// import com.campus.entity.College;
+// import com.campus.entity.Department;
+// import com.campus.service.FileService; // Removed unused import
+// import com.campus.service.MailService; // Removed MailService import
+// import jakarta.servlet.http.HttpServletResponse; // Removed unused import
 
-import com.campus.enums.Term;
+import org.springframework.beans.factory.annotation.Autowired; // Added Autowired import
+// import com.campus.entity.base.BaseResponse; // Uncomment when BaseResponse exists
+import com.campus.enums.*;
+// import com.campus.security.UserPrincipal; // Uncomment when UserPrincipal exists
+// import com.campus.service.CommonService; // Uncomment when CommonService exists
 import com.campus.service.FileService;
+// import org.springframework.http.ResponseEntity;
+// import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+// import org.springframework.web.multipart.MultipartFile;
+import com.campus.enums.Term;
 import com.campus.utils.Result;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+// Added missing java.util imports
+import java.util.ArrayList;
+// import java.util.Arrays; // Keep Arrays import
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+// import java.io.IOException; // Removed unused import
+// import java.io.OutputStream; // Removed unused import
+// import java.nio.charset.StandardCharsets; // Removed unused import
 
 /**
  * 公共API控制器
@@ -26,9 +40,26 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/common")
 public class CommonController {
 
-    // Comment out FileService dependency as it's not used after removing download logic
-    // @Autowired
-    // private FileService fileService;
+    // Removed unused fileService field
+    // private final FileService fileService;
+
+    // Constructor injection requires CommonService (which is commented out)
+    // public CommonController(CommonService commonService, FileService fileService) {
+    //     // this.commonService = commonService;
+    //     this.fileService = fileService;
+    // }
+
+    // Manually Autowire FileService for now since constructor injection is broken
+    // @Autowired // Removed as field is removed
+    // public CommonController(FileService fileService) {
+    //     this.fileService = fileService;
+    //     // this.commonService = null; // Handle null commonService in methods below
+    // }
+
+    // Add default constructor if no other constructor is present and field is removed
+    public CommonController() {
+        // Default constructor
+    }
 
     /**
      * 获取系统状态
@@ -210,24 +241,28 @@ public class CommonController {
     @GetMapping("/colleges")
     public Result<List<Map<String, Object>>> getColleges() {
         // TODO: Implement actual data retrieval
+        // List<College> colleges = commonService.getAllColleges(); // Needs commonService
         return Result.success("获取成功 (Stub)", List.of());
     }
 
     @GetMapping("/departments")
     public Result<List<Map<String, Object>>> getDepartments(@RequestParam(required = false) Long collegeId) {
         // TODO: Implement actual data retrieval (potentially filtered by collegeId)
+        // List<Department> departments = commonService.getDepartmentsByCollege(collegeId); // Needs commonService
         return Result.success("获取成功 (Stub)", List.of());
     }
 
     @GetMapping("/majors")
     public Result<List<Map<String, Object>>> getMajors(@RequestParam(required = false) Long departmentId) {
         // TODO: Implement actual data retrieval (potentially filtered by departmentId)
+        // List<Map<String, Object>> majors = commonService.getMajorsByDepartment(departmentId); // Needs commonService
         return Result.success("获取成功 (Stub)", List.of());
     }
 
     @GetMapping("/classes")
     public Result<List<Map<String, Object>>> getClasses(@RequestParam(required = false) Long majorId) {
         // TODO: Implement actual data retrieval (potentially filtered by majorId)
+        // List<Map<String, Object>> classes = commonService.getClassesByMajor(majorId); // Needs commonService
         return Result.success("获取成功 (Stub)", List.of());
     }
 
@@ -266,6 +301,7 @@ public class CommonController {
         // Note: ForumController /categories returns types based on Post entity
         // This endpoint might be redundant or need different implementation
         // TODO: Implement actual data retrieval or align with ForumController
+        // List<Map<String, Object>> categories = commonService.getForumCategories(); // Needs commonService
         return Result.success("获取成功 (Stub)", List.of(
                 Map.of("id", 1, "name", "学习交流 (Stub)"),
                 Map.of("id", 2, "name", "校园生活 (Stub)")

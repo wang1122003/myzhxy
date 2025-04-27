@@ -1,8 +1,19 @@
 package com.campus.config;
 
 import com.campus.entity.User;
+// import com.campus.exception.UnauthorizedException;
+// import com.campus.service.JwtService;
+// import com.campus.utils.AuthUtils;
 import com.campus.utils.JwtUtil;
-import io.jsonwebtoken.Claims;
+// import com.campus.service.JwtService; // Removed unused import
+import com.campus.service.UserService; // Keep if needed, or remove if also unused
+import com.campus.service.AuthService;
+// Removed unused import
+// import com.campus.service.UserService;
+import com.campus.utils.JwtUtil; // Keep existing JwtUtil import
+// Removed unresolved import
+// import com.campus.utils.JwtTokenUtil;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

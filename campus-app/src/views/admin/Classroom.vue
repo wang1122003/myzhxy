@@ -1,232 +1,146 @@
 <template>
-  <div class="classroom-management-container">
-    <div class="page-header">
-      <h2>教室管理</h2>
-      <el-button
-          type="primary"
-          @click="handleAddClassroom"
-      >
-        <el-icon>
-          <Plus/>
-        </el-icon>
-        添加教室
-      </el-button>
-    </div>
+  <div class="classroom-management">
+    <el-card class="page-container">
+      <template #header>
+        <div class="header">
+          <span>教室管理</span>
+          <el-button :icon="Plus" type="primary" @click="handleAdd">添加教室</el-button>
+        </div>
+      </template>
 
-    <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form
-          :inline="true"
-          :model="searchParams"
-          @submit.prevent="handleSearch"
-      >
-        <el-form-item label="关键词">
-          <el-input
-              v-model="searchParams.keyword"
-              clearable
-              placeholder="教室编号/教学楼"
-              style="width: 200px;"
-          />
+      <!-- 筛选区域 -->
+      <el-form :inline="true" :model="filters" class="filter-form">
+        <el-form-item label="教室名称">
+          <el-input v-model="filters.name" clearable placeholder="请输入教室名称"/>
         </el-form-item>
         <el-form-item label="教学楼">
-          <el-input
-              v-model="searchParams.building"
-              clearable
-              placeholder="输入教学楼"
-              style="width: 150px;"
-          />
+          <el-input v-model="filters.building" clearable placeholder="请输入教学楼名称"/>
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="filters.type" clearable placeholder="请选择教室类型">
+            <el-option label="全部" value=""/>
+            <el-option label="普通教室" value="REGULAR"/>
+            <el-option label="机房" value="COMPUTER_LAB"/>
+            <el-option label="实验室" value="LABORATORY"/>
+            <el-option label="会议室" value="MEETING_ROOM"/>
+            <el-option label="其他" value="OTHER"/>
+          </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
-              v-model="searchParams.status"
-              clearable
-              placeholder="选择状态"
-              style="width: 120px;"
-          >
-            <el-option
-                :value="1"
-                label="可用"
-            />
-            <el-option
-                :value="0"
-                label="维修中"
-            />
+          <el-select v-model="filters.status" clearable placeholder="请选择状态">
+            <el-option label="全部" value=""/>
+            <el-option label="可用" value="AVAILABLE"/>
+            <el-option label="维修中" value="UNDER_MAINTENANCE"/>
+            <el-option label="停用" value="DECOMMISSIONED"/>
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button
-              type="primary"
-              @click="handleSearch"
-          >
-            查询
-          </el-button>
+          <el-button :icon="Search" type="primary" @click="fetchClassrooms">查询</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
 
-    <!-- 教室列表 -->
-    <el-card class="classroom-list-card">
-      <BaseTable :table-data="classroomList"
+      <!-- 教室列表 -->
+      <el-table
+          :data="classroomList"
           v-loading="loading"
-          style="width: 100%">
-        <el-table-column
-            label="教室编号/名称"
-            prop="name"
-            min-width="180"/>
-        <el-table-column :table-data="classroomList"
-            label="教学楼"
-            prop="building"
-            width="120"
-        />
-        <el-table-column :table-data="classroomList"
-            label="容量"
-            prop="capacity"
-            width="100"
-        />
-        <el-table-column :table-data="classroomList"
-            label="类型"
-            prop="roomType"
-            width="120"
-        >
-          <template #default="scope">
-            {{ formatRoomType(scope.row.roomType) }}
-          </template>
+          style="width: 100%"
+      >
+        <el-table-column label="教室名称" min-width="150" prop="name"/>
+        <el-table-column label="教学楼" prop="building" width="120"/>
+        <el-table-column label="类型" prop="type" width="120">
+          <template #default="scope">{{ formatClassroomType(scope.row.type) }}</template>
         </el-table-column>
-        <el-table-column :table-data="classroomList"
-            label="状态"
-            prop="status"
-            width="100"
-        >
+        <el-table-column label="容量" prop="capacity" width="80"/>
+        <el-table-column label="设施" min-width="180" prop="facilities" show-overflow-tooltip/>
+        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)">
-              {{ formatStatus(scope.row.status) }}
+            <el-tag :type="getClassroomStatusType(scope.row.status)">
+              {{ formatClassroomStatus(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :table-data="classroomList"
-            label="创建时间"
-            prop="createTime"
-            width="180"
-        >
-          <template #default="scope">
-            {{ formatTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column :table-data="classroomList"
-            fixed="right"
-            label="操作"
-            width="150"
-        >
+        <el-table-column fixed="right" label="操作" width="150">
           <template #default="scope">
             <el-button
+                :icon="Edit"
+                circle
                 size="small"
                 type="primary"
-                @click="handleEditClassroom(scope.row)"
-            >
-              编辑
-            </el-button>
+                @click="handleEdit(scope.row)"
+            />
             <el-button
+                :icon="Delete"
+                circle
                 size="small"
                 type="danger"
-                @click="handleDeleteClassroom(scope.row)"
-            >
-              删除
-            </el-button>
+                @click="handleDelete(scope.row)"
+            />
           </template>
         </el-table-column>
-      </BaseTable>
+        <template #empty>
+          <el-empty description="暂无教室数据"/>
+        </template>
+      </el-table>
 
       <!-- 分页 -->
-      <div
+      <el-pagination
           v-if="total > 0"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
           class="pagination-container"
-      >
-        <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-        />
-      </div>
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+      />
     </el-card>
 
-    <!-- 添加/编辑教室对话框 -->
+    <!-- 添加/编辑 对话框 -->
     <el-dialog
         v-model="dialogVisible"
-        :title="dialogTitle"
+        :close-on-click-modal="false"
+        :title="isEditMode ? '编辑教室' : '添加教室'"
         width="600px"
-        @close="resetForm"
+        @close="handleDialogClose"
     >
-      <el-form
-          ref="classroomFormRef"
-          :model="classroomForm"
-          :rules="classroomFormRules"
-          label-width="100px"
-      >
-        <el-form-item
-            label="教室编号/名称"
-            prop="name"
-        >
-          <el-input
-              v-model="classroomForm.name"
-              placeholder="请输入教室编号/名称"
-          />
+      <el-form ref="classroomFormRef" :model="currentClassroom" :rules="formRules" label-width="100px">
+        <el-form-item label="教室名称" prop="name">
+          <el-input v-model="currentClassroom.name" placeholder="请输入教室名称"/>
         </el-form-item>
-        <el-form-item
-            label="教学楼"
-            prop="building"
-        >
-          <el-input
-              v-model="classroomForm.building"
-              placeholder="请输入教学楼"
-          />
+        <el-form-item label="教学楼" prop="building">
+          <el-input v-model="currentClassroom.building" placeholder="请输入教学楼名称"/>
         </el-form-item>
-        <el-form-item
-            label="容量"
-            prop="capacity"
-        >
-          <el-input-number
-              v-model="classroomForm.capacity"
-              :min="0"
-              placeholder="请输入教室容量"
-          />
-        </el-form-item>
-        <el-form-item
-            label="类型"
-            prop="roomType"
-        >
-          <el-select
-              v-model="classroomForm.roomType"
-              placeholder="请选择教室类型"
-          >
-            <el-option :value="1" label="普通教室"/>
-            <el-option :value="2" label="多媒体教室"/>
-            <el-option :value="3" label="实验室"/>
+        <el-form-item label="类型" prop="type">
+          <el-select v-model="currentClassroom.type" placeholder="请选择教室类型" style="width: 100%;">
+            <el-option label="普通教室" value="REGULAR"/>
+            <el-option label="机房" value="COMPUTER_LAB"/>
+            <el-option label="实验室" value="LABORATORY"/>
+            <el-option label="会议室" value="MEETING_ROOM"/>
+            <el-option label="其他" value="OTHER"/>
           </el-select>
         </el-form-item>
-        <el-form-item
-            label="状态"
-            prop="status"
-        >
-          <el-select
-              v-model="classroomForm.status"
-              placeholder="请选择教室状态"
-          >
-            <el-option :value="1" label="可用"/>
-            <el-option :value="0" label="维修中"/>
-          </el-select>
+        <el-form-item label="容量" prop="capacity">
+          <el-input-number v-model="currentClassroom.capacity" :min="1" placeholder="请输入容量" style="width: 100%;"/>
+        </el-form-item>
+        <el-form-item label="设施" prop="facilities">
+          <el-input v-model="currentClassroom.facilities" :rows="3" placeholder="请输入教室设施，如：投影仪、空调"
+                    type="textarea"/>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="currentClassroom.status">
+            <el-radio label="AVAILABLE">可用</el-radio>
+            <el-radio label="UNDER_MAINTENANCE">维修中</el-radio>
+            <el-radio label="DECOMMISSIONED">停用</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button
-              type="primary"
-              @click="submitClassroomForm"
-          >确定</el-button>
+          <el-button :loading="submitting" type="primary" @click="handleSubmit">
+            {{ isEditMode ? '保存' : '创建' }}
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -234,250 +148,224 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {ref, reactive, onMounted} from 'vue';
 import {
-  ElButton,
   ElCard,
+  ElButton,
+  ElTable,
+  ElTableColumn,
+  ElPagination,
   ElDialog,
   ElForm,
   ElFormItem,
-  ElIcon,
   ElInput,
-  ElInputNumber,
+  ElSelect,
+  ElOption,
+  ElTag,
   ElMessage,
   ElMessageBox,
-  ElOption,
-  ElPagination,
-  ElSelect,
-  ElTag
+  ElEmpty,
+  ElRadioGroup,
+  ElRadio,
+  ElInputNumber
 } from 'element-plus';
-import {Plus} from '@element-plus/icons-vue';
-import {addClassroom, deleteClassroom, getClassroomList, updateClassroom} from '@/api/classroom';
+import {Plus, Edit, Delete, Search} from '@element-plus/icons-vue';
+import {addClassroom, deleteClassroom, getClassroomsPage, updateClassroom} from '@/api/classroom';
+import {formatDateTime} from '@/utils/formatters'; // Assuming you have date formatter
 
-// 使用defineOptions定义组件选项 
-defineOptions({
-  name: 'ClassroomManagement' // 保持多词命名
-});
-
+// Loading states
 const loading = ref(false);
+const submitting = ref(false);
+
+// Table data
 const classroomList = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
-const searchParams = reactive({
-  keyword: '',
-  building: '',
-  status: null
-});
 
-const dialogVisible = ref(false);
-const dialogTitle = ref('添加教室');
-const classroomFormRef = ref(null);
-const classroomForm = ref({
-  id: null,
+// Filters
+const filters = reactive({
   name: '',
   building: '',
-  capacity: null,
-  roomType: null,
-  status: 1,
+  type: '',
+  status: ''
 });
 
-const classroomFormRules = reactive({
-  name: [
-    {required: true, message: '请输入教室编号/名称', trigger: 'blur'}
-  ],
-  building: [
-    {required: true, message: '请输入教学楼', trigger: 'blur'}
-  ],
+// Dialog state
+const dialogVisible = ref(false);
+const isEditMode = ref(false);
+const currentClassroom = ref({});
+const classroomFormRef = ref(null);
+
+// Form rules
+const formRules = reactive({
+  name: [{required: true, message: '请输入教室名称', trigger: 'blur'}],
+  building: [{required: true, message: '请输入教学楼名称', trigger: 'blur'}],
+  type: [{required: true, message: '请选择教室类型', trigger: 'change'}],
   capacity: [
-    {required: true, type: 'number', message: '请输入教室容量', trigger: 'blur'},
+    {required: true, message: '请输入容量', trigger: 'blur'},
+    {type: 'number', message: '容量必须为数字值'}
   ],
-  roomType: [
-    {required: true, type: 'number', message: '请选择教室类型', trigger: 'change'}
-  ],
-  status: [
-    {required: true, type: 'number', message: '请选择教室状态', trigger: 'change'}
-  ]
+  status: [{required: true, message: '请选择状态', trigger: 'change'}]
 });
 
-const isEditMode = computed(() => !!classroomForm.value.id);
-
+// Fetch classrooms
 const fetchClassrooms = async () => {
   loading.value = true;
   try {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchParams.keyword || null,
-      building: searchParams.building || null,
-      status: searchParams.status
+      ...filters
     };
-    const res = await getClassroomList(params);
-    classroomList.value = res.data.list || [];
+    const res = await getClassroomsPage(params);
+    classroomList.value = res.data.records || [];
     total.value = res.data.total || 0;
   } catch (error) {
-    console.error("获取教室列表失败", error);
-    ElMessage.error("获取教室列表失败");
+    console.error("获取教室列表失败:", error);
+    ElMessage.error('获取教室列表时发生错误');
   } finally {
     loading.value = false;
   }
 };
 
-const handleSearch = () => {
-  currentPage.value = 1;
-  fetchClassrooms();
+// Formatters (Move to utils later)
+const formatClassroomType = (type) => {
+  const map = {
+    REGULAR: '普通教室',
+    COMPUTER_LAB: '机房',
+    LABORATORY: '实验室',
+    MEETING_ROOM: '会议室',
+    OTHER: '其他'
+  };
+  return map[type] || type;
+};
+const formatClassroomStatus = (status) => {
+  const map = {
+    AVAILABLE: '可用',
+    UNDER_MAINTENANCE: '维修中',
+    DECOMMISSIONED: '停用'
+  };
+  return map[status] || status;
+};
+const getClassroomStatusType = (status) => {
+  const map = {
+    AVAILABLE: 'success',
+    UNDER_MAINTENANCE: 'warning',
+    DECOMMISSIONED: 'danger'
+  };
+  return map[status] || 'info';
 };
 
+// Pagination handlers
 const handleSizeChange = (val) => {
   pageSize.value = val;
-  currentPage.value = 1;
+  currentPage.value = 1; // Reset to first page
   fetchClassrooms();
 };
-
 const handleCurrentChange = (val) => {
   currentPage.value = val;
   fetchClassrooms();
 };
 
-const resetForm = () => {
-  if (classroomFormRef.value) {
-    classroomFormRef.value.resetFields();
-  }
-  classroomForm.value = {
-    id: null,
-    name: '',
-    building: '',
-    capacity: null,
-    roomType: null,
-    status: 1,
-  };
-};
-
-const handleAddClassroom = () => {
-  resetForm();
-  dialogTitle.value = '添加教室';
+// Dialog actions
+const handleAdd = () => {
+  isEditMode.value = false;
+  currentClassroom.value = {status: 'AVAILABLE'}; // Default values
   dialogVisible.value = true;
 };
 
-const handleEditClassroom = (row) => {
-  resetForm();
-  dialogTitle.value = '编辑教室';
-  classroomForm.value = {...row};
+const handleEdit = (row) => {
+  isEditMode.value = true;
+  currentClassroom.value = {...row};
   dialogVisible.value = true;
 };
 
-const handleDeleteClassroom = (row) => {
-  ElMessageBox.confirm(`确定要删除教室 ${row.name} 吗?`, '警告', {
-    confirmButtonText: '确定删除',
+const handleDelete = (row) => {
+  ElMessageBox.confirm(`确定要删除教室 "${row.name}" 吗?`, '警告', {
+    confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteClassroom(row.id);
-      ElMessage.success('教室删除成功');
-      fetchClassrooms();
-    } catch (error) {
-      console.error("删除教室失败", error);
-      ElMessage.error("删除教室失败");
-    }
-  }).catch(() => {
-    ElMessage.info('已取消删除');
-  });
-};
-
-const submitClassroomForm = () => {
-  classroomFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        const dataToSend = {...classroomForm.value};
-        if (isEditMode.value) {
-          await updateClassroom(dataToSend.id, dataToSend);
-          ElMessage.success('教室信息更新成功');
-        } else {
-          await addClassroom(dataToSend);
-          ElMessage.success('教室添加成功');
+    type: 'warning',
+  })
+      .then(async () => {
+        try {
+          await deleteClassroom(row.id);
+          ElMessage.success('删除成功');
+          fetchClassrooms(); // Refresh list
+        } catch (error) {
+          console.error("删除教室失败:", error);
+          ElMessage.error(error?.response?.data?.message || '删除失败');
         }
-        dialogVisible.value = false;
-        await fetchClassrooms();
-      } catch (error) {
-        console.error("提交教室表单失败", error);
-        ElMessage.error(error?.response?.data?.message || '提交教室表单失败');
-      }
-    } else {
-      console.log('教室表单验证失败');
-      return false;
-    }
-  });
+      })
+      .catch(() => {
+      }); // User cancelled
 };
 
-// 格式化状态
-const formatStatus = (status) => {
-  const statusMap = {
-    1: '可用',
-    0: '维修中',
-  };
-  return statusMap[status] !== undefined ? statusMap[status] : '未知';
+const handleDialogClose = () => {
+  classroomFormRef.value?.resetFields();
+  currentClassroom.value = {};
 };
 
-// 获取状态标签类型
-const getStatusTagType = (status) => {
-  const typeMap = {
-    1: 'success',
-    0: 'danger',
-  };
-  return typeMap[status] || 'info';
-};
-
-// 格式化时间
-const formatTime = (timeStr) => {
-  if (!timeStr) return '-';
+// Form submission
+const handleSubmit = async () => {
   try {
-    const date = new Date(timeStr);
-    return date.toLocaleString('zh-CN', {hour12: false});
-  } catch (e) {
-    return timeStr;
+    const isValid = await classroomFormRef.value?.validate();
+    if (!isValid) return;
+
+    submitting.value = true;
+    if (isEditMode.value) {
+      await updateClassroom(currentClassroom.value.id, currentClassroom.value);
+      ElMessage.success('更新成功');
+    } else {
+      await addClassroom(currentClassroom.value);
+      ElMessage.success('添加成功');
+    }
+    dialogVisible.value = false;
+    fetchClassrooms(); // Refresh list
+  } catch (error) {
+    console.error("提交教室失败:", error);
+    ElMessage.error(error?.response?.data?.message || (isEditMode.value ? '更新失败' : '添加失败'));
+  } finally {
+    submitting.value = false;
   }
 };
 
-// 格式化教室类型
-const formatRoomType = (type) => {
-  const typeMap = {
-    1: '普通教室',
-    2: '多媒体教室',
-    3: '实验室',
-  };
-  return typeMap[type] !== undefined ? typeMap[type] : '未知';
-};
-
-// 组件挂载后加载数据
+// Initial load
 onMounted(() => {
   fetchClassrooms();
 });
-
 </script>
 
-<style lang="less" scoped>
-.classroom-management-container {
+<script>
+// Non-setup script block for component name
+export default {
+  name: 'ClassroomManagement' // Changed name to multi-word
+}
+</script>
+
+<style scoped>
+.classroom-management {
   padding: 20px;
 }
-.page-header {
+
+.page-container {
+  min-height: 600px;
+}
+
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.filter-form {
   margin-bottom: 20px;
 }
 
-.filter-card {
-  margin-bottom: 20px;
-}
-
-.classroom-list-card {
-  /* 样式 */
-}
 .pagination-container {
   margin-top: 20px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .dialog-footer {

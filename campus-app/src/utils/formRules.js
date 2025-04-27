@@ -1,12 +1,12 @@
-// Basic form validation rules
+// 通用表单验证规则
 const formRules = {
     required: (field = '该字段') => ({
         required: true,
         message: `${field}不能为空`,
-        trigger: 'blur' // Or 'change' depending on the component
+        trigger: 'blur' // 或根据组件类型使用 'change'
     }),
-    // Add other common rules like email, phone, length etc. as needed
-    // Example email rule:
+    // 可根据需要添加其他常用规则，如 email, phone, length 等
+    // 示例 email 规则:
     // email: {
     //   type: 'email',
     //   message: '请输入有效的邮箱地址',

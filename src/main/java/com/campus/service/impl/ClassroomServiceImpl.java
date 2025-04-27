@@ -6,23 +6,31 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.campus.dao.ClassroomDao;
 import com.campus.entity.Classroom;
 import com.campus.enums.ClassroomStatus;
 import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
+import com.campus.service.ScheduleService;
+import com.campus.dao.ClassroomDao;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * 教室服务实现类
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> implements ClassroomService {
+
+    private final ScheduleService scheduleService;
 
     @Override
     public Classroom getClassroomById(Long id) {
@@ -104,6 +112,10 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
     @Override
     @Transactional
     public boolean deleteClassroom(Long id) {
+        if (scheduleService.isAnyClassroomScheduled(Collections.singletonList(id))) {
+            log.warn("Attempted to delete scheduled classroom with ID: {}", id);
+            throw new RuntimeException("教室已被排课，无法删除");
+        }
         return removeById(id);
     }
 
@@ -134,11 +146,11 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
     @Transactional
     public boolean batchDeleteClassrooms(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            return true; // 或者根据业务返回 false 或抛异常
+            return true;
         }
-        // TODO: 检查这些教室是否被排课占用，如果占用则不允许删除或抛异常
-        // boolean isScheduled = scheduleService.isAnyClassroomScheduled(ids);
-        // if (isScheduled) { throw new CustomException("部分教室已被排课使用，无法删除"); }
-        return this.removeByIds(ids);
+        if (scheduleService.isAnyClassroomScheduled(ids)) {
+            throw new CustomException("无法删除，部分或全部所选教室已被排课占用");
+        }
+        return removeByIds(ids);
     }
 }

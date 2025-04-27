@@ -5,19 +5,19 @@ USE campus_db;
 -- 插入用户数据
 INSERT INTO `user` (`id`, `username`, `password`, `real_name`, `gender`, `phone`, `email`, `user_type`, `status`,
                     `user_no`, `create_time`, `update_time`)
-VALUES (1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', '管理员', 1, '13800000000', 'admin@example.com', 'Admin',
+VALUES (1, 'admin', '123456', '管理员', 1, '13800000000', 'admin@example.com', 'Admin',
         'Active', 'A001', NOW(), NOW()),
-       (2, 'teacher1', 'e10adc3949ba59abbe56e057f20f883e', '张老师', 1, '13800000001', 'teacher1@example.com',
+       (2, 'teacher1', '123456', '张老师', 1, '13800000001', 'teacher1@example.com',
         'Teacher', 'Active', 'T001', NOW(), NOW()),
-       (3, 'teacher2', 'e10adc3949ba59abbe56e057f20f883e', '王老师', 1, '13800000002', 'teacher2@example.com',
+       (3, 'teacher2', '123456', '王老师', 1, '13800000002', 'teacher2@example.com',
         'Teacher', 'Active', 'T002', NOW(), NOW()),
-       (4, 'teacher3', 'e10adc3949ba59abbe56e057f20f883e', '李老师', 0, '13800000003', 'teacher3@example.com',
+       (4, 'teacher3', '123456', '李老师', 0, '13800000003', 'teacher3@example.com',
         'Teacher', 'Active', 'T003', NOW(), NOW()),
-       (5, 'student1', 'e10adc3949ba59abbe56e057f20f883e', '赵同学', 1, '13800000004', 'student1@example.com',
+       (5, 'student1', '123456', '赵同学', 1, '13800000004', 'student1@example.com',
         'Student', 'Active', '2023001', NOW(), NOW()),
-       (6, 'student2', 'e10adc3949ba59abbe56e057f20f883e', '钱同学', 0, '13800000005', 'student2@example.com',
+       (6, 'student2', '123456', '钱同学', 0, '13800000005', 'student2@example.com',
         'Student', 'Active', '2023002', NOW(), NOW()),
-       (7, 'student3', 'e10adc3949ba59abbe56e057f20f883e', '孙同学', 1, '13800000006', 'student3@example.com',
+       (7, 'student3', '123456', '孙同学', 1, '13800000006', 'student3@example.com',
         'Student', 'Active', '2023003', NOW(), NOW());
 
 ALTER TABLE `user`

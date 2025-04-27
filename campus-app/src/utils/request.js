@@ -58,11 +58,7 @@ request.interceptors.response.use(
         if (error.response) {
             if (error.response.status === 401) {
                 message = '登录已过期，请重新登录';
-                ElMessage.error(message);
-                // 清除登录状态并跳转到登录页
-                window.localStorage.removeItem('token');
-                window.localStorage.removeItem('user');
-                router.push('/login');
+                handleUnauthorized();
             } else if (error.response.status === 403) {
                 message = '无权访问该资源';
             } else if (error.response.status === 404) {

@@ -166,7 +166,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.el-select, .el-input-number {
-  width: 100%;
-}
+/* Add component-specific styles here if needed */
+
+/* Removed unused selector: .el-input-number */
 </style> 

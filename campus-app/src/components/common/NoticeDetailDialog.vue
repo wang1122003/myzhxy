@@ -56,7 +56,7 @@
 import {defineEmits, defineProps, ref, watch} from 'vue';
 import {ElButton, ElDialog, ElDivider, ElEmpty, ElIcon, ElLink, ElMessage, vLoading} from 'element-plus';
 import {Clock, CollectionTag, Paperclip, User, View} from '@element-plus/icons-vue';
-import {getNoticeById} from '@/api/notice'; // Correct import
+import {getNotificationById} from '@/api/notice';
 // import { downloadFile } from '@/api/file'; // Import if download functionality is needed
 
 const props = defineProps({
@@ -81,8 +81,8 @@ const fetchNoticeDetail = async () => {
   loading.value = true;
   noticeData.value = null; // Clear previous data
   try {
-    const res = await getNoticeById(props.noticeId);
-    if (res.success && res.data) {
+    const res = await getNotificationById(props.noticeId);
+    if (res.code === 200) {
       noticeData.value = res.data;
     } else {
       ElMessage.error(res.message || '获取通知详情失败');
@@ -222,16 +222,24 @@ const formatBytes = (bytes, decimals = 2) => {
   margin-top: 20px;
 }
 
+.notice-meta span + span {
+  margin-left: 15px;
+}
+
+.notice-content {
+  margin-top: 20px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.attachment-list {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
 .attachment-item {
   margin-bottom: 8px;
-}
-
-.attachment-item .el-link {
-  font-size: 0.95em;
-}
-
-.attachment-item .el-icon {
-  margin-right: 5px;
 }
 
 .empty-container {

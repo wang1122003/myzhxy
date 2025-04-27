@@ -1,26 +1,26 @@
 import request from '@/utils/request'
 
-// API Endpoints for Activity
+// 活动相关的API端点
 const API = {
-    GET_ALL: '/activities',
-    GET_BY_ID: (id) => `/activities/${id}`,
-    GET_BY_TYPE: (activityType) => `/activities/type/${activityType}`,
-    GET_BY_STATUS: (status) => `/activities/status/${status}`,
-    GET_ONGOING: '/activities/ongoing',
-    GET_UPCOMING: '/activities/upcoming',
-    ADD: '/activities',
-    ADD_WITH_POSTER: '/activities/with-poster', // Assumes backend combines data and poster upload or handles separately
-    UPDATE: (id) => `/activities/${id}`,
-    DELETE: (id) => `/activities/${id}`,
-    BATCH_DELETE: '/activities/batch',
-    UPDATE_STATUS: (id, status) => `/activities/${id}/status/${status}`,
-    UPLOAD_POSTER: '/activities/poster/upload', // Likely a separate call before ADD_WITH_POSTER or UPDATE?
-    GET_BY_PUBLISHER: (publisherId) => `/activities/publisher/${publisherId}`,
-    GET_STUDENT_ACTIVITIES: '/activities/student/my',
-    JOIN_ACTIVITY: (id) => `/activities/join/${id}`,
-    CANCEL_JOIN: (id) => `/activities/cancel/${id}`,
-    RATE_ACTIVITY: (id) => `/activities/rate/${id}`,
-    GET_ENROLLMENTS: (id) => `/admin/activities/enrollments/${id}` // Note: path starts with /admin
+    GET_ALL: '/activities', // 获取所有活动
+    GET_BY_ID: (id) => `/activities/${id}`, // 根据ID获取活动
+    GET_BY_TYPE: (activityType) => `/activities/type/${activityType}`, // 根据类型获取活动
+    GET_BY_STATUS: (status) => `/activities/status/${status}`, // 根据状态获取活动
+    GET_ONGOING: '/activities/ongoing', // 获取正在进行的活动
+    GET_UPCOMING: '/activities/upcoming', // 获取即将开始的活动
+    ADD: '/activities', // 添加活动
+    ADD_WITH_POSTER: '/activities/with-poster', // 添加活动（带海报）- 假设后端合并处理数据和海报上传或分开处理
+    UPDATE: (id) => `/activities/${id}`, // 更新活动
+    DELETE: (id) => `/activities/${id}`, // 删除活动
+    BATCH_DELETE: '/activities/batch', // 批量删除活动
+    UPDATE_STATUS: (id, status) => `/activities/${id}/status/${status}`, // 更新活动状态
+    UPLOAD_POSTER: '/activities/poster/upload', // 上传海报 - 可能在 ADD_WITH_POSTER 或 UPDATE 之前单独调用?
+    GET_BY_PUBLISHER: (publisherId) => `/activities/publisher/${publisherId}`, // 根据发布者获取活动
+    GET_STUDENT_ACTIVITIES: '/activities/student/my', // 获取当前学生参与的活动
+    JOIN_ACTIVITY: (id) => `/activities/join/${id}`, // 报名参加活动
+    CANCEL_JOIN: (id) => `/activities/cancel/${id}`, // 取消报名活动
+    RATE_ACTIVITY: (id) => `/activities/rate/${id}`, // 评价活动
+    GET_ENROLLMENTS: (id) => `/admin/activities/enrollments/${id}` // 获取报名列表 (管理员) - 注意：路径以 /admin 开头
 };
 
 // 获取所有活动 (可带分页或过滤参数)
@@ -86,11 +86,11 @@ export function addActivity(data) {
 }
 
 // 添加活动 (包含海报，具体实现依赖后端)
-export function addActivityWithPoster(formData) { // Assuming formData includes activity data and poster file
+export function addActivityWithPoster(formData) { // 假设 formData 包含活动数据和海报文件
     return request({
         url: API.ADD_WITH_POSTER,
         method: 'post',
-        data: formData, // Send as FormData
+        data: formData, // 以 FormData 发送
         headers: {'Content-Type': 'multipart/form-data'}
     });
 }
@@ -116,7 +116,7 @@ export function deleteActivity(id) {
 export function batchDeleteActivities(ids) {
     return request({
         url: API.BATCH_DELETE,
-        method: 'delete', // Or POST
+        method: 'delete', // 或 POST
         data: ids
     });
 }
@@ -125,7 +125,7 @@ export function batchDeleteActivities(ids) {
 export function updateActivityStatus(id, status) {
     return request({
         url: API.UPDATE_STATUS(id, status),
-        method: 'put' // Or PATCH
+        method: 'put' // 或 PATCH
     });
 }
 
@@ -163,7 +163,7 @@ export function getMyActivities(params) {
 export function joinActivity(id) {
     return request({
         url: API.JOIN_ACTIVITY(id),
-        method: 'post' // Assuming POST to join
+        method: 'post' // 假设使用 POST 报名
     });
 }
 
@@ -171,7 +171,7 @@ export function joinActivity(id) {
 export function cancelJoinActivity(id) {
     return request({
         url: API.CANCEL_JOIN(id),
-        method: 'post' // Assuming POST to cancel
+        method: 'post' // 假设使用 POST 取消
     });
 }
 
@@ -179,7 +179,7 @@ export function cancelJoinActivity(id) {
 export function rateActivity(id, ratingData) {
     return request({
         url: API.RATE_ACTIVITY(id),
-        method: 'post', // Assuming POST to rate
+        method: 'post', // 假设使用 POST 评价
         data: ratingData
     });
 }

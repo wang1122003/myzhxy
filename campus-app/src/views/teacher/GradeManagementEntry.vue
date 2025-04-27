@@ -134,9 +134,9 @@ import {
 } from 'element-plus'
 import {Search} from '@element-plus/icons-vue'
 import {getTeacherCourses} from '@/api/course'
-import {getCourseScores, recordStudentScore} from '@/api/grade' // Updated API
+import {getCourseScores, recordScore} from '@/api/grade' // Updated API
 import {formatDateTime} from '@/utils/formatters'; // Assuming formatter utility
-import {getTermList} from '@/api/term' // 导入学期列表 API
+import {getAllTerms} from '@/api/term' // Corrected import: use getAllTerms instead of getTermList
 
 const route = useRoute()
 const router = useRouter()
@@ -186,19 +186,18 @@ const fetchCourses = async () => {
 const fetchTerms = async () => {
   termsLoading.value = true;
   try {
-    const res = await getTermList();
-    if (res.code === 200 && res.data) {
+    const res = await getAllTerms({sortByCreateDesc: true}); // Example params if needed
+    if (res.code === 200 && Array.isArray(res.data)) {
       termList.value = res.data;
-      // 设置默认学期（例如，当前学期）
-      const currentTerm = res.data.find(t => t.current === 1);
-      if (currentTerm) {
-        selectedTermId.value = currentTerm.id;
+      if (termList.value.length > 0) {
+        selectedTermId.value = termList.value[0].id; // Default to the first/latest term
+        fetchCourses(); // Fetch courses for the default term
       }
     } else {
       ElMessage.error(res.message || '获取学期列表失败');
     }
   } catch (error) {
-    console.error('获取学期列表失败', error);
+    console.error('获取学期列表失败:', error);
     ElMessage.error('获取学期列表失败');
   } finally {
     termsLoading.value = false;
@@ -281,8 +280,8 @@ const saveAllChanges = async () => {
         courseId: selectedCourseId.value,
         score: scoreRecord.score
       };
-      // Use recordStudentScore for both create and update
-      const response = await recordStudentScore(payload);
+      // Corrected function call: use recordScore
+      const response = await recordScore(payload);
       // Update the local record with the ID and reset changed flag if successful
       if (response.code === 200 && response.data) {
         // If it was a new record, backend might return the full object including the new ID

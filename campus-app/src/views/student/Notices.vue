@@ -175,7 +175,7 @@
 import {onMounted, reactive, ref} from 'vue'
 import {ElMessage} from 'element-plus'
 import {Document, Search} from '@element-plus/icons-vue'
-import {getNoticeById, getNotificationsPage} from '@/api/notice'
+import {getNotificationById, getNotificationsPage} from '@/api/notice'
 import {downloadFile} from '@/api/file'
 
 // 公告类型选项
@@ -226,11 +226,17 @@ const fetchNotices = async () => {
 // 获取公告详情
 const fetchNoticeDetail = async (id) => {
   try {
-    const res = await getNoticeById(id)
-    Object.assign(currentNotice, res.data)
+    const res = await getNotificationById(id)
+    if (res.code === 200 && res.data) {
+      currentNotice.value = res.data
+      currentNotice.value.htmlContent = currentNotice.value.content; // Assuming content is plain text for now
+      detailVisible.value = true
+    } else {
+      ElMessage.error(res.message || '获取通知详情失败')
+    }
   } catch (error) {
-    console.error('获取公告详情失败', error)
-    ElMessage.error('获取公告详情失败')
+    console.error('获取通知详情失败:', error)
+    ElMessage.error('获取通知详情失败')
   }
 }
 

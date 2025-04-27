@@ -19,7 +19,7 @@
             text-color="#bfcbd9"
             @select="handleMenuSelect"
         >
-          <template v-for="item in menuItems" :key="item.index">
+          <template v-for="item in sidebarMenuItems" :key="item.index">
             <el-menu-item :index="item.index">
               <el-icon>
                 <component :is="item.icon"/>
@@ -30,8 +30,9 @@
         </el-menu>
       </el-scrollbar>
     </el-aside>
-    <el-container>
-      <el-main>
+    <el-container class="main-container">
+      <AppHeader/>
+      <el-main class="app-main">
         <router-view/>
       </el-main>
     </el-container>
@@ -39,40 +40,47 @@
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {Calendar, Document, Expand, Fold, HomeFilled, User} from '@element-plus/icons-vue'
-import {getUserInfo} from '@/api/user'
+import AppHeader from '@/components/common/AppHeader.vue'
+import {
+  Calendar,
+  Expand,
+  Fold,
+  HomeFilled,
+  User,
+  Reading,
+  Collection,
+  DataAnalysis,
+  Bell,
+  QuestionFilled
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
-const userInfo = ref({})
 const isCollapsed = ref(false)
 const isMobile = ref(false)
 
-// 定义菜单项
-const menuItems = shallowRef([
-  {index: '/teacher', icon: HomeFilled, title: '首页'},
-  // {index: '/teacher/notices', icon: ChatLineRound, title: '通知公告'}, // 移除通知公告
-  {index: '/teacher/profile', icon: User, title: '个人资料'},
-  {index: '/teacher/schedule', icon: Calendar, title: '我的课表'},
-  {index: '/teacher/course-management', icon: 'Notebook', title: '课程管理'},
-  {index: '/teacher/grades', icon: 'DataAnalysis', title: '成绩管理'},
-]);
-
-// 新增：计算当前页面标题
-const currentPageTitle = computed(() => {
-  const currentPath = route.path;
-  const menuItem = menuItems.value.find(item => {
-    // 完全匹配或作为子路由前缀匹配
-    return item.index === currentPath || currentPath.startsWith(item.index + '/');
-  });
-  return menuItem ? menuItem.title : '教师中心'; // 如果找不到匹配项，显示默认标题
+// 动态生成侧边栏菜单项
+const sidebarMenuItems = computed(() => {
+  const teacherRoute = router.options.routes.find(r => r.name === 'TeacherLayout');
+  if (!teacherRoute || !teacherRoute.children) {
+    return [];
+  }
+  return teacherRoute.children
+      .filter(child => child.meta && child.meta.showInSidebar)
+      .map(child => {
+        const parentPath = teacherRoute.path.endsWith('/') ? teacherRoute.path : teacherRoute.path + '/';
+        const fullPath = parentPath + child.path;
+        return {
+          index: fullPath.replace(/\/$/, '') || teacherRoute.path,
+          title: child.meta.title || 'Untitled',
+          icon: child.meta.icon || QuestionFilled
+        }
+      });
 });
 
 onMounted(() => {
-  fetchUserInfo()
   checkScreenWidth();
   window.addEventListener('resize', checkScreenWidth);
 })
@@ -95,23 +103,25 @@ const handleMenuSelect = () => {
     isCollapsed.value = true;
   }
 }
+</script>
 
-const fetchUserInfo = () => {
-  getUserInfo().then(response => {
-    userInfo.value = response.data
-  }).catch(() => {
-    logout()
-  })
-}
-
-const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('role')
-  router.push('/login')
-  ElMessage({
-    message: '退出登录成功',
-    type: 'success'
-  })
+<script>
+// Non-setup script block for component name
+export default {
+  name: 'TeacherLayout',
+  components: {
+    AppHeader,
+    Calendar,
+    Expand,
+    Fold,
+    HomeFilled,
+    User,
+    Reading,
+    Collection,
+    DataAnalysis,
+    Bell,
+    QuestionFilled
+  },
 }
 </script>
 
@@ -130,28 +140,48 @@ const logout = () => {
 }
 
 .sidebar-header {
-  height: 50px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .collapse-icon {
   font-size: 20px;
   cursor: pointer;
   color: #bfcbd9;
+  padding: 10px;
 }
 
 .el-menu-vertical:not(.el-menu--collapse) {
   width: 200px;
 }
 
-.el-menu--collapse {
-  width: 64px;
-}
-
 .el-menu-vertical {
   border-right: none;
+  flex-grow: 1;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-main {
+  padding: 20px;
+  background-color: #f0f2f5;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.el-scrollbar {
+  height: calc(100% - 60px);
+}
+
+.scrollbar-wrapper {
+  overflow-x: hidden !important;
 }
 </style> 

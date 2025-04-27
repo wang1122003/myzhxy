@@ -5,6 +5,9 @@ import com.campus.utils.Result;
 import com.campus.entity.FileRecord;
 import com.campus.entity.User;
 import com.campus.service.FileService;
+import com.campus.service.AuthService;
+import com.campus.service.CourseService;
+import com.campus.service.CourseSelectionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -13,15 +16,23 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import com.campus.entity.Course;
 
 /**
  * 文件管理控制器
@@ -33,6 +44,12 @@ public class FileController {
 
     @Autowired
     private FileService fileService;
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private CourseService courseService;
+    @Autowired
+    private CourseSelectionService courseSelectionService;
 
     /**
      * 通用文件上传接口
@@ -211,6 +228,116 @@ public class FileController {
         } catch (Exception e) {
             log.error("下载文件时发生错误: fileId={}", id, e);
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 上传课程资料
+     *
+     * @param file     文件
+     * @param courseId 课程ID
+     * @return 上传结果
+     */
+    @PostMapping("/upload/course/{courseId}")
+    public Result<FileRecord> uploadCourseResource(
+            @RequestParam("file") MultipartFile file,
+            @PathVariable Long courseId) {
+        User currentUser = authService.getCurrentAuthenticatedUser();
+        if (currentUser == null) {
+            return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录");
+        }
+
+        boolean hasPermission = false;
+        try {
+            Course course = courseService.getCourseById(courseId);
+            if (course != null && Objects.equals(course.getTeacherId(), currentUser.getId())) {
+                hasPermission = true;
+            }
+            // if (!hasPermission && courseSelectionService.isStudentEnrolled(currentUser.getId(), courseId)) {
+            //     // hasPermission = true; // Uncomment if students can upload
+            // }
+        } catch (Exception e) {
+            log.error("检查上传课程资料权限时出错, courseId: {}, userId: {}", courseId, currentUser.getId(), e);
+            return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "权限校验失败: " + e.getMessage());
+        }
+
+        if (!hasPermission) {
+            return Result.error(HttpStatus.FORBIDDEN.value(), "无权上传该课程的资料");
+        }
+
+        try {
+            FileRecord record = fileService.uploadFile(file, currentUser.getId(), "course", courseId);
+            return Result.success("上传成功", record);
+        } catch (IOException e) {
+            log.error("上传课程资料失败, courseId: {}, userId: {}", courseId, currentUser.getId(), e);
+            return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "文件上传失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("处理课程资料上传时出错, courseId: {}, userId: {}", courseId, currentUser.getId(), e);
+            return Result.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "处理上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 下载课程资料
+     *
+     * @param fileId   文件记录ID
+     * @param response HttpServletResponse 用于文件下载
+     */
+    @GetMapping("/download/course/{fileId}")
+    public void downloadCourseResource(@PathVariable Long fileId, HttpServletResponse response) throws IOException {
+        User currentUser = authService.getCurrentAuthenticatedUser();
+        FileRecord fileRecord = fileService.getFileRecordById(fileId);
+
+        if (fileRecord == null || !"course".equals(fileRecord.getContextType())) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "课程文件未找到");
+            return;
+        }
+
+        if (currentUser == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "请登录");
+            return;
+        }
+
+        boolean hasPermission = false;
+        Long courseId = fileRecord.getContextId();
+        try {
+            Course course = courseService.getCourseById(courseId);
+            if (course != null && Objects.equals(course.getTeacherId(), currentUser.getId())) {
+                hasPermission = true;
+            }
+            if (!hasPermission && courseSelectionService.isCourseTaken(currentUser.getId(), courseId, "current_term")) {
+                hasPermission = true;
+            }
+        } catch (Exception e) {
+            log.error("检查下载课程资料权限时出错, courseId: {}, userId: {}", courseId, currentUser.getId(), e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "权限校验失败");
+            return;
+        }
+
+        if (!hasPermission) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "无权下载该文件");
+            return;
+        }
+
+        Path filePath = Paths.get(fileRecord.getFilePath());
+        if (!Files.exists(filePath) || !Files.isReadable(filePath)) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "文件在服务器上不存在或不可读");
+            return;
+        }
+
+        response.setContentType(fileRecord.getFileType() != null ? fileRecord.getFileType() : "application/octet-stream");
+        response.setContentLengthLong(fileRecord.getFileSize());
+        String headerValue = String.format("attachment; filename=\"%s\"",
+                URLEncoder.encode(fileRecord.getFilename(), "UTF-8").replace("+", "%20"));
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, headerValue);
+
+        try (InputStream inputStream = Files.newInputStream(filePath)) {
+            FileCopyUtils.copy(inputStream, response.getOutputStream());
+        } catch (IOException e) {
+            log.error("下载文件时发生IO错误: fileId={}, path={}", fileId, filePath, e);
+            if (!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "文件下载失败");
+            }
         }
     }
 

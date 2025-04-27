@@ -1,20 +1,20 @@
 import request from '@/utils/request'
 
-// API Endpoints for Notification
+// 通知相关 API 端点
 const API = {
-    GET_ALL: '/notifications/all',
-    GET_PAGE: '/notifications/page',
-    GET_BY_ID: (id) => `/notifications/${id}`,
-    GET_BY_TYPE: (noticeType) => `/notifications/type/${noticeType}`,
-    GET_BY_STATUS: (status) => `/notifications/status/${status}`,
-    GET_RECENT: '/notifications/recent',
-    GET_TOP: '/notifications/top',
-    GET_BY_PUBLISHER: (publisherId) => `/notifications/publisher/${publisherId}`,
-    ADD: '/notifications',
-    UPDATE: (id) => `/notifications/${id}`,
-    DELETE: (id) => `/notifications/${id}`,
-    BATCH_DELETE: '/notifications/batch',
-    UPDATE_STATUS: (id) => `/notifications/status/${id}` // Path format seems different, verify controller mapping
+    GET_ALL: '/notifications/all', // 获取所有通知 (不分页)
+    GET_PAGE: '/notifications/page', // 获取通知列表 (分页)
+    GET_BY_ID: (id) => `/notifications/${id}`, // 根据 ID 获取通知详情
+    GET_BY_TYPE: (noticeType) => `/notifications/type/${noticeType}`, // 根据类型获取通知
+    GET_BY_STATUS: (status) => `/notifications/status/${status}`, // 根据状态获取通知
+    GET_RECENT: '/notifications/recent', // 获取最近通知
+    GET_TOP: '/notifications/top', // 获取置顶通知
+    GET_BY_PUBLISHER: (publisherId) => `/notifications/publisher/${publisherId}`, // 根据发布者获取通知
+    ADD: '/notifications', // 添加通知
+    UPDATE: (id) => `/notifications/${id}`, // 更新通知
+    DELETE: (id) => `/notifications/${id}`, // 删除通知
+    BATCH_DELETE: '/notifications/batch', // 批量删除通知
+    UPDATE_STATUS: (id) => `/notifications/status/${id}` // 更新通知状态 (路径格式似乎不同，请核对 Controller 映射)
 };
 
 // 获取所有通知 (非分页)
@@ -62,7 +62,7 @@ export function getNotificationsByStatus(status, params) {
 }
 
 // 获取最近通知
-export function getRecentNotifications(params) { // params might include limit
+export function getRecentNotifications(params) { // params 可能包含 limit 参数
     return request({
         url: API.GET_RECENT,
         method: 'get',
@@ -71,7 +71,7 @@ export function getRecentNotifications(params) { // params might include limit
 }
 
 // 获取置顶通知
-export function getTopNotifications(params) { // params might include limit
+export function getTopNotifications(params) { // params 可能包含 limit 参数
     return request({
         url: API.GET_TOP,
         method: 'get',
@@ -118,8 +118,8 @@ export function deleteNotification(id) {
 export function batchDeleteNotifications(ids) {
     return request({
         url: API.BATCH_DELETE,
-        method: 'delete', // Or POST
-        data: ids // 后端是 @RequestBody List<Long> ids, data 方式匹配
+        method: 'delete', // 或 POST
+        data: ids // 后端接收 @RequestBody List<Long> ids，使用 data 匹配
     });
 }
 
@@ -127,25 +127,25 @@ export function batchDeleteNotifications(ids) {
 export function updateNotificationStatus(id, status) {
     return request({
         url: API.UPDATE_STATUS(id),
-        method: 'put', // Or PATCH
+        method: 'put', // 或 PATCH
         // data: { status } // 原方式，发送 Request Body
         params: {status} // 修正：使用 params 匹配后端的 @RequestParam
     });
 }
 
-// --- Potential additions/missing based on Controller --- 
-// // Mark notification as read
+// --- 可能缺少或需要根据 Controller 添加的接口 --- 
+// // 标记通知为已读 (示例)
 // export function markNotificationRead(id) {
 //     return request({
-//         url: `/notifications/${id}/read`, // Example endpoint
+//         url: `/notifications/${id}/read`, // 示例端点
 //         method: 'post'
 //     });
 // }
 
-// // Get unread notification count
+// // 获取未读通知数量 (示例)
 // export function getUnreadNotificationCount() {
 //     return request({
-//         url: '/notifications/unread/count', // Example endpoint
+//         url: '/notifications/unread/count', // 示例端点
 //         method: 'get'
 //     });
 // }

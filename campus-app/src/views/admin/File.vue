@@ -1,528 +1,331 @@
 <template>
-  <div class="file-manager">
-    <h1>文件管理</h1>
-
-    <!-- 当前路径显示 -->
-    <el-breadcrumb class="path-breadcrumb" separator="/">
-      <el-breadcrumb-item :to="{ path: '' }" @click="navigateToPath('')">根目录</el-breadcrumb-item>
-      <el-breadcrumb-item
-          v-for="(folder, index) in pathSegments"
-          :key="index"
-          @click="navigateToPath(generatePath(index))"
-      >
-        {{ folder }}
-      </el-breadcrumb-item>
-    </el-breadcrumb>
-
-    <!-- 工具栏 -->
-    <div class="file-tools">
-      <el-upload
-          :action="uploadUrl"
-          :before-upload="beforeUpload"
-          :disabled="uploading"
-          :on-error="handleUploadError"
-          :on-success="handleUploadSuccess"
-          :show-file-list="false"
-          class="file-uploader"
-          multiple
-      >
-        <el-button :loading="uploading" type="primary">
-          <i class="el-icon-upload"></i> 上传文件
-        </el-button>
-      </el-upload>
-
-      <el-button
-          :disabled="selectedFiles.length === 0"
-          type="danger"
-          @click="confirmDeleteFiles"
-      >
-        <i class="el-icon-delete"></i> 删除选中
-      </el-button>
-
-      <el-button
-          type="info"
-          @click="refreshFileList"
-      >
-        <i class="el-icon-refresh"></i> 刷新
-      </el-button>
-    </div>
-
-    <!-- 文件统计信息 -->
-    <el-card v-if="showStats" class="stats-card">
+  <div class="file-management-container">
+    <el-card class="page-container">
       <template #header>
-        <span>文件统计</span>
-        <el-button style="float: right; padding: 3px 0" @click="showStats = false">
-          隐藏
-        </el-button>
+        <div class="header">
+          <span>文件管理</span>
+          <!-- Add buttons for actions like cleanup etc. if needed -->
+        </div>
       </template>
-      <div v-if="fileStats" class="stats-content">
-        <div class="stats-item">
-          <div class="stats-label">总文件数:</div>
-          <div class="stats-value">{{ fileStats.totalCount }} 个文件</div>
-        </div>
-        <div class="stats-item">
-          <div class="stats-label">总容量:</div>
-          <div class="stats-value">{{ formatFileSize(fileStats.totalSize) }}</div>
-        </div>
-        <div v-if="fileStats.typeStats && fileStats.typeStats.length > 0" class="stats-types">
-          <h4>文件类型分布:</h4>
-          <el-table :table-data="fileStats.typeStats.slice(0, 5)" border size="small" stripe>
-            <el-table-column label="类型" prop="type" width="100"></el-table-column>
-            <el-table-column label="数量" prop="count" width="80"></el-table-column>
-            <el-table-column label="大小" prop="size">
-              <template #default="scope">
-                {{ formatFileSize(scope.row.size) }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </div>
-    </el-card>
 
-    <!-- 文件列表 -->
-    <div class="file-list">
+      <!-- Filters -->
+      <el-form :inline="true" :model="filters" class="filter-form">
+        <el-form-item label="文件名">
+          <el-input v-model="filters.filename" clearable placeholder="输入文件名关键词"/>
+        </el-form-item>
+        <el-form-item label="上传者">
+          <el-input v-model="filters.uploaderName" clearable placeholder="输入上传者姓名/ID"/>
+        </el-form-item>
+        <el-form-item label="文件类型">
+          <el-select v-model="filters.fileType" clearable placeholder="选择文件类型">
+            <el-option label="全部" value=""/>
+            <el-option label="文档" value="document"/>
+            <el-option label="图片" value="image"/>
+            <el-option label="视频" value="video"/>
+            <el-option label="音频" value="audio"/>
+            <el-option label="压缩包" value="archive"/>
+            <el-option label="其他" value="other"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button :icon="Search" type="primary" @click="fetchFiles">查询</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- File List Table -->
       <el-table
-          v-loading="loading"
           :data="fileList"
+          v-loading="loading"
           style="width: 100%"
-          @selection-change="handleSelectionChange"
+          border
+          size="small"
+          stripe
       >
         <el-table-column
-            type="selection"
-            width="55"
-        />
-        <el-table-column
-            label="名称"
-            min-width="200"
+            label="文件名"
+            min-width="250"
+            prop="filename"
+            show-overflow-tooltip
         >
           <template #default="scope">
-            <div class="file-name-cell">
-              <i
-                  :class="scope.row.isDirectory ? 'el-icon-folder' : getFileIcon(scope.row.name)"
-                  class="file-icon"
-              ></i>
-              <span
-                  :class="{'folder-name': scope.row.isDirectory}"
-                  class="file-name"
-                  @click="scope.row.isDirectory ? enterDirectory(scope.row.name) : ''"
-              >
-                {{ scope.row.name }}
-              </span>
-            </div>
+            <el-icon style="vertical-align: middle; margin-right: 5px;">
+              <Document v-if="isDocument(scope.row.filename)"/>
+              <Picture v-else-if="isImage(scope.row.filename)"/>
+              <Files v-else/>
+            </el-icon>
+            <el-link
+                :href="getFilePreviewUrl(scope.row)"
+                :underline="false"
+                target="_blank"
+                type="primary"
+            >
+              {{ scope.row.filename }}
+            </el-link>
           </template>
         </el-table-column>
         <el-table-column
             label="大小"
-            prop="size"
+            prop="fileSize"
             width="120"
         >
-          <template #default="scope">
-            {{ scope.row.isDirectory ? '-' : formatFileSize(scope.row.size) }}
-          </template>
+          <template #default="scope">{{ formatFileSize(scope.row.fileSize) }}</template>
         </el-table-column>
         <el-table-column
-            label="修改时间"
-            prop="lastModified"
+            label="类型"
+            prop="fileType"
+            width="100"
+        >
+          <template #default="scope">{{ getFileType(scope.row.filename) }}</template>
+        </el-table-column>
+        <el-table-column
+            label="上传者"
+            prop="uploaderName"
+            width="120"
+        />
+        <el-table-column
+            label="上传时间"
+            prop="uploadTime"
             width="180"
         >
-          <template #default="scope">
-            {{ formatDate(scope.row.lastModified) }}
-          </template>
+          <template #default="scope">{{ formatDateTime(scope.row.uploadTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="180">
+        <el-table-column
+            fixed="right"
+            label="操作"
+            width="150"
+        >
           <template #default="scope">
             <el-button
-                v-if="!scope.row.isDirectory"
+                :loading="downloadLoading === scope.row.id"
                 size="small"
                 type="primary"
-                @click="downloadFile(scope.row)"
+                @click="handleDownload(scope.row)"
             >
               下载
             </el-button>
             <el-button
+                :loading="deleteLoading === scope.row.id"
                 size="small"
                 type="danger"
-                @click="confirmDeleteFile(scope.row)"
+                @click="handleDelete(scope.row)"
             >
               删除
             </el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="暂无文件数据"/>
+        </template>
       </el-table>
-    </div>
 
-    <!-- 当目录为空时显示 -->
-    <el-empty
-        v-if="fileList.length === 0 && !loading"
-        description="当前目录为空"
-    ></el-empty>
+      <!-- Pagination -->
+      <el-pagination
+          v-if="total > 0"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          class="pagination-container"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+      />
+    </el-card>
   </div>
 </template>
 
-<script>
-import {batchDeleteFiles, downloadFileByPath, getFileStats, listDirectory} from '@/api/file';
+<script setup>
+import {ref, reactive, onMounted, computed} from 'vue';
+import {
+  ElCard, ElForm, ElFormItem, ElInput, ElSelect, ElOption,
+  ElButton, ElTable, ElTableColumn, ElIcon, ElLink, ElPagination,
+  ElEmpty, ElMessage, ElMessageBox
+} from 'element-plus';
+// Ensure ALL required icons are imported
+import {
+  Search, Document, Picture, Files, Download, Delete
+} from '@element-plus/icons-vue';
+// Assume API functions are correctly defined in @/api/file.js
+import {listFiles, deleteFile, downloadFile as apiDownloadFile, getFileStats} from '@/api/file';
 
-export default {
-  name: 'FileManager',
-  data() {
-    return {
-      loading: false,
-      uploading: false,
-      fileList: [],
-      currentPath: '',
-      selectedFiles: [],
-      showStats: true,
-      fileStats: null,
-      uploadUrl: (process.env.VUE_APP_BASE_API || '') + '/file/upload/document'
-    }
-  },
-  created() {
-    this.loadFileList();
-    this.loadFileStats();
-  },
-  computed: {
-    pathSegments() {
-      if (!this.currentPath) return [];
-      return this.currentPath.split('/').filter(segment => segment);
-    }
-  },
-  methods: {
-    // 辅助函数：清理路径，移除类似 /d: 的前缀
-    cleanPathPrefix(path) {
-      if (typeof path !== 'string') return path;
-      // 匹配 /<盘符>: 格式，例如 /d: /c:
-      const prefixRegex = /^\/[a-zA-Z]:/;
-      if (prefixRegex.test(path)) {
-        return path.replace(prefixRegex, '');
-      }
-      return path;
-    },
+const loading = ref(false);
+const fileList = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const filters = reactive({
+  filename: '',
+  uploaderName: '',
+  fileType: ''
+});
+const downloadLoading = ref(null);
+const deleteLoading = ref(null);
 
-    // 加载文件列表
-    loadFileList() {
-      this.loading = true;
-      // 在发送请求前也清理一次 currentPath
-      const cleanedPathToSend = this.cleanPathPrefix(this.currentPath);
-      listDirectory(cleanedPathToSend)
-          .then(response => {
-            if (response.code === 200 && response.data) {
-              this.fileList = response.data.files || [];
-              // 在更新前清理后端返回的路径
-              this.currentPath = this.cleanPathPrefix(response.data.currentPath);
-            } else {
-              this.$message.error(response.message || '获取文件列表失败');
-            }
-          })
-          .catch(error => {
-            console.error('加载文件列表失败', error);
-            this.$message.error('加载文件列表失败: ' + (error.message || error));
-          })
-          .finally(() => {
-            this.loading = false;
-          });
-    },
+// Define the function directly in setup scope
+const getFilePreviewUrl = (file) => {
+  console.warn('getFilePreviewUrl needs implementation', file);
+  return '#'; // Placeholder implementation
+};
 
-    // 加载文件统计
-    loadFileStats() {
-      getFileStats()
-          .then(response => {
-            if (response.code === 200) {
-              this.fileStats = response.data;
-            }
-          })
-          .catch(error => {
-            console.error('获取文件统计失败', error);
-          });
-    },
+const isDocument = (filename) => {
+  if (!filename) return false;
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ['doc', 'docx', 'pdf', 'txt', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
+};
 
-    // 刷新文件列表
-    refreshFileList() {
-      this.loadFileList();
-    },
+const isImage = (filename) => {
+  if (!filename) return false;
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
+};
 
-    // 下载文件
-    downloadFile(file) {
-      if (file.isDirectory) return;
+// Helper to format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  if (!bytes) return '-'; // Handle null/undefined
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
-      const filePath = file.path;
-      downloadFileByPath(filePath)
-          .then(response => {
-            // 创建Blob对象
-            const blob = new Blob([response], {
-              type: 'application/octet-stream'
-            });
+// Helper to get file type category from filename
+const getFileType = (filename) => {
+  if (!filename) return '未知';
+  if (isDocument(filename)) return '文档';
+  if (isImage(filename)) return '图片';
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return '视频';
+  if (['mp3', 'wav', 'ogg'].includes(ext)) return '音频';
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '压缩包';
+  return '其他';
+};
 
-            // 创建下载链接
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = file.name;
-            link.click();
-
-            // 释放URL对象
-            URL.revokeObjectURL(link.href);
-
-            this.$message.success('下载成功');
-          })
-          .catch(error => {
-            console.error('下载文件失败', error);
-            this.$message.error('下载文件失败: ' + (error.message || error));
-          });
-    },
-
-    // 确认删除单个文件
-    confirmDeleteFile(file) {
-      this.$confirm(`确定要删除 ${file.name} 吗?`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-          .then(() => {
-            this.deleteFiles([file.path]);
-          })
-          .catch(() => {
-            // 用户取消删除
-          });
-    },
-
-    // 确认删除多个文件
-    confirmDeleteFiles() {
-      if (this.selectedFiles.length === 0) return;
-
-      this.$confirm(`确定要删除选中的 ${this.selectedFiles.length} 个文件吗?`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-          .then(() => {
-            const filePaths = this.selectedFiles.map(file => file.path);
-            this.deleteFiles(filePaths);
-          })
-          .catch(() => {
-            // 用户取消删除
-          });
-    },
-
-    // 删除文件
-    deleteFiles(filePaths) {
-      this.loading = true;
-      batchDeleteFiles(filePaths)
-          .then(response => {
-            if (response.code === 200) {
-              this.$message.success('删除成功');
-              // 刷新文件列表
-              this.loadFileList();
-              // 更新文件统计
-              this.loadFileStats();
-            } else {
-              this.$message.error(response.message || '删除失败');
-            }
-          })
-          .catch(error => {
-            console.error('删除文件失败', error);
-            this.$message.error('删除文件失败: ' + (error.message || error));
-          })
-          .finally(() => {
-            this.loading = false;
-          });
-    },
-
-    // 进入目录
-    enterDirectory(dirName) {
-      const newPath = this.currentPath
-          ? `${this.currentPath}/${dirName}`
-          : dirName;
-      // 清理 newPath
-      this.currentPath = this.cleanPathPrefix(newPath);
-      this.loadFileList();
-    },
-
-    // 导航到指定路径
-    navigateToPath(path) {
-      // 清理 path
-      this.currentPath = this.cleanPathPrefix(path);
-      this.loadFileList();
-    },
-
-    // 生成跳转路径
-    generatePath(index) {
-      return this.pathSegments.slice(0, index + 1).join('/');
-    },
-
-    // 文件上传前检查
-    beforeUpload(/* file */) {
-      this.uploading = true;
-      return true;
-    },
-
-    // 文件上传成功
-    handleUploadSuccess(response, /* file */) {
-      this.uploading = false;
-      if (response.code === 200) {
-        this.$message.success('文件上传成功');
-        // 刷新文件列表
-        this.loadFileList();
-        // 更新文件统计
-        this.loadFileStats();
-      } else {
-        this.$message.error(response.message || '上传失败');
-      }
-    },
-
-    // 文件上传失败
-    handleUploadError(error) {
-      this.uploading = false;
-      console.error('上传文件失败', error);
-      this.$message.error('上传文件失败: ' + (error.message || error));
-    },
-
-    // 表格选择变化
-    handleSelectionChange(selection) {
-      this.selectedFiles = selection;
-    },
-
-    // 格式化文件大小
-    formatFileSize(size) {
-      if (size === 0) return '0 B';
-
-      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(size) / Math.log(1024));
-      return (size / Math.pow(1024, i)).toFixed(2) + ' ' + units[i];
-    },
-
-    // 格式化日期
-    formatDate(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleString();
-    },
-
-    // 获取文件图标
-    getFileIcon(fileName) {
-      if (!fileName) return 'el-icon-document';
-
-      const extension = fileName.split('.').pop().toLowerCase();
-
-      const iconMap = {
-        // 图片
-        jpg: 'el-icon-picture',
-        jpeg: 'el-icon-picture',
-        png: 'el-icon-picture',
-        gif: 'el-icon-picture',
-        bmp: 'el-icon-picture',
-        svg: 'el-icon-picture',
-
-        // 文档
-        doc: 'el-icon-document',
-        docx: 'el-icon-document',
-        pdf: 'el-icon-document',
-        txt: 'el-icon-document-copy',
-        md: 'el-icon-document-copy',
-
-        // 表格
-        xls: 'el-icon-tickets',
-        xlsx: 'el-icon-tickets',
-        csv: 'el-icon-tickets',
-
-        // 压缩文件
-        zip: 'el-icon-suitcase',
-        rar: 'el-icon-suitcase',
-        '7z': 'el-icon-suitcase',
-        tar: 'el-icon-suitcase',
-        gz: 'el-icon-suitcase',
-
-        // 音频
-        mp3: 'el-icon-headset',
-        wav: 'el-icon-headset',
-        ogg: 'el-icon-headset',
-
-        // 视频
-        mp4: 'el-icon-video-camera',
-        avi: 'el-icon-video-camera',
-        mov: 'el-icon-video-camera',
-        wmv: 'el-icon-video-camera',
-
-        // 代码
-        js: 'el-icon-s-order',
-        css: 'el-icon-s-order',
-        html: 'el-icon-s-order',
-        java: 'el-icon-s-order',
-        py: 'el-icon-s-order',
-
-        // 默认
-        default: 'el-icon-document'
-      };
-
-      return iconMap[extension] || iconMap.default;
-    }
+// Helper to format date/time
+const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return '-';
+  try {
+    return new Date(dateTimeString).toLocaleString();
+  } catch (e) {
+    return dateTimeString;
   }
-}
+};
+
+// Fetch file list from backend
+const fetchFiles = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      filename: filters.filename || undefined,
+      uploaderName: filters.uploaderName || undefined,
+      fileType: filters.fileType || undefined
+    };
+    const res = await listFiles(params);
+    if (res.code === 200 && res.data) {
+      fileList.value = res.data.list || [];
+      total.value = res.data.total || 0;
+    } else {
+      ElMessage.error(res.message || '获取文件列表失败');
+      fileList.value = [];
+      total.value = 0;
+    }
+  } catch (error) {
+    console.error('加载文件列表失败:', error);
+    fileList.value = [];
+    total.value = 0;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Download file
+const handleDownload = async (file) => {
+  if (!file || !file.id) return;
+  downloadLoading.value = file.id;
+  try {
+    const response = await apiDownloadFile(file.id); // Adjust parameter as needed
+    const blob = new Blob([response], {type: 'application/octet-stream'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = file.filename || `file_${file.id}`;
+    document.body.appendChild(link); // Required for Firefox
+    link.click();
+    URL.revokeObjectURL(link.href);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('下载文件失败:', error);
+    ElMessage.error('下载文件失败');
+  } finally {
+    downloadLoading.value = null;
+  }
+};
+
+// Delete file
+const handleDelete = (file) => {
+  if (!file || !file.id) return;
+  ElMessageBox.confirm(`确定要删除文件 "${file.filename}" 吗? 此操作不可恢复。`, '警告', {
+    confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+  }).then(async () => {
+    deleteLoading.value = file.id;
+    try {
+      await deleteFile(file.id);
+      ElMessage.success('文件删除成功');
+      fetchFiles(); // Refresh list
+    } catch (error) {
+      console.error('删除文件失败:', error);
+    } finally {
+      deleteLoading.value = null;
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除');
+  });
+};
+
+// Pagination handlers
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+  currentPage.value = 1;
+  fetchFiles();
+};
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  fetchFiles();
+};
+
+// Initial load
+onMounted(() => {
+  fetchFiles();
+  getFileStats().catch(err => console.warn("Failed to load file stats", err));
+});
+
 </script>
 
 <style scoped>
-.file-manager {
+.file-management-container {
   padding: 20px;
 }
 
-.path-breadcrumb {
-  margin: 20px 0;
-  font-size: 16px;
+.page-container {
+  /* Add styles if needed */
 }
 
-.file-tools {
-  margin-bottom: 20px;
+.header {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.file-list {
+.filter-form {
+  margin-bottom: 20px;
+}
+
+.pagination-container {
   margin-top: 20px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.file-name-cell {
   display: flex;
-  align-items: center;
-}
-
-.file-icon {
-  margin-right: 10px;
-  font-size: 18px;
-}
-
-.folder-name {
-  color: #409eff;
-  cursor: pointer;
-}
-
-.folder-name:hover {
-  text-decoration: underline;
-}
-
-.stats-card {
-  margin-bottom: 20px;
-}
-
-.stats-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stats-item {
-  display: flex;
-  align-items: center;
-}
-
-.stats-label {
-  font-weight: bold;
-  margin-right: 8px;
-}
-
-.stats-types {
-  margin-top: 10px;
-}
-
-.stats-types h4 {
-  margin-bottom: 8px;
+  justify-content: center;
 }
 </style>

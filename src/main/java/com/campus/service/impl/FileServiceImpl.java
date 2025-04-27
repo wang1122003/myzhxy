@@ -6,9 +6,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.FileRecordMapper;
 import com.campus.entity.FileRecord;
+import com.campus.entity.Course;
 import com.campus.exception.CustomException;
 import com.campus.service.FileService;
+import com.campus.service.CourseService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,9 @@ public class FileServiceImpl extends ServiceImpl<FileRecordMapper, FileRecord> i
     // 从配置文件读取上传目录，需要你在 application.yml 或 properties 中配置
     @Value("${file.upload-dir:./uploads}") // 默认为项目根目录下的 uploads 文件夹
     private String uploadDir;
+
+    @Autowired
+    private CourseService courseService;
 
     @Override
     @Transactional
@@ -144,64 +150,74 @@ public class FileServiceImpl extends ServiceImpl<FileRecordMapper, FileRecord> i
         FileRecord fileRecord = this.getFileRecordById(fileId);
 
         if (fileRecord == null) {
-            // 文件记录本身就不存在（或已被删除），可以认为删除成功或返回特定状态
             log.warn("尝试删除的文件记录不存在或已被删除: fileId={}, userId={}", fileId, userId);
-            return true; // 或者 false，取决于业务定义，这里认为目标状态已达成
+            return true;
         }
 
         // 权限校验：
-        // 1. 个人文件只能由上传者删除
         if ("personal".equals(fileRecord.getContextType())) {
             if (!Objects.equals(fileRecord.getUserId(), userId)) {
                 log.warn("无权删除文件: fileId={}, ownerId={}, operatorId={}", fileId, fileRecord.getUserId(), userId);
                 throw new CustomException("无权删除该文件");
             }
         } else if ("course".equals(fileRecord.getContextType())) {
-            // 2. 课程资料：允许上传者删除，或课程的授课教师删除 (需要查询课程信息获取教师ID)
-            // TODO: 实现查询课程教师ID并进行校验的逻辑
-            log.warn("课程资料删除权限校验未完全实现: fileId={}, uploaderId={}, operatorId={}, courseId={}",
-                    fileId, fileRecord.getUserId(), userId, fileRecord.getContextId());
-            // 简化处理：暂时只允许上传者删除
-            if (!Objects.equals(fileRecord.getUserId(), userId)) {
+            // 2. 课程资料：允许上传者删除，或课程的授课教师删除
+            boolean canDelete = false;
+            // Check if operator is the uploader
+            if (Objects.equals(fileRecord.getUserId(), userId)) {
+                canDelete = true;
+            }
+            // Check if operator is the teacher of the course
+            if (!canDelete && fileRecord.getContextId() != null) {
+                try {
+                    Course course = courseService.getCourseById(fileRecord.getContextId());
+                    // Assuming Course entity has a teacherId field or similar
+                    if (course != null && Objects.equals(course.getTeacherId(), userId)) {
+                        canDelete = true;
+                    } else {
+                        log.warn("无法验证课程资料删除权限，课程 {} 不存在或教师 ID ({}) 不匹配操作者 ID ({})",
+                                fileRecord.getContextId(), course != null ? course.getTeacherId() : "null", userId);
+                    }
+                } catch (Exception e) {
+                    log.error("校验课程资料删除权限时获取课程信息出错, courseId: {}, operatorId: {}",
+                            fileRecord.getContextId(), userId, e);
+                    // Fallback: Do not allow deletion if course info check fails
+                }
+            }
+
+            if (!canDelete) {
+                log.warn("无权删除课程资料: fileId={}, uploaderId={}, operatorId={}, courseId={}",
+                        fileId, fileRecord.getUserId(), userId, fileRecord.getContextId());
                 throw new CustomException("无权删除该课程资料");
             }
         } else {
             // 其他类型的文件，根据需要添加权限校验
             log.warn("未知的 contextType 文件删除权限校验: {}", fileRecord.getContextType());
-            // 默认只允许上传者删除
             if (!Objects.equals(fileRecord.getUserId(), userId)) {
                 throw new CustomException("无权删除该类型文件");
             }
         }
 
         // 软删除：更新状态为 0
-        fileRecord.setStatus(0); // 0: 已删除
-        fileRecord.setUploadTime(null); // 可选：清空时间戳或记录删除时间
+        fileRecord.setStatus(0);
+        fileRecord.setUploadTime(null);
         boolean updated = this.updateById(fileRecord);
 
         if (updated) {
             log.info("文件记录软删除成功: fileId={}, operatorId={}", fileId, userId);
-            // 可选：是否同时删除物理文件 (取决于你的文件保留策略)
-            // deletePhysicalFile(fileRecord.getFilePath());
         } else {
             log.error("文件记录软删除失败: fileId={}, operatorId={}", fileId, userId);
         }
         return updated;
     }
 
-    // 可选：辅助方法，用于删除物理文件
-    private void deletePhysicalFile(String filePath) {
-        if (filePath == null || filePath.isEmpty()) return;
-        try {
-            Path path = Paths.get(filePath);
-            if (Files.deleteIfExists(path)) {
-                log.info("文件物理删除成功: {}", filePath);
-            } else {
-                log.warn("尝试物理删除的文件不存在: {}", filePath);
-            }
-        } catch (IOException e) {
-            log.error("文件物理删除失败: {}", filePath, e);
-            // 即使物理删除失败，逻辑删除可能已成功，需要监控或后台任务清理
-        }
-    }
+    // Utility method to delete the physical file (potentially unsafe if file is shared)
+    // private void deletePhysicalFile(String filePath) {
+    //     try {
+    //         Path path = Paths.get(filePath);
+    //         Files.deleteIfExists(path);
+    //     } catch (IOException e) {
+    //         log.error("Error deleting physical file: {}", filePath, e);
+    //     }
+    // }
 } 

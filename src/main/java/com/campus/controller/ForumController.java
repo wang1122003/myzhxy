@@ -4,15 +4,20 @@ package com.campus.controller;
 // import com.campus.entity.Comment; // Removed Comment dependency
 
 import com.campus.entity.Post;
-// import com.campus.service.ForumService; // 移除 ForumService 导入
+// import com.campus.entity.ForumCategory; // Assume this entity exists
 import com.campus.service.PostService;
+// import com.campus.service.ForumCategoryService; // Assume this service exists
 import com.campus.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+// import org.springframework.security.access.prepost.PreAuthorize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+// import com.campus.exception.ResourceNotFoundException; // Added import
 
-import java.util.HashMap;
+// import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +29,9 @@ import java.util.Map;
 @RequestMapping("/api/forum")
 public class ForumController {
 
+    // Removed unused field
+    // private static final Logger log = LoggerFactory.getLogger(ForumController.class);
+
     @Autowired
     private PostService postService;
 
@@ -34,79 +42,6 @@ public class ForumController {
     // private ForumService forumService; // 移除 ForumService 注入
 
     // =============== 板块/分类相关 API (新增/修改) ===============
-
-    /**
-     * 获取所有论坛分类类型
-     *
-     * @return 分类类型列表
-     */
-    @GetMapping("/categories")
-    public Result<List<Map<String, Object>>> getForumCategories() {
-        // 调用 PostService 中的方法
-        List<String> forumTypes = postService.listAvailableForumTypes();
-        List<Map<String, Object>> categories = new java.util.ArrayList<>();
-        for (int i = 0; i < forumTypes.size(); i++) {
-            Map<String, Object> category = new HashMap<>();
-            category.put("id", i + 1); // 暂时用索引作为ID
-            category.put("name", forumTypes.get(i));
-            categories.add(category);
-        }
-        return Result.success(categories);
-    }
-
-    /**
-     * 添加论坛分类 (Stub)
-     *
-     * @param categoryData 分类信息 (e.g., {"name": "新板块"})
-     * @return 添加结果
-     */
-    @PostMapping("/categories")
-    public Result<String> addForumCategory(@RequestBody Map<String, String> categoryData) {
-        // TODO: Implement category creation logic
-        String name = categoryData.get("name");
-        if (name == null || name.isBlank()) {
-            return Result.error("分类名称不能为空");
-        }
-        System.out.println("Adding category: " + name);
-        // boolean success = forumService.addCategory(name);
-        // return success ? Result.success("添加成功") : Result.error("添加失败");
-        return Result.success("添加分类成功 (Stub)");
-    }
-
-    /**
-     * 更新论坛分类 (Stub)
-     *
-     * @param id           分类ID
-     * @param categoryData 分类信息 (e.g., {"name": "更新后板块"})
-     * @return 更新结果
-     */
-    @PutMapping("/categories/{id}")
-    public Result<String> updateForumCategory(@PathVariable Long id, @RequestBody Map<String, String> categoryData) {
-        // TODO: Implement category update logic
-        String name = categoryData.get("name");
-        if (name == null || name.isBlank()) {
-            return Result.error("分类名称不能为空");
-        }
-        System.out.println("Updating category " + id + " to name: " + name);
-        // boolean success = forumService.updateCategory(id, name);
-        // return success ? Result.success("更新成功") : Result.error("更新失败");
-        return Result.success("更新分类成功 (Stub)");
-    }
-
-    /**
-     * 删除论坛分类 (Stub)
-     *
-     * @param id 分类ID
-     * @return 删除结果
-     */
-    @DeleteMapping("/categories/{id}")
-    public Result<String> deleteForumCategory(@PathVariable Long id) {
-        // TODO: Implement category deletion logic
-        System.out.println("Deleting category: " + id);
-        // boolean success = forumService.deleteCategory(id);
-        // return success ? Result.success("删除成功") : Result.error("删除失败");
-        return Result.success("删除分类成功 (Stub)");
-    }
 
     /**
      * 获取所有可用的板块列表 (用于下拉列表等)

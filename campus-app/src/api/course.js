@@ -1,17 +1,17 @@
 import request from '@/utils/request'
 
-// API Endpoints for Course
+// 课程相关的API端点
 const API = {
-    GET_ALL: '/courses',
-    GET_BY_ID: (id) => `/courses/${id}`,
-    GET_BY_NO: (courseNo) => `/courses/no/${courseNo}`,
-    GET_BY_TYPE: (courseType) => `/courses/type/${courseType}`,
-    GET_BY_COLLEGE: (collegeId) => `/courses/college/${collegeId}`,
-    ADD: '/courses',
-    UPDATE: (id) => `/courses/${id}`,
-    DELETE: (id) => `/courses/${id}`,
-    BATCH_DELETE: '/courses/batch',
-    UPDATE_STATUS: (id, status) => `/courses/${id}/status/${status}`
+    GET_ALL: '/courses', // 获取所有课程
+    GET_BY_ID: (id) => `/courses/${id}`, // 根据ID获取课程
+    GET_BY_NO: (courseNo) => `/courses/no/${courseNo}`, // 根据课程编号获取课程
+    GET_BY_TYPE: (courseType) => `/courses/type/${courseType}`, // 根据课程类型获取课程
+    GET_BY_COLLEGE: (collegeId) => `/courses/college/${collegeId}`, // 根据学院获取课程
+    ADD: '/courses', // 添加课程
+    UPDATE: (id) => `/courses/${id}`, // 更新课程
+    DELETE: (id) => `/courses/${id}`, // 删除课程
+    BATCH_DELETE: '/courses/batch', // 批量删除课程
+    UPDATE_STATUS: (id, status) => `/courses/${id}/status/${status}` // 更新课程状态
 };
 
 // 获取所有课程 (可带分页或过滤参数)
@@ -87,8 +87,8 @@ export function deleteCourse(id) {
 export function batchDeleteCourses(ids) {
     return request({
         url: API.BATCH_DELETE,
-        method: 'delete', // Or 'post' depending on backend
-        data: ids // Send IDs in request body
+        method: 'delete', // 或 'post'，取决于后端实现
+        data: ids // 在请求体中发送ID
     });
 }
 
@@ -96,7 +96,7 @@ export function batchDeleteCourses(ids) {
 export function updateCourseStatus(id, status) {
     return request({
         url: API.UPDATE_STATUS(id, status),
-        method: 'put' // Or 'patch'
+        method: 'put' // 或 'patch'
     });
 }
 

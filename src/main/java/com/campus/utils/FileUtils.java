@@ -4,13 +4,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 import java.text.Normalizer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * 文件工具类，用于处理文件上传、下载等操作 (无状态)
@@ -80,14 +81,10 @@ public class FileUtils {
      * @return 唯一文件名
      */
     public static String generateUniqueFileName(String originalFilename) {
-        if (originalFilename == null || originalFilename.isEmpty()) {
-            return UUID.randomUUID().toString();
-        }
-
-        int lastDotIndex = originalFilename.lastIndexOf(".");
-        String extension = lastDotIndex != -1 ? originalFilename.substring(lastDotIndex) : "";
-        String nameWithoutExtension = lastDotIndex != -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
-        return UUID.randomUUID() + extension;
+        String extension = getFileExtension(originalFilename);
+        String timestamp = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
+        String randomStr = UUID.randomUUID().toString().substring(0, 6);
+        return String.format("%s_%s%s", timestamp, randomStr, extension);
     }
 
     /**

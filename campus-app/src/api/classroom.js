@@ -1,16 +1,16 @@
 import request from '@/utils/request'
 
-// API Endpoints for Classroom
+// 教室相关的 API 端点
 const API = {
-    GET_PAGE: '/classrooms', // 后端 @GetMapping 默认是分页
-    GET_ALL: '/classrooms/all', // 后端有 @GetMapping("/all") 获取全部
-    GET_BY_ID: (id) => `/classrooms/${id}`,
-    ADD: '/classrooms',
-    UPDATE: (id) => `/classrooms/${id}`,
-    DELETE: (id) => `/classrooms/${id}`,
-    BATCH_DELETE: '/classrooms/batch',
-    UPDATE_STATUS: (id, status) => `/classrooms/${id}/status/${status}`,
-    GET_AVAILABLE: '/classrooms/available',
+    GET_PAGE: '/classrooms', // 获取教室列表 (分页)
+    GET_ALL: '/classrooms/all', // 获取所有教室 (非分页)
+    GET_BY_ID: (id) => `/classrooms/${id}`, // 根据 ID 获取教室详情
+    ADD: '/classrooms', // 添加教室
+    UPDATE: (id) => `/classrooms/${id}`, // 更新教室
+    DELETE: (id) => `/classrooms/${id}`, // 删除教室
+    BATCH_DELETE: '/classrooms/batch', // 批量删除教室
+    UPDATE_STATUS: (id, status) => `/classrooms/${id}/status/${status}`, // 更新教室状态
+    GET_AVAILABLE: '/classrooms/available', // 获取可用教室
     // GET_BY_BUILDING: (building) => `/classrooms/building/${building}`, // 原路径，与后端不符
     // GET_BY_TYPE: (roomType) => `/classrooms/type/${roomType}`, // 后端缺失
     // GET_BY_CAPACITY: '/classrooms/capacity' // 后端缺失
@@ -72,8 +72,8 @@ export function deleteClassroom(id) {
 export function batchDeleteClassrooms(ids) {
     return request({
         url: API.BATCH_DELETE,
-        method: 'delete', // Or POST
-        data: ids // Send IDs in request body
+        method: 'delete', // 或 POST
+        data: ids // 在请求体中发送 ID 列表
     });
 }
 
@@ -81,7 +81,7 @@ export function batchDeleteClassrooms(ids) {
 export function updateClassroomStatus(id, status) {
     return request({
         url: API.UPDATE_STATUS(id, status),
-        method: 'put' // Or PATCH
+        method: 'put' // 或 PATCH
     });
 }
 
@@ -116,12 +116,12 @@ export function getClassroomsByType(roomType, params) {
 }
 
 // 根据容量获取教室 (后端缺失此接口)
-export function getClassroomsByCapacity(params) { // params should include min/max capacity
-    console.warn('Backend API for getClassroomsByCapacity is missing.');
+export function getClassroomsByCapacity(params) { // 参数应包含最小/最大容量
+    console.warn('根据容量获取教室的后端 API 缺失。');
     // return request({
     //     url: API.GET_BY_CAPACITY,
     //     method: 'get',
     //     params
     // });
-    return Promise.reject('Backend API missing');
+    return Promise.reject('后端 API 缺失');
 }

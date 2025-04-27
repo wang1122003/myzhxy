@@ -376,7 +376,7 @@ import {
 import {Plus} from '@element-plus/icons-vue';
 import '@wangeditor/editor/dist/css/style.css';
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue';
-import {addActivity, deleteActivity, getActivityById, getActivityList, updateActivity,} from '@/api/activity';
+import {addActivity, deleteActivity, getActivityById, getAllActivities, updateActivity,} from '@/api/activity';
 import {getToken} from '@/utils/auth';
 
 const loading = ref(false);
@@ -542,12 +542,11 @@ const fetchActivities = async () => {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchParams.keyword || null,
-      status: searchParams.status
+      ...searchParams // Add search filters
     };
-    const res = await getActivityList(params);
-    // 直接使用返回的对象列表格式
-    activityList.value = res.data.list || [];
+    // Use getAllActivities instead of getActivityList
+    const res = await getAllActivities(params);
+    activityList.value = res.data.records || [];
     total.value = res.data.total || 0;
   } catch (error) {
     console.error("获取活动列表失败", error);

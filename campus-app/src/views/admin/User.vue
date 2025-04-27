@@ -149,7 +149,7 @@ import {
   ElTag
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {addUser, deleteUser, getUserList, resetPassword, updateUser, updateUserStatus} from '@/api/user'; // 引入 API
+import {addUser, deleteUser, getUserList, resetPassword, updateUser} from '@/api/user'; // 引入 API
 
 const loading = ref(false);
 const userList = ref([]);
@@ -190,8 +190,15 @@ const userFormRules = reactive({ // 表单验证规则
   ],
   realName: [{required: true, message: '请输入姓名', trigger: 'blur'}],
   userType: [{required: true, message: '请选择角色', trigger: 'change'}],
-  email: [formRules.required, formRules.email],
-  phone: [formRules.required, formRules.phone]
+  email: [
+    {required: true, message: '请输入邮箱地址', trigger: 'blur'},
+    {type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change']}
+  ],
+  phone: [
+    {required: true, message: '请输入手机号码', trigger: 'blur'},
+    // 可选：添加手机号格式验证
+    {pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: ['blur', 'change']}
+  ]
 });
 
 // 获取用户列表
@@ -318,7 +325,7 @@ const handleStatusChange = async (row) => {
   const newStatus = row.status;
   const statusText = newStatus === 'Active' ? '启用' : '禁用';
   try {
-    await updateUserStatus(row.id, newStatus);
+    await updateUser(row.id, {status: newStatus});
     ElMessage.success(`${statusText}成功`);
     // No need to refetch, v-model already updated the local state
   } catch (error) {

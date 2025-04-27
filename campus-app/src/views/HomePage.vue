@@ -193,7 +193,7 @@
 <script setup>
 import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {ElLink, ElMessage} from 'element-plus'
+import {ElMessage} from 'element-plus'
 import {Lock, User} from '@element-plus/icons-vue'
 import {login as authLogin} from '@/utils/auth'
 import {getNotificationById, getRecentNotifications} from '@/api/notice'
@@ -300,45 +300,54 @@ const noticeTypeMapComputed = computed(() => {
 })
 
 const handleLogin = () => {
-  loginFormRef.value.validate((valid) => {
+  loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loginLoading.value = true
-      login(loginForm).then(response => {
-        const {token, user} = response.data
+      try {
+        const response = await login({
+          username: loginForm.username,
+          password: loginForm.password
+        })
 
-        // 调用 auth.js 的 login 更新全局状态，并获取角色
-        const loggedInRole = authLogin({token, user})
+        if (response && response.code === 200 && response.data) {
+          // 从 @/utils/auth 导入的 login 函数处理 token 和 user info 存储
+          const role = authLogin({token: response.data.token, user: response.data.user})
 
-        if (loginForm.remember) {
-          localStorage.setItem('username', loginForm.username)
+          // 根据 remember 状态存储或移除用户名
+          if (loginForm.remember) {
+            localStorage.setItem('username', loginForm.username)
+          } else {
+            localStorage.removeItem('username')
+          }
+
+          ElMessage.success('登录成功')
+
+          // 根据角色重定向
+          console.log('[HomePage] Redirecting based on role from authLogin:', role)
+          if (role === 'admin') {
+            router.push('/admin/notice')
+          } else if (role === 'teacher') {
+            router.push('/teacher')
+          } else if (role === 'student') {
+            router.push('/student')
+          } else {
+            router.push('/') // Fallback to home if role is unexpected
+          }
         } else {
-          localStorage.removeItem('username')
+          // 使用后端返回的错误消息，如果存在的话
+          ElMessage.error(response?.message || '登录失败，请检查用户名或密码')
         }
-
-        ElMessage.success('登录成功')
-
-        // 根据 authLogin 返回的角色进行重定向
-        console.log('[HomePage] Redirecting based on role from authLogin:', loggedInRole);
-
-        if (loggedInRole === 'admin') {
-          router.push('/admin/notice')
-        } else if (loggedInRole === 'teacher') {
-          router.push('/teacher')
-        } else if (loggedInRole === 'student') {
-          router.push('/student')
-        } else {
-          // 如果 authLogin 返回 null 或未知角色
-          console.error('[HomePage] Login successful, but role from authLogin is unknown/invalid:', loggedInRole);
-          router.push('/')
-        }
-      }).catch((error) => {
-        // 可以在这里处理登录接口本身返回的错误，例如网络问题或后端特定错误消息
-        const errorMsg = error?.response?.data?.message || '用户名或密码错误';
-        ElMessage.error(errorMsg);
-        console.error('登录请求失败:', error);
-      }).finally(() => {
+      } catch (error) {
+        console.error('登录请求失败:', error)
+        // 检查 error 对象是否有更具体的后端错误信息
+        const backendMessage = error?.response?.data?.message || error?.message
+        ElMessage.error(backendMessage || '登录请求失败')
+      } finally {
         loginLoading.value = false
-      })
+      }
+    } else {
+      console.log('表单验证失败')
+      return false
     }
   })
 }
@@ -476,8 +485,7 @@ export default {
   margin-bottom: 18px;
 }
 
-.el-input,
-.el-checkbox {
+.el-input {
   font-size: 14px;
 }
 

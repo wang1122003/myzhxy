@@ -1,26 +1,26 @@
 import {computed, ref} from 'vue';
 
-const TokenKey = 'Authorization-Token'; // Key for storing token in localStorage
-const UserInfoKey = 'user'; // Key for storing user info
-const RoleKey = 'role'; // Key for storing role
+const TokenKey = 'Authorization-Token'; // 用于在 localStorage 中存储令牌的键名
+const UserInfoKey = 'user'; // 用于存储用户信息的键名
+const RoleKey = 'role'; // 用于存储角色的键名
 
-// --- State (Reactive Refs) ---
+// --- State (响应式引用) ---
 const token = ref(localStorage.getItem(TokenKey) || null);
 const userInfo = ref(JSON.parse(localStorage.getItem(UserInfoKey) || 'null'));
 
-// --- Getters (Computed Refs) ---
+// --- Getters (计算属性) ---
 const isLoggedIn = computed(() => !!token.value);
-// Ensure userInfo.value exists before accessing properties
+// 确保在访问属性前 userInfo.value 存在
 const userRole = computed(() => userInfo.value?.userType?.toLowerCase() || null);
 const userAvatar = computed(() => userInfo.value?.avatarUrl || '');
 const userRealName = computed(() => userInfo.value?.realName || '');
-const userId = computed(() => userInfo.value?.id || null); // Add userId getter
+const userId = computed(() => userInfo.value?.id || null); // 添加 userId getter
 
-// --- Actions/Functions ---
+// --- Actions/Functions (操作/函数) ---
 
 /**
- * Sets the token in ref and localStorage.
- * @param {string | null} newToken The token to store, or null to remove.
+ * 在响应式引用和 localStorage 中设置令牌。
+ * @param {string | null} newToken 要存储的令牌，或 null 表示移除。
  */
 function setToken(newToken) {
     token.value = newToken;
@@ -32,9 +32,9 @@ function setToken(newToken) {
 }
 
 /**
- * Sets the user info in ref and localStorage.
- * Also handles storing the role separately.
- * @param {object | null} newUserInfo The user info object, or null to remove.
+ * 在响应式引用和 localStorage 中设置用户信息。
+ * 同时处理单独存储角色信息。
+ * @param {object | null} newUserInfo 用户信息对象，或 null 表示移除。
  */
 function setUserInfo(newUserInfo) {
     // 添加日志，检查传入的用户信息
@@ -42,7 +42,7 @@ function setUserInfo(newUserInfo) {
     userInfo.value = newUserInfo;
     if (newUserInfo) {
         localStorage.setItem(UserInfoKey, JSON.stringify(newUserInfo));
-        // Store role separately if it exists
+        // 如果角色信息存在，单独存储
         if (newUserInfo.userType) {
             localStorage.setItem(RoleKey, newUserInfo.userType.toLowerCase());
         } else {
@@ -55,9 +55,9 @@ function setUserInfo(newUserInfo) {
 }
 
 /**
- * Processes login by setting token and user info, then returns the user role.
- * @param {object} userData Object containing token and user info.
- * @returns {string | null} The lowercase user role ('admin', 'teacher', 'student') or null if invalid.
+ * 通过设置令牌和用户信息来处理登录，然后返回用户角色。
+ * @param {object} userData 包含令牌和用户信息的对象。
+ * @returns {string | null} 小写的用户角色 ('admin', 'teacher', 'student')，如果无效则返回 null。
  */
 function login(userData) {
     console.log('[auth.js] login called, setting state...'); // 日志确认调用
@@ -71,81 +71,81 @@ function login(userData) {
         return role;
     } else {
         console.error('[auth.js] Login failed: Invalid user data received.', userData);
-        setToken(null); // 确保无效登录也清理token
+        setToken(null); // 确保无效登录也清理 token
         setUserInfo(null);
         return null; // 登录失败返回 null
     }
 }
 
 /**
- * Processes logout by clearing token and user info.
+ * 通过清除令牌和用户信息来处理登出。
  */
 function logout() {
     console.log('[auth.js] logout called'); // 添加日志
     setToken(null);
     setUserInfo(null);
-    // Explicitly clear localStorage just in case set* functions failed
+    // 显式清除 localStorage，以防 set* 函数失败
     localStorage.removeItem(TokenKey);
     localStorage.removeItem(UserInfoKey);
     localStorage.removeItem(RoleKey);
-    // Optionally: redirect or clear other sensitive data
+    // 可选：重定向或清除其他敏感数据
 }
 
 /**
- * Gets the current user info from the reactive state.
- * If token exists but user info is missing/invalid, performs logout.
- * Does NOT perform an API call.
- * @returns {Promise<object|null>} A promise resolving to user info or null.
+ * 从响应式状态获取当前用户信息。
+ * 如果令牌存在但用户信息缺失/无效，则执行登出。
+ * 不执行 API 调用。
+ * @returns {Promise<object|null>} 一个解析为用户信息或 null 的 Promise。
  */
 async function fetchUserInfo() {
     if (!token.value) {
-        // If no token, ensure user info is also cleared
+        // 如果没有令牌，确保用户信息也被清除
         if (userInfo.value) setUserInfo(null);
         return null;
     }
 
     if (userInfo.value) {
-        // Optional validation: Check if essential info like userType exists
+        // 可选验证：检查基本信息（如 userType）是否存在
         if (!userInfo.value.userType) {
-            console.warn('Stored user info is incomplete (missing userType). Logging out.');
+            console.warn('存储的用户信息不完整 (缺少 userType)，正在登出。');
             logout();
             return null;
         }
-        return userInfo.value; // Return existing info
+        return userInfo.value; // 返回现有信息
     } else {
-        // Token exists but no user info (e.g., localStorage cleared externally)
-        console.warn('Token found but user info is missing in store. Logging out.');
-        logout(); // Clear invalid state
+        // 令牌存在但存储中无用户信息 (例如，localStorage 被外部清除)
+        console.warn('找到令牌但存储中缺少用户信息，正在登出。');
+        logout(); // 清除无效状态
         return null;
     }
 }
 
 /**
- * Gets the token from localStorage (original function, potentially redundant now).
- * Consider using the exported 'token' ref directly.
- * @returns {string | null} The token or null if not found.
+ * 从 localStorage 获取令牌 (原始函数，现在可能多余)。
+ * 考虑直接使用导出的 'token' 响应式引用。
+ * @returns {string | null} 令牌，如果未找到则返回 null。
  */
 function getToken() {
-    // Can simply return the reactive ref's value
+    // 可以简单地返回响应式引用的值
     return token.value;
-    // Or keep reading from localStorage, though less ideal if ref is the source of truth
+    // 或者继续从 localStorage 读取，但如果响应式引用是数据源则不太理想
     // return localStorage.getItem(TokenKey);
 }
 
 /**
- * Removes the token from localStorage (original function, potentially redundant now).
- * Consider using logout() or setToken(null).
+ * 从 localStorage 移除令牌 (原始函数，现在可能多余)。
+ * 考虑使用 logout() 或 setToken(null)。
  */
 function removeToken() {
-    // Simply call setToken with null to clear state and localStorage
+    // 只需调用 setToken(null) 来清除状态和 localStorage
     setToken(null);
-    // Or just remove from storage, but doesn't update the reactive state:
+    // 或者只从存储中移除，但这不会更新响应式状态:
     // localStorage.removeItem(TokenKey);
 }
 
 /**
- * 提供用户存储的hook，供组件和视图使用
- * @returns {Object} 包含用户状态和方法的对象
+ * 提供用户存储的 hook，供组件和视图使用。
+ * @returns {Object} 包含用户状态和方法的对象。
  */
 function useUserStore() {
     return {
@@ -168,7 +168,7 @@ function useUserStore() {
 }
 
 export {
-    // Reactive State & Getters (directly usable in components/setup)
+    // Reactive State & Getters (响应式状态和计算属性，可直接在组件/setup 中使用)
     token,
     userInfo,
     isLoggedIn,
@@ -177,17 +177,17 @@ export {
     userRealName,
     userId,
 
-    // Actions/Mutators
+    // Actions/Mutators (操作/修改器)
     setToken,
     setUserInfo,
     login,
     logout,
     fetchUserInfo,
 
-    // Original auth functions (potentially redundant, keep for compatibility or remove)
+    // Original auth functions (原始认证函数，可能多余，保留用于兼容性或移除)
     getToken,
     removeToken,
-    
-    // 用户存储Hook
+
+    // 用户存储 Hook
     useUserStore
 }; 

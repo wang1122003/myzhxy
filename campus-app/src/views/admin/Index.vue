@@ -19,19 +19,23 @@
             text-color="#bfcbd9"
             @select="handleMenuSelect"
         >
-          <template v-for="item in menuItems" :key="item.index">
+          <template v-for="item in sidebarMenuItems" :key="item.index">
             <el-menu-item :index="item.index">
               <el-icon>
                 <component :is="item.icon"/>
               </el-icon>
-              <template #title>{{ item.title }}</template>
+              <template #title>
+                {{ item.title }}
+              </template>
             </el-menu-item>
           </template>
         </el-menu>
       </el-scrollbar>
     </el-aside>
-    <el-container>
-      <el-main>
+
+    <el-container class="main-container">
+      <AppHeader/>
+      <el-main class="app-main">
         <router-view/>
       </el-main>
     </el-container>
@@ -39,56 +43,52 @@
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {ElMessageBox} from 'element-plus'
+import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
+import AppHeader from '@/components/common/AppHeader.vue';
 import {
+  Fold,
+  Expand,
+  House,
+  Setting,
+  User,
   Bell,
+  Notebook,
   Calendar,
   ChatDotRound,
-  Document,
-  Expand,
   Files,
-  Fold,
-  HomeFilled,
-  School,
-  User
-} from '@element-plus/icons-vue'
-import {logout} from '@/utils/auth'
+  OfficeBuilding,
+  Flag,
+  QuestionFilled
+} from '@element-plus/icons-vue';
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
+const isCollapsed = ref(false);
+const isMobile = ref(false);
 
-const isCollapsed = ref(false)
-const isMobile = ref(false)
-
-// 定义菜单项
-const menuItems = shallowRef([
-  {index: '/admin', icon: HomeFilled, title: '首页'},
-  {index: '/admin/user', icon: User, title: '用户管理'},
-  {index: '/admin/course', icon: Document, title: '课程管理'},
-  {index: '/admin/classroom', icon: School, title: '教室管理'},
-  {index: '/admin/schedule', icon: Calendar, title: '课表管理'},
-  {index: '/admin/activity', icon: Bell, title: '活动管理'},
-  // {index: '/admin/notice', icon: Message, title: '公告管理'}, // 移除公告管理
-  {index: '/admin/forum', icon: ChatDotRound, title: '论坛管理'},
-  {index: '/admin/file', icon: Files, title: '文件管理'},
-]);
-
-// 新增：计算当前页面标题
-const currentPageTitle = computed(() => {
-  const currentPath = route.path;
-  const menuItem = menuItems.value.find(item => {
-    // 完全匹配或作为子路由前缀匹配
-    return item.index === currentPath || currentPath.startsWith(item.index + '/');
-  });
-  return menuItem ? menuItem.title : '管理后台'; // 如果找不到匹配项，显示默认标题
+const sidebarMenuItems = computed(() => {
+  const adminRoute = router.options.routes.find(r => r.name === 'AdminLayout');
+  if (!adminRoute || !adminRoute.children) {
+    return [];
+  }
+  return adminRoute.children
+      .filter(child => child.meta && child.meta.showInSidebar)
+      .map(child => {
+        const parentPath = adminRoute.path.endsWith('/') ? adminRoute.path : adminRoute.path + '/';
+        const fullPath = parentPath + child.path;
+        return {
+          index: fullPath.replace(/\/$/, '') || adminRoute.path,
+          title: child.meta.title || 'Untitled',
+          icon: child.meta.icon || QuestionFilled
+        }
+      });
 });
 
 onMounted(() => {
   checkScreenWidth();
   window.addEventListener('resize', checkScreenWidth);
-})
+});
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkScreenWidth);
@@ -97,40 +97,39 @@ onBeforeUnmount(() => {
 const checkScreenWidth = () => {
   isMobile.value = window.innerWidth < 768;
   isCollapsed.value = isMobile.value;
-}
+};
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
-}
+};
 
 const handleMenuSelect = () => {
   if (isMobile.value) {
     isCollapsed.value = true;
   }
-}
+};
 
-const handleLogout = async () => {
-  await ElMessageBox.confirm(
-      '您确定要退出登录吗?',
-      '提示',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-  ).then(async () => {
-    try {
-      await logout(); // 调用 auth.js 的 logout
-      router.push('/login');
-    } catch (error) {
-      console.error("登出时出错:", error);
-      // 即使API失败也清理前端并跳转
-      logout();
-      router.push('/login');
-    }
-  }).catch(() => {
-    // 用户取消，无需操作
-  });
+</script>
+
+<script>
+export default {
+  name: 'AdminLayout',
+  components: {
+    AppHeader,
+    Fold,
+    Expand,
+    House,
+    Setting,
+    User,
+    Bell,
+    Notebook,
+    Calendar,
+    ChatDotRound,
+    Files,
+    OfficeBuilding,
+    Flag,
+    QuestionFilled
+  },
 }
 </script>
 
@@ -149,28 +148,48 @@ const handleLogout = async () => {
 }
 
 .sidebar-header {
-  height: 50px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .collapse-icon {
   font-size: 20px;
   cursor: pointer;
   color: #bfcbd9;
+  padding: 10px;
 }
 
 .el-menu-vertical:not(.el-menu--collapse) {
   width: 200px;
 }
 
-.el-menu--collapse {
-  width: 64px;
-}
-
 .el-menu-vertical {
   border-right: none;
+  flex-grow: 1;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-main {
+  padding: 20px;
+  background-color: #f0f2f5;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.el-scrollbar {
+  height: calc(100% - 60px);
+}
+
+.scrollbar-wrapper {
+  overflow-x: hidden !important;
 }
 </style> 

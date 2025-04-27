@@ -1,0 +1,83 @@
+/* Global styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f4f5f7;
+}
+
+/* Common layout classes */
+.page-container {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Element Plus overrides */
+.el-card {
+  margin-bottom: 20px;
+}
+
+.el-table {
+  th {
+    background-color: #f5f7fa !important;
+    font-weight: 600;
+  }
+}
+
+.el-pagination {
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.el-button {
+  &:focus,
+  &:hover {
+    // Custom focus/hover styles if needed
+  }
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-muted {
+  color: #909399;
+}
+
+.text-danger {
+  color: #F56C6C;
+}
+
+.text-success {
+  color: #67C23A;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Removed unused selectors: fade-*, slide-fade-*, mt-*, mr-*, mb-*, ml-*, app-card, card-body, gradient-border-card, is-disabled, el-table__cell */ 

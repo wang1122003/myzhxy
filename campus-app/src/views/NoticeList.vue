@@ -161,7 +161,7 @@ import {
   ElTableColumn,
   ElTag
 } from 'element-plus';
-import {getNoticeById, getNoticeList} from '@/api/notice';
+import {getNotificationById, getNotificationsPage} from '@/api/notice';
 import {getNoticeTypes} from '@/api/common';
 import {downloadFile} from '@/api/file';
 
@@ -200,7 +200,7 @@ const fetchNotices = async () => {
       size: pageSize.value
       // 可以添加其他筛选参数，例如 type
     };
-    const res = await getNoticeList(params);
+    const res = await getNotificationsPage(params);
     noticeList.value = res.data.list || [];
     totalNotices.value = res.data.total || 0;
   } catch (error) {
@@ -240,7 +240,7 @@ const viewNotice = async (row) => {
   noticeDialogVisible.value = true;
   currentNotice.id = null; // 重置详情
   try {
-    const res = await getNoticeById(row.id);
+    const res = await getNotificationById(row.id);
     Object.assign(currentNotice, res.data);
   } catch (err) {
     console.error("获取通知详情失败", err);
@@ -372,5 +372,27 @@ onMounted(async () => {
 .el-link.is-loading {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.notice-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  cursor: pointer;
+  color: #303133;
+
+  &:hover {
+    color: #409EFF;
+  }
+}
+
+.notice-meta {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 10px;
+
+  span + span {
+    margin-left: 15px;
+  }
 }
 </style> 

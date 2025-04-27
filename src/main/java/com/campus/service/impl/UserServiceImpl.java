@@ -12,28 +12,28 @@ import com.campus.enums.UserStatus;
 import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
 import com.campus.service.UserService;
-// import org.springframework.security.crypto.password.PasswordEncoder; // TODO: [Security] Uncomment and Inject PasswordEncoder
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 import java.util.*;
-// import java.util.stream.Collectors; // Removed unused import
 
 /**
  * 用户服务实现类
  */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
-    // TODO: [Security] Inject PasswordEncoder
-    // @Autowired
-    // private PasswordEncoder passwordEncoder;
+    private final UserDao userDao;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 根据ID查询用户 (清除密码)
@@ -85,16 +85,16 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             throw new CustomException("用户类型不能为空");
         }
         // Check uniqueness using DAO count methods
-        if (baseMapper.countByUsername(user.getUsername()) > 0) {
+        if (userDao.countByUsername(user.getUsername()) > 0) {
             throw new CustomException("用户名已存在: " + user.getUsername());
         }
-        if (StringUtils.hasText(user.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+        if (StringUtils.hasText(user.getEmail()) && userDao.countByEmail(user.getEmail()) > 0) {
             throw new CustomException("邮箱已存在: " + user.getEmail());
         }
-        if (StringUtils.hasText(user.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+        if (StringUtils.hasText(user.getPhone()) && userDao.countByPhone(user.getPhone()) > 0) {
             throw new CustomException("手机号已存在: " + user.getPhone());
         }
-        if (StringUtils.hasText(user.getUserNo()) && baseMapper.countByUserNo(user.getUserNo()) > 0) {
+        if (StringUtils.hasText(user.getUserNo()) && userDao.countByUserNo(user.getUserNo()) > 0) {
             throw new CustomException("学工号已存在: " + user.getUserNo());
         }
 
@@ -104,13 +104,16 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         user.setUpdateTime(now);
         user.setStatus(user.getStatus() == null ? UserStatus.ACTIVE : user.getStatus());
 
-        // TODO: [Security] Encode password before saving
-        // String encodedPassword = passwordEncoder.encode(user.getPassword());
-        // user.setPassword(encodedPassword);
-        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
-        String plainPassword = user.getPassword(); // Store temporarily if needed, but ideally encode immediately
-        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
-        user.setPassword(plainPassword); // Store plaintext (INSECURE!)
+        // TODO: [Security] Encode password before saving - MODIFIED for NoOpPasswordEncoder
+        if (StringUtils.hasText(user.getPassword())) {
+            // user.setPassword(passwordEncoder.encode(user.getPassword())); // Original BCrypt encode
+            // No encoding needed for NoOpPasswordEncoder
+            user.setPassword(user.getPassword()); // Keep the plain text password
+        } else {
+            // Handle case where password is required but not provided
+            // Or set a default password? For now, assume password is provided.
+            throw new CustomException("创建用户时必须提供密码");
+        }
 
         return save(user);
     }
@@ -140,25 +143,22 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
         // Handle password update: only update if a non-empty password is provided
         if (StringUtils.hasText(user.getPassword())) {
-            // TODO: [Security] Encode the new password
-            // String encodedPassword = passwordEncoder.encode(user.getPassword());
-            // user.setPassword(encodedPassword);
-            // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
-            user.setPassword(user.getPassword()); // Store plaintext (INSECURE!)
-            // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+            // TODO: [Security] Encode the new password - MODIFIED for NoOpPasswordEncoder
+            // user.setPassword(passwordEncoder.encode(user.getPassword())); // Original BCrypt encode
+            user.setPassword(user.getPassword()); // Save plain text password
         } else {
             // If password in request is null or empty, retain the existing password
             user.setPassword(existingUser.getPassword());
         }
 
         // Check uniqueness for fields that might change (email, phone, userNo)
-        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && userDao.countByEmail(user.getEmail()) > 0) {
             throw new CustomException("邮箱已存在: " + user.getEmail());
         }
-        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && userDao.countByPhone(user.getPhone()) > 0) {
             throw new CustomException("手机号已存在: " + user.getPhone());
         }
-        if (StringUtils.hasText(user.getUserNo()) && !Objects.equals(user.getUserNo(), existingUser.getUserNo()) && baseMapper.countByUserNo(user.getUserNo()) > 0) {
+        if (StringUtils.hasText(user.getUserNo()) && !Objects.equals(user.getUserNo(), existingUser.getUserNo()) && userDao.countByUserNo(user.getUserNo()) > 0) {
             throw new CustomException("学工号已存在: " + user.getUserNo());
         }
 
@@ -221,26 +221,21 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             throw new CustomException("用户不存在");
         }
 
-        // TODO: [Security] Compare oldPassword with stored hash using PasswordEncoder
-        // if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-        //     throw new CustomException("旧密码不正确");
-        // }
-        // --- REMOVE PLAINTEXT PASSWORD COMPARISON --- >>
-        if (!Objects.equals(oldPassword, user.getPassword())) {
+        // TODO: [Security] Compare oldPassword with stored hash using PasswordEncoder - MODIFIED for NoOpPasswordEncoder
+        // if (!passwordEncoder.matches(oldPassword, user.getPassword())) { // Original BCrypt match
+        if (!oldPassword.equals(user.getPassword())) { // Plain text comparison
             throw new CustomException("旧密码不正确");
         }
-        // << --- REMOVE PLAINTEXT PASSWORD COMPARISON ---
 
-        // TODO: [Security] Encode the new password
-        // String encodedNewPassword = passwordEncoder.encode(newPassword);
-        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
-        String plainNewPassword = newPassword; // (INSECURE!)
-        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+        // TODO: [Security] Encode the new password - MODIFIED for NoOpPasswordEncoder
+        // String encodedNewPassword = passwordEncoder.encode(newPassword); // Original BCrypt encode
+        String newPasswordPlainText = newPassword; // Use plain text
 
         // Update password and update time
         return update(Wrappers.<User>lambdaUpdate()
                 .eq(User::getId, id)
-                .set(User::getPassword, plainNewPassword) // Store plaintext (INSECURE!) / encodedNewPassword
+                //.set(User::getPassword, encodedNewPassword)
+                .set(User::getPassword, newPasswordPlainText) // Set plain text password
                 .set(User::getUpdateTime, new Date()));
     }
 
@@ -258,15 +253,11 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             return null; // User not found
         }
 
-        // TODO: [Security] Compare provided password with stored hash using PasswordEncoder
-        // if (!passwordEncoder.matches(password, user.getPassword())) {
-        //     return null; // Password mismatch
-        // }
-        // --- REMOVE PLAINTEXT PASSWORD COMPARISON --- >>
-        if (!Objects.equals(password, user.getPassword())) {
-            return null; // Password mismatch (INSECURE!)
+        // TODO: [Security] Compare provided password with stored hash using PasswordEncoder - MODIFIED for NoOpPasswordEncoder
+        // if (!passwordEncoder.matches(password, user.getPassword())) { // Original BCrypt match
+        if (!password.equals(user.getPassword())) { // Plain text comparison
+            return null; // Password mismatch
         }
-        // << --- REMOVE PLAINTEXT PASSWORD COMPARISON ---
 
         // Check user status
         if (user.getStatus() != UserStatus.ACTIVE) {
@@ -316,14 +307,11 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         // TODO: Add permission check - only admins should reset passwords
 
         // TODO: [Security] Encode the new password
-        // String encodedNewPassword = passwordEncoder.encode(newPassword);
-        // --- REMOVE PLAINTEXT PASSWORD STORAGE --- >>
-        String plainNewPassword = newPassword; // (INSECURE!)
-        // << --- REMOVE PLAINTEXT PASSWORD STORAGE ---
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
 
         return update(Wrappers.<User>lambdaUpdate()
                 .eq(User::getId, id)
-                .set(User::getPassword, plainNewPassword) // Store plaintext (INSECURE!) / encodedNewPassword
+                .set(User::getPassword, encodedNewPassword)
                 .set(User::getUpdateTime, new Date()));
     }
 
@@ -437,10 +425,10 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         User existingUser = getById(user.getId()); // Get current data for comparison
         if (existingUser == null) throw new CustomException("用户不存在");
 
-        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && baseMapper.countByEmail(user.getEmail()) > 0) {
+        if (StringUtils.hasText(user.getEmail()) && !Objects.equals(user.getEmail(), existingUser.getEmail()) && userDao.countByEmail(user.getEmail()) > 0) {
             throw new CustomException("邮箱已存在: " + user.getEmail());
         }
-        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && baseMapper.countByPhone(user.getPhone()) > 0) {
+        if (StringUtils.hasText(user.getPhone()) && !Objects.equals(user.getPhone(), existingUser.getPhone()) && userDao.countByPhone(user.getPhone()) > 0) {
             throw new CustomException("手机号已存在: " + user.getPhone());
         }
 

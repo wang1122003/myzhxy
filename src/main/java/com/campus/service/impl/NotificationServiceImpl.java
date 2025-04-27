@@ -14,7 +14,6 @@ import com.campus.enums.UserType;
 import com.campus.exception.CustomException;
 import com.campus.exception.ResourceNotFoundException;
 import com.campus.service.NotificationService;
-import com.campus.service.UserService;
 import com.campus.dao.NotificationUserDao;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+// import com.campus.mapper.NotificationMapper; // Commented out unresolved import
+// import com.campus.mapper.NotificationReadMapper; // Commented out unresolved import
+// import com.campus.security.UserPrincipal; // Commented out unresolved import
+// import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.util.*;

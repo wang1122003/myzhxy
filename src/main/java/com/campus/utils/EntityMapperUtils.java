@@ -2,9 +2,13 @@ package com.campus.utils;
 
 import com.campus.entity.CourseSelection;
 import com.campus.entity.Score;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +20,8 @@ import java.util.stream.Collectors;
  * 用于替代VO层及处理实体间转换
  */
 public class EntityMapperUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(EntityMapperUtils.class);
 
     /**
      * 实体对象转Map
@@ -67,7 +73,6 @@ public class EntityMapperUtils {
      * @param entityClass 实体类
      * @return 实体对象
      */
-    @SuppressWarnings("unchecked")
     public static <T> T mapToEntity(Map<String, Object> map, Class<T> entityClass) {
         if (map == null) {
             return null;
@@ -95,7 +100,13 @@ public class EntityMapperUtils {
                         } else if (field.getType() == Boolean.class && value instanceof String) {
                             field.set(entity, Boolean.valueOf((String) value));
                         } else if (field.getType().isEnum() && value instanceof String) {
-                            field.set(entity, Enum.valueOf((Class<Enum>) field.getType(), (String) value));
+                            try {
+                                // Use helper method for safe enum conversion
+                                Object enumValue = getEnumConstant(field.getType(), (String) value);
+                                field.set(entity, enumValue);
+                            } catch (IllegalArgumentException e) {
+                                log.warn("Invalid enum value '{}' for enum type {}: {}", value, field.getType().getName(), e.getMessage());
+                            }
                         } else if (value instanceof Enum) {
                             // Handle Enums: Store their names or ordinal values
                             // return ((Enum<?>) value).name(); // Store name
@@ -267,5 +278,37 @@ public class EntityMapperUtils {
             System.err.println("Error converting string '" + value + "' to enum " + enumClass.getSimpleName() + ": " + e.getMessage());
             return null;
         }
+    }
+
+    public static Map<String, Object> enumToMap(Enum<?> enumInstance) {
+        if (enumInstance == null) return Collections.emptyMap();
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", enumInstance.name());
+        // Add other common enum properties if needed (e.g., ordinal, description via interface)
+        // Example assuming an interface `DescribableEnum` with `getDescription()`
+        // if (enumInstance instanceof DescribableEnum) {
+        //     map.put("description", ((DescribableEnum) enumInstance).getDescription());
+        // }
+        return map;
+    }
+
+    public static List<Map<String, Object>> enumListToMapList(Class<? extends Enum<?>> enumClass) {
+        if (enumClass == null || !enumClass.isEnum()) return Collections.emptyList();
+        return Arrays.stream(enumClass.getEnumConstants())
+                .map(EntityMapperUtils::enumToMap)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper method to safely get an enum constant from a String value,
+     * handling wildcard types.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends Enum<T>> T getEnumConstant(Class<?> enumType, String value) {
+        if (!enumType.isEnum()) {
+            throw new IllegalArgumentException("Type is not an enum: " + enumType);
+        }
+        // Cast the Class object to the appropriate Enum type
+        return Enum.valueOf((Class<T>) enumType, value);
     }
 }

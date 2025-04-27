@@ -13,8 +13,6 @@ import com.campus.entity.User;
 import com.campus.enums.UserType;
 import com.campus.service.ScheduleService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -445,5 +443,54 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             return false;
         }
         return count(Wrappers.<Schedule>lambdaQuery().in(Schedule::getClassroomId, classroomIds)) > 0;
+    }
+
+    public void deleteSchedulesByCourseIds(List<Long> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return;
+        }
+        LambdaUpdateWrapper<Schedule> deleteWrapper = Wrappers.lambdaUpdate(Schedule.class)
+                .in(Schedule::getCourseId, courseIds);
+        scheduleDao.delete(deleteWrapper);
+    }
+
+    public boolean isClassroomAvailable(Long classroomId, Integer weekday, String startTime, String endTime, Long termId, Long excludeScheduleId) {
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("classroom_id", classroomId)
+                .eq("weekday", weekday)
+                .eq("term_id", termId)
+                .and(qw -> qw
+                        .lt("start_time", endTime)
+                        .gt("end_time", startTime)
+                );
+        if (excludeScheduleId != null) {
+            queryWrapper.ne("id", excludeScheduleId);
+        }
+        return scheduleDao.selectCount(queryWrapper) == 0;
+    }
+
+    public boolean isTeacherAvailable(Long teacherId, Integer weekday, String startTime, String endTime, Long termId, Long excludeScheduleId) {
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("teacher_id", teacherId)
+                .eq("weekday", weekday)
+                .eq("term_id", termId)
+                .and(qw -> qw
+                        .lt("start_time", endTime)
+                        .gt("end_time", startTime)
+                );
+        if (excludeScheduleId != null) {
+            queryWrapper.ne("id", excludeScheduleId);
+        }
+        return scheduleDao.selectCount(queryWrapper) == 0;
+    }
+
+    public List<Schedule> getSchedulesByClassIdAndTerm(Long classId, Long termId) {
+        if (classId == null || termId == null) {
+            return Collections.emptyList();
+        }
+        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("class_id", classId);
+        queryWrapper.eq("term_id", termId);
+        return scheduleDao.selectList(queryWrapper);
     }
 }

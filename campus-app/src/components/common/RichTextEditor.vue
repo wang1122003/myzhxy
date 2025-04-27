@@ -53,4 +53,9 @@ watch(content, (newVal) => {
   min-height: v-bind('`${props.minHeight}px`');
   resize: vertical;
 }
+
+.editor-wrapper {
+  border: 1px solid #ccc;
+  z-index: 100;
+}
 </style> 

@@ -8,6 +8,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 活动实体类
@@ -82,6 +84,24 @@ public class Activity implements Serializable {
      */
     @TableField("max_participants")
     private Integer maxParticipants;
+
+    /**
+     * 当前参与人数 (数据库字段)
+     */
+    @TableField("current_participants")
+    private Integer currentParticipants;
+
+    /**
+     * 参与者信息JSON (数据库字段)
+     */
+    @TableField("participants_json")
+    private String participantsJson;
+
+    /**
+     * 参与者列表 (非数据库字段, 用于代码操作)
+     */
+    @TableField(exist = false)
+    private transient List<Map<String, Object>> participants;
 
     /**
      * 活动状态 (例如: 1-正常/已发布, 0-已取消, 2-进行中, 3-已结束等)

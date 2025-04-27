@@ -1,267 +1,154 @@
 <template>
-  <div class="course-management-container">
-    <div class="page-header">
-      <h2>课程管理</h2>
-      <el-button
-          type="primary"
-          @click="handleAddCourse"
-      >
-        <el-icon>
-          <Plus/>
-        </el-icon>
-        添加课程
-      </el-button>
-    </div>
+  <div class="course-management">
+    <el-card class="page-container">
+      <template #header>
+        <div class="header">
+          <span>课程管理</span>
+          <el-button :icon="Plus" type="primary" @click="handleAdd">添加课程</el-button>
+        </div>
+      </template>
 
-    <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form
-          :inline="true"
-          :model="searchParams"
-          @submit.prevent="handleSearch"
-      >
-        <el-form-item label="学期">
-          <el-select
-              v-model="searchParams.termId"
-              placeholder="选择学期"
-              clearable
-              filterable
-              style="width: 200px;"
-              @change="handleTermChange"
-          >
+      <!-- 筛选区域 -->
+      <el-form :inline="true" :model="filters" class="filter-form">
+        <el-form-item label="课程名称/编号">
+          <el-input v-model="filters.keyword" clearable placeholder="请输入课程名称或编号"/>
+        </el-form-item>
+        <el-form-item label="课程类型">
+          <el-select v-model="filters.courseType" clearable placeholder="请选择课程类型">
+            <el-option label="全部" value=""/>
+            <el-option label="必修课" value="COMPULSORY"/>
+            <el-option label="选修课" value="ELECTIVE"/>
+            <el-option label="通识课" value="GENERAL"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所属学院">
+          <el-select v-model="filters.collegeId" clearable filterable placeholder="请选择学院">
+            <el-option label="全部" value=""/>
             <el-option
-                v-for="term in termList"
-                :key="term.id"
-                :label="term.termName"
-                :value="term.id"
+                v-for="college in collegeList"
+                :key="college.id"
+                :label="college.collegeName"
+                :value="college.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="关键词">
-          <el-input
-              v-model="searchParams.keyword"
-              clearable
-              placeholder="课程代码/课程名称"
-              style="width: 250px;"
-          />
-        </el-form-item>
         <el-form-item label="状态">
-          <el-select
-              v-model="searchParams.status"
-              clearable
-              placeholder="选择状态"
-              style="width: 120px;"
-          >
-            <el-option
-                :value="1"
-                label="正常"
-            />
-            <el-option
-                :value="0"
-                label="禁用"
-            />
+          <el-select v-model="filters.status" clearable placeholder="请选择课程状态">
+            <el-option label="全部" value=""/>
+            <el-option label="启用" value="1"/>
+            <el-option label="禁用" value="0"/>
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button
-              type="primary"
-              @click="handleSearch"
-          >
-            查询
-          </el-button>
+          <el-button :icon="Search" type="primary" @click="fetchCourses">查询</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
 
-    <!-- 课程列表 -->
-    <el-card class="course-list-card">
-      <BaseTable :table-data="courseList"
-          v-loading="loading"
+      <!-- 课程列表 -->
+      <el-table
           :data="courseList"
+          v-loading="loading"
           style="width: 100%"
       >
-        <BaseTable -column :table-data="courseList"
-            label="课程代码"
-            prop="courseCode"
-            width="150"
-        />
-        <BaseTable -column :table-data="courseList"
+        <el-table-column
             label="课程名称"
-            min-width="200"
             prop="courseName"
+            min-width="180"
         />
-        <BaseTable -column :table-data="courseList"
+        <el-table-column
+            label="课程编号"
+            prop="courseNo"
+            width="120"
+        />
+        <el-table-column
             label="学分"
-            prop="credit"
+            prop="credits"
             width="80"
         />
-        <BaseTable -column :table-data="courseList"
-            label="学时"
-            prop="hours"
-            width="80"
+        <el-table-column
+            label="课程类型"
+            prop="courseType"
+            width="100"
+        >
+          <template #default="scope">{{ formatCourseType(scope.row.courseType) }}</template>
+        </el-table-column>
+        <el-table-column
+            label="所属学院"
+            min-width="150"
+            prop="collegeName"
         />
-        <!-- 可以添加院系、类型等字段 -->
-        <el-table-column :table-data="courseList"
-            label="创建时间"
-            prop="createTime"
-            width="180"
+        <el-table-column
+            label="状态"
+            prop="status"
+            width="80"
         >
           <template #default="scope">
-            {{ formatTime(scope.row.createTime) }}
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+              {{ scope.row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :table-data="courseList"
+        <el-table-column
             fixed="right"
             label="操作"
             width="150"
         >
           <template #default="scope">
             <el-button
+                :icon="Edit"
+                circle
                 size="small"
                 type="primary"
-                @click="handleEditCourse(scope.row)"
-            >
-              编辑
-            </el-button>
+                @click="handleEdit(scope.row)"
+            />
             <el-button
+                :icon="Delete"
+                circle
                 size="small"
                 type="danger"
-                @click="handleDeleteCourse(scope.row)"
-            >
-              删除
-            </el-button>
+                @click="handleDelete(scope.row)"
+            />
           </template>
         </el-table-column>
-      </BaseTable>
+        <template #empty>
+          <el-empty description="暂无课程数据"/>
+        </template>
+      </el-table>
 
       <!-- 分页 -->
-      <div
+      <el-pagination
           v-if="total > 0"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
           class="pagination-container"
-      >
-        <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-        />
-      </div>
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+      />
     </el-card>
 
-    <!-- 添加/编辑课程对话框 -->
+    <!-- 添加/编辑 对话框 -->
     <el-dialog
         v-model="dialogVisible"
-        :title="dialogTitle"
+        :close-on-click-modal="false"
+        :title="isEditMode ? '编辑课程' : '添加课程'"
         width="600px"
-        @close="resetForm"
+        @close="handleDialogClose"
     >
-      <el-form
+      <CourseForm
           ref="courseFormRef"
-          :model="courseForm"
-          :rules="courseFormRules"
-          label-width="100px"
-      >
-        <el-form-item
-            label="课程代码"
-            prop="courseNo"
-        >
-          <el-input
-              v-model="courseForm.courseNo"
-              :disabled="isEditMode"
-              placeholder="请输入课程代码"
-          />
-        </el-form-item>
-        <el-form-item
-            label="课程名称"
-            prop="courseName"
-        >
-          <el-input
-              v-model="courseForm.courseName"
-              placeholder="请输入课程名称"
-          />
-        </el-form-item>
-        <el-form-item
-            label="学分"
-            prop="credit"
-        >
-          <el-input-number
-              v-model="courseForm.credit"
-              :min="0"
-              :precision="1"
-              :step="0.5"
-              placeholder="请输入学分"
-          />
-        </el-form-item>
-        <el-form-item
-            label="所属学院ID"
-            prop="collegeId"
-        >
-          <el-input
-              v-model.number="courseForm.collegeId"
-              placeholder="请输入所属学院ID (可选)"
-          />
-        </el-form-item>
-        <el-form-item
-            label="所属学院"
-            prop="collegeName"
-        >
-          <el-input
-              v-model="courseForm.collegeName"
-              placeholder="请输入所属学院名称 (可选)"
-          />
-        </el-form-item>
-        <el-form-item
-            label="课程类型"
-            prop="courseType"
-        >
-          <el-select
-              v-model="courseForm.courseType"
-              placeholder="选择课程类型 (可选)"
-          >
-            <el-option
-                :value="1"
-                label="必修课"
-            />
-            <el-option
-                :value="2"
-                label="选修课"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-            label="状态"
-            prop="status"
-        >
-          <el-switch
-              v-model="courseForm.status"
-              :active-value="1"
-              :inactive-value="0"
-              active-text="已开课"
-              inactive-text="未开课"
-          />
-        </el-form-item>
-        <el-form-item
-            label="课程简介"
-            prop="introduction"
-        >
-          <el-input
-              v-model="courseForm.introduction"
-              :rows="3"
-              placeholder="请输入课程简介(可选)"
-              type="textarea"
-          />
-        </el-form-item>
-      </el-form>
+          :course-data="currentCourse"
+          :is-edit="isEditMode"
+          :loading="formLoading"
+      />
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button
-              type="primary"
-              @click="submitCourseForm"
-          >确定</el-button>
+          <el-button :loading="submitting" type="primary" @click="handleSubmit">
+            {{ isEditMode ? '保存' : '创建' }}
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -286,10 +173,10 @@ import {
   ElSelect,
   ElSwitch
 } from 'element-plus';
-import {Plus} from '@element-plus/icons-vue';
+import {Plus, Search, Edit, Delete} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 import {getTeacherList} from '@/api/user';
-import {getTermList} from '@/api/term';
+import {getAllTerms} from '@/api/term';
 
 const loading = ref(false);
 const courseList = ref([]);
@@ -376,7 +263,7 @@ const fetchTeachers = async () => {
 
 const fetchTerms = async () => {
   try {
-    const res = await getTermList();
+    const res = await getAllTerms();
     if (res.code === 200 && res.data) {
       termList.value = res.data;
       const currentTerm = res.data.find(t => t.current === 1);

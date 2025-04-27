@@ -13,19 +13,22 @@ import com.campus.exception.AuthenticationException;
 import com.campus.exception.CustomException;
 import com.campus.service.PostService;
 import com.campus.service.UserService;
-import com.campus.utils.PageUtils;
+import com.campus.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.campus.exception.ResourceNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+// import com.campus.mapper.ForumMapper; // Commented out unresolved import
+// import com.campus.mapper.PostMapper; // Commented out unresolved import
+// import com.campus.security.UserPrincipal; // Commented out unresolved import
+// import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.stream.Collectors;

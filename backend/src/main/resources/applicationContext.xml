@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 扫描service包下所有使用注解的类型 -->
+    <context:component-scan base-package="com.campus.service" />
+    
+    <!-- 扫描utils包，但排除Controller和Web相关组件 -->
+    <context:component-scan base-package="com.campus.utils">
+        <!-- 排除所有控制器和Web相关组件 -->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    </context:component-scan>
+
+    <!-- 扫描配置类 (启用Spring Security配置) -->
+    <context:component-scan base-package="com.campus.config"/>
+    <!-- 保留对特定配置Bean的扫描或显式定义 -->
+
+    <!-- 配置MyBatis Mapper扫描 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.campus.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- 配置数据库和应用属性 -->
+    <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties" />
+
+    <!-- 显式定义 StorageProperties Bean -->
+    <bean id="storageProperties" class="com.campus.config.StorageProperties"/>
+
+    <!-- 配置密码编码器 (使用 NoOpPasswordEncoder，不进行加密) -->
+    <bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder"/>
+
+    <!-- 配置数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}" />
+        <!-- 配置初始化大小、最小、最大 -->
+        <property name="initialSize" value="5" />
+        <property name="minIdle" value="5" />
+        <property name="maxActive" value="20" />
+        <!-- 配置获取连接等待超时的时间 -->
+        <property name="maxWait" value="60000" />
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis" value="60000" />
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis" value="300000"/>
+        <!-- 用来检测连接是否有效的sql -->
+        <property name="validationQuery" value="SELECT 1"/>
+        <!-- 建议配置为true，不影响性能，并且保证安全性。 -->
+        <property name="testWhileIdle" value="true"/>
+        <!-- 申请连接时执行validationQuery检测连接是否有效 -->
+        <property name="testOnBorrow" value="false"/>
+        <!-- 归还连接时执行validationQuery检测连接是否有效 -->
+        <property name="testOnReturn" value="false"/>
+        <!-- 配置监控统计拦截的filters -->
+        <property name="filters" value="stat"/>
+        <!-- 慢SQL记录 -->
+        <property name="connectionProperties" value="druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000"/>
+    </bean>
+
+
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 启用注解驱动的事务管理 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- 配置MyBatis-Plus插件 -->
+    <bean id="mybatisPlusInterceptor" class="com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor">
+        <property name="interceptors">
+            <list>
+                <bean class="com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor">
+                    <constructor-arg name="dbType" value="MYSQL" />
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 修改 depends-on 属性 -->
+    <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource" />
+        <!-- 扫描model包 -->
+        <property name="typeAliasesPackage" value="com.campus.entity" />
+        <!-- 扫描sql配置文件:mapper需要的xml文件 -->
+        <property name="mapperLocations" value="classpath:mapper/PostMapper.xml"/>
+        <!-- 配置MyBatis全局配置文件 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <!-- 配置MyBatis-Plus插件 -->
+        <property name="plugins">
+            <array>
+                <ref bean="mybatisPlusInterceptor" />
+            </array>
+        </property>
+        <!-- MyBatis-Plus全局配置 -->
+        <property name="globalConfig">
+            <bean class="com.baomidou.mybatisplus.core.config.GlobalConfig">
+                <!-- 配置主键自增策略 -->
+                <property name="dbConfig">
+                    <bean class="com.baomidou.mybatisplus.core.config.GlobalConfig$DbConfig">
+                        <property name="idType" value="AUTO" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- 配置基于注解的声明式事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!-- 恢复 JwtUtil Bean 定义 -->
+    <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
+
+    <!-- 添加 ObjectMapper Bean 定义 -->
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
+
+    <!-- ObjectMapper Bean 定义移至 spring-mvc.xml -->
+</beans>

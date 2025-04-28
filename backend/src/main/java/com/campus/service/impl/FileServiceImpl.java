@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.campus.dao.FileRecordMapper;
+import com.campus.dao.FileRecordDao;
 import com.campus.entity.FileRecord;
 import com.campus.entity.Course;
 import com.campus.exception.CustomException;
@@ -28,7 +28,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-public class FileServiceImpl extends ServiceImpl<FileRecordMapper, FileRecord> implements FileService {
+public class FileServiceImpl extends ServiceImpl<FileRecordDao, FileRecord> implements FileService {
 
     // 从配置文件读取上传目录，需要你在 application.yml 或 properties 中配置
     @Value("${file.upload-dir:./uploads}") // 默认为项目根目录下的 uploads 文件夹

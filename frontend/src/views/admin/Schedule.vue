@@ -439,6 +439,11 @@ const scheduleForm = ref({
   endWeek: 16,
 });
 
+// 通用表单验证规则
+const formRules = {
+  required: {required: true, message: '该字段为必填项', trigger: 'blur'}
+};
+
 const scheduleFormRules = reactive({
   termId: [formRules.required],
   courseId: [formRules.required],

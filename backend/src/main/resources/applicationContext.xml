@@ -3,83 +3,51 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:security="http://www.springframework.org/schema/security"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/context
        http://www.springframework.org/schema/context/spring-context.xsd
        http://www.springframework.org/schema/tx
-       http://www.springframework.org/schema/tx/spring-tx.xsd">
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/security
+       http://www.springframework.org/schema/security/spring-security.xsd">
 
-    <!-- 扫描service包下所有使用注解的类型 -->
+    <!-- 1. 属性文件加载 -->
+    <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties"
+                                  ignore-unresolvable="true"/>
+
+    <!-- 2. 核心 Bean 扫描 (Service, Utils) -->
     <context:component-scan base-package="com.campus.service" />
-    
-    <!-- 扫描utils包，但排除Controller和Web相关组件 -->
     <context:component-scan base-package="com.campus.utils">
-        <!-- 排除所有控制器和Web相关组件 -->
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
         <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
         <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
     </context:component-scan>
 
-    <!-- 扫描配置类 (启用Spring Security配置) -->
-    <context:component-scan base-package="com.campus.config"/>
-    <!-- 保留对特定配置Bean的扫描或显式定义 -->
-
-    <!-- 配置MyBatis Mapper扫描 -->
-    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <property name="basePackage" value="com.campus.dao"/>
-        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
-    </bean>
-
-    <!-- 配置数据库和应用属性 -->
-    <context:property-placeholder location="classpath:jdbc.properties,classpath:application.properties" />
-
-    <!-- 显式定义 StorageProperties Bean -->
-    <bean id="storageProperties" class="com.campus.config.StorageProperties"/>
-
-    <!-- 配置密码编码器 (使用 NoOpPasswordEncoder，不进行加密) -->
-    <bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder"/>
-
-    <!-- 配置数据源 -->
+    <!-- 3. 数据访问配置 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
         <property name="driverClassName" value="${jdbc.driver}" />
         <property name="url" value="${jdbc.url}" />
         <property name="username" value="${jdbc.username}" />
         <property name="password" value="${jdbc.password}" />
-        <!-- 配置初始化大小、最小、最大 -->
         <property name="initialSize" value="5" />
         <property name="minIdle" value="5" />
         <property name="maxActive" value="20" />
-        <!-- 配置获取连接等待超时的时间 -->
         <property name="maxWait" value="60000" />
-        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
         <property name="timeBetweenEvictionRunsMillis" value="60000" />
-        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
         <property name="minEvictableIdleTimeMillis" value="300000"/>
-        <!-- 用来检测连接是否有效的sql -->
         <property name="validationQuery" value="SELECT 1"/>
-        <!-- 建议配置为true，不影响性能，并且保证安全性。 -->
         <property name="testWhileIdle" value="true"/>
-        <!-- 申请连接时执行validationQuery检测连接是否有效 -->
         <property name="testOnBorrow" value="false"/>
-        <!-- 归还连接时执行validationQuery检测连接是否有效 -->
         <property name="testOnReturn" value="false"/>
-        <!-- 配置监控统计拦截的filters -->
         <property name="filters" value="stat"/>
-        <!-- 慢SQL记录 -->
         <property name="connectionProperties" value="druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000"/>
     </bean>
-
-
-    <!-- 配置事务管理器 -->
     <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
         <property name="dataSource" ref="dataSource"/>
     </bean>
-
-    <!-- 启用注解驱动的事务管理 -->
     <tx:annotation-driven transaction-manager="transactionManager"/>
-
-    <!-- 配置MyBatis-Plus插件 -->
     <bean id="mybatisPlusInterceptor" class="com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor">
         <property name="interceptors">
             <list>
@@ -89,27 +57,18 @@
             </list>
         </property>
     </bean>
-
-    <!-- 修改 depends-on 属性 -->
     <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
-        <!-- 注入数据库连接池 -->
         <property name="dataSource" ref="dataSource" />
-        <!-- 扫描model包 -->
         <property name="typeAliasesPackage" value="com.campus.entity" />
-        <!-- 扫描sql配置文件:mapper需要的xml文件 -->
-        <property name="mapperLocations" value="classpath:mapper/PostMapper.xml"/>
-        <!-- 配置MyBatis全局配置文件 -->
+        <property name="mapperLocations" value="classpath:mapper/**/*.xml"/>
         <property name="configLocation" value="classpath:mybatis-config.xml" />
-        <!-- 配置MyBatis-Plus插件 -->
         <property name="plugins">
             <array>
                 <ref bean="mybatisPlusInterceptor" />
             </array>
         </property>
-        <!-- MyBatis-Plus全局配置 -->
         <property name="globalConfig">
             <bean class="com.baomidou.mybatisplus.core.config.GlobalConfig">
-                <!-- 配置主键自增策略 -->
                 <property name="dbConfig">
                     <bean class="com.baomidou.mybatisplus.core.config.GlobalConfig$DbConfig">
                         <property name="idType" value="AUTO" />
@@ -118,15 +77,91 @@
             </bean>
         </property>
     </bean>
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.campus.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
 
-    <!-- 配置基于注解的声明式事务 -->
-    <tx:annotation-driven transaction-manager="transactionManager" />
-
-    <!-- 恢复 JwtUtil Bean 定义 -->
+    <!-- 4. 安全相关 Bean 定义 -->
+    <bean id="passwordEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder"/>
     <bean id="jwtUtil" class="com.campus.utils.JwtUtil"/>
+    <bean id="jwtAuthenticationFilter" class="com.campus.utils.JwtAuthenticationFilter"/>
 
-    <!-- 添加 ObjectMapper Bean 定义 -->
+    <!-- 5. CORS 配置 -->
+    <bean id="corsConfigurationSource" class="org.springframework.web.cors.UrlBasedCorsConfigurationSource">
+        <property name="corsConfigurations">
+            <map>
+                <entry key="/**">
+                    <bean class="org.springframework.web.cors.CorsConfiguration">
+                        <property name="allowedOrigins">
+                            <list>
+                                <!-- 根据需要配置允许的源 -->
+                                <value>http://localhost:7777</value>
+                            </list>
+                        </property>
+                        <property name="allowedOriginPatterns">
+                            <list>
+                                <value>*</value> <!-- 允许所有来源 -->
+                            </list>
+                        </property>
+                        <property name="allowedMethods">
+                            <list>
+                                <value>GET</value>
+                                <value>POST</value>
+                                <value>PUT</value>
+                                <value>DELETE</value>
+                                <value>OPTIONS</value>
+                                <value>PATCH</value>
+                                <value>HEAD</value>
+                            </list>
+                        </property>
+                        <property name="allowedHeaders">
+                            <list>
+                                <value>*</value> <!-- 允许所有请求头 -->
+                            </list>
+                        </property>
+                        <property name="allowCredentials" value="true"/>
+                        <property name="exposedHeaders">
+                            <list>
+                                <value>Authorization</value>
+                                <value>Content-Disposition</value>
+                            </list>
+                        </property>
+                        <property name="maxAge" value="3600"/>
+                    </bean>
+                </entry>
+            </map>
+        </property>
+    </bean>
+    <bean id="corsFilter" class="org.springframework.web.filter.CorsFilter">
+        <constructor-arg ref="corsConfigurationSource"/>
+    </bean>
+
+    <!-- 6. Spring Security HTTP 配置 -->
+    <security:http auto-config="false" use-expressions="true" create-session="stateless">
+        <!-- 优先添加 CORS 过滤器 -->
+        <security:custom-filter ref="corsFilter" before="CHANNEL_FILTER"/>
+        <!-- 禁用 CSRF -->
+        <security:csrf disabled="true"/>
+
+        <!-- 添加JWT认证过滤器 -->
+        <security:custom-filter ref="jwtAuthenticationFilter" before="FORM_LOGIN_FILTER"/>
+
+        <!-- 配置拦截规则 -->
+        <!-- 明确放行 OPTIONS 请求 -->
+        <security:intercept-url pattern="/**" method="OPTIONS" access="permitAll"/>
+        <!-- 允许所有其他请求的匿名访问 -->
+        <security:intercept-url pattern="/**" access="permitAll"/>
+    </security:http>
+
+    <!-- Authentication Manager 配置 -->
+    <security:authentication-manager alias="authenticationManager">
+        <security:authentication-provider user-service-ref="customUserDetailsService">
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!-- 7. 通用 Bean -->
     <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 
-    <!-- ObjectMapper Bean 定义移至 spring-mvc.xml -->
 </beans>

@@ -6,10 +6,18 @@ import com.campus.enums.UserStatus;
 import com.campus.enums.UserType;
 import com.campus.service.AuthService;
 import com.campus.service.UserService;
+import com.campus.utils.JwtUtil;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,30 +38,49 @@ public class UserController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
     /**
-     * 用户登录 (使用明文密码)
+     * 用户登录 (使用Spring Security认证)
      */
     @PostMapping("/login")
-    public Result<Map<String, Object>> login(
-            @RequestBody User loginUser,
-            HttpServletResponse response) {
+    public Result<Map<String, Object>> login(@RequestBody User loginUser) {
+        try {
+            // 使用Spring Security进行认证
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginUser.getUsername(), loginUser.getPassword())
+            );
 
-        // 直接使用用户输入的明文密码进行登录验证
-        User user = userService.login(loginUser.getUsername(), loginUser.getPassword());
+            // 存储认证信息到上下文
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        if (user != null) {
-            // 生成token
-            String token = authService.generateToken(user);
+            // 加载用户详情
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginUser.getUsername());
 
-            // 返回结果
+            // 生成JWT令牌
+            String token = jwtUtil.generateToken(userDetails);
+
+            // 获取用户信息
+            User user = userService.getUserByUsername(loginUser.getUsername());
+            user.setPassword(null); // 移除密码
+
+            // 构建响应数据
             Map<String, Object> data = new HashMap<>();
             data.put("token", token);
-            user.setPassword(null); // 仍然清除密码，避免返回给前端
             data.put("user", user);
 
             return Result.success("登录成功", data);
-        } else {
+        } catch (BadCredentialsException e) {
             return Result.error("用户名或密码错误");
+        } catch (Exception e) {
+            return Result.error("登录失败: " + e.getMessage());
         }
     }
 

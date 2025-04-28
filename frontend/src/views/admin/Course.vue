@@ -4,17 +4,17 @@
       <template #header>
         <div class="header">
           <span>课程管理</span>
-          <el-button :icon="Plus" type="primary" @click="handleAdd">添加课程</el-button>
+          <el-button :icon="Plus" type="primary" @click="handleAddCourse">添加课程</el-button>
         </div>
       </template>
 
       <!-- 筛选区域 -->
-      <el-form :inline="true" :model="filters" class="filter-form">
+      <el-form :inline="true" :model="searchParams" class="filter-form">
         <el-form-item label="课程名称/编号">
-          <el-input v-model="filters.keyword" clearable placeholder="请输入课程名称或编号"/>
+          <el-input v-model="searchParams.keyword" clearable placeholder="请输入课程名称或编号"/>
         </el-form-item>
         <el-form-item label="课程类型">
-          <el-select v-model="filters.courseType" clearable placeholder="请选择课程类型">
+          <el-select v-model="searchParams.courseType" clearable placeholder="请选择课程类型">
             <el-option label="全部" value=""/>
             <el-option label="必修课" value="COMPULSORY"/>
             <el-option label="选修课" value="ELECTIVE"/>
@@ -22,7 +22,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属学院">
-          <el-select v-model="filters.collegeId" clearable filterable placeholder="请选择学院">
+          <el-select v-model="searchParams.collegeId" clearable filterable placeholder="请选择学院">
             <el-option label="全部" value=""/>
             <el-option
                 v-for="college in collegeList"
@@ -33,14 +33,14 @@
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="filters.status" clearable placeholder="请选择课程状态">
+          <el-select v-model="searchParams.status" clearable placeholder="请选择课程状态">
             <el-option label="全部" value=""/>
             <el-option label="启用" value="1"/>
             <el-option label="禁用" value="0"/>
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button :icon="Search" type="primary" @click="fetchCourses">查询</el-button>
+          <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
 
@@ -99,14 +99,14 @@
                 circle
                 size="small"
                 type="primary"
-                @click="handleEdit(scope.row)"
+                @click="handleEditCourse(scope.row)"
             />
             <el-button
                 :icon="Delete"
                 circle
                 size="small"
                 type="danger"
-                @click="handleDelete(scope.row)"
+                @click="handleDeleteCourse(scope.row)"
             />
           </template>
         </el-table-column>
@@ -146,7 +146,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button :loading="submitting" type="primary" @click="handleSubmit">
+          <el-button :loading="submitting" type="primary" @click="submitCourseForm">
             {{ isEditMode ? '保存' : '创建' }}
           </el-button>
         </span>
@@ -174,6 +174,7 @@ import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 import {getTeacherList} from '@/api/user';
 import {getAllTerms} from '@/api/term';
+import CourseForm from '@/components/course/CourseForm.vue';
 
 const loading = ref(false);
 const courseList = ref([]);
@@ -227,6 +228,11 @@ const isEditMode = computed(() => !!courseForm.value.id);
 
 const teacherList = ref([]);
 const termList = ref([]);
+
+const collegeList = ref([]);
+const formLoading = ref(false);
+const submitting = ref(false);
+const currentCourse = ref({});
 
 const fetchCourses = async () => {
   loading.value = true;
@@ -381,9 +387,23 @@ const handleTermChange = () => {
   fetchCourses();
 };
 
+const handleDialogClose = () => {
+  resetForm();
+};
+
+const formatCourseType = (type) => {
+  const types = {
+    'COMPULSORY': '必修课',
+    'ELECTIVE': '选修课',
+    'GENERAL': '通识课'
+  };
+  return types[type] || type;
+};
+
 onMounted(() => {
-  fetchTerms();
+  fetchCourses();
   fetchTeachers();
+  fetchTerms();
 });
 
 </script>

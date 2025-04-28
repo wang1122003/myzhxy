@@ -1,8 +1,9 @@
 package com.campus.utils;
 
-import com.campus.config.StorageProperties;
+// import com.campus.config.StorageProperties;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
@@ -15,8 +16,13 @@ import java.nio.file.Paths;
 @Component
 public class InitializationUtils {
 
-    @Autowired
-    private StorageProperties storageProperties;
+    // 移除 StorageProperties 注入
+    // @Autowired
+    // private StorageProperties storageProperties;
+
+    // 使用 @Value 直接注入上传路径
+    @Value("${file.upload.path}")
+    private String uploadBasePath;
 
     /**
      * 初始化上传目录
@@ -25,7 +31,8 @@ public class InitializationUtils {
     @PostConstruct
     public void init() {
         // 获取基础上传路径
-        String basePath = storageProperties.getLocation();
+        // String basePath = storageProperties.getLocation();
+        String basePath = uploadBasePath;
 
         // 检查基础上传路径是否已配置
         if (basePath == null || basePath.trim().isEmpty()) {

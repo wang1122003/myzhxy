@@ -128,7 +128,7 @@ const downloadingId = ref(null);
 const deletingId = ref(null);
 const fileList = ref([]);
 const uploadUrl = computed(() =>
-    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/campus/api'}/file/upload/course/material/${courseId.value}`
+    `/api/file/upload/course/material/${courseId.value}`
 );
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`

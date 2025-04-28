@@ -1,35 +1,22 @@
 <template>
   <el-container class="app-container">
-    <!-- 移除全局 AppHeader -->
-    <!-- <app-header/> -->
-    <!-- el-main 可能也需要移除或调整，取决于 Index.vue 的结构 -->
-    <el-main class="app-main-global"> <!-- 暂时保留并改名以区分 -->
+    <el-main class="app-main-global">
       <router-view v-slot="{ Component, route }">
         <transition mode="out-in" name="fade">
           <component :is="Component" :key="route.fullPath"/>
         </transition>
       </router-view>
     </el-main>
-    <!-- 移除 Footer，通常 Footer 也应在布局组件内 -->
-    <!-- <el-footer class="app-footer">
-      <div class="footer-content">
-        <p>智慧校园管理系统 © {{ currentYear }} 版权所有</p>
-      </div>
-    </el-footer> -->
   </el-container>
 </template>
 
 <script>
-// 移除 AppHeader 导入
-// import AppHeader from './components/common/AppHeader.vue'
 import {computed, onMounted} from 'vue'
 import {fetchUserInfo} from '@/utils/auth'
 
 export default {
   name: 'App',
   components: {
-    // 移除 AppHeader 注册
-    // AppHeader
   },
   setup() {
     const currentYear = computed(() => new Date().getFullYear())
@@ -95,16 +82,6 @@ html, body {
   background: #606266;
 }
 
-/* 渐变色彩类 (移除，因为未使用) */
-/*
-.gradient-text {
-  background: linear-gradient(to right, #3a7bd5, #00d2ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-*/
-
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -127,10 +104,6 @@ html, body {
   padding: 0;
   /* background-color: #f5f7fa; */ /* 背景色也由 Index.vue 控制 */
 }
-
-/* 移除 app-footer 样式 */
-/* .app-footer { ... } */
-/* .footer-content { ... } */
 
 /* 页面过渡动画 */
 .fade-enter-active,

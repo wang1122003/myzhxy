@@ -7,7 +7,7 @@ import {token as authToken} from '@/utils/auth'; // 移除 logout
 
 // 创建axios实例
 const request = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/campus', // 修正 baseURL，移除末尾的 /api
+    baseURL: '/api', // 强制使用代理，不再使用环境变量
     timeout: 15000 // 请求超时时间，增加到15秒
 })
 

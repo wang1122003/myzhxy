@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.campus.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public interface UserDao extends BaseMapper<User> {
      * @param username 用户名
      * @return 用户对象
      */
-    User findByUsername(String username);
+    @Select("SELECT * FROM t_user WHERE username = #{username}")
+    User findByUsername(@Param("username") String username);
 
     /**
      * 根据学工号查询用户

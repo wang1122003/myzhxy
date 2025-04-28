@@ -45,7 +45,22 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import {QuestionFilled} from '@element-plus/icons-vue';
+import {
+  QuestionFilled,
+  Fold,
+  Expand,
+  House,
+  Setting,
+  User,
+  Bell,
+  Notebook,
+  Calendar,
+  ChatDotRound,
+  Files,
+  OfficeBuilding,
+  Flag
+} from '@element-plus/icons-vue';
+import AppHeader from '@/components/common/AppHeader.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -93,28 +108,11 @@ const handleMenuSelect = () => {
     isCollapsed.value = true;
   }
 };
-
 </script>
 
 <script>
 export default {
-  name: 'AdminLayout',
-  components: {
-    AppHeader,
-    Fold,
-    Expand,
-    House,
-    Setting,
-    User,
-    Bell,
-    Notebook,
-    Calendar,
-    ChatDotRound,
-    Files,
-    OfficeBuilding,
-    Flag,
-    QuestionFilled
-  },
+  name: 'AdminLayout'
 }
 </script>
 

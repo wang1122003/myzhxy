@@ -10,73 +10,61 @@
        http://www.springframework.org/schema/mvc
        http://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
-    <!-- 只扫描controller包和Web相关组件 -->
+    <!-- 1. Web 组件扫描 (Controller, RestControllerAdvice) -->
     <context:component-scan base-package="com.campus.controller">
         <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
         <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
         <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+        <!-- 如果 GlobalExceptionHandler 在 controller 包外且用于 MVC，需要单独扫描或在此包含 -->
+        <!-- <context:include-filter type="assignable" expression="com.campus.exception.GlobalExceptionHandler"/> -->
     </context:component-scan>
-
-    <!-- 扫描 Config 包 (部分配置已迁移或移除) -->
+    <!-- 移除其他扫描 -->
     <!-- <context:component-scan base-package="com.campus.config"/> -->
+    <!-- <context:component-scan base-package="com.campus.utils" .../> -->
 
-    <!-- 不再扫描 utils 包中的 ExceptionUtils，因为它将被删除 -->
-    <!-- 
-    <context:component-scan base-package="com.campus.utils" use-default-filters="false">
-        <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$GlobalExceptionHandler"/>
-        <context:include-filter type="assignable" expression="com.campus.utils.ExceptionUtils$BusinessExceptionHandler"/>
-    </context:component-scan>
-    -->
-
-    <!-- 加载属性文件 -->
-    <context:property-placeholder location="classpath:application.properties" ignore-unresolvable="true" />
-
-    <!-- 启用Spring MVC注解，并配置消息转换器等 -->
+    <!-- 2. 启用 MVC 注解驱动并配置消息转换器 -->
     <mvc:annotation-driven>
         <mvc:message-converters>
+            <!-- 引用根上下文的 ObjectMapper -->
             <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
                 <property name="objectMapper" ref="objectMapper"/>
             </bean>
         </mvc:message-converters>
     </mvc:annotation-driven>
 
-    <!-- 添加Jackson ObjectMapper Bean -->
-    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
-
-    <!-- 配置CORS跨域支持 -->
+    <!-- 启用CORS支持 -->
     <mvc:cors>
         <mvc:mapping path="/**"
-                     allowed-origins="http://localhost:3000,http://localhost:8088,http://localhost:7778,http://localhost:7777"
-                     allowed-methods="GET,POST,PUT,DELETE,OPTIONS"
+                     allowed-origins="http://localhost:7777"
+                     allowed-origin-patterns="*"
+                     allowed-methods="GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
                      allowed-headers="*"
                      allow-credentials="true"
-                     exposed-headers="Authorization"
                      max-age="3600"/>
     </mvc:cors>
 
-    <!-- 文件上传配置 -->
+    <!-- 3. 文件上传解析器 -->
     <bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver">
     </bean>
 
-    <!-- 静态资源处理 -->
+    <!-- 4. 静态资源处理 -->
+    <!-- 允许 DispatcherServlet 传递静态资源请求给默认 Servlet -->
     <mvc:default-servlet-handler />
-
-    <!-- 应用自身的静态资源 - 合并自WebMvcConfig -->
+    <!-- 配置应用自定义静态资源 (如上传文件) -->
+    <!-- 注意：这里的 ${file.upload.path} 需要 applicationContext.xml 中的 property-placeholder 加载 -->
     <mvc:resources mapping="/uploads/**" location="file:${file.upload.path}/" cache-period="3600" />
 
-    <!-- 视图解析器 -->
+    <!-- 5. 视图解析器 -->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="prefix" value="/WEB-INF/views/" />
         <property name="suffix" value=".jsp" />
     </bean>
 
-    <!-- 视图控制器配置 -->
+    <!-- 6. 视图控制器 -->
     <mvc:view-controller path="/" view-name="forward:/index.html" />
-    <!--  /campus 相关的转发 -->
     <mvc:view-controller path="/campus" view-name="forward:/index.html"/>
     <mvc:view-controller path="/campus/" view-name="forward:/index.html"/>
-
-    <!-- 添加 Catch-all 规则 for Vue Router History Mode -->
+    <!-- Vue Router History Mode 支持 -->
     <mvc:view-controller path="/campus/login" view-name="forward:/index.html"/>
     <mvc:view-controller path="/campus/error" view-name="forward:/index.html"/>
     <mvc:view-controller path="/campus/student/**" view-name="forward:/index.html"/>

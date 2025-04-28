@@ -45,19 +45,18 @@ public class JwtUtil {
     }
 
     /**
-     * 生成JWT令牌
+     * 生成JWT令牌 (支持UserDetails接口)
      *
-     * @param user 用户对象
+     * @param userDetails 用户详情对象
      * @return JWT令牌
      */
-    public String generateToken(User user) {
+    public String generateToken(UserDetails userDetails) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration * 1000);
 
         return Jwts.builder()
-                .setSubject(String.valueOf(user.getId()))
-                .claim("name", user.getUsername())
-                .claim("role", user.getUserType())
+                .setSubject(userDetails.getUsername())
+                .claim("authorities", userDetails.getAuthorities().toString())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)

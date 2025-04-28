@@ -51,21 +51,12 @@ export default defineConfig({
         port: 7777,
         open: true,
         proxy: {
-            // 代理所有 /api 请求到后端服务器
             '/api': {
-                target: 'http://localhost:8080', // SSM服务运行在8080端口
+                target: 'http://localhost:8080/campus',
                 changeOrigin: true,
                 secure: false,
+                rewrite: path => path.replace(/^\/api/, '/api')
             }
         }
     },
-    // 配置构建输出目录到后端项目的静态资源目录
-    build: {
-        outDir: '../backend/src/main/resources/static',
-        emptyOutDir: true
-    },
-    // 兼容原有的环境变量配置
-    define: {
-        'process.env': process.env
-    }
 }); 

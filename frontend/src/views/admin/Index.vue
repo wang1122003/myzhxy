@@ -34,7 +34,6 @@
     </el-aside>
 
     <el-container class="main-container">
-      <AppHeader/>
       <el-main class="app-main">
         <router-view/>
       </el-main>
@@ -45,22 +44,7 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
-import {
-  QuestionFilled,
-  Fold,
-  Expand,
-  House,
-  Setting,
-  User,
-  Bell,
-  Notebook,
-  Calendar,
-  ChatDotRound,
-  Files,
-  OfficeBuilding,
-  Flag
-} from '@element-plus/icons-vue';
-import AppHeader from '@/components/common/AppHeader.vue';
+import {Expand, Fold, QuestionFilled} from '@element-plus/icons-vue';
 
 const router = useRouter();
 const route = useRoute();

@@ -61,7 +61,7 @@
 import {computed} from 'vue'
 import {useRouter} from 'vue-router'
 import {ArrowDown, ChatDotRound, HomeFilled, Right, SwitchButton, User} from '@element-plus/icons-vue'
-import {logout, userAvatar, userRealName, userRole} from '@/utils/auth'
+import {useUserStore} from '@/stores/userStore'
 
 export default {
   name: 'AppHeader',
@@ -75,11 +75,12 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
 
-    const isLoggedIn = computed(() => userRealName.value !== null)
-    const userName = computed(() => userRealName.value)
+    const isLoggedIn = computed(() => userStore.isLoggedIn())
+    const userName = computed(() => userStore.userInfo?.realName || '')
     const userRoleName = computed(() => {
-      const role = userRole.value
+      const role = userStore.userRole()
       const names = {
         student: '学生',
         teacher: '教师',
@@ -87,6 +88,7 @@ export default {
       }
       return names[role] || ''
     })
+    const userAvatar = computed(() => userStore.userInfo?.avatarUrl || '')
 
     const goToHome = () => {
       router.push('/')
@@ -100,7 +102,7 @@ export default {
       if (command === 'logout') {
         handleLogout()
       } else if (command === 'profile') {
-        const rolePath = userRole.value
+        const rolePath = userStore.userRole()
         if (rolePath) {
           router.push(`/${rolePath}/profile`)
         } else {
@@ -108,11 +110,12 @@ export default {
           router.push('/')
         }
       } else if (command === 'dashboard') {
-        if (userRole.value === 'student') {
+        const role = userStore.userRole()
+        if (role === 'student') {
           router.push('/student')
-        } else if (userRole.value === 'teacher') {
+        } else if (role === 'teacher') {
           router.push('/teacher')
-        } else if (userRole.value === 'admin') {
+        } else if (role === 'admin') {
           router.push('/admin/notice')
         } else {
           router.push('/')
@@ -124,12 +127,21 @@ export default {
 
     const handleLogout = async () => {
       try {
-        await logout()
-        router.push('/login')
+        console.log('[AppHeader] 开始退出登录流程...')
+        // 使用Pinia store统一管理退出登录逻辑
+        await userStore.logout()
+        console.log('[AppHeader] 状态已清除，准备跳转到登录页')
+
+        // 确保状态清理后再跳转，避免路由守卫拦截
+        setTimeout(() => {
+          router.push('/')
+          console.log('[AppHeader] 已跳转到登录页')
+        }, 100)
       } catch (error) {
-        console.error("登出时出错:", error)
-        logout()
-        router.push('/login')
+        console.error("[AppHeader] 登出时出错:", error)
+        // 即使出错也尝试通过store清理状态
+        userStore.logout()
+        router.push('/')
       }
     }
 

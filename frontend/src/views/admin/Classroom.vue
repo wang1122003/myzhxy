@@ -218,11 +218,10 @@ const fetchClassrooms = async () => {
       ...filters
     };
     const res = await getClassroomsPage(params);
-    classroomList.value = res.data.records || [];
-    total.value = res.data.total || 0;
+    classroomList.value = res.records || [];
+    total.value = res.total || 0;
   } catch (error) {
     console.error("获取教室列表失败:", error);
-    ElMessage.error('获取教室列表时发生错误');
   } finally {
     loading.value = false;
   }

@@ -210,8 +210,8 @@ const fetchNotices = async () => {
       type: filters.type || null
     }
     const res = await getNotificationsPage(params)
-    noticeList.value = res.data.records || []
-    total.value = res.data.total || 0
+    noticeList.value = res.records || []
+    total.value = res.total || 0
   } catch (error) {
     console.error('获取公告列表失败:', error)
     ElMessage.error('获取公告列表失败')

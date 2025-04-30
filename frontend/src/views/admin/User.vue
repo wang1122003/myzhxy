@@ -19,15 +19,18 @@
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="searchParams.role" clearable placeholder="选择角色" style="width: 150px;">
-            <el-option label="管理员" value="admin"/>
-            <el-option label="教师" value="teacher"/>
-            <el-option label="学生" value="student"/>
+            <el-option
+                v-for="item in userRoleOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchParams.status" clearable placeholder="选择状态" style="width: 120px;">
-            <el-option :value="1" label="正常"/>
-            <el-option :value="0" label="禁用"/>
+            <el-option label="正常" value="ACTIVE"/>
+            <el-option label="禁用" value="INACTIVE"/>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -52,8 +55,8 @@
           <template #default="scope">
             <el-switch
                 v-model="scope.row.status"
-                active-value="Active"
-                inactive-value="Inactive"
+                :active-value="'ACTIVE'"
+                :inactive-value="'INACTIVE'"
                 @change="handleStatusChange(scope.row)"
             />
           </template>
@@ -98,9 +101,12 @@
         </el-form-item>
         <el-form-item label="角色" prop="userType">
           <el-select v-model="userForm.userType" placeholder="请选择角色">
-            <el-option label="管理员" value="Admin"/>
-            <el-option label="教师" value="Teacher"/>
-            <el-option label="学生" value="Student"/>
+            <el-option
+                v-for="item in userRoleOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -112,8 +118,8 @@
         <el-form-item label="状态" prop="status">
           <el-switch
               v-model="userForm.status"
-              active-value="Active"
-              inactive-value="Inactive"
+              :active-value="'ACTIVE'"
+              :inactive-value="'INACTIVE'"
               active-text="正常"
               inactive-text="禁用"
           />
@@ -149,7 +155,7 @@ import {
   ElTag
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {addUser, deleteUser, getUserList, resetPassword, updateUser} from '@/api/user'; // 引入 API
+import {addUser, deleteUser, getUserList, resetPassword, updateUser, updateUserStatus} from '@/api/user'; // 引入 API
 
 const loading = ref(false);
 const userList = ref([]);
@@ -173,7 +179,7 @@ const userForm = ref({
   userType: '',
   email: '',
   phone: '',
-  status: 'Active'
+  status: 'ACTIVE'
 });
 
 // 计算属性判断是添加还是编辑模式
@@ -201,6 +207,19 @@ const userFormRules = reactive({ // 表单验证规则
   ]
 });
 
+// 用户状态枚举
+const userStatusOptions = [
+  {label: '正常', value: 'ACTIVE'},
+  {label: '禁用', value: 'INACTIVE'}
+];
+
+// 用户角色枚举
+const userRoleOptions = [
+  {label: '管理员', value: 'ADMIN'},
+  {label: '教师', value: 'TEACHER'},
+  {label: '学生', value: 'STUDENT'}
+];
+
 // 获取用户列表
 const fetchUsers = async () => {
   loading.value = true;
@@ -208,13 +227,13 @@ const fetchUsers = async () => {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: searchParams.keyword || null,
-      role: searchParams.role || null,
-      status: searchParams.status
+      keyword: searchParams.keyword || undefined,
+      userType: searchParams.role ? searchParams.role.toUpperCase() : undefined,
+      status: searchParams.status || undefined
     };
     const res = await getUserList(params);
-    userList.value = res.data.rows || [];
-    total.value = res.data.total || 0;
+    userList.value = res.records || [];
+    total.value = res.total || 0;
   } catch (error) {
     console.error("获取用户列表失败", error);
     ElMessage.error("获取用户列表失败");
@@ -255,7 +274,7 @@ const resetForm = () => {
     userType: '',
     email: '',
     phone: '',
-    status: 'Active'
+    status: 'ACTIVE'
   };
 };
 
@@ -269,8 +288,18 @@ const handleAddUser = () => {
 // 编辑用户（打开对话框）
 const handleEditUser = (row) => {
   dialogTitle.value = '编辑用户';
-  // Shallow copy might be enough, or deep copy if needed
-  userForm.value = {...row, password: ''}; // Don't populate password for edit
+  // Backend sends uppercase enums, form select expects 'Admin', 'Teacher', 'Student'
+  // Backend status is 'ACTIVE'/'INACTIVE', form switch expects the same.
+  const userTypeForForm = row.userType === 'ADMIN' ? 'Admin'
+      : row.userType === 'TEACHER' ? 'Teacher'
+          : row.userType === 'STUDENT' ? 'Student'
+              : ''; // Handle unknown types
+  userForm.value = {
+    ...row,
+    userType: userTypeForForm, // Map to form value
+    status: row.status, // Directly use backend value ('ACTIVE'/'INACTIVE')
+    password: '' // Don't populate password for edit
+  };
   dialogVisible.value = true;
 };
 
@@ -322,17 +351,24 @@ const handleResetPassword = (row) => {
 
 // 更改用户状态
 const handleStatusChange = async (row) => {
-  const newStatus = row.status;
-  const statusText = newStatus === 'Active' ? '启用' : '禁用';
+  // v-model now directly binds to 'ACTIVE' or 'INACTIVE' from the backend/list
+  const currentStatusValue = row.status;
+  const optimisticNewStatus = currentStatusValue === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  const statusText = optimisticNewStatus === 'ACTIVE' ? '启用' : '禁用';
+
+  // Optimistically update the UI first for better UX
+  row.status = optimisticNewStatus;
+
   try {
-    await updateUser(row.id, {status: newStatus});
+    // API expects 'ACTIVE' or 'INACTIVE'
+    await updateUserStatus(row.id, optimisticNewStatus);
     ElMessage.success(`${statusText}成功`);
-    // No need to refetch, v-model already updated the local state
+    // No need to refetch, status is updated locally.
   } catch (error) {
     console.error(`更新用户状态失败 (ID: ${row.id})`, error);
-    ElMessage.error(`${statusText}失败`);
+    ElMessage.error(`${statusText}失败，请重试`);
     // Revert switch state on error
-    row.status = newStatus === 'Active' ? 'Inactive' : 'Active';
+    row.status = currentStatusValue; // Revert to original value
   }
 };
 
@@ -341,23 +377,31 @@ const submitUserForm = () => {
   userFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        // Prepare data for API: Convert userType, status is already correct ('ACTIVE'/'INACTIVE')
+        const dataToSend = {
+          ...userForm.value,
+          // Convert form's 'Admin'/'Teacher'/'Student' to backend's 'ADMIN'/'TEACHER'/'STUDENT'
+          userType: userForm.value.userType ? userForm.value.userType.toUpperCase() : null,
+          // userForm.status is already 'ACTIVE'/'INACTIVE' due to switch binding
+          status: userForm.value.status
+        };
+
         if (isEditMode.value) {
-          // 编辑模式 - 调用 updateUser API
-          // 确保只发送需要的字段，特别是移除 password
-          const {password, id, ...updateData} = userForm.value;
+          // Edit mode - Call updateUser API
+          // Remove fields backend doesn't update
+          const {password, id, username, createTime, ...updateData} = dataToSend;
           await updateUser(id, updateData);
           ElMessage.success('用户信息更新成功');
         } else {
-          // 添加模式 - 调用 addUser API
-          await addUser(userForm.value);
+          // Add mode - Call addUser API (which maps to /register)
+          // Ensure password is included for add
+          await addUser(dataToSend);
           ElMessage.success('用户添加成功');
         }
-        dialogVisible.value = false; // 关闭对话框
-        await fetchUsers(); // 刷新用户列表
+        dialogVisible.value = false;
+        await fetchUsers();
       } catch (error) {
         console.error("提交用户表单失败", error);
-        // 错误消息由 API 请求拦截器处理，这里可以不再重复提示
-        // ElMessage.error(isEditMode.value ? '更新用户失败' : '添加用户失败');
       }
     } else {
       console.log('表单验证失败');
@@ -367,19 +411,23 @@ const submitUserForm = () => {
 };
 
 // 格式化角色显示
-const formatRole = (userType) => {
-  if (userType === 'Admin') return '管理员';
-  if (userType === 'Teacher') return '教师';
-  if (userType === 'Student') return '学生';
-  return userType || '未知';
+const formatRole = (role) => {
+  const roleMap = {
+    'ADMIN': '管理员',
+    'TEACHER': '教师',
+    'STUDENT': '学生'
+  };
+  return roleMap[role] || role;
 };
 
 // 获取角色标签类型
-const getRoleTagType = (userType) => {
-  if (userType === 'Admin') return 'danger';
-  if (userType === 'Teacher') return 'success';
-  if (userType === 'Student') return 'info';
-  return 'info';
+const getRoleTagType = (role) => {
+  const typeMap = {
+    'ADMIN': 'danger',
+    'TEACHER': 'warning',
+    'STUDENT': 'success'
+  };
+  return typeMap[role] || 'info';
 };
 
 // 组件挂载后加载数据

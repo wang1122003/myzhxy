@@ -159,7 +159,7 @@ import {computed, onMounted, reactive, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {Upload} from '@element-plus/icons-vue';
 import {changePassword as changePasswordApi, getCurrentUser, updateUserProfile} from '@/api/user'; // 引入修改密码API
-import {logout, setUserInfo, token, userAvatar, userInfo, userRole} from '@/utils/auth';
+import {useUserStore} from '@/stores/userStore'; // Correct import for userStore
 import {useRouter} from 'vue-router';
 
 const router = useRouter();
@@ -189,6 +189,14 @@ const passwordForm = reactive({
   confirmPassword: '',
 });
 
+// Get user store instance
+const userStore = useUserStore();
+// Access state/getters via userStore
+const token = computed(() => userStore.token);
+const userInfo = computed(() => userStore.userInfo);
+const userRole = computed(() => userStore.userRole());
+const userAvatar = computed(() => userStore.userAvatar());
+
 // 将 userInfo 的值同步到 form
 const syncFormWithUserInfo = () => {
   if (userInfo.value) {
@@ -210,7 +218,7 @@ const uploadAvatarUrl = computed(() => {
 });
 
 const headers = computed(() => ({
-  Authorization: token.value || ''
+  Authorization: token.value // Use the computed token here
 }));
 
 const rules = {
@@ -250,8 +258,11 @@ const fetchProfile = async () => {
   try {
     const response = await getCurrentUser();
     if (response.code === 200 && response.data) {
-      setUserInfo(response.data); // 更新全局用户信息
-      setUserAvatar(response.data.avatar); // 更新全局头像
+      userStore.setUserInfo(response.data); // 使用Pinia store更新用户信息
+      // 更新全局头像
+      if (response.data.avatar) {
+        userStore.setAvatar(response.data.avatar);
+      }
       syncFormWithUserInfo(); // 将获取到的信息同步到表单
     } else {
       ElMessage.error(response.message || '获取用户信息失败');
@@ -328,7 +339,7 @@ const handleAvatarSuccess = (response, uploadFile) => {
   if (response.code === 0 || response.code === 200) {
     ElMessage.success('头像上传成功');
     const newAvatarUrl = response.data.url; // 假设返回的数据结构包含 url
-    setUserAvatar(newAvatarUrl); // 更新全局头像
+    userStore.setAvatar(newAvatarUrl); // 更新全局头像
     // 可以选择性地更新 userInfo 中的 avatar 字段，如果后端在 updateUserProfile 时不返回完整信息
     if (userInfo.value) {
       userInfo.value.avatar = newAvatarUrl;
@@ -349,10 +360,9 @@ const handleAvatarError = (error) => {
   }
 };
 
-
 const handleLogout = async () => {
-  await logout(); // 调用登出函数，清除本地存储
-  router.push('/'); // 重定向到首页
+  await userStore.logout();
+  router.push('/');
   ElMessage.info('会话已过期，请重新登录');
 };
 
@@ -368,7 +378,6 @@ const formatRole = (role) => {
   if (role === 'admin') return '管理员';
   return '未知角色';
 };
-
 
 // --- 修改密码逻辑 ---
 const openChangePasswordDialog = () => {

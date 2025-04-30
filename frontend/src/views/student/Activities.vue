@@ -45,7 +45,7 @@
             shadow="hover"
         >
           <img
-              :src="activity.coverImage || 'https://via.placeholder.com/300x150'"
+              :src="activity.coverImage"
               class="activity-image"
           >
           <div class="activity-content">

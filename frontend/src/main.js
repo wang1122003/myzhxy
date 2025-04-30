@@ -4,6 +4,8 @@ import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+// 导入Pinia
+import {createPinia} from 'pinia'
 
 // 导入全局样式
 import './assets/styles/global.scss'
@@ -30,6 +32,9 @@ window.console.error = (...args) => {
 
 const app = createApp(App)
 
+// 创建Pinia实例
+const pinia = createPinia()
+
 // 注册全局组件
 app.component('PageHeader', PageHeader)
 app.component('StatsCard', StatsCard)
@@ -38,7 +43,8 @@ app.component('NavMenu', NavMenu)
 app.component('DataDisplay', DataDisplay)
 app.component('BaseTable', BaseTable)
 
-// app.use(pinia) // 移除使用 Pinia
+// 使用Pinia（必须在使用router前初始化）
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus, {
     locale: zhCn

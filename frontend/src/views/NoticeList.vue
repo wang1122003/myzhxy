@@ -11,7 +11,7 @@
 
     <el-card class="notice-list-card">
       <el-table
-          v-loading="loadingNotices || loadingNoticeTypes"
+          v-loading="loadingNotices"
           :data="noticeList"
           height="calc(100vh - 260px)"
           style="width: 100%"
@@ -34,6 +34,12 @@
           </template>
         </el-table-column>
         <el-table-column
+            label="发布人"
+            prop="publisherName"
+            show-overflow-tooltip
+            width="150"
+        />
+        <el-table-column
             label="发布时间"
             prop="publishTime"
             width="180"
@@ -43,18 +49,9 @@
           </template>
         </el-table-column>
         <el-table-column
-            label="已读"
-            prop="readCount"
-            width="80"
-            align="center"
-        >
-          <template #default="scope">
-            {{ scope.row.readCount ?? 0 }}
-          </template>
-        </el-table-column>
-        <el-table-column
             label="操作"
             width="100"
+            fixed="right"
         >
           <template #default="scope">
             <el-button
@@ -103,7 +100,7 @@
       >
         <div class="notice-content">
           <div class="notice-info">
-            <span>发布人：{{ currentNotice.publisher }}</span>
+            <span>发布人：{{ currentNotice.publisherName }}</span>
             <span>发布时间：{{ formatTime(currentNotice.publishTime) }}</span>
           </div>
           <el-divider/>
@@ -112,19 +109,19 @@
               v-html="currentNotice.content"
           />
           <div
-              v-if="currentNotice.attachments && currentNotice.attachments.length"
+              v-if="currentNotice.attachmentFiles && currentNotice.attachmentFiles.length"
               class="notice-attachments"
           >
             <el-divider/>
             <h4>附件：</h4>
             <ul>
               <li
-                  v-for="file in currentNotice.attachments"
-                  :key="file.id"
+                  v-for="file in currentNotice.attachmentFiles"
+                  :key="file.url || file.name" 
               >
                 <el-link
-                    :disabled="downloadingAttachment[file.id]"
-                    :loading="downloadingAttachment[file.id]"
+                    :disabled="downloadingAttachment[file.id || file.url]"
+                    :loading="downloadingAttachment[file.id || file.url]" 
                     type="primary"
                     @click="downloadAttachment(file)"
                 >
@@ -162,14 +159,12 @@ import {
   ElTag
 } from 'element-plus';
 import {getNotificationById, getNotificationsPage} from '@/api/notice';
-import {getNoticeTypes} from '@/api/common';
 import {downloadFile} from '@/api/file';
 
 const router = useRouter();
 
 // 加载状态
 const loadingNotices = ref(false);
-const loadingNoticeTypes = ref(false);
 const loadingNoticeDetail = ref(false);
 const downloadingAttachment = reactive({});
 
@@ -178,7 +173,6 @@ const noticeList = ref([]);
 const totalNotices = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
-const noticeTypes = ref([]);
 const currentNotice = reactive({
   id: null,
   title: '',
@@ -191,6 +185,20 @@ const currentNotice = reactive({
 // 对话框可见性
 const noticeDialogVisible = ref(false);
 
+// 直接定义静态的类型映射 (与 HomePage 保持一致)
+const noticeTypeMap = {
+  "SYSTEM": {name: "系统通知", tag: "info"},
+  "COURSE": {name: "教学通知", tag: "success"},
+  "ACTIVITY": {name: "活动公告", tag: "warning"},
+  "GENERAL": {name: "通用", tag: "danger"},
+  "OTHER": {name: "其他", tag: "info"}
+};
+
+// computed 保持不变，但现在基于静态 map
+const noticeTypeMapComputed = computed(() => {
+  return noticeTypeMap;
+});
+
 // 获取通知列表
 const fetchNotices = async () => {
   loadingNotices.value = true;
@@ -200,9 +208,12 @@ const fetchNotices = async () => {
       size: pageSize.value
       // 可以添加其他筛选参数，例如 type
     };
+    // getNotificationsPage 返回的是 IPage 对象
     const res = await getNotificationsPage(params);
-    noticeList.value = res.data.list || [];
-    totalNotices.value = res.data.total || 0;
+    // 使用 IPage 的 records 和 total 字段
+    noticeList.value = res.records || [];
+    // noticeList.value = res.list || []; // 旧的错误访问方式
+    totalNotices.value = res.total || 0;
   } catch (error) {
     console.error("获取通知列表失败", error);
     ElMessage.error("获取通知列表失败");
@@ -211,37 +222,17 @@ const fetchNotices = async () => {
   }
 };
 
-// 获取通知类型
-const fetchNoticeTypes = async () => {
-  loadingNoticeTypes.value = true;
-  try {
-    const res = await getNoticeTypes();
-    noticeTypes.value = res.data || [];
-  } catch (error) {
-    console.error("获取通知类型失败", error);
-    // 此处不提示错误，以免过多弹窗
-  } finally {
-    loadingNoticeTypes.value = false;
-  }
-};
-
-// 计算通知类型映射
-const noticeTypeMapComputed = computed(() => {
-  const map = {};
-  noticeTypes.value.forEach(type => {
-    map[type.typeCode] = {name: type.typeName, tag: type.tagType || 'info'};
-  });
-  return map;
-});
-
 // 查看通知详情 (复用 Home.vue 逻辑)
 const viewNotice = async (row) => {
   loadingNoticeDetail.value = true;
   noticeDialogVisible.value = true;
   currentNotice.id = null; // 重置详情
   try {
+    // 成功时 res 直接是数据对象
     const res = await getNotificationById(row.id);
-    Object.assign(currentNotice, res.data);
+    // 直接将返回的数据对象合并到 currentNotice
+    Object.assign(currentNotice, res);
+    // Object.assign(currentNotice, res.data); // 旧的访问方式
   } catch (err) {
     console.error("获取通知详情失败", err);
     ElMessage.error("获取通知详情失败");
@@ -300,10 +291,12 @@ const goBack = () => {
 
 // 组件挂载后加载数据
 onMounted(async () => {
-  await Promise.all([
-    fetchNotices(),
-    fetchNoticeTypes()
-  ]);
+  // 只需获取通知列表
+  await fetchNotices();
+  // await Promise.all([
+  //   fetchNotices(),
+  //   fetchNoticeTypes() // 移除类型获取
+  // ]);
 });
 
 </script>

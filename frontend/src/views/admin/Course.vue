@@ -238,18 +238,15 @@ const fetchCourses = async () => {
   loading.value = true;
   try {
     const params = {
-      page: currentPage.value,
-      size: pageSize.value,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
       keyword: searchParams.keyword || undefined,
-      status: searchParams.status,
-      termId: searchParams.termId || undefined,
     };
     const res = await getCourseList(params);
-    courseList.value = res.data.records || [];
-    total.value = res.data.total || 0;
+    courseList.value = res.records || [];
+    total.value = res.total || 0;
   } catch (error) {
     console.error("获取课程列表失败", error);
-    ElMessage.error("获取课程列表失败");
   } finally {
     loading.value = false;
   }

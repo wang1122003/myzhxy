@@ -15,7 +15,8 @@ const API = {
     CHECK_PERMISSION: '/users/check-permission', // 检查权限 (假设后端存在此接口)
     GET_PERMISSIONS: '/users/permissions', // 获取权限列表 (假设后端存在此接口)
     LOGOUT: '/users/logout',
-    UPLOAD_AVATAR: '/users/upload-avatar' // 上传头像
+    UPLOAD_AVATAR: '/users/upload-avatar', // 上传头像
+    REFRESH_TOKEN: '/users/refresh-token' // 刷新token
 }
 
 // 登录
@@ -97,6 +98,15 @@ export function deleteUser(id) {
     })
 }
 
+// 更新用户状态 (管理员)
+export function updateUserStatus(id, status) {
+    return request({
+        url: `/users/${id}/status`, // 直接使用模板字符串
+        method: 'put',
+        params: {status} // 将状态作为查询参数发送
+    })
+}
+
 // 重置用户密码 (管理员)
 export function resetPassword(id, data) { // 如果后端需要数据 (例如新密码)，则添加 data 参数
     return request({
@@ -128,6 +138,14 @@ export function logout() {
     return request({
         url: API.LOGOUT,
         method: 'post' // 假设使用 POST 方法登出
+    })
+}
+
+// 刷新token
+export function refreshToken() {
+    return request({
+        url: API.REFRESH_TOKEN,
+        method: 'post'
     })
 }
 
@@ -282,10 +300,10 @@ export function getUserByUsername(username) {
  * @returns {Promise} 请求响应 Promise
  */
 export function getTeacherList(params) {
-    // 假设后端有专门获取教师列表的接口，例如 GET /users/teachers
+    // 调用 /users 接口，并添加 userType 过滤参数
     return request({
-        url: '/users/teachers', // 或者复用 getUserList 并添加 role='teacher' 过滤器
+        url: API.GET_USER_LIST, // 使用 /api/users 接口
         method: 'get',
-        params
+        params: {...params, userType: 'Teacher'} // 确保传递 userType 参数
     })
 } 

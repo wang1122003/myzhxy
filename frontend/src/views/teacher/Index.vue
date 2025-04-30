@@ -31,7 +31,6 @@
       </el-scrollbar>
     </el-aside>
     <el-container class="main-container">
-      <AppHeader/>
       <el-main class="app-main">
         <router-view/>
       </el-main>
@@ -42,7 +41,7 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {QuestionFilled} from '@element-plus/icons-vue'
+import {Expand, Fold, QuestionFilled} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -96,20 +95,7 @@ const handleMenuSelect = () => {
 <script>
 // Non-setup script block for component name
 export default {
-  name: 'TeacherLayout',
-  components: {
-    AppHeader,
-    Calendar,
-    Expand,
-    Fold,
-    HomeFilled,
-    User,
-    Reading,
-    Collection,
-    DataAnalysis,
-    Bell,
-    QuestionFilled
-  },
+  name: 'TeacherLayout'
 }
 </script>
 

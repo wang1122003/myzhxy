@@ -72,7 +72,7 @@
                 width="180"
             >
               <template #default="scope">
-                {{ formatDate(scope.row.uploadTime) }}
+                {{ formatDateTime(scope.row.uploadTime) }}
               </template>
             </el-table-column>
             <el-table-column
@@ -192,7 +192,7 @@
                 width="180"
             >
               <template #default="scope">
-                {{ formatDate(scope.row.uploadTime) }}
+                {{ formatDateTime(scope.row.uploadTime) }}
               </template>
             </el-table-column>
             <el-table-column
@@ -258,7 +258,7 @@ import {
 import {Document, Files, Picture, Upload} from '@element-plus/icons-vue';
 import {deleteFile as apiDeleteFile, getMyFiles} from '@/api/file';
 import {getStudentCourses} from '@/api/course';
-import {formatDate, formatFileSize} from '@/utils/formatters';
+import {formatDateTime, formatFileSize} from '@/utils/formatters';
 import {useRouter} from 'vue-router';
 
 const router = useRouter();

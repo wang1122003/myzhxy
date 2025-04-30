@@ -2,8 +2,8 @@ import request from '@/utils/request';
 
 // API Endpoints for Term
 const API = {
-    GET_ALL: '/terms',
-    GET_CURRENT: '/terms/current'
+    GET_ALL: '/common/terms',
+    GET_CURRENT: '/common/terms/current'
     // Add other term-related endpoints if they exist in the controller
     // e.g., ADD: '/terms', UPDATE: (id) => `/terms/${id}`, DELETE: (id) => `/terms/${id}`
 };

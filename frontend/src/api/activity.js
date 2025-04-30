@@ -184,11 +184,11 @@ export function rateActivity(id, ratingData) {
     });
 }
 
-// 获取活动报名列表 (管理员视角) - (后端缺失)
-// export function getActivityEnrollments(id, params) {
-//     return request({
-//         url: API.GET_ENROLLMENTS(id),
-//         method: 'get',
-//         params
-//     });
-// } 
+// 获取活动报名列表 (管理员视角)
+export function getActivityEnrollments(id, params) {
+    return request({
+        url: API.GET_ENROLLMENTS(id),
+        method: 'get',
+        params
+    });
+} 

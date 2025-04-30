@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.dao.PostDao">
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.campus.entity.Post">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
+        <result column="comments_json" property="commentsJson" jdbcType="LONGVARCHAR"/>
+        <result column="is_top" property="isTop" jdbcType="TINYINT"/>
+        <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="creation_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <association property="author" javaType="com.campus.entity.User">
+            <id column="u_id" property="id"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        p.id, p.title, p.content, p.user_id,
+        p.view_count, p.like_count, p.comment_count, p.comments_json, p.is_top, p.is_essence, p.status, 
+        p.creation_time, p.last_update_time
+    </sql>
+
+    <!-- 添加带作者信息的列 -->
+    <sql id="Columns_With_Author">
+        <include refid="Base_Column_List"/>,
+        u.id as u_id, u.username, u.real_name
+    </sql>
+
+    <!-- 获取所有帖子（分页） -->
+    <select id="getAllPosts" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Author"/>
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        <where>
+            <if test="status != null">
+                AND p.status = #{status,jdbcType=TINYINT}
+            </if>
+        </where>
+        ORDER BY p.creation_time DESC
+        <if test="offset != null and limit != null">
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取帖子总数 -->
+    <select id="getPostCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM post p
+        <where>
+            <if test="status != null">
+                AND p.status = #{status,jdbcType=TINYINT}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID获取帖子 -->
+    <select id="getPostById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Author"/>
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <!-- 根据作者ID获取帖子（分页） -->
+    <select id="getPostsByAuthorId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Author"/>
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.user_id = #{authorId,jdbcType=BIGINT}
+        <if test="status != null">
+            AND p.status = #{status,jdbcType=TINYINT}
+        </if>
+        ORDER BY p.creation_time DESC
+        <if test="offset != null and limit != null">
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 获取热门帖子 (恢复，确保 ID 与 DAO 接口一致) -->
+    <select id="getHotPosts" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Author"/>
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.status = 1 -- TINYINT 1 for Active (或根据实际状态值调整)
+        ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
+        limit #{limit,jdbcType=INTEGER}
+    </select>
+
+    <!-- 搜索帖子（分页） -->
+    <select id="searchPosts" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Author"/>
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.title LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                    OR p.content LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+                )
+            </if>
+            <if test="status != null">
+                AND p.status = #{status,jdbcType=TINYINT}
+            </if>
+        </where>
+        ORDER BY p.creation_time DESC
+        <if test="offset != null and limit != null">
+            limit #{offset,jdbcType=INTEGER}, #{limit,jdbcType=INTEGER}
+        </if>
+    </select>
+
+    <!-- 添加帖子 -->
+    <insert id="addPost" parameterType="com.campus.entity.Post" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO post (title, content, user_id,
+                          view_count, like_count, comment_count, comments_json, is_top, is_essence, status,
+                          creation_time, last_update_time
+        )
+        VALUES (#{title,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{userId,jdbcType=BIGINT},
+                #{viewCount,jdbcType=INTEGER}, #{likeCount,jdbcType=INTEGER}, #{commentCount,jdbcType=INTEGER},
+                #{commentsJson,jdbcType=LONGVARCHAR},
+                #{isTop,jdbcType=TINYINT}, #{isEssence,jdbcType=TINYINT}, #{status,jdbcType=TINYINT},
+                NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新帖子 -->
+    <update id="updatePost" parameterType="com.campus.entity.Post">
+        UPDATE post
+        <set>
+            <if test="title != null">title = #{title,jdbcType=VARCHAR},</if>
+            <if test="content != null">content = #{content,jdbcType=LONGVARCHAR},</if>
+            <if test="status != null">status = #{status,jdbcType=TINYINT},</if>
+            <if test="isTop != null">is_top = #{isTop,jdbcType=TINYINT},</if>
+            <if test="isEssence != null">is_essence = #{isEssence,jdbcType=TINYINT},</if>
+            last_update_time = NOW()
+        </set>
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 增加浏览量 -->
+    <update id="incrementViews" parameterType="java.lang.Long">
+        UPDATE post
+        SET view_count = view_count + 1
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 分页查询帖子（带作者信息和分类） -->
+    <select id="findPageMap" resultType="map">
+        SELECT
+        p.id AS id, p.title, p.content, p.user_id AS userId,
+        p.view_count AS viewCount, p.like_count AS likeCount, p.comment_count AS commentCount,
+        p.is_top AS isTop, p.is_essence AS isEssence, p.status,
+        p.creation_time AS createTime, p.last_update_time AS updateTime,
+        u.username AS authorName
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        <where>
+            <if test="params.keyword != null and params.keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{params.keyword}, '%')
+                OR p.content LIKE CONCAT('%', #{params.keyword}, '%')
+                OR u.username LIKE CONCAT('%', #{params.keyword}, '%'))
+            </if>
+            <if test="params.status != null">
+                AND p.status = #{params.status}
+            </if>
+        </where>
+        <choose>
+            <when test="params.sortBy == 'hot'">
+                ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
+            </when>
+            <when test="params.sortBy == 'updateTime'">
+                ORDER BY p.last_update_time DESC
+            </when>
+            <otherwise>
+                ORDER BY p.creation_time DESC
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

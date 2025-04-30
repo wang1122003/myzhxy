@@ -1,5 +1,6 @@
 <template>
-  <el-container class="app-container">
+  <el-container class="app-container" direction="vertical">
+    <app-header/>
     <el-main class="app-main-global">
       <router-view v-slot="{ Component, route }">
         <transition mode="out-in" name="fade">
@@ -12,34 +13,44 @@
 
 <script>
 import {computed, onMounted} from 'vue'
-import {fetchUserInfo} from '@/utils/auth'
+import {useUserStore} from '@/stores/userStore'
+import AppHeader from '@/components/common/AppHeader.vue'
 
 export default {
   name: 'App',
   components: {
+    AppHeader,
   },
   setup() {
+    const userStore = useUserStore()
     const currentYear = computed(() => new Date().getFullYear())
 
     onMounted(async () => {
-      // 添加页面加载完成后的类，用于页面过渡动画
       document.body.classList.add('app-loaded')
-      // 尝试从 localStorage 恢复用户信息到响应式变量中
-      // auth.js 文件本身在加载时就会执行这个初始化
-      // 但如果需要确保在 App 组件挂载时 userInfo 是最新的，可以调用 fetchUserInfo
-      // 注意：这里的 fetchUserInfo 不会发 API 请求，只是检查本地状态
       try {
-        await fetchUserInfo()
+        if (userStore.isLoggedIn()) {
+          console.log('[App.vue] 用户已登录，尝试获取/验证用户信息...');
+          try {
+            await userStore.fetchAndSetUserInfo();
+            console.log('[App.vue] 用户信息获取完成。');
+          } catch (fetchError) {
+            // 会话可能已经失效，但我们不立即登出用户
+            // 只是记录错误信息，允许用户继续操作，等到需要授权的操作时再处理
+            console.error('[App.vue] 用户信息获取失败，但继续保持当前状态:', fetchError.message);
+
+            // 更新存储中的错误状态，但不强制登出
+            userStore.setSessionError(true);
+          }
+        } else {
+          console.log('[App.vue] 用户未在本地登录，跳过用户信息获取。');
+        }
       } catch (error) {
-        console.error('App mounted: Error during initial user info fetch/check:', error)
-        // 如果检查出错，可能需要强制登出
-        // logout()
-        // router.push('/login')
+        console.error('App挂载：初始用户信息获取过程中出错:', error);
       }
     })
 
     return {
-      currentYear // 仍然保留，虽然 Footer 移除了
+      currentYear
     }
   }
 }
@@ -94,15 +105,12 @@ html, body {
 .app-container {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
 }
 
-/* 调整或移除 app-main-global 样式 */
 .app-main-global {
   flex: 1;
-  /* 移除内边距，让 Index.vue 的 el-main 控制 */
   padding: 0;
-  /* background-color: #f5f7fa; */ /* 背景色也由 Index.vue 控制 */
+  overflow-y: auto;
 }
 
 /* 页面过渡动画 */

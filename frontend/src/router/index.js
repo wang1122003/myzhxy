@@ -9,8 +9,6 @@ import {
     Document,
     Files,
     Flag,
-    HomeFilled,
-    House,
     Notebook,
     OfficeBuilding,
     Reading,
@@ -18,34 +16,15 @@ import {
     User
 } from '@element-plus/icons-vue'
 
-// 从 @/utils/auth 导入
-import {isLoggedIn, userRole} from '@/utils/auth'
+// 导入用户状态store
+import {useUserStore} from '@/stores/userStore'
 
 // 公共页面路由
 const routes = [
     {
         path: '/',
         name: 'Home',
-        component: () => import('../views/HomePage.vue'),
-        beforeEnter: (to, from, next) => {
-            const token = localStorage.getItem('token')
-            const userRole = localStorage.getItem('role')
-
-            if (token && userRole) {
-                // 已登录用户根据角色重定向到对应的首页
-                if (userRole === 'admin') {
-                    next('/admin')
-                } else if (userRole === 'teacher') {
-                    next('/teacher')
-                } else if (userRole === 'student') {
-                    next('/student')
-                } else {
-                    next() // 未知角色，显示普通首页
-                }
-            } else {
-                next() // 未登录用户显示普通首页
-            }
-        }
+        component: () => import('../views/HomePage.vue')
     },
     {
         path: '/error',
@@ -80,8 +59,8 @@ const routes = [
             {
                 path: '',
                 name: 'StudentHome',
-                component: () => import('../views/student/Home.vue'),
-                meta: {title: '学生主页', icon: HomeFilled, showInSidebar: true}
+                component: () => import('../views/student/Notices.vue'),
+                meta: {title: '通知公告', icon: Bell, showInSidebar: true},
             },
             {
                 path: 'profile',
@@ -142,8 +121,8 @@ const routes = [
             {
                 path: '',
                 name: 'TeacherHome',
-                component: () => import('../views/teacher/Home.vue'),
-                meta: {title: '教师工作台', icon: HomeFilled, showInSidebar: true}
+                component: () => import('../views/teacher/TeacherNoticeView.vue'),
+                meta: {title: '通知公告', icon: Bell, showInSidebar: true}
             },
             {
                 path: 'profile',
@@ -203,8 +182,8 @@ const routes = [
             {
                 path: '',
                 name: 'AdminHome',
-                component: () => import('../views/admin/Home.vue'),
-                meta: {title: '管理员工作台', icon: House, showInSidebar: true}
+                component: () => import('../views/admin/Notice.vue'),
+                meta: {title: '公告管理', icon: Bell, showInSidebar: true}
             },
             {
                 path: 'profile',
@@ -243,12 +222,6 @@ const routes = [
                 meta: {title: '活动管理', icon: Flag, showInSidebar: true}
             },
             {
-                path: 'notice',
-                name: 'AdminNotice',
-                component: () => import('../views/admin/Notice.vue'),
-                meta: {title: '公告管理', icon: Bell, showInSidebar: true}
-            },
-            {
                 path: 'forum',
                 name: 'AdminForum',
                 component: () => import('../views/admin/Forum.vue'),
@@ -273,12 +246,12 @@ const routes = [
         name: 'NotFound',
         component: () => import('../views/NotFound.vue') // 指向 404 页面
     },
-    // 添加通知列表公共页面路由
+    // 恢复 /notices 直接指向 NoticeList.vue
     {
         path: '/notices',
         name: 'NoticeList',
-        component: () => import('../views/NoticeList.vue'), // 新建的通知列表组件
-        meta: {title: '通知公告'} // 可选的路由元信息
+        component: () => import('../views/NoticeList.vue'),
+        meta: {title: '通知公告'} 
     }
 ]
 
@@ -292,12 +265,12 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-    // 直接使用导入的响应式变量和计算属性
-    const _isLoggedIn = isLoggedIn.value;
-    const _userRole = userRole.value; // 获取当前用户角色
-    // const _token = token.value; // token 检查 _isLoggedIn 内部已包含
+    // 使用Pinia store获取登录状态
+    const userStore = useUserStore();
+    const _isLoggedIn = userStore.isLoggedIn();
+    const _userRole = userStore.userRole();
 
-    console.log(`路由跳转：${from.path} -> ${to.path}`); // 保留日志
+    console.log(`路由跳转：${from.path} -> ${to.path}`);
 
     // 设置页面标题
     if (to.meta.title) {
@@ -305,10 +278,6 @@ router.beforeEach((to, from, next) => {
     } else {
         document.title = '智慧化校园服务系统'
     }
-
-    // 存储前一个页面的路径（用于实现"返回"功能） - 这个逻辑放这里可能不准确，因为 next() 可能重定向
-    // 考虑在 App.vue 或布局组件中使用 watch(route) 来保存前一个路由
-    // localStorage.setItem('prevPath', from.path)
 
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
     const requiredRole = to.meta.role;
@@ -324,7 +293,7 @@ router.beforeEach((to, from, next) => {
             if (requiredRole && _userRole !== requiredRole) {
                 // 1.2.1 角色不匹配 -> 跳转错误页
                 console.warn(`权限不足: 目标路由 ${to.path} 需要 ${requiredRole}, 当前角色为 ${_userRole}，跳转到 /error`);
-                next('/error'); // 或者跳转到专门的无权限页面
+                next('/error');
             } else {
                 // 1.2.2 角色匹配 或 路由不需要特定角色 -> 允许访问
                 console.log(`认证通过 (${requiredRole ? '角色匹配' : '无需特定角色'})，放行到 ${to.path}`);
@@ -334,17 +303,17 @@ router.beforeEach((to, from, next) => {
     } else {
         // 2. 目标路由不需要认证
         if (to.name === 'Home' && _isLoggedIn) {
-            // 2.1 访问的是主页（通常是登录页或通用首页），但用户已登录 -> 重定向到角色首页
+            // 2.1 访问的是主页，但用户已登录 -> 重定向到角色首页
             console.log(`已登录，访问首页，重定向到角色首页 (${_userRole})`);
             if (_userRole === 'admin') {
                 next('/admin/notice');
             } else if (_userRole === 'teacher') {
-                next('/teacher'); // 假设教师首页是 /teacher
+                next('/teacher');
             } else if (_userRole === 'student') {
-                next('/student'); // 假设学生首页是 /student
+                next('/student');
             } else {
                 console.warn('未知角色，重定向到 /');
-                next('/'); // 未知角色留在首页或特定页面
+                next('/');
             }
         } else {
             // 2.2 访问其他公共页面 -> 允许访问

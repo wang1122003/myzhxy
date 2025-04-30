@@ -173,8 +173,12 @@ const deleteLoading = ref(null);
 
 // Define the function directly in setup scope
 const getFilePreviewUrl = (file) => {
-  console.warn('getFilePreviewUrl needs implementation', file);
-  return '#'; // Placeholder implementation
+  if (!file || !file.id) {
+    return '#';
+  }
+
+  // 构建文件预览URL，注意直接返回下载链接
+  return `/api/file/download/${file.id}`;
 };
 
 const isDocument = (filename) => {

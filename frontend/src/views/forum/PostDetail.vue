@@ -67,20 +67,6 @@
 
           <!-- 帖子正文 -->
           <div class="post-content" v-html="post.content"></div>
-
-          <!-- 帖子标签 -->
-          <div v-if="post.tags && post.tags.length > 0" class="post-tags">
-            <span class="tag-label">标签:</span>
-            <el-tag
-                v-for="tag in post.tags"
-                :key="tag.id"
-                class="tag-item"
-                effect="plain"
-                size="small"
-            >
-              {{ tag.name }}
-            </el-tag>
-          </div>
         </el-card>
 
         <!-- 评论区 -->
@@ -311,7 +297,7 @@ import {
 } from '@/api/post'
 import {formatDistance} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
-import {useUserStore} from '@/utils/auth'
+import {useUserStore} from '@/stores/userStore'
 
 export default {
   name: 'PostDetail',
@@ -710,17 +696,6 @@ export default {
 .post-content {
   margin-bottom: 30px;
   line-height: 1.6;
-}
-
-.post-tags {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.tag-label {
-  color: #909399;
 }
 
 .comments-card {

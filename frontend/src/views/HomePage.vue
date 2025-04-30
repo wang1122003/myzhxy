@@ -147,7 +147,7 @@
       >
         <div class="notice-content">
           <div class="notice-info">
-            <span>发布人：{{ currentNotice.publisher }}</span>
+            <span>发布人：{{ currentNotice.publisherName }}</span>
             <span>发布时间：{{ formatTime(currentNotice.publishTime) }}</span>
           </div>
           <el-divider/>
@@ -157,22 +157,21 @@
               v-html="currentNotice.content"
           />
           <div
-              v-if="currentNotice.attachments && currentNotice.attachments.length"
+              v-if="currentNotice.attachmentFiles && currentNotice.attachmentFiles.length"
               class="notice-attachments"
           >
             <el-divider/>
             <h4>附件：</h4>
             <ul>
               <li
-                  v-for="file in currentNotice.attachments"
-                  :key="file.id"
+                  v-for="file in currentNotice.attachmentFiles"
+                  :key="file.url || file.name"  
               >
-                <!-- 附件下载，添加 loading 状态 -->
                 <el-link
-                    :disabled="downloadingAttachment[file.id]"
-                    :loading="downloadingAttachment[file.id]"
+                    :disabled="downloadingAttachment[file.id || file.url]"
+                    :loading="downloadingAttachment[file.id || file.url]" 
                     type="primary"
-                    @click="downloadAttachment(file)"
+                    @click="downloadAttachment(file)" 
                 >
                   {{ file.name }}
                 </el-link>
@@ -195,11 +194,10 @@ import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {Lock, User} from '@element-plus/icons-vue'
-import {login as authLogin} from '@/utils/auth'
+import {useUserStore} from '@/stores/userStore'
 import {getNotificationById, getRecentNotifications} from '@/api/notice'
 import {login} from '@/api/user'
 import {downloadFile} from '@/api/file'
-import {getNoticeTypes} from '@/api/common'
 
 // defineOptions({
 //   name: 'HomePage'
@@ -214,7 +212,6 @@ const loginLoading = ref(false)
 const noticeDialogVisible = ref(false)
 const loadingNoticeDetail = ref(false)
 const downloadingAttachment = reactive({})
-const noticeTypes = ref([])
 const tableHeight = ref('400px')
 
 const currentNotice = reactive({
@@ -223,7 +220,7 @@ const currentNotice = reactive({
   publisher: '',
   publishTime: '',
   content: '',
-  attachments: []
+  attachmentFiles: []
 })
 
 const loginForm = reactive({
@@ -237,67 +234,78 @@ const rules = {
   password: [{required: true, message: '请输入密码', trigger: 'blur'}]
 }
 
-// 检查并填充记住的用户名
-onMounted(async () => {
-  const rememberedUsername = localStorage.getItem('username')
-  if (rememberedUsername) {
-    loginForm.username = rememberedUsername
-    loginForm.remember = true
-  }
-  // 并发获取通知和通知类型
-  await Promise.all([
-    fetchNotices(),
-    fetchNoticeTypes()
-  ])
+const userStore = useUserStore(); // 获取 store 实例
 
-  // 初始化并监听窗口大小变化来调整表格高度
-  nextTick(() => {
-    calculateTableHeight();
+// 直接定义静态的类型映射
+const noticeTypeMap = {
+  "SYSTEM": {name: "系统通知", tag: "info"},
+  "COURSE": {name: "教学通知", tag: "success"},
+  "ACTIVITY": {name: "活动公告", tag: "warning"},
+  "GENERAL": {name: "通用", tag: "danger"}, // 假设数据库存的是 GENERAL
+  "OTHER": {name: "其他", tag: "info"} // 添加一个默认的 OTHER 以防万一
+};
+
+// computed 保持不变，但现在基于静态 map
+const noticeTypeMapComputed = computed(() => {
+  // 可以选择直接返回 noticeTypeMap，或者如果需要响应式更新则保持 computed
+  return noticeTypeMap;
+  // const map = {};
+  // noticeTypes.value.forEach(type => {
+  //   map[type.typeName] = {name: type.typeName, tag: type.tagType || 'info'} 
+  // });
+  // return map;
+});
+
+onMounted(async () => {
+  const rememberedUsername = localStorage.getItem('username');
+  if (rememberedUsername) {
+    loginForm.username = rememberedUsername;
+    loginForm.remember = true;
+  }
+
+  // 只需获取通知，不再需要获取类型
+  try {
+    await fetchNotices();
+    // await Promise.all([
+    //   fetchNotices(),
+    //   fetchNoticeTypes() // 移除类型获取
+    // ]);
+  } catch (error) {
+    console.error("Error during initial data fetch:", error);
+  }
+
+  // 调整表格高度的逻辑
+  await nextTick(() => {
+    const noticeCard = document.querySelector('.notice-card .el-card__body');
+    if (noticeCard) {
+      const calculatedHeight = noticeCard.clientHeight - 40;
+      tableHeight.value = `${Math.max(calculatedHeight, 200)}px`;
+    }
   });
-  window.addEventListener('resize', calculateTableHeight);
-})
+});
 
 const fetchNotices = async () => {
   loadingNotices.value = true
   try {
+    // 成功时，res 直接是数据数组
     const res = await getRecentNotifications()
-    if (res.code === 200 || res.success === true) {
-      // 确保res.data存在且是数组
-      notices.value = Array.isArray(res.data) ? res.data.slice(0, 5) : []
-    } else {
-      console.error('获取最近通知失败:', res.message)
-      notices.value = []
-    }
+    // 直接使用返回的数据，不再检查 code 或 success
+    notices.value = Array.isArray(res) ? res.slice(0, 5) : []
+    // if (res.code === 200 || res.success === true) {
+    //   // 确保res.data存在且是数组
+    //   notices.value = Array.isArray(res.data) ? res.data.slice(0, 5) : []
+    // } else {
+    //   console.error('获取最近通知失败:', res.message)
+    //   notices.value = []
+    // }
   } catch (error) {
-    console.error('获取最近通知异常:', error)
+    // catch 块仍然处理网络错误或拦截器抛出的业务错误
+    console.error('获取最近通知异常:', error) 
     notices.value = []
   } finally {
     loadingNotices.value = false
   }
 }
-
-const fetchNoticeTypes = async () => {
-  loadingNoticeTypes.value = true
-  try {
-    const res = await getNoticeTypes()
-    // 假设 API 返回 { data: [{ typeCode: 1, typeName: '系统通知', tagType: 'info' }, ...] }
-    noticeTypes.value = res.data || []
-  } catch (error) {
-    console.error("获取通知类型失败", error)
-  } finally {
-    loadingNoticeTypes.value = false
-  }
-}
-
-const noticeTypeMapComputed = computed(() => {
-  const map = {}
-  noticeTypes.value.forEach(type => {
-    // 假设 API 返回的字段是 typeCode, typeName, tagType
-    // 如果字段名不同，需要在这里调整
-    map[type.typeCode] = {name: type.typeName, tag: type.tagType || 'info'}
-  })
-  return map
-})
 
 const handleLogin = () => {
   loginFormRef.value.validate(async (valid) => {
@@ -309,10 +317,12 @@ const handleLogin = () => {
           password: loginForm.password
         })
 
-        if (response && response.code === 200 && response.data) {
-          // 从 @/utils/auth 导入的 login 函数处理 token 和 user info 存储
-          const role = authLogin({token: response.data.token, user: response.data.user})
-
+        if (response && response.token && response.user) {
+          // 使用userStore设置token和用户信息
+          const userStore = useUserStore()
+          userStore.setToken(response.token)
+          userStore.setUserInfo(response.user)
+          
           // 根据 remember 状态存储或移除用户名
           if (loginForm.remember) {
             localStorage.setItem('username', loginForm.username)
@@ -323,7 +333,8 @@ const handleLogin = () => {
           ElMessage.success('登录成功')
 
           // 根据角色重定向
-          console.log('[HomePage] Redirecting based on role from authLogin:', role)
+          const role = userStore.userRole()
+          console.log('[HomePage] Redirecting based on role:', role)
           if (role === 'admin') {
             router.push('/admin/notice')
           } else if (role === 'teacher') {
@@ -357,11 +368,13 @@ const handleLogin = () => {
 const viewNotice = async (row) => {
   loadingNoticeDetail.value = true
   noticeDialogVisible.value = true
-  currentNotice.id = null
+  currentNotice.id = null // 重置详情，避免显示旧数据
   try {
+    // 成功时 res 直接是数据对象
     const res = await getNotificationById(row.id)
-    // 假设附件信息在 notice 详情中，格式为 [{ id: 1, name: 'xxx.pdf', url: '...' }]
-    Object.assign(currentNotice, res.data)
+    // 直接将返回的数据对象合并到 currentNotice
+    Object.assign(currentNotice, res)
+    // Object.assign(currentNotice, res.data) // 旧的访问方式
   } catch (err) {
     console.error("获取通知详情失败", err)
     ElMessage.error("获取通知详情失败")
@@ -426,18 +439,9 @@ const downloadAttachment = async (file) => {
   }
 }
 
-// 计算表格高度的函数
-const calculateTableHeight = () => {
-  const windowHeight = window.innerHeight;
-  // 根据窗口高度或其他因素动态计算，例如减去 Header 和 Footer 的高度以及一些边距
-  // 这里的计算方式是一个示例，需要根据实际布局调整
-  const calculatedHeight = windowHeight - 300; // 假设减去 300px 的其他元素高度
-  tableHeight.value = calculatedHeight > 200 ? `${calculatedHeight}px` : '200px'; // 最小高度 200px
-};
-
 onBeforeUnmount(() => {
   // 组件卸载前移除监听器
-  window.removeEventListener('resize', calculateTableHeight);
+  // window.removeEventListener('resize', calculateTableHeight); // calculateTableHeight 已移除，无需再移除监听器
 });
 </script>
 

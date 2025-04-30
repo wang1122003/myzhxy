@@ -226,17 +226,20 @@ export default {
           getWeekdays()
         ])
 
-        semestersRef.value = termsRes.data
-        timeSlotsRef.value = timeSlotsRes.data
-        weekdaysRef.value = weekdaysRes.data
+        semestersRef.value = termsRes.data || [];
+        timeSlotsRef.value = timeSlotsRes.data || [];
+        weekdaysRef.value = weekdaysRes.data || [];
 
         if (semestersRef.value.length > 0) {
-          semester.value = semestersRef.value[0].value
-          await fetchSchedule()
+          semester.value = semestersRef.value[0].value || '';
+          await fetchSchedule();
         }
       } catch (error) {
         console.error('获取初始数据失败', error)
         ElMessage.error('获取学期/时间段/星期数据失败')
+        semestersRef.value = [];
+        timeSlotsRef.value = [];
+        weekdaysRef.value = [];
       } finally {
         loadingSemesters.value = false
         loadingTimeSlots.value = false

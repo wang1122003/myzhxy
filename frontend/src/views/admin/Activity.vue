@@ -325,14 +325,32 @@
       </template>
     </el-dialog>
 
-    <!-- 查看报名情况对话框 (占位符) -->
+    <!-- 查看报名情况对话框 -->
     <el-dialog
         v-model="enrollmentDialogVisible"
         title="活动报名情况"
         width="60%"
     >
-      <p>报名列表待实现...</p>
-      <!-- 显示报名学生列表 -->
+      <div v-loading="loadingEnrollments">
+        <el-table v-if="enrollments.length > 0" :data="enrollments" border style="width: 100%">
+          <el-table-column label="学号" prop="studentId"/>
+          <el-table-column label="姓名" prop="studentName"/>
+          <el-table-column label="班级" prop="className"/>
+          <el-table-column label="报名时间" prop="joinTime">
+            <template #default="scope">
+              {{ formatTime(scope.row.joinTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" prop="status">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'info'">
+                {{ scope.row.status === 'ACTIVE' ? '有效' : '已取消' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-else description="暂无报名数据"/>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="enrollmentDialogVisible = false">关闭</el-button>
@@ -371,13 +389,25 @@ import {
   ElSelect,
   ElTableColumn,
   ElTag,
-  ElUpload
+  ElUpload,
+  ElEmpty,
+  ElTable
 } from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
 import '@wangeditor/editor/dist/css/style.css';
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue';
-import {addActivity, deleteActivity, getActivityById, getAllActivities, updateActivity,} from '@/api/activity';
-import {getToken} from '@/utils/auth';
+import {fetchList, fetchDetail, createItem, updateItem, deleteItem, handleResponse} from '@/utils/apiUtils';
+import {formatDateTime, formatActivityStatus, getActivityStatusTagType} from '@/utils/formatters';
+import {ACTIVITY_STATUS, ACTIVITY_STATUS_LABELS} from '@/utils/constants';
+import {
+  addActivity,
+  deleteActivity,
+  getActivityById,
+  getAllActivities,
+  getActivityEnrollments,
+  updateActivity,
+} from '@/api/activity';
+import {useUserStore} from '@/stores/userStore';
 
 const loading = ref(false);
 const activityList = ref([]);
@@ -414,7 +444,12 @@ const posterFileList = ref([]); // For el-upload :file-list
 const imagePreviewVisible = ref(false);
 const imagePreviewUrl = ref('');
 const uploadPosterUrl = ref('/activities/poster/upload'); // Using path directly, was ACTIVITY_API.UPLOAD_POSTER
-const uploadHeaders = ref({Authorization: `Bearer ${getToken()}`});
+const uploadHeaders = ref({
+  get Authorization() {
+    const userStore = useUserStore();
+    return `Bearer ${userStore.token}`;
+  }
+});
 
 // Editor State
 const editorRef = shallowRef();
@@ -541,16 +576,16 @@ const fetchActivities = async () => {
   try {
     const params = {
       page: currentPage.value,
-      size: pageSize.value,
-      ...searchParams // Add search filters
+      pageSize: pageSize.value,
+      keyword: searchParams.keyword || undefined,
+      statusInt: searchParams.status // 使用statusInt与后端一致
     };
-    // Use getAllActivities instead of getActivityList
-    const res = await getAllActivities(params);
-    activityList.value = res.data.records || [];
-    total.value = res.data.total || 0;
+
+    const result = await fetchList('/activities', params);
+    activityList.value = result.list || [];
+    total.value = result.total || 0;
   } catch (error) {
-    console.error("获取活动列表失败", error);
-    ElMessage.error("获取活动列表失败");
+    console.error('获取活动列表失败', error);
   } finally {
     loading.value = false;
   }
@@ -661,19 +696,23 @@ const handleDeleteActivity = (row) => {
   });
 };
 
+// 报名情况状态变量
+const enrollments = ref([]);
+const loadingEnrollments = ref(false);
+
 // 查看报名情况
 const viewEnrollments = async (row) => {
   enrollmentDialogVisible.value = true;
-  ElMessage.info(`查看活动 ${row.title} 报名情况功能待实现`);
-  // try {
-  //     loadingEnrollments.value = true;
-  //     const res = await getActivityEnrollments(row.id);
-  //     enrollments.value = res.data || [];
-  // } catch (error) {
-  //     ElMessage.error('获取报名列表失败');
-  // } finally {
-  //     loadingEnrollments.value = false;
-  // }
+  try {
+    loadingEnrollments.value = true;
+    const res = await getActivityEnrollments(row.id);
+    enrollments.value = res.data?.list || [];
+  } catch (error) {
+    console.error("获取报名列表失败", error);
+    ElMessage.error('获取报名列表失败');
+  } finally {
+    loadingEnrollments.value = false;
+  }
 };
 
 // Submit Form
@@ -714,43 +753,17 @@ const submitActivityForm = () => {
 
 // 格式化状态
 const formatStatus = (status) => {
-  const statusMap = {
-    1: '报名中',
-    2: '进行中',
-    3: '已结束',
-    0: '已取消' // 假设 0 为取消状态
-  };
-  return statusMap[status] !== undefined ? statusMap[status] : '未知';
+  return formatActivityStatus(status);
 };
 
 // 获取状态标签类型
 const getStatusTagType = (status) => {
-  const typeMap = {
-    1: 'success', // 报名中
-    2: 'warning', // 进行中
-    3: 'info',    // 已结束
-    0: 'danger'   // 已取消
-  };
-  return typeMap[status] || 'info';
+  return getActivityStatusTagType(status);
 };
 
 // 格式化时间
 const formatTime = (timeStr) => {
-  if (!timeStr) return '-';
-  try {
-    const date = new Date(timeStr);
-    // 使用更完整的格式
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  } catch (e) {
-    return timeStr;
-  }
+  return formatDateTime(timeStr);
 };
 
 // 组件挂载后加载数据

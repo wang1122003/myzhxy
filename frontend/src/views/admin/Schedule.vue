@@ -46,7 +46,7 @@
               style="width: 150px"
           >
             <el-option
-                v-for="day in weekDayOptions"
+                v-for="day in WEEKDAY_OPTIONS"
                 :key="day.value"
                 :label="day.label"
                 :value="day.value"
@@ -74,7 +74,7 @@
     </el-card>
 
     <el-card
-        v-loading="loadingSchedule || loadingWeekdays"
+        v-loading="loadingSchedule || loadingSemesters"
         class="schedule-card"
     >
       <!-- 列表视图 -->
@@ -107,11 +107,19 @@
           <el-table-column
               label="开始时间"
               prop="startTime"
-          />
+          >
+            <template #default="scope">
+              {{ scope.row.startTime ? String(scope.row.startTime).substring(0, 5) : '-' }}
+            </template>
+          </el-table-column>
           <el-table-column
               label="结束时间"
               prop="endTime"
-          />
+          >
+            <template #default="scope">
+              {{ scope.row.endTime ? String(scope.row.endTime).substring(0, 5) : '-' }}
+            </template>
+          </el-table-column>
           <el-table-column
               label="教室"
               prop="classroomName"
@@ -183,10 +191,10 @@
                   placeholder="选择学期"
               >
                 <el-option
-                    v-for="item in semestersRef"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
+                    v-for="item in termList"
+                    :key="item.id"
+                    :label="item.termName"
+                    :value="item.id"
                 />
               </el-select>
             </el-form-item>
@@ -285,7 +293,7 @@
                   placeholder="选择星期"
               >
                 <el-option
-                    v-for="day in weekdaysRef"
+                    v-for="day in WEEKDAY_OPTIONS"
                     :key="day.value"
                     :label="day.label"
                     :value="day.value"
@@ -388,21 +396,21 @@ import {
   ElSelect,
   ElTimeSelect,
 } from 'element-plus';
-import {addSchedule, deleteSchedule, getScheduleById, getSchedulesPage, updateSchedule} from '@/api/schedule';
-import {getClasses, getTerms, getWeekdays} from '@/api/common';
+import {addSchedule, deleteSchedule, getScheduleById, updateSchedule} from '@/api/schedule';
+import {getClasses, getTerms} from '@/api/common';
 import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherSelectList} from '@/api/user';
 import {getAvailableClassrooms} from '@/api/classroom';
 import {getAllTerms} from '@/api/term';
 import {Plus, Search} from '@element-plus/icons-vue';
+import {WEEKDAY_OPTIONS} from '@/utils/components-config';
+import {fetchList, handleResponse} from '@/utils/apiUtils';
 
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);
-const loadingWeekdays = ref(false);
 
 const scheduleList = ref([]);
-const semestersRef = ref([]);
-const weekdaysRef = ref([]);
+const termList = ref([]);
 
 const total = ref(0);
 const currentPage = ref(1);
@@ -410,9 +418,6 @@ const pageSize = ref(10);
 
 const searchParams = reactive({
   termId: null,
-  teacherName: '',
-  courseName: '',
-  className: '',
   weekDay: null,
   keyword: '',
 });
@@ -437,9 +442,9 @@ const scheduleForm = ref({
   endTime: null,
   startWeek: 1,
   endWeek: 16,
+  className: '',
 });
 
-// 通用表单验证规则
 const formRules = {
   required: {required: true, message: '该字段为必填项', trigger: 'blur'}
 };
@@ -485,54 +490,40 @@ const loadingTeachers = ref(false);
 const loadingClasses = ref(false);
 const loadingClassrooms = ref(false);
 
-const termList = ref([]);
-
-const weekDayOptions = ref([]);
-
 const fetchInitialData = async () => {
   loadingSemesters.value = true;
-  loadingWeekdays.value = true;
   try {
-    const [termsRes, weekdaysRes] = await Promise.all([
-      getTerms(),
-      getWeekdays()
-    ]);
-    semestersRef.value = termsRes.data || [];
-    weekdaysRef.value = weekdaysRes.data || [];
+    const termsRes = await getTerms();
+    termList.value = termsRes.data || [];
 
-    if (semestersRef.value.length > 0 && !searchParams.termId) {
-      searchParams.termId = semestersRef.value[0].value;
+    if (termList.value.length > 0 && !searchParams.termId) {
+      const currentTerm = termList.value.find(t => t.current === 1);
+      searchParams.termId = currentTerm ? currentTerm.id : termList.value[0].id;
       await fetchSchedule();
     }
   } catch (error) {
     console.error('获取初始数据失败', error);
-    ElMessage.error('获取学期/星期数据失败');
+    ElMessage.error('获取学期数据失败');
   } finally {
     loadingSemesters.value = false;
-    loadingWeekdays.value = false;
   }
 };
 
 const fetchSchedule = async () => {
-  if (!searchParams.termId) {
-    ElMessage.warning('请先选择学期');
-    return;
-  }
   loadingSchedule.value = true;
   try {
     const params = {
       page: currentPage.value,
-      size: pageSize.value,
+      pageSize: pageSize.value,
       ...searchParams
     };
-    const res = await getSchedulesPage(params);
-    scheduleList.value = res.data.records || [];
-    total.value = res.data.total || 0;
+
+    const result = await fetchList('/schedules', params);
+    scheduleList.value = result.list || [];
+    total.value = result.total || 0;
   } catch (error) {
     console.error('获取课表失败', error);
-    ElMessage.error('获取课表失败');
-    scheduleList.value = [];
-    total.value = 0;
+    ElMessage.error('获取课表数据失败');
   } finally {
     loadingSchedule.value = false;
   }
@@ -540,12 +531,15 @@ const fetchSchedule = async () => {
 
 const weekdayMap = computed(() => {
   const map = {};
-  weekdaysRef.value.forEach(day => {
+  WEEKDAY_OPTIONS.forEach(day => {
     map[day.value] = day.label;
   });
   return map;
 });
-const formatWeekday = (weekdayValue) => weekdayMap.value[weekdayValue] || '';
+const formatWeekday = (weekday) => {
+  const day = WEEKDAY_OPTIONS.find(d => d.value === Number(weekday));
+  return day ? day.label : `星期${weekday}`;
+};
 
 const handleSizeChange = (val) => {
   pageSize.value = val;
@@ -651,35 +645,48 @@ const resetScheduleForm = () => {
     endTime: null,
     startWeek: 1,
     endWeek: 16,
+    className: '',
   };
   isEditMode.value = false;
 };
 
-const submitScheduleForm = () => {
-  scheduleFormRef.value.validate(async (valid) => {
+const submitScheduleForm = async () => {
+  scheduleFormRef.value?.validate(async (valid) => {
     if (valid) {
       submitting.value = true;
       try {
-        const dataToSend = {...scheduleForm.value};
+        // 处理班级名称
+        const formData = {...scheduleForm.value};
 
         if (isEditMode.value) {
-          await updateSchedule(dataToSend.id, dataToSend);
+          // 更新课表
+          const res = await updateSchedule(formData.id, formData);
+          handleResponse(res,
+              () => {
           ElMessage.success('更新成功');
+                dialogVisible.value = false;
+                fetchSchedule();
+              },
+              (msg) => ElMessage.error(msg || '更新失败')
+          );
         } else {
-          await addSchedule(dataToSend);
+          // 新增课表
+          const res = await addSchedule(formData);
+          handleResponse(res,
+              () => {
           ElMessage.success('添加成功');
+                dialogVisible.value = false;
+                fetchSchedule();
+              },
+              (msg) => ElMessage.error(msg || '添加失败')
+          );
         }
-        dialogVisible.value = false;
-        fetchSchedule();
       } catch (error) {
-        console.error("提交课表项失败", error);
-        ElMessage.error(error?.response?.data?.message || '提交失败，可能存在时间冲突');
+        console.error('提交失败', error);
+        ElMessage.error('提交失败，请检查网络连接');
       } finally {
         submitting.value = false;
       }
-    } else {
-      console.log('课表表单验证失败');
-      return false;
     }
   });
 };
@@ -689,11 +696,10 @@ const fetchTerms = async () => {
     const res = await getAllTerms({sortByCreateDesc: true});
     if (res.code === 200 && res.data) {
       termList.value = res.data;
-      // 设置默认选中当前学期
       const currentTerm = res.data.find(t => t.current === 1);
-      if (currentTerm) {
+      if (currentTerm && !searchParams.termId) {
         searchParams.termId = currentTerm.id;
-        fetchSchedule(); // 加载默认学期的课表
+        fetchSchedule();
       }
     } else {
       ElMessage.error(res.message || '获取学期列表失败');
@@ -709,32 +715,9 @@ const handleFilterChange = () => {
   fetchSchedule();
 };
 
-const fetchWeekdays = async () => {
-  loadingWeekdays.value = true;
-  try {
-    const res = await getWeekdays();
-    if (res.success && Array.isArray(res.data)) {
-      weekDayOptions.value = res.data.map(day => ({
-        label: day.label,
-        value: day.value
-      }));
-    } else {
-      ElMessage.error(res.message || '获取星期列表失败');
-      weekDayOptions.value = [];
-    }
-  } catch (error) {
-    console.error('获取星期列表失败:', error);
-    ElMessage.error('获取星期列表失败');
-    weekDayOptions.value = [];
-  } finally {
-    loadingWeekdays.value = false;
-  }
-};
-
 onMounted(() => {
   fetchInitialData();
   fetchTerms();
-  fetchWeekdays();
 });
 
 </script>

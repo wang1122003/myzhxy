@@ -9,46 +9,10 @@
       <el-form-item label="标题" prop="title">
         <el-input
             v-model="postForm.title"
-            maxlength="50"
-            placeholder="请输入帖子标题（2-50个字符）"
+            maxlength="100"
+            placeholder="请输入帖子标题（2-100个字符）"
             show-word-limit
         />
-      </el-form-item>
-
-      <el-form-item label="分类" prop="forumId">
-        <el-select
-            v-model="postForm.forumId"
-            placeholder="请选择分类"
-            style="width: 100%"
-        >
-          <el-option
-              v-for="item in forums"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="标签">
-        <el-select
-            v-model="selectedTags"
-            :max="5"
-            :max-collapse-tags="3"
-            allow-create
-            default-first-option
-            filterable
-            multiple
-            placeholder="请选择或输入标签，最多5个"
-            style="width: 100%;"
-        >
-          <el-option
-              v-for="tag in availableTags"
-              :key="tag.value"
-              :label="tag.label"
-              :value="tag.value"
-          />
-        </el-select>
       </el-form-item>
 
       <el-form-item label="内容" prop="content">
@@ -82,8 +46,11 @@ import {onBeforeUnmount, onMounted, reactive, ref, shallowRef} from 'vue'
 import {ElMessage} from 'element-plus'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
-import {createPost, getAvailableForums} from '@/api/post'
-import request from '@/utils/request'
+import {createPost} from '@/api/post'
+
+const formRules = {
+  required: {required: true, message: '此项为必填项', trigger: 'blur'},
+};
 
 export default {
   name: 'CreatePost',
@@ -93,33 +60,19 @@ export default {
   },
   emits: ['post-created'],
   setup(props, {emit}) {
-    // 表单数据
     const postFormRef = ref(null)
     const postForm = reactive({
       title: '',
-      forumId: '',
       content: '',
       tags: []
     })
 
-    // 表单校验规则
     const rules = {
       title: [formRules.required, {min: 2, max: 100, message: '标题长度在2到100个字符之间', trigger: 'blur'}],
-      forumId: [formRules.required],
       content: [formRules.required, {min: 10, message: '内容不能少于10个字符', trigger: 'blur'}]
     }
 
-    // 论坛板块数据
-    const forums = ref([])
-
-    // 标签数据
-    const availableTags = ref([])
-    const selectedTags = ref([])
-
-    // 提交状态
     const submitting = ref(false)
-
-    // 富文本编辑器配置
     const editorRef = shallowRef()
 
     const toolbarConfig = {
@@ -130,89 +83,63 @@ export default {
       placeholder: '请输入帖子内容...',
       MENU_CONF: {
         uploadImage: {
-          server: '/api/forum/upload/image',
+          server: '/api/posts/upload/image',
           fieldName: 'file',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${sessionStorage.getItem('token') || ''}`
           },
-          maxFileSize: 5 * 1024 * 1024, // 最大5MB
-          maxNumberOfFiles: 10, // 最大可上传10张图片
+          maxFileSize: 5 * 1024 * 1024,
+          maxNumberOfFiles: 10,
           allowedFileTypes: ['image/*'],
           customInsert(res, insertFn) {
-            if (res.code === 0 && res.data) {
-              let url = res.data
-              // 确保URL是完整的
-              if (url && !url.startsWith('http')) {
-                url = `${window.location.origin}/${url.startsWith('/') ? url.substring(1) : url}`
-              }
-              insertFn(url, '', url)
+            if (res && res.data && res.data.url) {
+              let url = res.data.url;
+              insertFn(url, res.data.alt || '', url);
             } else {
-              ElMessage.error(res.message || '图片上传失败')
+              ElMessage.error(res.message || '图片上传失败');
             }
           },
           onError(file, err, res) {
-            console.error('图片上传失败:', err, res)
-            ElMessage.error(`图片 ${file.name} 上传失败: ${err.message}`)
+            console.error('图片上传失败:', err, res);
+            ElMessage.error(`图片 ${file.name} 上传失败: ${err.message || '服务器错误'}`);
           }
         }
       }
     }
 
-    // 编辑器创建完成的回调
     const handleEditorCreated = (editor) => {
       editorRef.value = editor
     }
 
-    // 获取论坛板块
-    const fetchForums = async () => {
-      try {
-        const res = await getAvailableForums()
-        forums.value = res.data || []
-      } catch (error) {
-        console.error('获取板块失败:', error)
-        ElMessage.error('获取板块失败')
-      }
-    }
-
-    // 获取热门标签
-    const fetchPopularTags = async () => {
-      try {
-        const res = await request.get('/forum/tags/popular')
-        if (res && res.data) {
-          availableTags.value = res.data.map(tag => ({
-            value: tag.id || tag.name,
-            label: tag.name
-          }))
-        }
-      } catch (error) {
-        console.error('获取热门标签失败:', error)
-      }
-    }
-
-    // 提交表单
     const submitForm = async () => {
       if (!postFormRef.value) return
 
       await postFormRef.value.validate(async (valid) => {
         if (!valid) return
 
+        if (!editorRef.value) {
+          ElMessage.error('编辑器未初始化');
+          return;
+        }
+
+        const htmlContent = editorRef.value.getHtml() || '';
+        const textContent = editorRef.value.getText() || '';
+
+        if (htmlContent === '<p><br></p>' || textContent.length < 10) {
+          ElMessage.error('内容不能少于10个字符');
+          return;
+        }
+
         submitting.value = true
 
         try {
-          // 获取富文本内容
-          const htmlContent = editorRef.value.getHtml()
-          const textContent = editorRef.value.getText()
-
-          // 构造发布数据
           const postData = {
             title: postForm.title,
-            forumId: postForm.forumId,
             content: htmlContent,
-            summary: textContent.substring(0, 150), // 摘要最多150字
-            tags: selectedTags.value.map(tag => ({name: tag}))
+            summary: textContent.substring(0, 150),
+            tags: []
           }
 
-          // 发布帖子
           const res = await createPost(postData)
 
           ElMessage.success('发布成功')
@@ -220,50 +147,42 @@ export default {
           emit('post-created', res.data)
         } catch (error) {
           console.error('发布失败:', error)
-          ElMessage.error('发布失败: ' + (error.message || '未知错误'))
+          const errorMsg = error?.response?.data?.message || error?.message || '发布失败，请稍后再试';
+          ElMessage.error(errorMsg);
         } finally {
           submitting.value = false
         }
       })
     }
 
-    // 重置表单
     const resetForm = () => {
       if (postFormRef.value) {
         postFormRef.value.resetFields()
       }
-
       postForm.title = ''
-      postForm.forumId = ''
       postForm.content = ''
-      selectedTags.value = []
+      postForm.tags = []
 
       if (editorRef.value) {
-        editorRef.value.setHtml('')
+        editorRef.value.setHtml('<p><br></p>')
       }
     }
 
-    // 组件卸载前销毁编辑器实例
+    onMounted(() => {
+    })
+
     onBeforeUnmount(() => {
       const editor = editorRef.value
       if (editor) {
         editor.destroy()
       }
-    })
-
-    // 组件挂载时获取数据
-    onMounted(() => {
-      fetchForums()
-      fetchPopularTags()
+      editorRef.value = null
     })
 
     return {
       postFormRef,
       postForm,
       rules,
-      forums,
-      availableTags,
-      selectedTags,
       submitting,
       editorRef,
       toolbarConfig,
@@ -279,9 +198,32 @@ export default {
 <style scoped>
 .create-post-container {
   padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-:deep(.w-e-text-container) {
-  height: 350px;
+.el-form-item {
+  margin-bottom: 22px;
+}
+
+.editor-container {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.w-e-toolbar {
+  border-bottom: 1px solid #dcdfe6 !important;
+  padding: 5px 0;
+}
+
+.w-e-text-container {
+  height: 350px !important;
+  padding: 10px;
+}
+
+.el-select--multiple {
+  line-height: normal;
 }
 </style>

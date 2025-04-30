@@ -78,11 +78,10 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref, watch, h, resolveComponent} from 'vue';
-import {ElMessage, ElMessageBox, ElTag, ElButton} from 'element-plus';
-import {getCourseList, getStudentCourses, getCourseById} from '@/api/course'; // Corrected: Use course.js for listing and details
-import {selectCourse, dropCourse} from '@/api/courseSelection'; // Corrected: Use courseSelection.js for actions
-import {formatDateTime} from '@/utils/formatters';
+import {computed, h, onMounted, reactive, ref, resolveComponent, watch} from 'vue';
+import {ElButton, ElMessage, ElMessageBox} from 'element-plus';
+import {getCourseById, getCourseList, getStudentCourses} from '@/api/course'; // Corrected: Use course.js for listing and details
+import {dropCourse, selectCourse} from '@/api/courseSelection'; // Corrected: Use courseSelection.js for actions
 import PageContainer from '@/components/common/EnhancedPageContainer.vue';
 import TableView from '@/components/common/TableView.vue';
 import FilterForm from '@/components/common/AdvancedFilterForm.vue';

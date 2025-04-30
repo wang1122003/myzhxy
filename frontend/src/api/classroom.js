@@ -118,7 +118,7 @@ export function getClassroomsByType(roomType, params) {
 }
 
 // 根据容量获取教室 (后端缺失此接口)
-export function getClassroomsByCapacity(params) { // 参数应包含最小/最大容量
+export function getClassroomsByCapacity() { // 移除未使用的 params 参数
     console.warn('根据容量获取教室的后端 API 缺失。');
     // return request({
     //     url: API.GET_BY_CAPACITY,

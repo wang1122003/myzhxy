@@ -307,7 +307,7 @@ const getStatusTagType = (activity) => {
     case 'UPCOMING':
       return 'info';
     default:
-      return '';
+      return 'info'; // 默认返回'info'而不是空字符串
   }
 };
 
@@ -343,7 +343,7 @@ const fetchData = async () => {
         activityList.value = activitiesRes;
         total.value = activitiesRes.length;
       } else if (activitiesRes && activitiesRes.list && Array.isArray(activitiesRes.list)) {
-        // {list: [...], total: number} 格式
+        // {list: [...], total: number} 格式 - 常见于分页数据
         activityList.value = activitiesRes.list;
         total.value = activitiesRes.total || activitiesRes.list.length;
       } else if (activitiesRes && activitiesRes.records && Array.isArray(activitiesRes.records)) {
@@ -426,11 +426,14 @@ const handleReset = () => {
   fetchData();
 }
 
-// 处理 Tab 切换
-const handleTabChange = (tabName) => {
-  // activeTab 已通过 v-model 更新
-  currentPage.value = 1; // 切换 Tab 时重置页码
-  fetchData();
+// 切换选项卡
+const handleTabChange = () => {
+  currentPage.value = 1;
+  if (activeTab.value === 'enrolled') {
+    fetchEnrolledActivities();
+  } else {
+    fetchActivities();
+  }
 };
 
 // 查看活动详情

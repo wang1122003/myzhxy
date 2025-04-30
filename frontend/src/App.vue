@@ -158,11 +158,6 @@ html, body {
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
-/* 加载动画 */
-.app-loaded .el-loading-mask {
-  transition: opacity 0.5s;
-}
-
 /* 响应式断点调整 */
 @media (max-width: 768px) {
   .el-table {
@@ -191,15 +186,6 @@ html, body {
 
   html, body {
     font-size: 12px;
-  }
-
-  .app-footer {
-    height: 40px;
-    padding: 0 12px;
-  }
-
-  .footer-content {
-    font-size: 11px;
   }
 }
 </style>

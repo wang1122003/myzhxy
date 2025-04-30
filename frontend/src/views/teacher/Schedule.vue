@@ -107,10 +107,19 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 import {
-  ElButton, ElCard, ElDescriptions, ElDescriptionsItem, ElDialog, ElMessage,
-  ElOption, ElRadioButton, ElRadioGroup, ElSelect, ElIcon, ElEmpty
+  ElButton,
+  ElCard,
+  ElDescriptions,
+  ElDescriptionsItem,
+  ElDialog,
+  ElEmpty,
+  ElMessage,
+  ElOption,
+  ElRadioButton,
+  ElRadioGroup,
+  ElSelect
 } from 'element-plus';
 import {Refresh} from '@element-plus/icons-vue';
 import {getTeacherWeeklySchedule} from '@/api/schedule'; // Corrected: Use schedule.js for weekly schedule
@@ -256,7 +265,7 @@ const findCourseForCell = (day, timeSlot) => {
     }
 
     // 只有成功转换后才进行比较
-    return courseDay == day && courseStartTimeHHMM === targetStartTime.substring(0, 5);
+    return courseDay === day && courseStartTimeHHMM === targetStartTime.substring(0, 5);
   });
 };
 
@@ -305,7 +314,6 @@ const getGridCellStyle = (day, timeSlot) => {
   const courseStartMinutes = timeToMinutes(course.startTime || course.start_time);
   const courseEndMinutes = timeToMinutes(course.endTime || course.end_time);
   const slotStartMinutes = timeToMinutes(timeSlotsRef.value.find(t => t.slot === timeSlot)?.startTime);
-  const slotEndMinutes = timeToMinutes(timeSlotsRef.value.find(t => t.slot === timeSlot)?.endTime);
 
   if (courseStartMinutes === -1 || courseEndMinutes === -1 || slotStartMinutes === -1) {
     console.warn("getGridCellStyle: Invalid time format for course or slot", course, timeSlotsRef.value.find(t => t.slot === timeSlot));

@@ -34,7 +34,7 @@
             <span>发布时间: {{ formatDateTime(currentNotice.publishTime) }}</span>
           </div>
           <el-divider/>
-          <div class="notice-content ql-editor" v-html="currentNotice.content"></div>
+          <div class="notice-content" v-html="currentNotice.content"></div>
           <!-- Display attachments if available -->
           <div v-if="currentNotice.attachments && currentNotice.attachments.length > 0" class="attachments-section">
             <h4>附件:</h4>
@@ -221,12 +221,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Apply Quill styles to content */
-.notice-content :deep(.ql-editor) {
-  padding: 0;
-  line-height: 1.8;
-  min-height: 100px;
-}
+/* 移除未使用的.ql-editor选择器 */
 
 .notice-details {
   max-height: 75vh;

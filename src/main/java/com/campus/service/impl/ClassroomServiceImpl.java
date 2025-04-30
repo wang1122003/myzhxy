@@ -1,6 +1,7 @@
 package com.campus.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> implements ClassroomService {
 
     private final ScheduleService scheduleService;
+    private final ClassroomDao classroomDao;
 
     @Override
     public Classroom getClassroomById(Long id) {
@@ -55,36 +57,25 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
 
     @Override
     public IPage<Classroom> getClassroomsByPage(int page, int size, String keyword, String building, Integer status, String roomType) {
-        Page<Classroom> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<Classroom> queryWrapper = new LambdaQueryWrapper<>();
+        Page<Classroom> pager = new Page<>(page, size);
+        QueryWrapper<Classroom> queryWrapper = new QueryWrapper<>();
 
+        // 构建查询条件
         if (StringUtils.isNotBlank(keyword)) {
-            queryWrapper.and(wrapper -> wrapper.like(Classroom::getName, keyword)
-                    .or()
-                    .like(Classroom::getBuilding, keyword));
+            queryWrapper.and(wrapper -> wrapper.like("room_number", keyword).or().like("name", keyword));
         }
         if (StringUtils.isNotBlank(building)) {
-            queryWrapper.eq(Classroom::getBuilding, building);
+            queryWrapper.like("building", building);
         }
         if (status != null) {
-            ClassroomStatus classroomStatus = ClassroomStatus.fromCode(status);
-            if (classroomStatus != null) {
-                queryWrapper.eq(Classroom::getStatus, classroomStatus);
-            } else {
-                log.warn("Invalid status code provided for classroom search: " + status);
-            }
+            queryWrapper.eq("status", status);
         }
         if (StringUtils.isNotBlank(roomType)) {
-            try {
-                Integer roomTypeCode = Integer.parseInt(roomType);
-                queryWrapper.eq(Classroom::getRoomType, roomTypeCode);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid roomType provided for classroom search: " + roomType);
-            }
+            queryWrapper.eq("room_type", roomType); // 修正为实际数据库字段名，假设是 room_type
         }
-        queryWrapper.orderByAsc(Classroom::getName);
+        queryWrapper.orderByAsc("building", "room_number"); // 排序
 
-        return this.page(pageRequest, queryWrapper);
+        return classroomDao.selectPage(pager, queryWrapper);
     }
 
     @Override
@@ -123,7 +114,6 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
         return removeById(id);
     }
 
-    @Override
     public boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek) {
         // checkClassroomAvailability 方法尚未完全实现，总是返回 true
         log.warn("checkClassroomAvailability is not fully implemented.");
@@ -146,7 +136,6 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
         }
     }
 
-    @Override
     @Transactional
     public boolean batchDeleteClassrooms(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {

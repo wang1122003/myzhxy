@@ -194,14 +194,13 @@
 </template>
 
 <script setup>
-import {ref, reactive, onMounted, computed, shallowRef, onBeforeUnmount, watch, h, resolveComponent} from 'vue'
-import {ElMessage, ElMessageBox, ElTag} from 'element-plus'
-import {Plus, Search} from '@element-plus/icons-vue'
-import {getAllActivities, addActivity, updateActivity, deleteActivity, getActivityEnrollments} from '@/api/activity'
+import {computed, h, onBeforeUnmount, onMounted, reactive, ref, resolveComponent, shallowRef, watch} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {Plus} from '@element-plus/icons-vue'
+import {addActivity, deleteActivity, getAllActivities, updateActivity} from '@/api/activity'
 // import { uploadActivityPosterFile } from '@/api/file' // 引入海报上传 API - Commented out
 import EnrollmentListDialog from '@/components/admin/EnrollmentListDialog.vue' // 引入报名列表弹窗组件
 import {formatDateTime} from '@/utils/formatters' // Corrected import path
-
 // 富文本编辑器相关
 import '@wangeditor/editor/dist/css/style.css'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'

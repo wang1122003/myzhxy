@@ -130,6 +130,19 @@ export default {
   height: 100vh;
 }
 
+.app-header {
+  border-bottom: 1px solid #eee;
+}
+
+.main-container {
+  /* No specific styles needed? */
+}
+
+.sidebar-menu {
+  height: calc(100vh - 60px); /* Adjust based on header height */
+  border-right: none !important; /* Override default border */
+}
+
 .sidebar-container {
   background-color: #304156;
   color: #fff;
@@ -164,25 +177,11 @@ export default {
   flex-grow: 1;
 }
 
-.main-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
 .app-main {
   padding: 20px;
-  background-color: #f0f2f5;
-  flex-grow: 1;
+  background-color: #f4f4f5;
+  height: calc(100vh - 60px); /* Adjust based on header height */
   overflow-y: auto;
-}
-
-.el-scrollbar {
-  height: calc(100% - 60px);
-}
-
-.scrollbar-wrapper {
-  overflow-x: hidden !important;
 }
 
 /* 移动端样式 */

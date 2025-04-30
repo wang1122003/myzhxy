@@ -8,7 +8,6 @@ import com.campus.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,15 +42,6 @@ public class ClassroomController {
             @RequestParam(required = false) String roomType) {
         try {
             IPage<Classroom> pageData = classroomService.getClassroomsByPage(page, size, keyword, building, status, roomType);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("total", pageData.getTotal());
-            result.put("list", pageData.getRecords());
-            result.put("pages", pageData.getPages());
-            result.put("current", pageData.getCurrent());
-            result.put("size", pageData.getSize());
-
-            // 返回 IPage 对象，而不是 Map
             return Result.success(pageData);
         } catch (Exception e) {
             return Result.error("获取教室列表失败: " + e.getMessage());

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Classroom;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -89,7 +88,7 @@ public interface ClassroomService extends IService<Classroom> {
      * @param dayOfWeek   星期几 (String)
      * @return 是否可用
      */
-    boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek);
+    // boolean checkClassroomAvailability(Long classroomId, Date startTime, Date endTime, String dayOfWeek);
 
     /**
      * 批量更新教室状态

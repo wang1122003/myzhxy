@@ -125,25 +125,21 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, reactive} from 'vue';
+import {computed, onMounted, reactive, ref} from 'vue';
 import {
-  ElMessage,
-  ElRadioGroup,
-  ElRadioButton,
-  ElSelect,
-  ElOption,
+  ElButton,
   ElCard,
-  ElTable,
-  ElTableColumn,
-  ElDialog,
   ElDescriptions,
   ElDescriptionsItem,
-  ElButton,
-  ElIcon,
-  ElEmpty
+  ElDialog,
+  ElEmpty,
+  ElMessage,
+  ElOption,
+  ElRadioButton,
+  ElRadioGroup,
+  ElSelect
 } from 'element-plus';
 import {Refresh} from '@element-plus/icons-vue';
-import {useRoute} from 'vue-router';
 import {getAllTerms} from '@/api/term';
 import {getSchedulesByStudent} from '@/api/schedule';
 import {getCourseById} from '@/api/course';
@@ -337,7 +333,7 @@ const findCourseForCell = (day, timeSlot) => {
     }
 
     // 只有成功转换后才进行比较
-    return courseDay == day && courseStartTimeHHMM === targetStartTime;
+    return courseDay === day && courseStartTimeHHMM === targetStartTime;
   });
 };
 
@@ -350,7 +346,6 @@ const getGridCellStyle = (day, timeSlot) => {
   const courseStartMinutes = timeToMinutes(course.startTime || course.start_time);
   const courseEndMinutes = timeToMinutes(course.endTime || course.end_time);
   const slotStartMinutes = timeToMinutes(timeSlots.find(t => t.slot === timeSlot)?.startTime);
-  const slotEndMinutes = timeToMinutes(timeSlots.find(t => t.slot === timeSlot)?.endTime);
 
   if (courseStartMinutes === -1 || courseEndMinutes === -1 || slotStartMinutes === -1) {
     console.warn("getGridCellStyle: Invalid time format for course or slot", course, timeSlots.find(t => t.slot === timeSlot));
@@ -971,16 +966,7 @@ const fetchClassroomDetails = async (classroomId) => {
 
 .course-name {
   font-weight: bold;
-  font-size: 11px; /* 减小课程名称字体 */
-  word-break: break-all;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 1px;
-  line-height: 1.1;
-  text-align: center;
-  max-width: 100%;
+  margin-bottom: 4px;
 }
 
 .course-location,
@@ -1041,27 +1027,9 @@ const fetchClassroomDetails = async (classroomId) => {
 
   /* 对于非常小的屏幕，自动切换到列表视图 */
   @media screen and (max-width: 480px) {
-    :deep(.el-radio-button__inner) {
-      padding: 8px 12px;
-      font-size: 12px;
-    }
-
-    :deep(.el-select) {
-      width: 130px !important;
-    }
+    /* 移除未使用的选择器 */
   }
 }
 
-:deep(.el-table .cell) {
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-:deep(.el-table th) {
-  padding: 8px 0;
-}
-
-:deep(.el-table td) {
-  padding: 5px 0;
-}
+/* 移除未使用的选择器 */
 </style> 

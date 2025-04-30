@@ -23,8 +23,6 @@
 # VS Code 配置
 .vscode/
 
-# 日志文件
-logs/
 
 # 编译输出
 target/

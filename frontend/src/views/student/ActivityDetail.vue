@@ -1,20 +1,8 @@
 <template>
-  <div class="activity-detail-container">
-    <div class="page-header">
-      <div class="back-button">
+  <PageContainer :title="activity.title || '活动详情'" @back="goBack">
+    <template #actions>
         <el-button
-            text
-            @click="goBack"
-        >
-          <el-icon>
-            <ArrowLeft/>
-          </el-icon>
-          返回活动列表
-        </el-button>
-      </div>
-      <div class="header-actions">
-        <el-button
-            v-if="!activity.enrolled && activity.status === 1"
+            v-if="activity.status === 'PUBLISHED' && !activity.enrolled"
             :loading="joinLoading"
             type="primary"
             @click="handleJoin"
@@ -22,113 +10,107 @@
           立即报名
         </el-button>
         <el-button
-            v-if="activity.enrolled && activity.status === 1"
+            v-if="activity.status === 'PUBLISHED' && activity.enrolled"
             :loading="cancelLoading"
             type="danger"
             @click="handleCancel"
         >
           取消报名
         </el-button>
-      </div>
-    </div>
+    </template>
 
     <el-card
         v-loading="loading"
         class="activity-detail-card"
-        shadow="hover"
+        shadow="never" 
     >
       <template v-if="activity.id">
         <div class="activity-header">
-          <h1 class="activity-title">
-            {{ activity.title }}
-          </h1>
+          <!-- Title moved to PageContainer -->
+          <!-- <h1 class="activity-title">{{ activity.title }}</h1> -->
           <div class="activity-status">
-            <el-tag
-                v-if="activity.status === 1"
-                type="success"
-            >
-              报名中
-            </el-tag>
-            <el-tag
-                v-else-if="activity.status === 2"
-                type="warning"
-            >
-              进行中
-            </el-tag>
-            <el-tag
-                v-else-if="activity.status === 3"
-                type="info"
-            >
-              已结束
+            <el-tag :type="getStatusTagType(activity)" size="small">
+              {{ formatStatus(activity) }}
             </el-tag>
           </div>
         </div>
 
-        <div class="activity-cover">
-          <img
-              :src="activity.coverImage || 'https://via.placeholder.com/800x300'"
+        <div v-if="activity.posterUrl" class="activity-cover">
+          <el-image
+              :preview-src-list="[activity.posterUrl]"
               alt="活动封面"
-          >
+              :src="activity.posterUrl"
+              fit="cover"
+              lazy
+              preview-teleported
+              style="width: 100%; height: 250px; border-radius: 4px; margin-bottom: 20px;"
+          />
         </div>
 
-        <div class="activity-meta">
-          <div class="meta-item">
-            <el-icon>
-              <Calendar/>
-            </el-icon>
-            <span>活动时间：{{ formatDate(activity.startTime) }} 至 {{ formatDate(activity.endTime) }}</span>
-          </div>
-          <div class="meta-item">
-            <el-icon>
-              <Location/>
-            </el-icon>
-            <span>活动地点：{{ activity.location }}</span>
-          </div>
-          <div class="meta-item">
-            <el-icon>
-              <User/>
-            </el-icon>
-            <span>主办方：{{ activity.organizer }}</span>
-          </div>
-          <div class="meta-item">
-            <el-icon>
-              <InfoFilled/>
-            </el-icon>
-            <span>活动类型：{{ getActivityTypeName(activity.type) }}</span>
-          </div>
-          <div class="meta-item">
-            <el-icon>
-              <Document/>
-            </el-icon>
-            <span>报名人数：{{ activity.enrolledCount || 0 }}</span>
-          </div>
-          <div
-              v-if="activity.quota"
-              class="meta-item"
-          >
-            <el-icon>
-              <Star/>
-            </el-icon>
-            <span>可获学分：{{ activity.quota }}</span>
-          </div>
-        </div>
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item>
+            <template #label>
+              <el-icon>
+                <Calendar/>
+              </el-icon>
+              活动时间
+            </template>
+            {{ formatDateTime(activity.startTime, 'YYYY-MM-DD HH:mm') }} 至
+            {{ formatDateTime(activity.endTime, 'YYYY-MM-DD HH:mm') }}
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label>
+              <el-icon>
+                <Location/>
+              </el-icon>
+              活动地点
+            </template>
+            {{ activity.location }}
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label>
+              <el-icon>
+                <AlarmClock/>
+              </el-icon>
+              报名截止
+            </template>
+            {{ formatDateTime(activity.enrollDeadline, 'YYYY-MM-DD HH:mm') }}
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label>
+              <el-icon>
+                <User/>
+              </el-icon>
+              主办方
+            </template>
+            {{ activity.organizer || '暂无' }}
+          </el-descriptions-item>
+          <el-descriptions-item>
+            <template #label>
+              <el-icon>
+                <Tickets/>
+              </el-icon>
+              报名情况
+            </template>
+            {{ activity.currentParticipants || 0 }} / {{
+              activity.maxParticipants > 0 ? activity.maxParticipants : '不限'
+            }}
+          </el-descriptions-item>
+          <!-- Add other relevant meta info here -->
+        </el-descriptions>
 
-        <el-divider content-position="left">
-          活动详情
-        </el-divider>
-
+        <el-divider content-position="left">活动详情</el-divider>
         <div
-            class="activity-content"
-            v-html="activity.description"
+            class="activity-content ql-editor"
+            v-html="activity.content"
         />
 
+        <!-- Attachments section (if applicable) -->
         <div
             v-if="activity.attachments && activity.attachments.length > 0"
             class="activity-attachments"
         >
-          <el-divider content-position="left">
-            活动资料
-          </el-divider>
+          <el-divider content-position="left">相关附件</el-divider>
           <div
               v-for="(attachment, index) in activity.attachments"
               :key="index"
@@ -141,329 +123,230 @@
                 @click="downloadAttachment(attachment)"
             >
               <el-icon>
-                <Document/>
+                <Download/>
               </el-icon>
-              {{ attachment.filename }}
+              {{ attachment.filename }} ({{ formatFileSize(attachment.size) }})
             </el-button>
           </div>
         </div>
 
+        <!-- Enrollment Info -->
         <template v-if="activity.enrolled">
-          <el-divider content-position="left">
-            报名信息
-          </el-divider>
+          <el-divider content-position="left">我的报名信息</el-divider>
           <div class="enrollment-info">
-            <p>您已成功报名此活动！</p>
-            <p>报名时间：{{ formatDateTime(activity.enrollTime) }}</p>
-            <div v-if="activity.participationStatus">
-              <p>
-                参与状态：
-                <el-tag
-                    :type="activity.participationStatus === 'ATTENDED' ? 'success' : 'info'"
-                >
-                  {{
-                    activity.participationStatus === 'ATTENDED' ? '已参加' :
-                        activity.participationStatus === 'ABSENT' ? '未参加' : '待确认'
-                  }}
+            <p>您已于 {{ formatDateTime(activity.enrollTime) }} 成功报名此活动！</p>
+            <!-- Add participation status if available from API -->
+            <!--
+             <p>参与状态: 
+               <el-tag :type="getParticipationStatusType(activity.participationStatus)" size="small">
+                 {{ formatParticipationStatus(activity.participationStatus) }}
                 </el-tag>
-              </p>
-            </div>
+             </p>
+            -->
           </div>
         </template>
 
+        <!-- Participant List (Optional) -->
+        <!-- Consider if showing participants is necessary/appropriate -->
+        <!--
         <template v-if="activity.participants && activity.participants.length > 0">
-          <el-divider content-position="left">
-            参与人员
-          </el-divider>
+          <el-divider content-position="left">其他参与者</el-divider>
           <div class="participant-list">
-            <el-avatar
-                v-for="participant in activity.participants"
-                :key="participant.id"
-                :size="50"
-                :src="participant.avatar"
-                class="participant-avatar"
-            >
-              {{ participant.name ? participant.name.substring(0, 1) : 'U' }}
-            </el-avatar>
-            <div
-                v-if="activity.participants.length >= 10"
-                class="more-participants"
-            >
-              <el-button
-                  text
-                  @click="showAllParticipants"
-              >
-                查看全部
-              </el-button>
-            </div>
+            <el-tooltip v-for="participant in activity.participants.slice(0, 15)" :key="participant.id" :content="participant.username || '未知用户'" placement="top">
+               <el-avatar :src="participant.avatarUrl" size="small" style="margin: 2px;"></el-avatar>
+            </el-tooltip>
+            <span v-if="activity.participants.length > 15" style="margin-left: 5px; color: #909399;">...等 {{ activity.participants.length }} 人</span>
           </div>
         </template>
+        -->
+
       </template>
+      <el-empty v-else-if="!loading" description="未找到活动详情或加载失败"/>
     </el-card>
 
-    <!-- 参与人员对话框 -->
-    <el-dialog
-        v-model="participantsVisible"
-        title="活动参与人员"
-        width="50%"
-    >
-      <div class="participants-dialog">
-        <div
-            v-for="participant in activity.participants"
-            :key="participant.id"
-            class="participant-item"
-        >
-          <el-avatar
-              :size="40"
-              :src="participant.avatar"
-          >
-            {{ participant.name ? participant.name.substring(0, 1) : 'U' }}
-          </el-avatar>
-          <div class="participant-info">
-            <div class="participant-name">
-              {{ participant.name }}
-            </div>
-            <div class="participant-department">
-              {{ participant.department || '未知院系' }}
-            </div>
-          </div>
-          <div class="participant-status">
-            <el-tag
-                v-if="participant.status"
-                :type="participant.status === 'ATTENDED' ? 'success' : 'info'"
-                size="small"
-            >
-              {{ participant.status === 'ATTENDED' ? '已参加' : '已报名' }}
-            </el-tag>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
-  </div>
+    <!-- Removed Participants Dialog for simplicity, can be added back if needed -->
+
+  </PageContainer>
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {ArrowLeft, Calendar, Document, InfoFilled, Location, Star, User} from '@element-plus/icons-vue'
-import {cancelJoinActivity, getActivityById, joinActivity} from '@/api/activity'
-import {downloadFile} from '@/api/file'
+import {computed, onMounted, reactive, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
+import {
+  ElMessage,
+  ElMessageBox,
+  ElTag,
+  ElCard,
+  ElDescriptions,
+  ElDescriptionsItem,
+  ElDivider,
+  ElButton,
+  ElIcon,
+  ElImage,
+  ElAvatar,
+  ElEmpty,
+  ElTooltip
+} from 'element-plus';
+import {
+  AlarmClock, ArrowLeft, Calendar, Download, Location, Tickets, User
+} from '@element-plus/icons-vue';
+import {getActivityById, joinActivity, cancelJoinActivity} from '@/api/activity'; // Corrected: Use activity.js
+import {downloadFile} from '@/api/file'; // Corrected: Use file.js for download
+import {formatDateTime} from '@/utils/formatters'; // Corrected import path
+import {formatFileSize} from '@/utils/formatters'; // Corrected import path
+import Quill from 'quill';
 
-const router = useRouter()
-const route = useRoute()
-const activityId = ref(route.params.id)
+// --- State ---
+const route = useRoute();
+const router = useRouter();
+const activityId = ref(route.params.id);
+const activity = ref({});
+const loading = ref(true);
+const joinLoading = ref(false);
+const cancelLoading = ref(false);
+const downloadLoading = ref(null); // Track which attachment is downloading
 
-const activity = reactive({})
-const loading = ref(true)
-const joinLoading = ref(false)
-const cancelLoading = ref(false)
-const downloadLoading = ref(null)
-const participantsVisible = ref(false)
+// --- Methods ---
 
-// 获取活动详情
-const fetchActivityDetail = async () => {
-  loading.value = true
-  try {
-    const res = await getActivityById(activityId.value)
-    if (res.code === 200 && res.data) {
-      Object.assign(activity, res.data)
-    } else {
-      ElMessage.error(res.message || '获取活动详情失败')
-    }
-  } catch (error) {
-    console.error("获取活动详情失败:", error)
-    ElMessage.error('获取活动详情失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 获取活动类型名称
-const getActivityTypeName = (type) => {
-  const typeMap = {
-    'ACADEMIC': '学术讲座',
-    'CULTURAL': '文化活动',
-    'SPORTS': '体育赛事',
-    'CAREER': '就业招聘',
-    'SOCIAL': '社交活动',
-    'VOLUNTEER': '志愿服务',
-    'OTHER': '其他'
-  }
-  return typeMap[type] || '未知类型'
-}
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '-'
-
-  const date = new Date(dateString)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-// 格式化日期时间
-const formatDateTime = (dateString) => {
-  if (!dateString) return '-'
-
-  const date = new Date(dateString)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
-
-// 返回活动列表
 const goBack = () => {
-  router.push('/student/activities')
-}
+  router.push('/student/activities');
+};
 
-// 报名活动
+const fetchActivityDetail = async () => {
+  loading.value = true;
+  try {
+    const res = await getActivityById(activityId); // Corrected
+    activity.value = res.data || {};
+    // Ensure attachments is an array
+    if (!Array.isArray(activity.value.attachments)) {
+      activity.value.attachments = [];
+    }
+  } catch (error) {
+    console.error('获取活动详情失败:', error);
+    ElMessage.error('获取活动详情失败');
+    activity.value = {}; // Clear activity data on error
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Reusing status formatting logic from Activities.vue (or import from a util)
+const formatStatus = (act) => {
+  if (act.enrolled) return '已报名';
+  switch (act.status) {
+    case 'PUBLISHED':
+      return (act.maxParticipants > 0 && (act.currentParticipants || 0) >= act.maxParticipants) ? '名额已满' : '报名中';
+    case 'ONGOING':
+      return '进行中';
+    case 'FINISHED':
+      return '已结束';
+    case 'CANCELLED':
+      return '已取消';
+    case 'UPCOMING':
+      return '即将开始';
+    default:
+      return '未知';
+  }
+};
+
+const getStatusTagType = (act) => {
+  if (act.enrolled) return 'success';
+  switch (act.status) {
+    case 'PUBLISHED':
+      return (act.maxParticipants > 0 && (act.currentParticipants || 0) >= act.maxParticipants) ? 'danger' : 'primary';
+    case 'ONGOING':
+      return 'warning';
+    case 'FINISHED':
+      return 'info';
+    case 'CANCELLED':
+      return 'danger';
+    case 'UPCOMING':
+      return 'info';
+    default:
+      return '';
+  }
+};
+
 const handleJoin = async () => {
+  joinLoading.value = true;
   try {
-    await ElMessageBox.confirm(
-        '确定要报名参加此活动吗？',
-        '报名确认',
-        {
-          confirmButtonText: '确定报名',
-          cancelButtonText: '取消',
-          type: 'info'
-        }
-    )
-
-    joinLoading.value = true
-    await joinActivity(activityId.value)
-    ElMessage.success('报名成功')
-    fetchActivityDetail()
+    await joinActivity(activityId); // Corrected
+    ElMessage.success('报名成功！');
+    await fetchActivityDetail(); // Refresh details
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('报名失败', error)
-      ElMessage.error(error.response?.data?.message || '报名失败')
-    }
+    console.error('报名失败:', error);
+    // Error handled by interceptor
   } finally {
-    joinLoading.value = false
+    joinLoading.value = false;
   }
-}
+};
 
-// 取消报名
 const handleCancel = async () => {
+  cancelLoading.value = true;
   try {
-    await ElMessageBox.confirm(
-        '确定要取消报名此活动吗？',
-        '取消报名确认',
-        {
-          confirmButtonText: '确定取消',
-          cancelButtonText: '返回',
-          type: 'warning'
-        }
-    )
-
-    cancelLoading.value = true
-    await cancelJoinActivity(activityId.value)
-    ElMessage.success('已取消报名')
-    fetchActivityDetail()
+    await ElMessageBox.confirm(`确定要取消报名活动【${activity.value.title}】吗？`, '确认取消', {
+      confirmButtonText: '确定取消',
+      cancelButtonText: '再想想',
+      type: 'warning',
+    });
+    await cancelJoinActivity(activityId); // Corrected
+    ElMessage.success('取消报名成功。');
+    await fetchActivityDetail(); // Refresh details
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('取消报名失败', error)
-      ElMessage.error(error.response?.data?.message || '取消报名失败')
+      console.error('取消报名失败:', error);
+      // Error handled by interceptor
     }
   } finally {
-    cancelLoading.value = false
+    cancelLoading.value = false;
   }
-}
+};
 
-// 下载附件
 const downloadAttachment = async (attachment) => {
-  downloadLoading.value = attachment.id
+  downloadLoading.value = attachment.id;
   try {
-    const response = await downloadFile(attachment.id)
-    const blob = new Blob([response.data])
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = attachment.filename
-    link.click()
-    URL.revokeObjectURL(link.href)
-    ElMessage.success('文件下载成功')
+    // Use generic downloadFile, assuming attachment has id and filename
+    await downloadFile({fileId: attachment.id}, attachment.filename); // Corrected
   } catch (error) {
-    console.error('文件下载失败', error)
-    ElMessage.error('文件下载失败')
+    console.error("下载附件失败:", error);
+    // Error handled by interceptor or download util
   } finally {
-    downloadLoading.value = null
+    downloadLoading.value = null;
   }
-}
+};
 
-// 显示所有参与人员
-const showAllParticipants = () => {
-  participantsVisible.value = true
-}
-
-// 页面初始化
+// --- Lifecycle Hooks ---
 onMounted(() => {
-  fetchActivityDetail()
-})
+  fetchActivityDetail();
+});
+
 </script>
 
 <style scoped>
-.activity-detail-container {
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.activity-detail-card {
-  margin-bottom: 20px;
+/* Use Quill classes to style rich text content */
+.activity-content :deep(.ql-editor) {
+  padding: 0; /* Remove default padding if needed */
+  line-height: 1.8;
 }
 
 .activity-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
-.activity-title {
-  margin: 0;
-  font-size: 24px;
-}
-
-.activity-cover {
-  margin-bottom: 20px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.activity-cover img {
-  width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-}
-
-.activity-meta {
-  background-color: #f5f7fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.meta-item:last-child {
-  margin-bottom: 0;
-}
-
-.meta-item .el-icon {
-  margin-right: 8px;
-  color: #409EFF;
+.activity-status {
+  margin-left: 15px;
 }
 
 .activity-content {
-  line-height: 1.8;
-  margin-bottom: 20px;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fdfdfd;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  min-height: 150px;
 }
 
 .activity-attachments {
@@ -471,71 +354,24 @@ onMounted(() => {
 }
 
 .attachment-item {
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .enrollment-info {
-  background-color: #f0f9eb;
+  margin-top: 10px;
   padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.enrollment-info p {
-  margin: 5px 0;
+  background-color: #f0f9eb;
+  border: 1px solid #e1f3d8;
+  border-radius: 4px;
+  color: #67c23a;
 }
 
 .participant-list {
+  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
 }
 
-.participant-avatar {
-  margin-right: 5px;
-  transition: all 0.3s;
-}
-
-.participant-avatar:hover {
-  transform: scale(1.1);
-}
-
-.more-participants {
-  margin-left: 10px;
-}
-
-.participants-dialog {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.participant-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #EBEEF5;
-}
-
-.participant-item:last-child {
-  border-bottom: none;
-}
-
-.participant-info {
-  margin-left: 10px;
-  flex: 1;
-}
-
-.participant-name {
-  font-weight: bold;
-}
-
-.participant-department {
-  color: #909399;
-  font-size: 12px;
-}
-
-.participant-status {
-  margin-left: 10px;
-}
+/* Remove old styles if not needed */
 </style> 

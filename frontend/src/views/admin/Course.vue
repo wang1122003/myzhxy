@@ -1,20 +1,22 @@
 <template>
-  <div class="course-management">
-    <el-card class="page-container">
-      <template #header>
-        <div class="header">
-          <span>课程管理</span>
-          <el-button :icon="Plus" type="primary" @click="handleAddCourse">添加课程</el-button>
-        </div>
+  <PageContainer title="课程管理">
+    <template #header-actions>
+      <el-button type="primary" @click="handleAddCourse">
+        <el-icon>
+          <Plus/>
+        </el-icon>
+        添加课程
+      </el-button>
       </template>
 
-      <!-- 筛选区域 -->
-      <el-form :inline="true" :model="searchParams" class="filter-form">
+    <!-- 搜索和筛选 -->
+    <template #filters>
+      <FilterForm :model="searchParams" @reset="resetSearch" @search="handleSearch">
         <el-form-item label="课程名称/编号">
-          <el-input v-model="searchParams.keyword" clearable placeholder="请输入课程名称或编号"/>
+          <el-input v-model="searchParams.keyword" clearable placeholder="请输入课程名称或编号" style="width: 250px;"/>
         </el-form-item>
         <el-form-item label="课程类型">
-          <el-select v-model="searchParams.courseType" clearable placeholder="请选择课程类型">
+          <el-select v-model="searchParams.courseType" clearable placeholder="请选择课程类型" style="width: 150px;">
             <el-option label="全部" value=""/>
             <el-option label="必修课" value="COMPULSORY"/>
             <el-option label="选修课" value="ELECTIVE"/>
@@ -22,7 +24,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属学院">
-          <el-select v-model="searchParams.collegeId" clearable filterable placeholder="请选择学院">
+          <el-select v-model="searchParams.collegeId" clearable filterable placeholder="请选择学院"
+                     style="width: 200px;">
             <el-option label="全部" value=""/>
             <el-option
                 v-for="college in collegeList"
@@ -33,22 +36,24 @@
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="searchParams.status" clearable placeholder="请选择课程状态">
+          <el-select v-model="searchParams.status" clearable placeholder="请选择课程状态" style="width: 120px;">
             <el-option label="全部" value=""/>
             <el-option label="启用" value="1"/>
             <el-option label="禁用" value="0"/>
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button :icon="Search" type="primary" @click="handleSearch">查询</el-button>
-        </el-form-item>
-      </el-form>
+      </FilterForm>
+    </template>
 
       <!-- 课程列表 -->
-      <el-table
+    <TableView
           :data="courseList"
-          v-loading="loading"
-          style="width: 100%"
+          v-model="pagination"
+          :loading="loading"
+          :total="total"
+          border
+          stripe
+          @page-change="handlePageChange"
       >
         <el-table-column
             label="课程名称"
@@ -57,12 +62,17 @@
         />
         <el-table-column
             label="课程编号"
-            prop="courseNo"
+            prop="courseCode"
             width="120"
         />
         <el-table-column
             label="学分"
-            prop="credits"
+            prop="credit"
+            width="80"
+        />
+      <el-table-column
+          label="课时"
+          prop="hours"
             width="80"
         />
         <el-table-column
@@ -83,51 +93,32 @@
             width="80"
         >
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? '启用' : '禁用' }}
+            <el-tag :type="scope.row.status === '1' ? 'success' : 'danger'">
+              {{ scope.row.status === '1' ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column
             fixed="right"
             label="操作"
-            width="150"
+            width="180"
         >
           <template #default="scope">
             <el-button
-                :icon="Edit"
-                circle
                 size="small"
                 type="primary"
                 @click="handleEditCourse(scope.row)"
-            />
+            >编辑
+            </el-button>
             <el-button
-                :icon="Delete"
-                circle
                 size="small"
                 type="danger"
                 @click="handleDeleteCourse(scope.row)"
-            />
+            >删除
+            </el-button>
           </template>
         </el-table-column>
-        <template #empty>
-          <el-empty description="暂无课程数据"/>
-        </template>
-      </el-table>
-
-      <!-- 分页 -->
-      <el-pagination
-          v-if="total > 0"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="total"
-          class="pagination-container"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-      />
-    </el-card>
+    </TableView>
 
     <!-- 添加/编辑 对话框 -->
     <el-dialog
@@ -137,22 +128,72 @@
         width="600px"
         @close="handleDialogClose"
     >
-      <CourseForm
+      <FormView
           ref="courseFormRef"
-          :course-data="currentCourse"
-          :is-edit="isEditMode"
-          :loading="formLoading"
-      />
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button :loading="submitting" type="primary" @click="submitCourseForm">
-            {{ isEditMode ? '保存' : '创建' }}
-          </el-button>
-        </span>
-      </template>
+          v-loading="formLoading"
+          :model="currentCourse"
+          :rules="courseFormRules"
+          :submitting="submitting"
+          @cancel="dialogVisible = false"
+          @submit="submitCourseForm"
+      >
+        <el-form-item label="课程名称" prop="courseName">
+          <el-input v-model="currentCourse.courseName" placeholder="请输入课程名称"/>
+        </el-form-item>
+        <el-form-item label="课程编号" prop="courseCode">
+          <el-input v-model="currentCourse.courseCode" :disabled="isEditMode" placeholder="请输入课程编号"/>
+        </el-form-item>
+        <el-form-item label="学分" prop="credit">
+          <el-input-number v-model="currentCourse.credit" :min="0" :precision="1" :step="0.5" placeholder="请输入学分"
+                           style="width: 180px;"/>
+        </el-form-item>
+        <el-form-item label="课时" prop="hours">
+          <el-input-number v-model="currentCourse.hours" :min="0" :precision="0" :step="1" placeholder="请输入课时"
+                           style="width: 180px;"/>
+        </el-form-item>
+        <el-form-item label="课程类型" prop="courseType">
+          <el-select v-model="currentCourse.courseType" placeholder="请选择课程类型" style="width: 100%;">
+            <el-option label="必修课" value="COMPULSORY"/>
+            <el-option label="选修课" value="ELECTIVE"/>
+            <el-option label="通识课" value="GENERAL"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所属学院" prop="collegeId">
+          <el-select
+              v-model="currentCourse.collegeId"
+              clearable
+              filterable
+              placeholder="请选择所属学院"
+              style="width: 100%;"
+          >
+            <el-option
+                v-for="college in collegeList"
+                :key="college.id"
+                :label="college.collegeName"
+                :value="college.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="课程描述" prop="introduction">
+          <el-input
+              v-model="currentCourse.introduction"
+              :rows="3"
+              placeholder="请输入课程描述"
+              type="textarea"
+          />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-switch
+              v-model="currentCourse.status"
+              :active-value="'1'"
+              :inactive-value="'0'"
+              active-text="启用"
+              inactive-text="禁用"
+          />
+        </el-form-item>
+      </FormView>
     </el-dialog>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
@@ -161,49 +202,65 @@ import {
   ElButton,
   ElCard,
   ElDialog,
+  ElEmpty,
   ElForm,
   ElFormItem,
+  ElIcon,
   ElInput,
+  ElInputNumber,
   ElMessage,
   ElMessageBox,
   ElOption,
   ElPagination,
-  ElSelect
+  ElRadio,
+  ElRadioGroup,
+  ElSelect,
+  ElTable,
+  ElTableColumn,
+  ElTag
 } from 'element-plus';
 import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 import {getTeacherList} from '@/api/user';
 import {getAllTerms} from '@/api/term';
-import CourseForm from '@/components/course/CourseForm.vue';
+import {getColleges} from '@/api/common';
+import PageContainer from '@/components/common/EnhancedPageContainer.vue';
+import FilterForm from '@/components/common/AdvancedFilterForm.vue';
+import TableView from '@/components/common/TableView.vue';
+import FormView from '@/components/common/SmartForm.vue';
 
 const loading = ref(false);
 const courseList = ref([]);
 const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(10);
+const pagination = ref({
+  pageNum: 1,
+  pageSize: 10
+});
 const searchParams = reactive({
   keyword: '',
-  status: null,
+  courseType: '',
+  collegeId: '',
+  status: '',
   termId: null,
 });
 
 const dialogVisible = ref(false);
-const dialogTitle = ref('添加课程');
 const courseFormRef = ref(null);
-const courseForm = ref({
+const currentCourse = ref({
   id: null,
-  courseNo: '',
+  courseCode: '',
   courseName: '',
   credit: 0.0,
+  hours: 0,
   courseType: null,
   collegeId: null,
   collegeName: '',
   introduction: '',
-  status: 1,
+  status: '1',
 });
 
 const courseFormRules = reactive({
-  courseNo: [
+  courseCode: [
     {required: true, message: '请输入课程代码', trigger: 'blur'}
   ],
   courseName: [
@@ -222,31 +279,52 @@ const courseFormRules = reactive({
       }, trigger: 'blur'
     }
   ],
+  courseType: [
+    {required: true, message: '请选择课程类型', trigger: 'change'}
+  ],
+  collegeId: [
+    {required: true, message: '请选择所属学院', trigger: 'change'}
+  ]
 });
 
-const isEditMode = computed(() => !!courseForm.value.id);
+const isEditMode = computed(() => !!currentCourse.value.id);
 
 const teacherList = ref([]);
 const termList = ref([]);
-
 const collegeList = ref([]);
 const formLoading = ref(false);
 const submitting = ref(false);
-const currentCourse = ref({});
 
-const fetchCourses = async () => {
+const fetchCourseList = async () => {
   loading.value = true;
   try {
     const params = {
-      pageNum: currentPage.value,
-      pageSize: pageSize.value,
+      pageNum: pagination.value.pageNum,
+      pageSize: pagination.value.pageSize,
       keyword: searchParams.keyword || undefined,
+      courseType: searchParams.courseType || undefined,
+      collegeId: searchParams.collegeId || undefined,
+      status: searchParams.status !== null && searchParams.status !== '' ? searchParams.status : undefined,
+      termId: searchParams.termId || undefined
     };
     const res = await getCourseList(params);
-    courseList.value = res.records || [];
-    total.value = res.total || 0;
+    if (res && res.records !== undefined && res.total !== undefined) {
+      courseList.value = res.records;
+      total.value = res.total;
+    } else if (Array.isArray(res)) {
+      console.warn('后端 /courses 返回了纯数组，分页信息可能丢失');
+      courseList.value = res;
+      total.value = res.length;
+    } else {
+      console.warn('从 /courses 获取的数据格式不符合预期:', res);
+      courseList.value = [];
+      total.value = 0;
+    }
   } catch (error) {
     console.error("获取课程列表失败", error);
+    ElMessage.error(error.message || '加载课程数据时遇到问题，请稍后重试。');
+    courseList.value = [];
+    total.value = 0;
   } finally {
     loading.value = false;
   }
@@ -269,7 +347,7 @@ const fetchTerms = async () => {
       const currentTerm = res.data.find(t => t.current === 1);
       if (currentTerm && !searchParams.termId) {
         searchParams.termId = currentTerm.id;
-        fetchCourses();
+        fetchCourseList();
       }
     } else {
       ElMessage.error(res.message || '获取学期列表失败');
@@ -280,49 +358,61 @@ const fetchTerms = async () => {
   }
 };
 
+const fetchColleges = async () => {
+  try {
+    const res = await getColleges();
+    if (res.code === 200 && res.data) {
+      collegeList.value = res.data;
+    }
+  } catch (error) {
+    console.error("获取学院列表失败", error);
+    ElMessage.error('获取学院列表时发生错误');
+  }
+};
+
 const handleSearch = () => {
-  currentPage.value = 1;
-  fetchCourses();
+  pagination.value.pageNum = 1;
+  fetchCourseList();
 };
 
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1;
-  fetchCourses();
+const handlePageChange = () => {
+  fetchCourseList();
 };
 
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchCourses();
+const resetSearch = () => {
+  searchParams.keyword = '';
+  searchParams.courseType = '';
+  searchParams.collegeId = '';
+  pagination.value.pageNum = 1;
+  fetchCourseList();
 };
 
 const resetForm = () => {
   if (courseFormRef.value) {
     courseFormRef.value.resetFields();
   }
-  courseForm.value = {
+  currentCourse.value = {
     id: null,
-    courseNo: '',
+    courseCode: '',
     courseName: '',
     credit: 0.0,
+    hours: 0,
     courseType: null,
     collegeId: null,
     collegeName: '',
     introduction: '',
-    status: 1,
+    status: '1',
   };
 };
 
 const handleAddCourse = () => {
   resetForm();
-  dialogTitle.value = '添加课程';
   dialogVisible.value = true;
 };
 
 const handleEditCourse = (row) => {
   resetForm();
-  dialogTitle.value = '编辑课程';
-  courseForm.value = {...row};
+  currentCourse.value = {...row};
   dialogVisible.value = true;
 };
 
@@ -335,53 +425,34 @@ const handleDeleteCourse = (row) => {
     try {
       await deleteCourse(row.id);
       ElMessage.success('删除成功');
-      fetchCourses();
+      fetchCourseList();
     } catch (error) {
       console.error("删除课程失败", error);
-      ElMessage.error("删除课程失败");
+      ElMessage.error(error.message || "删除课程失败");
     }
   }).catch(() => {
     ElMessage.info('已取消删除');
   });
 };
 
-const submitCourseForm = () => {
-  courseFormRef.value.validate(async (valid) => {
-    if (valid) {
+const submitCourseForm = async () => {
+  submitting.value = true;
       try {
         if (isEditMode.value) {
-          const {id, ...updateData} = courseForm.value;
-          await updateCourse(id, updateData);
-          ElMessage.success('课程信息更新成功');
+          await updateCourse(currentCourse.value.id, currentCourse.value);
+          ElMessage.success('课程更新成功');
         } else {
-          await addCourse(courseForm.value);
+          await addCourse(currentCourse.value);
           ElMessage.success('课程添加成功');
         }
         dialogVisible.value = false;
-        await fetchCourses();
+        fetchCourseList();
       } catch (error) {
-        console.error("提交课程表单失败", error);
+        console.error('提交表单失败', error);
+        ElMessage.error(error.response?.data?.message || '操作失败');
+      } finally {
+        submitting.value = false;
       }
-    } else {
-      console.log('课程表单验证失败');
-      return false;
-    }
-  });
-};
-
-const formatTime = (timeStr) => {
-  if (!timeStr) return '-';
-  try {
-    const date = new Date(timeStr);
-    return date.toLocaleString('zh-CN', {hour12: false});
-  } catch (e) {
-    return timeStr;
-  }
-};
-
-const handleTermChange = () => {
-  currentPage.value = 1;
-  fetchCourses();
 };
 
 const handleDialogClose = () => {
@@ -398,9 +469,10 @@ const formatCourseType = (type) => {
 };
 
 onMounted(() => {
-  fetchCourses();
+  fetchCourseList();
   fetchTeachers();
   fetchTerms();
+  fetchColleges();
 });
 
 </script>
@@ -427,8 +499,9 @@ export default {
 }
 
 .course-list-card {
-  /* 样式 */
+  margin-bottom: 20px;
 }
+
 .pagination-container {
   margin-top: 20px;
   display: flex;
@@ -436,6 +509,7 @@ export default {
 }
 
 .dialog-footer {
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

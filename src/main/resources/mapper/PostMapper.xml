@@ -96,7 +96,8 @@
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.status = 1 -- TINYINT 1 for Active (或根据实际状态值调整)
-        ORDER BY (p.view_count * 0.3 + p.like_count * 0.4 + p.comment_count * 0.3) DESC
+        ORDER BY (COALESCE(p.view_count, 0) * 0.3 + COALESCE(p.like_count, 0) * 0.4 + COALESCE(p.comment_count, 0) *
+        0.3) DESC
         limit #{limit,jdbcType=INTEGER}
     </select>
 

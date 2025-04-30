@@ -1,179 +1,36 @@
 <template>
-  <div class="activity-management-container">
-    <div class="page-header">
-      <h2>活动管理</h2>
+  <PageContainer title="活动管理">
+    <template #actions>
       <el-button
           type="primary"
+          :icon="Plus"
           @click="handleAddActivity"
       >
-        <el-icon>
-          <Plus/>
-        </el-icon>
         发布活动
       </el-button>
-    </div>
+    </template>
 
     <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form
-          :inline="true"
+    <FilterForm
           :model="searchParams"
-          @submit.prevent="handleSearch"
-      >
-        <el-form-item label="关键词">
-          <el-input
-              v-model="searchParams.keyword"
-              clearable
-              placeholder="活动标题/地点"
-              style="width: 250px;"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select
-              v-model="searchParams.status"
-              clearable
-              placeholder="选择状态"
-              style="width: 120px;"
-          >
-            <el-option
-                :value="1"
-                label="报名中"
-            />
-            <el-option
-                :value="2"
-                label="进行中"
-            />
-            <el-option
-                :value="3"
-                label="已结束"
-            />
-            <el-option
-                :value="0"
-                label="已取消"
-            />
-          </el-select>
-        </el-form-item>
-        <!-- 可以添加按时间范围筛选 -->
-        <el-form-item>
-          <el-button
-              type="primary"
-              @click="handleSearch"
-          >
-            查询
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          :items="filterItems"
+          @reset="handleReset"
+          @search="handleSearch"
+    />
 
     <!-- 活动列表 -->
-    <el-card class="activity-list-card">
-      <BaseTable :table-data="activityList"
-          v-loading="loading"
+    <TableView
+        :action-column-config="actionColumnConfig"
           :data="activityList"
-          style="width: 100%"
-      >
-        <el-table-column
-            label="活动标题"
-            min-width="200"
-            prop="title"
-            show-overflow-tooltip
-        />
-        <el-table-column
-            label="活动地点"
-            prop="location"
-            width="150"
-        />
-        <el-table-column
-            label="开始时间"
-            prop="startTime"
-            width="180"
-        >
-          <template #default="scope">
-            {{ formatTime(scope.row.startTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-            label="结束时间"
-            prop="endTime"
-            width="180"
-        >
-          <template #default="scope">
-            {{ formatTime(scope.row.endTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-            label="报名人数"
-            prop="currentParticipants"
-            width="100"
-        />
-        <el-table-column
-            label="状态"
-            prop="status"
-            width="100"
-        >
-          <template #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)">
-              {{ formatStatus(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-            label="发布时间"
-            prop="createTime"
-            width="180"
-        >
-          <template #default="scope">
-            {{ formatTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-            fixed="right"
-            label="操作"
-            width="220"
-        >
-          <template #default="scope">
-            <el-button
-                size="small"
-                type="success"
-                @click="viewEnrollments(scope.row)"
-            >
-              报名情况
-            </el-button>
-            <el-button
-                size="small"
-                type="primary"
-                @click="handleEditActivity(scope.row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-                size="small"
-                type="danger"
-                @click="handleDeleteActivity(scope.row)"
-            >
-              删除
-            </el-button>
-            <!-- 可以添加取消活动等操作 -->
-          </template>
-        </el-table-column>
-      </BaseTable>
-
-      <!-- 分页 -->
-      <div
-          v-if="total > 0"
-          class="pagination-container"
-      >
-        <el-pagination
+        :columns="tableColumns"
+        :loading="loading"
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
+        :total="total"
+        @delete="handleDeleteActivity"
+        @edit="handleEditActivity"
+        @refresh="fetchActivities"
         />
-      </div>
-    </el-card>
 
     <!-- 添加/编辑活动对话框 -->
     <el-dialog
@@ -183,6 +40,7 @@
         top="5vh"
         width="80%"
         @close="handleDialogClose"
+        destroy-on-close
     >
       <el-form
           ref="activityFormRef"
@@ -239,11 +97,54 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item
+                label="报名截止"
+                prop="enrollDeadline"
+            >
+              <el-date-picker
+                  v-model="activityForm.enrollDeadline"
+                  placeholder="选择报名截止时间"
+                  style="width: 100%;"
+                  type="datetime"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+                label="人数限制"
+                prop="maxParticipants"
+            >
+              <el-input-number
+                  v-model="activityForm.maxParticipants"
+                  :min="0"
+                  placeholder="0表示不限制"
+                  style="width: 100%;"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="活动封面" prop="posterUrl">
+          <!-- Comment out ImageUpload component -->
+          <!--
+          <ImageUpload
+            v-model="activityForm.posterUrl"
+            :limit="1"
+            :fileSize="5"
+            :uploadFunction="uploadActivityPosterFile"
+          />
+          -->
+          <el-input v-model="activityForm.posterUrl" placeholder="暂时禁用图片上传"></el-input>
+          <!-- Keep input for validation, or remove validation -->
+          <!-- <el-input v-model="activityForm.posterUrl" style="display: none;" /> --> <!-- 用于表单验证 -->
+        </el-form-item>
         <el-form-item
             label="活动描述"
             prop="description"
         >
-          <div style="border: 1px solid #ccc">
+          <div style="border: 1px solid #ccc; z-index: 100;">
             <Toolbar
                 :default-config="toolbarConfig"
                 :editor="editorRef"
@@ -254,268 +155,401 @@
                 v-model="activityForm.description"
                 :default-config="editorConfig"
                 mode="default"
-                style="height: 300px; overflow-y: hidden;"
-                @onCreated="handleEditorCreated"
+                style="height: 400px; overflow-y: hidden;"
+                @onChange="handleEditorChange"
+                @onCreated="handleCreated"
             />
           </div>
         </el-form-item>
-        <el-form-item
-            label="封面图片"
-            prop="posterUrl"
-        >
-          <el-upload
-              :action="uploadPosterUrl"
-              :before-upload="beforePosterUpload"
-              :file-list="posterFileList"
-              :headers="uploadHeaders"
-              :limit="1"
-              :on-error="handleUploadError"
-              :on-preview="handlePosterPreview"
-              :on-remove="handlePosterRemove"
-              :on-success="handlePosterSuccess"
-              :show-file-list="true"
-              list-type="picture-card"
-          >
-            <el-icon>
-              <Plus/>
-            </el-icon>
-            <template #tip>
-              <div class="el-upload__tip">
-                只能上传一张封面图，建议尺寸 750x300，大小不超过 2MB
-              </div>
-            </template>
-          </el-upload>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="activityForm.status">
+            <el-radio :label="1">发布（开放报名）</el-radio>
+            <el-radio :label="2">预告（暂不报名）</el-radio>
+            <el-radio :label="0">草稿（暂不发布）</el-radio>
+          </el-radio-group>
         </el-form-item>
-        <el-form-item
-            label="状态"
-            prop="status"
-        >
-          <el-select
-              v-model="activityForm.status"
-              placeholder="设置活动状态"
-          >
-            <el-option
-                :value="1"
-                label="报名中"
-            />
-            <el-option
-                :value="2"
-                label="进行中"
-            />
-            <el-option
-                :value="3"
-                label="已结束"
-            />
-            <el-option
-                :value="0"
-                label="已取消"
-            />
-          </el-select>
-        </el-form-item>
+
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button
-              :loading="submitting"
               type="primary"
+              :loading="submitting"
               @click="submitActivityForm"
-          >确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 查看报名情况对话框 -->
-    <el-dialog
-        v-model="enrollmentDialogVisible"
-        title="活动报名情况"
-        width="60%"
-    >
-      <div v-loading="loadingEnrollments">
-        <el-table v-if="enrollments.length > 0" :data="enrollments" border style="width: 100%">
-          <el-table-column label="学号" prop="studentId"/>
-          <el-table-column label="姓名" prop="studentName"/>
-          <el-table-column label="班级" prop="className"/>
-          <el-table-column label="报名时间" prop="joinTime">
-            <template #default="scope">
-              {{ formatTime(scope.row.joinTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" prop="status">
-            <template #default="scope">
-              <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'info'">
-                {{ scope.row.status === 'ACTIVE' ? '有效' : '已取消' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-else description="暂无报名数据"/>
+          >
+            {{ dialogTitle.includes('发布') ? '发布' : '更新' }}
+          </el-button>
       </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="enrollmentDialogVisible = false">关闭</el-button>
-        </span>
       </template>
     </el-dialog>
 
-    <!-- 图片预览 -->
-    <el-dialog v-model="imagePreviewVisible">
-      <img
-          :src="imagePreviewUrl"
-          alt="Preview Image"
-          style="display: block; max-width: 100%; margin: 0 auto;"
-      >
-    </el-dialog>
-  </div>
+    <!-- 报名情况弹窗 -->
+    <EnrollmentListDialog
+        v-model="enrollmentDialogVisible"
+        :activity-id="currentActivityId"
+    />
+
+  </PageContainer>
 </template>
 
 <script setup>
-import {onBeforeUnmount, onMounted, reactive, ref, shallowRef} from 'vue';
-import {
-  ElButton,
-  ElCard,
-  ElCol,
-  ElDatePicker,
-  ElDialog,
-  ElForm,
-  ElFormItem,
-  ElIcon,
-  ElInput,
-  ElMessage,
-  ElMessageBox,
-  ElOption,
-  ElPagination,
-  ElRow,
-  ElSelect,
-  ElTableColumn,
-  ElTag,
-  ElUpload,
-  ElEmpty,
-  ElTable
-} from 'element-plus';
-import {Plus} from '@element-plus/icons-vue';
-import '@wangeditor/editor/dist/css/style.css';
-import {Editor, Toolbar} from '@wangeditor/editor-for-vue';
-import {fetchList, fetchDetail, createItem, updateItem, deleteItem, handleResponse} from '@/utils/apiUtils';
-import {formatDateTime, formatActivityStatus, getActivityStatusTagType} from '@/utils/formatters';
-import {ACTIVITY_STATUS, ACTIVITY_STATUS_LABELS} from '@/utils/constants';
-import {
-  addActivity,
-  deleteActivity,
-  getActivityById,
-  getAllActivities,
-  getActivityEnrollments,
-  updateActivity,
-} from '@/api/activity';
-import {useUserStore} from '@/stores/userStore';
+import {ref, reactive, onMounted, computed, shallowRef, onBeforeUnmount, watch, h, resolveComponent} from 'vue'
+import {ElMessage, ElMessageBox, ElTag} from 'element-plus'
+import {Plus, Search} from '@element-plus/icons-vue'
+import {getAllActivities, addActivity, updateActivity, deleteActivity, getActivityEnrollments} from '@/api/activity'
+// import { uploadActivityPosterFile } from '@/api/file' // 引入海报上传 API - Commented out
+import EnrollmentListDialog from '@/components/admin/EnrollmentListDialog.vue' // 引入报名列表弹窗组件
+import {formatDateTime} from '@/utils/formatters' // Corrected import path
 
-const loading = ref(false);
-const activityList = ref([]);
-const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(10);
+// 富文本编辑器相关
+import '@wangeditor/editor/dist/css/style.css'
+import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
+
+// --- Constants & Enums ---
+const ACTIVITY_STATUS = {
+  DRAFT: 0,
+  PUBLISHED: 1, // 报名中 (替代旧的1)
+  UPCOMING: 2, // 预告 (替代旧的2 进行中)
+  ONGOING: 3, // 进行中 （新增状态，如果需要区分报名结束和活动开始的话）
+  FINISHED: 4, // 已结束 (替代旧的3)
+  CANCELLED: 5 // 已取消 (替代旧的0)
+}
+const ACTIVITY_STATUS_OPTIONS = [
+  // { value: '', label: '全部' }, // FilterForm 内部处理
+  {value: ACTIVITY_STATUS.PUBLISHED, label: '报名中'},
+  {value: ACTIVITY_STATUS.UPCOMING, label: '预告'},
+  {value: ACTIVITY_STATUS.ONGOING, label: '进行中'},
+  {value: ACTIVITY_STATUS.FINISHED, label: '已结束'},
+  {value: ACTIVITY_STATUS.CANCELLED, label: '已取消'}
+];
+
+// --- Reactive State ---
+const loading = ref(false)
+const activityList = ref([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
 const searchParams = reactive({
   keyword: '',
   status: null
-});
+})
 
-const dialogVisible = ref(false);
-const dialogTitle = ref('发布活动');
-const enrollmentDialogVisible = ref(false);
-const isEditMode = ref(false);
-const loadingForm = ref(false);
-const submitting = ref(false);
-const activityFormRef = ref(null);
-
-// Activity Form Data
-const activityForm = ref({
+const dialogVisible = ref(false)
+const dialogTitle = ref('发布活动')
+const activityFormRef = ref(null)
+const loadingForm = ref(false)
+const submitting = ref(false)
+const activityForm = reactive({
   id: null,
   title: '',
   location: '',
   startTime: null,
   endTime: null,
+  enrollDeadline: null,
+  maxParticipants: 0,
   description: '',
-  posterUrl: '', // Store the URL of the uploaded poster
-  status: 1, // Default to '报名中'
-});
+  posterUrl: '',
+  status: ACTIVITY_STATUS.PUBLISHED // 默认发布状态
+})
 
-// Poster Upload State
-const posterFileList = ref([]); // For el-upload :file-list
-const imagePreviewVisible = ref(false);
-const imagePreviewUrl = ref('');
-const uploadPosterUrl = ref('/activities/poster/upload'); // Using path directly, was ACTIVITY_API.UPLOAD_POSTER
-const uploadHeaders = ref({
-  get Authorization() {
-    const userStore = useUserStore();
-    return `Bearer ${userStore.token}`;
-  }
-});
+const enrollmentDialogVisible = ref(false)
+const currentActivityId = ref(null)
 
-// Editor State
-const editorRef = shallowRef();
-const toolbarConfig = {};
+// 富文本编辑器实例 (必须用 shallowRef)
+const editorRef = shallowRef()
+const toolbarConfig = {}
 const editorConfig = {
   placeholder: '请输入活动详情...',
-  // Configure image upload within editor if needed
-};
+  MENU_CONF: {
+    // 配置图片上传（如果编辑器需要）
+    // uploadImage: {
+    //     server: '/api/file/upload/post/image', // 与 file.js 中的接口对应
+    //     fieldName: 'file',
+    //     maxFileSize: 5 * 1024 * 1024, // 5M
+    //     // 可选的其他配置...
+    // }
+  }
+}
 
-// Editor created callback
-const handleEditorCreated = (editor) => {
-  editorRef.value = editor;
-};
-// Destroy editor before component unmount
-onBeforeUnmount(() => {
-  const editor = editorRef.value;
-  if (editor == null) return;
-  editor.destroy();
-});
+// --- Computed Properties ---
 
-// --- Poster Upload Handlers ---
-const handlePosterSuccess = (response, uploadFile) => {
-  if (response.code === 200 && response.data?.url) {
-    activityForm.value.posterUrl = response.data.url;
-    // Update fileList for display (ensure only one item)
-    posterFileList.value = [{name: uploadFile.name, url: response.data.url}];
-    ElMessage.success('封面上传成功');
-  } else {
-    ElMessage.error(response.message || '封面上传失败');
-    posterFileList.value = []; // Clear list on error
+// FilterForm 配置
+const filterItems = computed(() => [
+  {
+    type: 'input',
+    label: '关键词',
+    prop: 'keyword',
+    placeholder: '活动标题/地点',
+    props: {clearable: true, style: {width: '250px'}}
+  },
+  {
+    type: 'select',
+    label: '状态',
+    prop: 'status',
+    placeholder: '选择状态',
+    options: ACTIVITY_STATUS_OPTIONS,
+    props: {clearable: true, style: {width: '150px'}} // 调整宽度
+  }
+])
+
+// TableView 列配置
+const tableColumns = computed(() => [
+  {prop: 'title', label: '活动标题', minWidth: 200, showOverflowTooltip: true},
+  {prop: 'location', label: '活动地点', width: 150},
+  {
+    prop: 'startTime',
+    label: '开始时间',
+    width: 180,
+    formatter: (row) => formatDateTime(row.startTime)
+  },
+  {
+    prop: 'endTime',
+    label: '结束时间',
+    width: 180,
+    formatter: (row) => formatDateTime(row.endTime)
+  },
+  {
+    prop: 'enrollDeadline',
+    label: '报名截止',
+    width: 180,
+    formatter: (row) => formatDateTime(row.enrollDeadline)
+  },
+  {
+    label: '报名/名额', width: 120,
+    formatter: (row) => `${row.currentParticipants || 0} / ${row.maxParticipants > 0 ? row.maxParticipants : '不限'}`
+  },
+  {
+    prop: 'status',
+    label: '状态',
+    width: 100,
+    slots: {
+      default: (scope) =>
+          h(resolveComponent('ElTag'), {
+            type: getStatusTagType(scope.row.status)
+          }, () => formatStatus(scope.row.status))
+        }
+  },
+  {
+    prop: 'createTime',
+    label: '发布时间',
+    width: 180,
+    formatter: (row) => formatDateTime(row.createTime)
+    }
+])
+
+// TableView 操作列配置
+const actionColumnConfig = computed(() => ({
+  width: 250, // 调整宽度以适应按钮
+  fixed: 'right',
+  buttons: [
+    {label: '报名情况', type: 'success', size: 'small', event: 'viewEnrollments'}, // 自定义事件
+    {label: '编辑', type: 'primary', size: 'small', event: 'edit'},
+    {label: '删除', type: 'danger', size: 'small', event: 'delete'}
+    // 可以添加更多操作，如 '取消活动'
+  ]
+}))
+
+// --- Methods ---
+
+// 获取活动列表
+const fetchActivities = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      ...searchParams
+    }
+    const res = await getAllActivities(params)
+    activityList.value = res.data.records || []
+    total.value = res.data.total || 0
+  } catch (error) {
+    console.error("获取活动列表失败:", error)
+    // 错误由拦截器处理
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchActivities()
+}
+
+// 处理重置
+const handleReset = () => {
+  searchParams.keyword = '';
+  searchParams.status = null;
+  currentPage.value = 1;
+  fetchActivities();
+}
+
+// 格式化状态
+const formatStatus = (status) => {
+  const found = ACTIVITY_STATUS_OPTIONS.find(opt => opt.value === status);
+  return found ? found.label : '未知';
+}
+
+// 获取状态标签类型
+const getStatusTagType = (status) => {
+  switch (status) {
+    case ACTIVITY_STATUS.PUBLISHED:
+      return 'success' // 报名中
+    case ACTIVITY_STATUS.UPCOMING:
+      return 'info' // 预告
+    case ACTIVITY_STATUS.ONGOING:
+      return 'primary' // 进行中
+    case ACTIVITY_STATUS.FINISHED:
+      return 'warning' // 已结束
+    case ACTIVITY_STATUS.CANCELLED:
+      return 'danger' // 已取消
+    default:
+      return ''
+  }
+}
+
+// --- 活动表单和弹窗 --- 
+
+// 重置表单
+const resetForm = () => {
+  if (activityFormRef.value) {
+    activityFormRef.value.resetFields();
+  }
+  activityForm.id = null;
+  activityForm.title = '';
+  activityForm.location = '';
+  activityForm.startTime = null;
+  activityForm.endTime = null;
+  activityForm.enrollDeadline = null;
+  activityForm.maxParticipants = 0;
+  activityForm.description = '';
+  activityForm.posterUrl = '';
+  activityForm.status = ACTIVITY_STATUS.PUBLISHED; // 重置为默认
+  // 清空编辑器内容
+  if (editorRef.value) {
+    editorRef.value.setHtml('');
+  }
+}
+
+// 打开添加弹窗
+const handleAddActivity = () => {
+  resetForm();
+  dialogTitle.value = '发布新活动'
+  dialogVisible.value = true
+}
+
+// 打开编辑弹窗
+const handleEditActivity = (row) => {
+  resetForm(); // 先重置
+  dialogTitle.value = '编辑活动'
+  // 填充数据
+  Object.assign(activityForm, {
+    id: row.id,
+    title: row.title,
+    location: row.location,
+    startTime: row.startTime, // 后端返回的格式应能被 date-picker 识别
+    endTime: row.endTime,
+    enrollDeadline: row.enrollDeadline,
+    maxParticipants: row.maxParticipants,
+    description: row.description || '',
+    posterUrl: row.posterUrl || '',
+    status: row.status
+  });
+  dialogVisible.value = true;
+  // 编辑器内容在 dialog 打开后设置，确保编辑器已渲染
+  watch(dialogVisible, (newVal) => {
+    if (newVal && editorRef.value && activityForm.description) {
+      editorRef.value.setHtml(activityForm.description);
+    }
+  }, {immediate: true, once: true});
+}
+
+// 删除活动
+const handleDeleteActivity = (row) => {
+  ElMessageBox.confirm(`确定要删除活动【${row.title}】吗？`, '警告', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteActivity(row.id)
+      ElMessage.success('删除成功')
+      fetchActivities() // 刷新列表
+    } catch (error) {
+      console.error("删除活动失败:", error)
+      // 错误由拦截器处理
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除')
+  })
+}
+
+// 查看报名情况
+const viewEnrollments = (row) => {
+  currentActivityId.value = row.id
+  enrollmentDialogVisible.value = true
+}
+
+// 弹窗关闭回调
+const handleDialogClose = () => {
+  resetForm(); // 关闭时重置表单
+  // 销毁编辑器实例（如果每次打开都重新创建）
+  // const editor = editorRef.value;
+  // if (editor == null) return;
+  // editor.destroy();
+  // editorRef.value = null;
+}
+
+// 编辑器创建回调
+const handleCreated = (editor) => {
+  editorRef.value = editor // 记录 editor 实例
+}
+
+// 编辑器内容变化回调 (用于表单验证触发)
+const handleEditorChange = () => {
+  if (activityFormRef.value) {
+    activityFormRef.value.validateField('description');
   }
 };
 
-const handlePosterRemove = (uploadFile, uploadFiles) => {
-  activityForm.value.posterUrl = '';
-  posterFileList.value = [];
-  // Optional: Call backend to delete the uploaded poster if needed
-  // const posterId = ... // Get ID if stored
-  // if (posterId) deletePoster(posterId);
-};
+// 提交活动表单
+const submitActivityForm = async () => {
+  if (!activityFormRef.value) return
+  await activityFormRef.value.validate(async (valid) => {
+    if (valid) {
+      submitting.value = true
+      loadingForm.value = true
+      try {
+        const dataToSubmit = {...activityForm};
 
-const handlePosterPreview = (uploadFile) => {
-  imagePreviewUrl.value = uploadFile.url || activityForm.value.posterUrl;
-  imagePreviewVisible.value = true;
-};
+        if (activityForm.id) {
+          // 更新活动
+          await updateActivity(activityForm.id, dataToSubmit)
+          ElMessage.success('更新成功')
+        } else {
+          // 添加活动
+          await addActivity(dataToSubmit)
+          ElMessage.success('发布成功')
+        }
+        dialogVisible.value = false
+        fetchActivities() // 刷新列表
+      } catch (error) {
+        console.error("提交活动失败:", error)
+        // 错误由拦截器处理
+      } finally {
+        submitting.value = false
+        loadingForm.value = false
+      }
+    } else {
+      ElMessage.warning('请检查表单必填项')
+      return false
+    }
+  })
+}
 
-const beforePosterUpload = (rawFile) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-  if (!allowedTypes.includes(rawFile.type)) {
-    ElMessage.error('封面图片只支持 JPG/PNG/GIF 格式!');
-    return false;
-  }
-  if (rawFile.size / 1024 / 1024 > 2) {
-    ElMessage.error('封面图片大小不能超过 2MB!');
-    return false;
-  }
-  return true;
-};
-
-const handleUploadError = (error) => {
-  console.error("上传错误", error);
-  ElMessage.error('上传失败');
-};
-// --- End Poster Upload Handlers ---
-
-// Form Validation Rules
+// 表单验证规则
 const activityFormRules = reactive({
   title: [{required: true, message: '请输入活动标题', trigger: 'blur'}],
   location: [{required: true, message: '请输入活动地点', trigger: 'blur'}],
@@ -524,286 +558,60 @@ const activityFormRules = reactive({
     {required: true, message: '请选择结束时间', trigger: 'change'},
     {
       validator: (rule, value, callback) => {
-        if (activityForm.value.startTime && value && new Date(value) <= new Date(activityForm.value.startTime)) {
-          callback(new Error('结束时间必须晚于开始时间'));
+        if (activityForm.startTime && value && value <= activityForm.startTime) {
+          callback(new Error('结束时间必须晚于开始时间'))
         } else {
-          callback();
+          callback()
         }
-      }, trigger: 'change'
+      },
+      trigger: 'change'
     }
   ],
-  description: [
-    {required: true, message: '请输入活动描述', trigger: 'blur'},
+  enrollDeadline: [
+    {required: true, message: '请选择报名截止时间', trigger: 'change'},
     {
       validator: (rule, value, callback) => {
-        const editor = editorRef.value;
-        if (editor && editor.isEmpty()) {
-          callback(new Error('请输入活动描述'));
+        if (activityForm.startTime && value && value >= activityForm.startTime) {
+          callback(new Error('报名截止时间必须早于活动开始时间'))
         } else {
-          callback();
+          callback()
         }
-      }, trigger: 'blur'
+      },
+      trigger: 'change'
     }
   ],
-  // Poster is not strictly required for the form to submit?
-  // posterUrl: [{ required: true, message: '请上传封面图片', trigger: 'change' }],
-  status: [{required: true, message: '请设置活动状态', trigger: 'change'}],
-});
+  description: [{required: true, message: '请输入活动描述', trigger: 'change'}],
+  // posterUrl: [{ required: true, message: '请上传活动封面', trigger: 'change' }], // 验证隐藏的 input - Commented out validation
+  status: [{required: true, message: '请选择活动状态', trigger: 'change'}]
+})
 
-// Dialog Close Handler
-const handleDialogClose = () => {
-  if (activityFormRef.value) {
-    activityFormRef.value.resetFields();
-  }
-  activityForm.value = {
-    id: null,
-    title: '',
-    location: '',
-    startTime: null,
-    endTime: null,
-    description: '',
-    posterUrl: '',
-    status: 1
-  };
-  posterFileList.value = [];
-  isEditMode.value = false;
-  loadingForm.value = false;
-};
-
-// 获取活动列表
-const fetchActivities = async () => {
-  loading.value = true;
-  try {
-    const params = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      keyword: searchParams.keyword || undefined,
-      statusInt: searchParams.status // 使用statusInt与后端一致
-    };
-
-    const result = await fetchList('/activities', params);
-    activityList.value = result.list || [];
-    total.value = result.total || 0;
-  } catch (error) {
-    console.error('获取活动列表失败', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 搜索
-const handleSearch = () => {
-  currentPage.value = 1;
-  fetchActivities();
-};
-
-// 分页大小改变
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1;
-  fetchActivities();
-};
-
-// 当前页改变
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchActivities();
-};
-
-// Handle Add button click
-const handleAddActivity = () => {
-  isEditMode.value = false;
-  dialogTitle.value = '发布活动';
-  activityForm.value = {
-    id: null,
-    title: '',
-    location: '',
-    startTime: null,
-    endTime: null,
-    description: '',
-    posterUrl: '',
-    status: 1
-  };
-  posterFileList.value = [];
-  if (activityFormRef.value) {
-    activityFormRef.value.clearValidate();
-  }
-  // Ensure editor content is cleared
-  if (editorRef.value) {
-    editorRef.value.setHtml('');
-  }
-  dialogVisible.value = true;
-};
-
-// Handle Edit button click
-const handleEditActivity = async (row) => {
-  isEditMode.value = true;
-  dialogTitle.value = '编辑活动';
-  loadingForm.value = true;
-  // Reset form first
-  activityForm.value = {
-    id: null,
-    title: '',
-    location: '',
-    startTime: null,
-    endTime: null,
-    description: '',
-    posterUrl: '',
-    status: 1
-  };
-  posterFileList.value = [];
-  if (activityFormRef.value) {
-    activityFormRef.value.clearValidate();
-  }
-  dialogVisible.value = true;
-  try {
-    const res = await getActivityById(row.id);
-    activityForm.value = {...res.data}; // Populate form
-    // Populate posterFileList for el-upload
-    if (activityForm.value.posterUrl) {
-      posterFileList.value = [{name: '封面图', url: activityForm.value.posterUrl}];
-    }
-    // Set editor content
-    if (editorRef.value) {
-      editorRef.value.setHtml(activityForm.value.description || '');
-    }
-  } catch (error) {
-    console.error("获取活动详情失败", error);
-    ElMessage.error("获取活动详情失败");
-    dialogVisible.value = false;
-  } finally {
-    loadingForm.value = false;
-  }
-};
-
-// 删除活动
-const handleDeleteActivity = (row) => {
-  ElMessageBox.confirm(`确定要删除活动 ${row.title} 吗?`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteActivity(row.id);
-      ElMessage.success('删除成功');
-      fetchActivities(); // 刷新列表
-    } catch (error) {
-      console.error("删除活动失败", error);
-      ElMessage.error("删除活动失败");
-    }
-  }).catch(() => {
-    ElMessage.info('已取消删除');
-  });
-};
-
-// 报名情况状态变量
-const enrollments = ref([]);
-const loadingEnrollments = ref(false);
-
-// 查看报名情况
-const viewEnrollments = async (row) => {
-  enrollmentDialogVisible.value = true;
-  try {
-    loadingEnrollments.value = true;
-    const res = await getActivityEnrollments(row.id);
-    enrollments.value = res.data?.list || [];
-  } catch (error) {
-    console.error("获取报名列表失败", error);
-    ElMessage.error('获取报名列表失败');
-  } finally {
-    loadingEnrollments.value = false;
-  }
-};
-
-// Submit Form
-const submitActivityForm = () => {
-  activityFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true;
-      try {
-        const editor = editorRef.value;
-        if (!editor) throw new Error("编辑器未初始化");
-
-        const dataToSend = {
-          ...activityForm.value,
-          description: editor.getHtml(), // Get content from editor
-        };
-
-        if (isEditMode.value) {
-          await updateActivity(dataToSend.id, dataToSend);
-          ElMessage.success('活动更新成功');
-        } else {
-          await addActivity(dataToSend);
-          ElMessage.success('活动发布成功');
-        }
-        dialogVisible.value = false;
-        fetchActivities(); // Refresh list
-      } catch (error) {
-        console.error("提交活动失败", error);
-        ElMessage.error(error?.response?.data?.message || '提交活动失败');
-      } finally {
-        submitting.value = false;
-      }
-    } else {
-      console.log('活动表单验证失败');
-      return false;
-    }
-  });
-};
-
-// 格式化状态
-const formatStatus = (status) => {
-  return formatActivityStatus(status);
-};
-
-// 获取状态标签类型
-const getStatusTagType = (status) => {
-  return getActivityStatusTagType(status);
-};
-
-// 格式化时间
-const formatTime = (timeStr) => {
-  return formatDateTime(timeStr);
-};
-
-// 组件挂载后加载数据
+// --- Lifecycle Hooks ---
 onMounted(() => {
+  fetchActivities()
+})
+
+// 组件销毁时，也及时销毁编辑器
+onBeforeUnmount(() => {
+  const editor = editorRef.value
+  if (editor == null) return
+  editor.destroy()
+})
+
+// 监听分页变化 (TableView 内部处理)
+watch([currentPage, pageSize], () => {
   fetchActivities();
-});
+}, {immediate: false});
 
-</script>
-
-<script>
-export default {
-  name: 'ActivityManagement'
-}
 </script>
 
 <style scoped>
-.activity-management-container {
-  padding: 20px;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-card {
-  margin-bottom: 20px;
-}
-
-.activity-list-card {
-  /* 样式 */
+/* 保留或添加特定样式 */
+.dialog-footer {
+  text-align: right;
 }
 .pagination-container {
   margin-top: 20px;
   display: flex;
-  justify-content: center;
-}
-
-.dialog-footer {
-  text-align: right;
+  justify-content: flex-end;
 }
 </style>

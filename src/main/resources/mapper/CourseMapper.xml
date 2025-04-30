@@ -44,7 +44,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM course
-        WHERE code = #{courseCode,jdbcType=VARCHAR}
+        WHERE course_code = #{courseCode,jdbcType=VARCHAR}
     </select>
 
     <!-- 根据部门获取课程 -->
@@ -61,7 +61,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM course
-        WHERE type = #{type,jdbcType=VARCHAR}
+        WHERE course_type = #{type,jdbcType=VARCHAR}
         ORDER BY course_name
     </select>
 
@@ -77,12 +77,12 @@
 
     <!-- 添加课程 -->
     <insert id="addCourse" parameterType="com.campus.entity.Course" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO course (course_name, credit, introduction, teacher_id, status, create_time, update_time
-        )
-        VALUES (#{courseName,jdbcType=VARCHAR}, #{credit,jdbcType=DECIMAL},
-                #{introduction,jdbcType=LONGVARCHAR}, #{teacherId,jdbcType=INTEGER}, #{status,jdbcType=INTEGER},
-            NOW(), NOW()
-        )
+        INSERT INTO course (course_name, course_code, credit, hours, course_type, introduction, teacher_id, term_info,
+                            status, create_time, update_time)
+        VALUES (#{courseName,jdbcType=VARCHAR}, #{courseCode,jdbcType=VARCHAR}, #{credit,jdbcType=DECIMAL},
+                #{hours,jdbcType=INTEGER}, #{courseType,jdbcType=TINYINT},
+                #{introduction,jdbcType=LONGVARCHAR}, #{teacherId,jdbcType=BIGINT}, #{termInfo,jdbcType=VARCHAR},
+                #{status,jdbcType=TINYINT}, NOW(), NOW())
     </insert>
 
     <!-- 更新课程 -->
@@ -90,11 +90,15 @@
         UPDATE course
         SET
             course_name = #{courseName,jdbcType=VARCHAR},
+            course_code = #{courseCode,jdbcType=VARCHAR},
             credit = #{credit,jdbcType=DECIMAL},
+            hours       = #{hours,jdbcType=INTEGER},
+            course_type = #{courseType,jdbcType=TINYINT},
             introduction = #{introduction,jdbcType=LONGVARCHAR},
-            teacher_id   = #{teacherId,jdbcType=INTEGER},
+            teacher_id  = #{teacherId,jdbcType=BIGINT},
+            term_info   = #{termInfo,jdbcType=VARCHAR},
             update_time = NOW()
-        WHERE id = #{id,jdbcType=INTEGER}
+        WHERE id = #{id,jdbcType=BIGINT}
     </update>
 
     <!-- 删除课程 -->

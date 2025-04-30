@@ -27,13 +27,13 @@ public class Course implements Serializable {
     /**
      * 课程编号
      */
-    @TableField("code")
-    private String courseNo;
+    @TableField("course_code")
+    private String courseCode;
 
     /**
      * 课程名称
      */
-    @TableField("name")
+    @TableField("course_name")
     private String courseName;
 
     /**
@@ -41,6 +41,12 @@ public class Course implements Serializable {
      */
     @TableField("credit")
     private BigDecimal credit;
+
+    /**
+     * 课时数
+     */
+    @TableField("hours")
+    private Integer hours;
 
     /**
      * 课程类型：1-必修课，2-选修课，3-通识等
@@ -51,7 +57,7 @@ public class Course implements Serializable {
     /**
      * 课程简介
      */
-    @TableField("description")
+    @TableField("introduction")
     private String introduction;
 
     /**

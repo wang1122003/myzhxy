@@ -1,0 +1,109 @@
+/* 页面容器样式 */
+.page-container {
+    padding: 20px;
+    height: 100%;
+}
+
+/* 页面标题区域样式 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #303133;
+}
+
+/* 卡片样式 */
+.filter-card {
+    margin-bottom: 20px;
+}
+
+.content-card {
+    margin-bottom: 20px;
+}
+
+/* 表格样式 */
+.el-table {
+    margin-top: 8px;
+}
+
+/* 分页样式 */
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* 表单样式 */
+.form-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* 操作按钮样式 */
+.table-action-buttons .el-button {
+    margin-left: 6px;
+}
+
+.table-action-buttons .el-button:first-child {
+    margin-left: 0;
+}
+
+/* 状态标签颜色 */
+.status-tag.success {
+    --el-tag-bg-color: var(--el-color-success-light-9);
+    --el-tag-border-color: var(--el-color-success-light-7);
+    --el-tag-text-color: var(--el-color-success);
+}
+
+.status-tag.warning {
+    --el-tag-bg-color: var(--el-color-warning-light-9);
+    --el-tag-border-color: var(--el-color-warning-light-7);
+    --el-tag-text-color: var(--el-color-warning);
+}
+
+.status-tag.danger {
+    --el-tag-bg-color: var(--el-color-danger-light-9);
+    --el-tag-border-color: var(--el-color-danger-light-7);
+    --el-tag-text-color: var(--el-color-danger);
+}
+
+.status-tag.info {
+    --el-tag-bg-color: var(--el-color-info-light-9);
+    --el-tag-border-color: var(--el-color-info-light-7);
+    --el-tag-text-color: var(--el-color-info);
+}
+
+/* 表单项间距 */
+.el-form-item {
+    margin-bottom: 20px;
+}
+
+/* 对话框样式 */
+.el-dialog__body {
+    padding: 20px;
+}
+
+/* 添加适当的间距 */
+.mb-10 {
+    margin-bottom: 10px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+} 

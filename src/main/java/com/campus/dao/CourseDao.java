@@ -32,7 +32,7 @@ public interface CourseDao extends BaseMapper<Course> {
     /**
      * 根据课程代码查询课程
      *
-     * @param courseNo 课程代码
+     * @param courseCode 课程代码
      * @return 课程对象
      */
     Course findByCourseCode(String courseCode);

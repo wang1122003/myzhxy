@@ -96,18 +96,6 @@ const routes = [
                 path: 'activity/:id',
                 name: 'StudentActivityDetail',
                 component: () => import('../views/student/ActivityDetail.vue')
-            },
-            {
-                path: 'files',
-                name: 'StudentFiles',
-                component: () => import('../views/student/Files.vue'),
-                meta: {title: '文件中心', icon: Files, showInSidebar: true}
-            },
-            {
-                path: 'notices',
-                name: 'StudentNotices',
-                component: () => import('../views/student/Notices.vue'),
-                meta: {title: '通知公告', icon: Bell, showInSidebar: true}
             }
         ]
     },
@@ -158,18 +146,8 @@ const routes = [
                 path: 'courses/:courseId/grades',
                 name: 'TeacherCourseGradeManagement',
                 component: () => import('../views/teacher/CourseGradeManagement.vue')
-            },
-            {
-                path: 'courses/:courseId/resources',
-                name: 'TeacherCourseResources',
-                component: () => import('../views/teacher/CourseResources.vue')
-            },
-            {
-                path: 'notices',
-                name: 'TeacherNotices',
-                component: () => import('../views/teacher/TeacherNoticeView.vue'),
-                meta: {title: '通知公告', icon: Bell, showInSidebar: true}
             }
+
         ]
     },
     // 管理员页面路由
@@ -180,7 +158,7 @@ const routes = [
         meta: {requiresAuth: true, role: 'admin'},
         children: [
             {
-                path: '',
+                path: 'notice',
                 name: 'AdminHome',
                 component: () => import('../views/admin/Notice.vue'),
                 meta: {title: '公告管理', icon: Bell, showInSidebar: true}
@@ -228,16 +206,10 @@ const routes = [
                 meta: {title: '论坛管理', icon: ChatDotRound, showInSidebar: true}
             },
             {
-                path: 'file',
-                name: 'AdminFile',
-                component: () => import('../views/admin/File.vue'),
-                meta: {title: '文件管理', icon: Files, showInSidebar: true}
-            },
-            {
-                path: 'settings',
-                name: 'AdminSettings',
-                component: () => import('../views/admin/Settings.vue'),
-                meta: {title: '系统设置', icon: Setting, showInSidebar: true}
+                path: 'notices',
+                name: 'AdminNotices',
+                component: () => import('../views/admin/Notice.vue'),
+                meta: {title: '通知公告', icon: Bell, showInSidebar: true}
             }
         ]
     },

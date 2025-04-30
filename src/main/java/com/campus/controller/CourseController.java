@@ -59,13 +59,13 @@ public class CourseController {
     /**
      * 根据课程编号获取课程
      *
-     * @param courseNo 课程编号
+     * @param courseCode 课程编号
      * @return 课程详细信息
      */
-    @GetMapping("/no/{courseNo}")
-    public Result<Course> getCourseByNo(@PathVariable String courseNo) {
+    @GetMapping("/no/{courseCode}")
+    public Result<Course> getCourseByNo(@PathVariable String courseCode) {
         try {
-            Course course = courseService.getCourseByCourseCode(courseNo);
+            Course course = courseService.getCourseByCourseCode(courseCode);
             if (course != null) {
                 return Result.success(course);
             } else {

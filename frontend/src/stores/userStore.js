@@ -127,19 +127,22 @@ export const useUserStore = defineStore('user', () => {
         }
         try {
             console.log('[userStore] 正在获取用户信息...');
-            const response = await getCurrentUser();
-            if (response.code === 0 && response.data) {
-                console.log('[userStore] 用户信息已获取:', response.data);
-                setUserInfo(response.data);
+            const userData = await getCurrentUser(); // 拦截器已返回 data 部分
+
+            // ！！！ 直接使用拦截器处理后的 userData ！！！
+            if (userData && userData.userId) { // 简单检查 userData 是否有效 (例如检查 userId)
+                console.log('[userStore] 用户信息已获取:', userData);
+                setUserInfo(userData); // 直接设置用户信息
                 setSessionError(false); // 获取成功，清除错误标记
             } else {
-                console.error('[userStore] 获取用户信息失败: 无效的响应或无数据', response);
-                // 如果响应码不是0或没有数据，仅抛出错误，不强制登出
-                throw new Error(response.message || '获取用户信息失败：无效响应');
+                // 如果 userData 无效或缺少关键信息
+                console.error('[userStore] 获取用户信息失败: 拦截器返回的数据无效', userData);
+                throw new Error('获取用户信息失败：数据无效');
             }
         } catch (error) {
             console.error('[userStore] 获取用户信息时发生错误:', error);
             // 在捕获到任何获取用户信息的错误时，仅抛出错误，不强制登出
+            // setSessionError(true); // 可以考虑在这里设置会话错误
             throw error;
         }
     }

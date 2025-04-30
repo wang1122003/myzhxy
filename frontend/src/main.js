@@ -9,14 +9,24 @@ import {createPinia} from 'pinia'
 
 // 导入全局样式
 import './assets/styles/global.scss'
+import './assets/styles/common.css'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
 
-// 导入全局通用组件
+// 导入通用组件
 import PageHeader from './components/common/PageHeader.vue'
 import StatsCard from './components/common/StatsCard.vue'
-import FormPanel from './components/common/FormPanel.vue'
 import NavMenu from './components/common/NavMenu.vue'
 import DataDisplay from './components/common/DataDisplay.vue'
-import BaseTable from './components/common/BaseTable.vue'
+import AppHeader from './components/common/AppHeader.vue'
+import NoticeDetailDialog from './components/common/NoticeDetailDialog.vue'
+import RichTextEditor from './components/common/RichTextEditor.vue'
+
+// 导入核心组件
+import EnhancedPageContainer from './components/common/EnhancedPageContainer.vue'
+import DataTable from './components/common/DataTable.vue'
+import SmartForm from './components/common/SmartForm.vue'
+import AdvancedFilterForm from './components/common/AdvancedFilterForm.vue'
 
 // 添加Vue特性标志配置
 window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false
@@ -35,13 +45,20 @@ const app = createApp(App)
 // 创建Pinia实例
 const pinia = createPinia()
 
-// 注册全局组件
+// 注册通用组件
 app.component('PageHeader', PageHeader)
 app.component('StatsCard', StatsCard)
-app.component('FormPanel', FormPanel)
 app.component('NavMenu', NavMenu)
 app.component('DataDisplay', DataDisplay)
-app.component('BaseTable', BaseTable)
+app.component('AppHeader', AppHeader)
+app.component('NoticeDetailDialog', NoticeDetailDialog)
+app.component('RichTextEditor', RichTextEditor)
+
+// 注册核心组件（使用简单统一的名称）
+app.component('PageContainer', EnhancedPageContainer) // 保持与旧版的兼容性
+app.component('TableView', DataTable)
+app.component('FormView', SmartForm)
+app.component('FilterForm', AdvancedFilterForm)
 
 // 使用Pinia（必须在使用router前初始化）
 app.use(pinia)

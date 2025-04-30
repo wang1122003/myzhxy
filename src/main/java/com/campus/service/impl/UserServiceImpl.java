@@ -306,7 +306,6 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         }
         // TODO: Add permission check - only admins should reset passwords
 
-        // TODO: [Security] Encode the new password
         String encodedNewPassword = passwordEncoder.encode(newPassword);
 
         return update(Wrappers.<User>lambdaUpdate()

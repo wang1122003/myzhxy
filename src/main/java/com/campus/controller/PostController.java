@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,8 @@ public class PostController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "createTime") String sortBy) {
 
+        log.info("获取帖子列表请求: page={}, size={}, keyword={}, sortBy={}", page, size, keyword, sortBy);
+
         Map<String, Object> params = new java.util.HashMap<>();
         if (keyword != null && !keyword.trim().isEmpty()) {
             params.put("keyword", keyword);
@@ -67,6 +70,10 @@ public class PostController {
         params.put("sortBy", sortBy);
 
         Map<String, Object> pageResult = postService.findPageMap(params, page, size);
+        log.info("获取帖子列表结果: total={}, size={}",
+                pageResult.get("total"),
+                pageResult.get("rows") != null ? ((List) pageResult.get("rows")).size() : 0);
+        
         return Result.success(pageResult);
     }
 
@@ -199,6 +206,25 @@ public class PostController {
     }
 
     /**
+     * 获取帖子的评论列表
+     *
+     * @param postId 帖子ID
+     * @return 评论列表 (注意：此版本未分页)
+     */
+    @GetMapping("/{postId}/comments")
+    public Result<List<Map<String, Object>>> getCommentsForPost(@PathVariable Long postId) {
+        log.info("请求帖子 {} 的评论列表", postId);
+        try {
+            List<Map<String, Object>> comments = postService.getCommentsByPostId(postId);
+            log.info("帖子 {} 的评论列表获取成功，数量: {}", postId, comments.size());
+            return Result.success(comments);
+        } catch (Exception e) {
+            log.error("获取帖子 {} 评论列表失败: {}", postId, e.getMessage(), e);
+            return Result.error("获取评论列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 获取热门帖子
      *
      * @param limit 数量限制
@@ -206,8 +232,9 @@ public class PostController {
      */
     @GetMapping("/hot")
     public Result<List<Post>> getHotPosts(@RequestParam(defaultValue = "10") int limit) {
-        List<Post> hotPosts = postService.getHotPosts(limit);
-        return Result.success(hotPosts);
+        log.info("此功能已禁用: 获取热门帖子, 参数 limit: {}", limit);
+        // 返回空列表而非错误，避免前端报错
+        return Result.success(new ArrayList<>());
     }
 
     /**

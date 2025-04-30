@@ -10,7 +10,7 @@ const API = {
     BATCH_DELETE: '/schedules/batch', // 批量删除课表
     CHECK_CONFLICT: '/schedules/check-conflict', // 检查排课冲突
     GET_TEACHER_WEEKLY: '/schedules/teacher-weekly', // 获取教师周课表
-    GET_STUDENT_WEEKLY: '/schedules/student-weekly', // 获取学生周课表
+    GET_STUDENT_WEEKLY: '/schedules/student', // 获取学生周课表
     GET_CLASSROOM_WEEKLY: '/schedules/classroom-weekly', // 获取教室周课表
     GET_STUDENT_SCHEDULE_BY_USER_ID: '/schedules/student', // 根据用户 ID 获取学生课表 (通常是当前登录学生)
 };
@@ -112,12 +112,26 @@ export function getTeacherWeeklySchedule(params) {
 
 // 获取学生周课表
 export function getStudentWeeklySchedule(params) {
-    // params 可能包含 studentId, weekStartDate 等
+    console.log('[API] 调用学生周课表接口(getStudentWeeklySchedule)，参数:', params); // 添加日志
     return request({
-        url: API.GET_STUDENT_WEEKLY,
+        url: API.GET_STUDENT_WEEKLY, // 使用修正后的路径 /schedules/student
         method: 'get',
-        params
-    })
+        params // 需要传递 termInfo
+    }).then(res => {
+        console.log('[API] 学生周课表 API 返回:', res);
+        // 假设后端 /schedules/student 返回的直接是包含 schedules 的 Map
+        // 拦截器已经处理了 Result 包装
+        if (res && typeof res === 'object' && res.schedules) {
+            return res; // 直接返回 Map 对象
+        } else {
+            console.warn('[API] 学生周课表返回格式非预期，需要包含 schedules 数组');
+            // 返回一个默认结构，防止前端报错
+            return {schedules: [], type: 'student'};
+        }
+    }).catch(err => {
+        console.error('[API] 学生周课表 API 错误:', err);
+        throw err;
+    });
 }
 
 // 获取教室周课表
@@ -138,12 +152,24 @@ export function getSchedulesByTeacher(params) {
 
 // 获取某个学生的课表列表 (非周课表，使用专用接口)
 export function getSchedulesByStudent(params) {
-    // 适用于获取当前登录学生的课表，或需要特定处理的场景
+    console.log('[API] 调用学生课表接口(getSchedulesByStudent)，参数:', params);
     return request({
-        url: API.GET_STUDENT_SCHEDULE_BY_USER_ID,
+        url: API.GET_STUDENT_SCHEDULE_BY_USER_ID, // 使用正确的 API 路径
         method: 'get',
-        params // 可能包含学期等参数
-    })
+        params // 确认后端接口需要什么参数，例如 termInfo
+    }).then(res => {
+        console.log('[API] getSchedulesByStudent API 返回:', res);
+        if (Array.isArray(res)) {
+            console.log('[API] 课表API直接返回数组，不再包装');
+            return res;
+        }
+        // 保留其他格式检查...
+        console.warn('[API] getSchedulesByStudent 返回未知格式，尝试原样返回');
+        return res;
+    }).catch(err => {
+        console.error('[API] getSchedulesByStudent API 错误:', err);
+        throw err;
+    });
 }
 
 // 获取某个课程的排课列表 (修正：调用分页接口 + 课程 ID 参数)

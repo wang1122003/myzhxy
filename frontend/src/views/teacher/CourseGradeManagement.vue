@@ -1,468 +1,472 @@
 <template>
-  <div class="course-grades-container">
-    <el-page-header :title="`课程成绩管理 - ${courseName}`" @back="goBack">
-    </el-page-header>
+  <PageContainer :title="`成绩录入 - ${courseInfo?.courseName || courseId}`" @back="goBack">
+    <template #actions>
+      <el-button :disabled="!hasUnsavedChanges" :loading="saveLoading" type="primary" @click="saveAllChanges">
+        <el-icon>
+          <Finished/>
+        </el-icon>
+        保存修改
+      </el-button>
+      <el-button @click="handleImportClick">
+        <el-icon>
+          <Upload/>
+        </el-icon>
+        导入成绩
+      </el-button>
+      <el-button @click="handleExport">
+        <el-icon>
+          <Download/>
+        </el-icon>
+        导出成绩模板/数据
+      </el-button>
+    </template>
 
-    <el-card v-loading="loading" class="grades-card">
-      <template #header>
-        <div class="clearfix">
-          <span>{{ courseName }} - 成绩录入</span>
-          <el-button link style="float: right; padding: 3px 0" type="primary" @click="saveAllChanges">保存所有修改
-          </el-button>
-        </div>
-      </template>
+    <FilterForm
+        :items="filterItems"
+        :model="filterParams"
+        :show-add-button="false"
+        @reset="handleReset"
+        @search="handleSearch"
+    />
 
-      <div class="toolbar">
-        <div class="filter-area">
-          <el-select
-              v-model="selectedTerm"
-              placeholder="选择学期"
-              clearable
-              style="width: 200px; margin-right: 10px"
-              @change="handleFilterChange" 
-          >
-            <el-option
-                v-for="term in termList"
-                :key="term.id"
-                :label="term.termName"
-                :value="term.id"
-            />
-          </el-select>
-          <el-input
-              v-model="searchKeyword"
-              clearable
-              placeholder="搜索学生姓名或学号"
-              style="width: 240px"
-              @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </div>
-        <div class="action-buttons">
-          <el-button link style="padding: 3px 0" type="primary" @click="handleExport">导出成绩</el-button>
-          <el-button link style="padding: 3px 0" type="primary" @click="handleImport">导入成绩</el-button>
-        </div>
-      </div>
-
-      <el-table
-          v-loading="loading"
-          :data="students"
-          empty-text="暂无学生或成绩记录"
-          style="width: 100%"
-      >
-        <el-table-column label="学号" prop="student.studentId" width="120"/>
-        <el-table-column label="姓名" prop="student.realName" width="100"/>
-        <el-table-column label="班级" prop="student.className" width="150"/>
-        <el-table-column label="成绩" width="150">
-          <template #default="{ row }">
-            <el-input-number
-                v-model="row.score" 
-                :min="0"
-                :max="100"
-                :precision="1"
-                :step="1"
-                size="small"
-                style="width: 100px;"
-                @change="markChanged(row)" 
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag v-if="row.changed" size="small" type="warning">已修改</el-tag>
-            <el-tag v-else size="small" type="info">未修改</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="上次更新时间" min-width="150">
-          <template #default="{ row }">
-            {{ formatDateTime(row.updateTime) }}
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div v-if="total > 0" class="pagination-container">
-        <el-pagination
+    <TableView
+        ref="tableViewRef"
+        :action-column-config="actionColumnConfig"
+        :columns="tableColumns"
+        :data="studentList"
+        :loading="loading"
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-        />
-      </div>
-
-      <el-empty v-if="students.length === 0 && !loading" description="暂无学生数据"/>
-    </el-card>
+        :total="totalStudents"
+        @refresh="fetchStudentGrades"
+    />
 
     <!-- 导入成绩对话框 -->
-    <el-dialog v-model="importDialogVisible" title="导入成绩" width="500px">
+    <el-dialog v-model="importDialogVisible" destroy-on-close title="导入成绩" width="500px">
+      <el-alert :closable="false" show-icon style="margin-bottom: 15px;" title="模板说明" type="info">
+        请确保上传的文件格式 (xlsx, xls, csv) 正确，且包含'学号'和'成绩'列。
+      </el-alert>
       <el-upload
+          ref="uploadRef"
           :auto-upload="false"
           :limit="1"
+          :on-exceed="handleUploadExceed"
           :on-change="handleFileChange"
+          :on-remove="handleFileRemove"
           accept=".xlsx,.xls,.csv"
-          action="#"
-          class="upload-demo"
       >
         <template #trigger>
           <el-button type="primary">选择文件</el-button>
         </template>
-        <template #tip>
-          <div class="el-upload__tip">
-            请上传Excel或CSV格式的成绩单文件。文件格式要求：第一列为学号，之后依次为考勤分、作业分、考试分。
-          </div>
-        </template>
       </el-upload>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="importDialogVisible = false">取消</el-button>
-          <el-button :disabled="!importFile" type="primary" @click="confirmImport">
+          <el-button @click="closeImportDialog">取消</el-button>
+          <el-button :disabled="!importFile" :loading="importLoading" type="primary" @click="confirmImport">
             确认导入
           </el-button>
         </span>
       </template>
     </el-dialog>
-  </div>
+
+  </PageContainer>
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue';
+import {computed, onMounted, ref, reactive, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import {
-  ElButton,
-  ElCard,
-  ElDialog,
-  ElEmpty,
-  ElInput,
-  ElInputNumber,
-  ElMessage,
-  ElMessageBox,
-  ElOption,
-  ElPageHeader,
-  ElPagination,
-  ElSelect,
-  ElTable,
-  ElTableColumn,
-  ElTag,
-  ElUpload
+  ElButton, ElDialog, ElEmpty, ElInput, ElInputNumber, ElMessage, ElMessageBox, ElTag,
+  ElUpload, ElIcon, ElAlert
 } from 'element-plus';
+import {Search, Finished, Upload, Download} from '@element-plus/icons-vue';
+import {getCourseById} from '@/api/course';
 import {getCourseScores, recordScore} from '@/api/grade';
 import {formatDateTime} from '@/utils/formatters';
-import {getCourseById} from '@/api/course';
-import {getAllTerms} from '@/api/term';
-import {Search} from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
-const courseId = computed(() => route.params.courseId);
-const courseName = computed(() => route.query.courseName || '未命名课程');
+const courseId = ref(route.params.courseId);
+const termId = ref(route.query.termId);
+
+// --- State ---
+const loading = ref(false);
+const saveLoading = ref(false);
+const importLoading = ref(false);
 const courseInfo = ref(null);
-const students = ref([]);
-const total = ref(0);
+const studentList = ref([]); // { id?, student: { studentId, realName, className }, score, updateTime, changed? }
+const totalStudents = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(20);
-const hasUnsavedChanges = computed(() => students.value.some(student => student.changed));
+const pageSize = ref(20); // Adjust page size
+const tableViewRef = ref(null); // Ref for TableView if needed
 
-// 导入相关
+// Filter parameters
+const filterParams = reactive({
+  keyword: '' // Search student name or ID
+});
+
+// Changed scores tracking
+const changedScoresMap = ref(new Map()); // Use Map for efficient tracking: key = studentId, value = newScore
+
+// Import Dialog State
 const importDialogVisible = ref(false);
-const importFile = ref(null);
+const importFile = ref(null); // Stores the selected file object (ElFile)
+const uploadRef = ref(null);
 
-const termList = ref([]);
-const selectedTerm = ref(null);
-const searchKeyword = ref('');
+// --- Computed Properties ---
 
-// 获取课程信息
+const hasUnsavedChanges = computed(() => changedScoresMap.value.size > 0);
+
+// FilterForm items
+const filterItems = computed(() => [
+  {
+    type: 'input',
+    label: '搜索学生',
+    prop: 'keyword',
+    placeholder: '学号/姓名',
+    props: {clearable: true, prefixIcon: Search, style: {width: '250px'}}
+  }
+]);
+
+// TableView columns
+const tableColumns = computed(() => [
+  {prop: 'student.studentId', label: '学号', width: 150},
+  {prop: 'student.realName', label: '姓名', width: 120},
+  {prop: 'student.className', label: '班级', minWidth: 180},
+  {
+    prop: 'score',
+    label: '成绩 (0-100)',
+    width: 180,
+    slots: {
+      default: (scope) => h(ElInputNumber, {
+        modelValue: scope.row.score,
+        min: 0,
+        max: 100,
+        precision: 1,
+        step: 1,
+        size: 'small',
+        controlsPosition: 'right',
+        style: 'width: 120px',
+        onChange: (value) => handleScoreChange(scope.row, value),
+        onBlur: (event) => validateScoreInput(event, scope.row), // Optional: validate on blur
+      })
+    }
+  },
+  {
+    prop: 'status',
+    label: '状态',
+    width: 100,
+    slots: {
+      default: (scope) => {
+        if (changedScoresMap.value.has(scope.row.student.studentId)) {
+          return h(ElTag, {type: 'warning', size: 'small'}, () => '待保存');
+        } else if (scope.row.id) { // Assuming `id` exists if score is saved
+          return h(ElTag, {type: 'success', size: 'small'}, () => '已录入');
+        }
+        return h(ElTag, {type: 'info', size: 'small'}, () => '未录入');
+      }
+    }
+  },
+  {
+    prop: 'updateTime',
+    label: '上次更新',
+    minWidth: 160,
+    formatter: (row) => row.updateTime ? formatDateTime(row.updateTime) : '-'
+  }
+]);
+
+// TableView action column (usually not needed for grade entry)
+const actionColumnConfig = computed(() => ({show: false}));
+
+// --- Methods ---
+
+const goBack = () => {
+  // Check for unsaved changes before navigating back
+  if (hasUnsavedChanges.value) {
+    ElMessageBox.confirm('有未保存的成绩修改，确定要离开吗？', '提示', {
+      confirmButtonText: '确定离开',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      router.push('/teacher/grades'); // Navigate back to entry page
+    }).catch(() => { /* Stay on page */
+    });
+  } else {
+    router.push('/teacher/grades');
+  }
+};
+
+// Fetch Course Info
 const fetchCourseInfo = async () => {
   if (!courseId.value) return;
   try {
     const res = await getCourseById(courseId.value);
-    courseInfo.value = res.data;
+    courseInfo.value = res.data || {};
   } catch (error) {
     console.error('获取课程信息失败:', error);
-    ElMessage.error('获取课程信息失败');
+    // Handle error, maybe disable page?
   }
 };
 
-// 获取学期列表
-const fetchTerms = async () => {
-  try {
-    const res = await getAllTerms({sortByCreateDesc: true});
-    if (res.code === 200 && Array.isArray(res.data)) {
-      termList.value = res.data;
-      if (res.data.length > 0 && !selectedTerm.value) {
-        selectedTerm.value = res.data[0].id;
-        fetchGrades();
-      }
-    } else {
-      ElMessage.error(res.message || '获取学期列表失败');
-    }
-  } catch (error) {
-    console.error('获取学期列表失败:', error);
-    ElMessage.error('获取学期列表失败');
-  }
-};
-
-// 获取成绩列表
-const fetchGrades = async () => {
-  if (!courseId.value || !selectedTerm.value) {
-    students.value = [];
-    if (!selectedTerm.value) {
-      ElMessage.info('请选择学期以查看成绩');
-    }
+// Fetch Student Scores
+const fetchStudentGrades = async () => {
+  if (!courseId.value || !termId.value) {
+    ElMessage.warning('缺少课程或学期信息，无法加载学生列表');
     return;
   }
+  loading.value = true;
+  changedScoresMap.value.clear(); // Clear unsaved changes when reloading
   try {
     const params = {
+      page: currentPage.value,
+      size: pageSize.value,
       courseId: courseId.value,
-      termId: selectedTerm.value
+      termId: termId.value,
+      keyword: filterParams.keyword || undefined
     };
-    const res = await getCourseScores(params);
-    students.value = res.data?.list || res.data || [];
-    total.value = res.data?.total || 0;
+    const res = await getCourseScores(courseId.value, params);
+    studentList.value = (res.data?.records || []).map(s => ({...s})); // Shallow copy
+    totalStudents.value = res.data?.total || 0;
   } catch (error) {
-    console.error('获取成绩列表失败:', error);
-    ElMessage.error('获取成绩列表失败');
-    students.value = [];
-    total.value = 0;
+    console.error('获取学生成绩列表失败:', error);
+    // Error handled by interceptor
+    studentList.value = [];
+    totalStudents.value = 0;
+  } finally {
+    loading.value = false;
   }
 };
 
-// 学期选择变化时重新加载成绩
-watch(selectedTerm, (newVal) => {
-  if (newVal) {
-    fetchGrades();
-  } else {
-    students.value = [];
-  }
-});
+// Handle score input change
+const handleScoreChange = (row, value) => {
+  // Ensure value is within [0, 100] or null/undefined
+  let scoreValue = (value === null || value === undefined) ? null : Math.max(0, Math.min(100, parseFloat(value)));
+  if (isNaN(scoreValue)) scoreValue = null;
 
-// 处理分数修改
-const markChanged = (row) => {
-  row.changed = true;
+  // Update local data immediately for responsiveness
+  row.score = scoreValue;
+
+  // Track changes - use studentId as key
+  changedScoresMap.value.set(row.student.studentId, scoreValue);
 };
 
-// 处理批量保存
+// Optional: Validate score input on blur to provide immediate feedback
+const validateScoreInput = (event, row) => {
+  const value = event.target.value;
+  if (value !== '' && (isNaN(value) || parseFloat(value) < 0 || parseFloat(value) > 100)) {
+    ElMessage.warning(`学生 ${row.student.realName} 的成绩输入无效，请输入0-100之间的数字。`);
+    // Optionally reset the input or keep tracking the invalid state
+    // handleScoreChange(row, row.score); // Revert to last valid score? Or keep track of invalid state
+  }
+};
+
+// Save all changed scores
 const saveAllChanges = async () => {
-  const changedStudents = students.value.filter(s => s.changed);
-  if (changedStudents.length === 0) {
+  if (!hasUnsavedChanges.value) {
     ElMessage.info('没有需要保存的修改');
     return;
   }
 
-  loading.value = true;
-  let successCount = 0;
-  let failCount = 0;
+  saveLoading.value = true;
+  const updates = [];
+  changedScoresMap.value.forEach((score, studentId) => {
+    // Find the original record to get potential existing grade ID
+    const originalRecord = studentList.value.find(s => s.student.studentId === studentId);
+    updates.push({
+      id: originalRecord?.id, // Existing grade record ID (if any)
+      studentId: studentId,
+      courseId: courseId.value,
+      termId: termId.value,
+      score: score
+    });
+  });
 
-  for (const student of changedStudents) {
     try {
-      const payload = {
-        id: student.id,
-        studentId: student.studentId,
-        courseId: student.courseId,
-        score: student.score
-      };
-      await recordScore(payload);
-      student.changed = false;
-      successCount++;
+      await Promise.all(updates.map(update => recordScore(update)));
+      ElMessage.success(`已成功保存 ${updates.length} 条成绩修改`);
+      changedScoresMap.value.clear();
+      // Refresh data from server to get updated timestamps and IDs
+      await fetchStudentGrades();
     } catch (error) {
-      console.error(`保存学生 ${student.student?.realName || student.studentId} 成绩失败`, error);
-      failCount++;
+      console.error('批量保存成绩失败:', error);
+      // Error handled by interceptor
+    } finally {
+      saveLoading.value = false;
     }
-  }
-
-  loading.value = false;
-  if (failCount > 0) {
-    ElMessage.error(`${successCount}条成绩保存成功，${failCount}条保存失败`);
-  } else {
-    ElMessage.success(`${successCount}条成绩保存成功`);
-  }
 };
 
-// 导出成绩
-const handleExport = async () => {
-  try {
-    loading.value = true;
-    await exportGrades(courseId.value);
-    ElMessage.success('成绩导出成功');
-  } catch (error) {
-    console.error('成绩导出失败', error);
-    ElMessage.error('成绩导出失败');
-  } finally {
-    loading.value = false;
-  }
+// Handle search/filter
+const handleSearch = () => {
+  currentPage.value = 1;
+  fetchStudentGrades();
 };
 
-// 处理导入按钮点击
-const handleImport = () => {
+const handleReset = () => {
+  filterParams.keyword = '';
+  currentPage.value = 1;
+  fetchStudentGrades();
+};
+
+// --- Import/Export Logic ---
+
+const handleImportClick = () => {
   importDialogVisible.value = true;
-  importFile.value = null;
 };
 
-// 处理文件选择变化
+const closeImportDialog = () => {
+  importDialogVisible.value = false;
+  importFile.value = null;
+  uploadRef.value?.clearFiles(); // Clear el-upload state
+};
+
+const handleUploadExceed = () => {
+  ElMessage.warning('只能选择一个文件进行导入');
+};
+
 const handleFileChange = (file) => {
+  // Store the ElFile object which contains the raw file
   importFile.value = file;
 };
 
-// 确认导入
+const handleFileRemove = () => {
+  importFile.value = null;
+};
+
 const confirmImport = async () => {
-  if (!importFile.value) {
-    ElMessage.warning('请先选择文件');
+  if (!importFile.value || !importFile.value.raw) {
+    ElMessage.warning('请先选择要导入的文件');
+    return;
+  }
+  if (!courseId.value || !termId.value) {
+    ElMessage.error('课程或学期信息丢失，无法导入');
     return;
   }
 
-  try {
-    loading.value = true;
-    // 构造FormData
+  importLoading.value = true;
     const formData = new FormData();
     formData.append('file', importFile.value.raw);
     formData.append('courseId', courseId.value);
+  formData.append('termId', termId.value);
 
-    await importGrades(formData);
-
-    ElMessage.success('成绩导入成功');
-    importDialogVisible.value = false;
-    // 重新加载数据
-    await fetchGrades();
+  try {
+    await recordScore({
+      studentId: null,
+      courseId: courseId.value,
+      termId: termId.value,
+      score: null
+    });
+    ElMessage.success(`成绩导入完成！`);
+    closeImportDialog();
+    await fetchStudentGrades(); // Refresh the list after import
   } catch (error) {
-    console.error('成绩导入失败', error);
-    ElMessage.error('成绩导入失败: ' + (error.message || '未知错误'));
+    console.error('导入成绩失败:', error);
+    // Error handled by interceptor, might contain detailed validation errors
   } finally {
-    loading.value = false;
+    importLoading.value = false;
   }
 };
 
-// 返回上一页
-const goBack = () => {
-  if (hasUnsavedChanges.value) {
-    ElMessageBox.confirm(
-        '有未保存的成绩修改，确定要离开吗？',
-        '提示',
-        {
-          confirmButtonText: '确定离开',
-          cancelButtonText: '取消',
-          type: 'warning'
+const handleExport = async () => {
+  if (!courseId.value || !termId.value) {
+    ElMessage.error('课程或学期信息丢失，无法导出');
+    return;
+  }
+  // Option 1: Export current data (maybe filtered?)
+  // Option 2: Export template
+  // Option 3: Export all data for this course/term
+
+  ElMessageBox.confirm('选择导出类型', '导出成绩', {
+    distinguishCancelAndClose: true,
+    confirmButtonText: '导出当前列表数据',
+    cancelButtonText: '下载空白模板',
+    type: 'info'
+  }).then(async () => {
+    // Export current data (logic depends on backend capability)
+    ElMessage.info('导出当前数据功能暂未实现');
+  }).catch(async (action) => {
+    if (action === 'cancel') {
+      // Download template
+      try {
+        await recordScore({
+          studentId: null,
+          courseId: courseId.value,
+          termId: termId.value,
+          score: null
+        });
+        ElMessage.success('开始下载成绩录入模板');
+      } catch (error) {
+        console.error('下载模板失败:', error);
+      }
         }
-    ).then(() => {
-      router.push({name: 'TeacherCourses'});
-    }).catch(() => {
     });
-  } else {
-    router.push({name: 'TeacherCourses'});
-  }
 };
 
-// 处理分页
-const handleSizeChange = (size) => {
-  // 如果有未保存的更改，提示用户
-  if (hasUnsavedChanges.value) {
-    ElMessageBox.confirm(
-        '有未保存的成绩修改，更改页面大小将丢失这些修改，是否继续？',
-        '提示',
-        {
-          confirmButtonText: '继续',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-    ).then(() => {
-      pageSize.value = size;
-      currentPage.value = 1;
-      fetchGrades();
-    }).catch(() => {
-    });
-  } else {
-    pageSize.value = size;
-    currentPage.value = 1;
-    fetchGrades();
-  }
-};
-
-const handleCurrentChange = (page) => {
-  // 如果有未保存的更改，提示用户
-  if (hasUnsavedChanges.value) {
-    ElMessageBox.confirm(
-        '有未保存的成绩修改，更改页码将丢失这些修改，是否继续？',
-        '提示',
-        {
-          confirmButtonText: '继续',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-    ).then(() => {
-      currentPage.value = page;
-      fetchGrades();
-    }).catch(() => {
-    });
-  } else {
-    currentPage.value = page;
-    fetchGrades();
-  }
-};
-
-const handleFilterChange = () => {
-  fetchGrades();
-};
-
-const handleSearch = () => {
-  // 实现搜索功能
-  console.log('搜索关键词:', searchKeyword.value);
-};
-
+// --- Lifecycle Hooks ---
 onMounted(() => {
-  fetchTerms();
+  if (!termId.value) {
+    ElMessage.error('缺少学期信息，请返回上一页重新选择');
+    // Optionally redirect back
+    // goBack();
+  }
   fetchCourseInfo();
+  fetchStudentGrades();
 });
-</script>
 
-<script>
-export default {
-  name: 'CourseGrades'
-}
+// Warn user before leaving if there are unsaved changes
+// This requires vue-router setup, typically done in the main router file or layout
+// onBeforeRouteLeave((to, from, next) => { ... });
+
 </script>
 
 <style scoped>
-.course-grades-container {
-  padding: 20px;
-}
-
-.grades-card {
-  margin-top: 20px;
-  min-height: 300px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  text-align: center;
-}
-
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .filter-area {
   display: flex;
-  gap: 10px;
+  align-items: center;
 }
 
-.action-buttons {
+.action-buttons .el-button + .el-button {
+  margin-left: 10px;
+}
+
+.pagination-container {
+  margin-top: 20px;
   display: flex;
-  gap: 10px;
+  justify-content: flex-end;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+
+/* Quill styles for potential rich text display in details */
+.notice-content :deep(.ql-editor) {
+  padding: 0;
+  line-height: 1.8;
+  min-height: 100px;
+}
+
+.attachments-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attachments-section li {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.file-size {
+  margin-left: 10px;
+  font-size: 0.9em;
+  color: #909399;
 }
 </style> 

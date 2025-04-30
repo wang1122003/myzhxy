@@ -1,89 +1,106 @@
 <template>
-  <div class="teacher-course-management-container">
-    <el-card class="page-container">
-      <template #header>
-        <div class="header">
-          <span>我教授的课程</span>
-          <el-button :icon="Plus" type="primary" @click="handleAdd">添加课程</el-button>
-        </div>
-      </template>
+  <PageContainer title="我的课程管理">
+    <template #actions>
+      <!-- Add FilterForm trigger button if needed -->
+      <!-- Teachers might not add courses directly, depends on system design -->
+      <!-- <el-button :icon="Plus" type="primary" @click="handleAdd">添加课程</el-button> -->
+    </template>
 
-      <el-table v-loading="loading" :data="courseList" style="width: 100%">
-        <el-table-column label="课程名称" prop="courseName"/>
-        <el-table-column label="课程编号" prop="courseNo"/>
-        <el-table-column label="学分" prop="credits" width="80"/>
-        <el-table-column label="课程类型" prop="courseType" width="100">
-          <template #default="scope">
-            {{ formatCourseType(scope.row.courseType) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="所属学院" prop="collegeName"/> <!-- Assuming backend provides collegeName -->
-        <el-table-column label="操作" width="150">
-          <template #default="scope">
-            <el-button :icon="Edit" circle size="small" type="primary" @click="handleEdit(scope.row)"/>
-            <el-button :icon="Delete" circle size="small" type="danger" @click="handleDelete(scope.row)"/>
-          </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="暂无课程数据"/>
-        </template>
-      </el-table>
+    <!-- Add FilterForm definition here if needed -->
+    <!--
+    <FilterForm
+        :model="searchParams"
+        :items="filterItems"
+        @search="handleSearch"
+        @reset="handleReset"
+        :show-add-button="false"
+    />
+    -->
 
-      <!-- 分页 -->
-      <el-pagination
-          v-if="total > 0"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="total"
-          class="pagination-container"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-      />
-    </el-card>
+    <TableView
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :action-column-config="actionColumnConfig"
+        :columns="tableColumns"
+        :data="courseList"
+        :loading="loading"
+        :total="total"
+        @refresh="fetchCourses"
+        @edit-item="handleEdit"
+        @delete-item="handleDelete"
+    />
 
     <!-- 添加/编辑 对话框 -->
     <el-dialog
         v-model="dialogVisible"
-        :title="isEditMode ? '编辑课程' : '添加课程'"
+        :close-on-click-modal="false"
         width="600px"
         @close="handleDialogClose"
+        :title="isEditMode ? '编辑课程信息' : '添加课程'"
     >
-      <CourseForm
+      <!-- Use SmartForm or a dedicated CourseForm component -->
+      <el-form
           ref="courseFormRef"
-          :courseData="currentCourse"
-          :isEdit="isEditMode"
-          :loading="formLoading"
-      />
+          v-loading="formLoading"
+          :model="currentCourseForm"
+          :rules="courseFormRules"
+          label-width="100px"
+      >
+        <el-form-item label="课程编号" prop="courseCode">
+          <el-input v-model="currentCourseForm.courseCode" :disabled="isEditMode"
+                    placeholder="请输入课程编号"></el-input>
+        </el-form-item>
+        <el-form-item label="课程名称" prop="courseName">
+          <el-input v-model="currentCourseForm.courseName" placeholder="请输入课程名称"></el-input>
+        </el-form-item>
+        <el-form-item label="学分" prop="credit">
+          <el-input-number v-model="currentCourseForm.credit" :min="0" :precision="1" :step="0.5"
+                           controls-position="right" style="width: 100%;"/>
+        </el-form-item>
+        <el-form-item label="课时" prop="hours">
+          <el-input-number v-model="currentCourseForm.hours" :min="0" :precision="0" controls-position="right"
+                           style="width: 100%;"/>
+        </el-form-item>
+        <el-form-item label="课程类型" prop="courseType">
+          <el-select v-model="currentCourseForm.courseType" placeholder="请选择课程类型" style="width: 100%;">
+            <el-option label="必修课" value="COMPULSORY"/>
+            <el-option label="选修课" value="ELECTIVE"/>
+            <el-option label="通识课" value="GENERAL"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所属学院" prop="collegeId">
+          <el-select v-model="currentCourseForm.collegeId" filterable placeholder="请选择所属学院" style="width: 100%;">
+            <el-option v-for="college in collegeOptions" :key="college.id" :label="college.name" :value="college.id"/>
+          </el-select>
+        </el-form-item>
+        <!-- Add other fields like introduction if needed -->
+        <el-form-item label="课程介绍" prop="introduction">
+          <el-input v-model="currentCourseForm.introduction" :rows="4" placeholder="请输入课程介绍"
+                    type="textarea"></el-input>
+        </el-form-item>
+      </el-form>
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button :loading="submitting" type="primary" @click="handleSubmit">
-            {{ isEditMode ? '保存' : '创建' }}
+            {{ isEditMode ? '保存更新' : '确认添加' }}
           </el-button>
         </span>
       </template>
     </el-dialog>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, reactive, ref} from 'vue';
 import {
-  ElButton,
-  ElCard,
-  ElDialog,
-  ElEmpty,
-  ElMessage,
-  ElMessageBox,
-  ElPagination,
-  ElTable,
-  ElTableColumn
+  ElButton, ElDialog, ElEmpty, ElMessage, ElMessageBox, ElTable, ElTableColumn,
+  ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElInputNumber
 } from 'element-plus';
 import {Delete, Edit, Plus} from '@element-plus/icons-vue';
-import {addCourse, deleteCourse, getCourseById, getTeacherCourses, updateCourse} from '@/api/course';
-import CourseForm from '@/components/course/CourseForm.vue';
+import {getTeacherCourses, getCourseById, updateCourse} from '@/api/course'; // Corrected: Use course.js
+import {getColleges} from '@/api/common'; // Corrected: Use common.js and correct function name
 
 const loading = ref(false);
 const formLoading = ref(false);
@@ -92,33 +109,80 @@ const courseList = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
+const collegeOptions = ref([]); // For form select
 
-dialogVisible = ref(false);
+// Dialog State
+const dialogVisible = ref(false);
 const isEditMode = ref(false);
-const currentCourse = ref({});
+const currentCourseForm = ref({}); // Form model separate from table row
 const courseFormRef = ref(null);
 
-// 获取课程列表
+// Form Rules (example)
+const courseFormRules = reactive({
+  courseCode: [{required: true, message: '请输入课程编号', trigger: 'blur'}],
+  courseName: [{required: true, message: '请输入课程名称', trigger: 'blur'}],
+  credit: [{required: true, type: 'number', message: '请输入学分', trigger: 'blur'}],
+  hours: [{required: true, type: 'number', message: '请输入课时', trigger: 'blur'}],
+  courseType: [{required: true, message: '请选择课程类型', trigger: 'change'}],
+  collegeId: [{required: true, message: '请选择所属学院', trigger: 'change'}],
+});
+
+// --- Computed Properties ---
+
+// TableView Columns
+const tableColumns = computed(() => [
+  {prop: 'courseCode', label: '课程编号', width: 120},
+  {prop: 'courseName', label: '课程名称', minWidth: 180},
+  {prop: 'credit', label: '学分', width: 80},
+  {prop: 'hours', label: '课时', width: 80},
+  {
+    prop: 'courseType',
+    label: '课程类型',
+    width: 100,
+    formatter: (row) => formatCourseType(row.courseType)
+  },
+  {prop: 'collegeName', label: '所属学院', minWidth: 150},
+  // Add status column if applicable for teachers (e.g., '未开课', '已开课')
+]);
+
+// TableView Action Column Configuration
+const actionColumnConfig = computed(() => ({
+  width: 120, // Adjust width if needed
+  fixed: 'right',
+  buttons: [
+    {label: '编辑', type: 'primary', event: 'edit-item', icon: Edit},
+    // Teachers might not be allowed to delete courses, depends on logic
+    // { label: '删除', type: 'danger', event: 'delete-item', icon: Delete },
+  ]
+}));
+
+// --- Methods ---
+
+// Fetch colleges for form select
+const fetchColleges = async () => {
+  try {
+    const res = await getColleges(); // Assuming API exists
+    collegeOptions.value = res.data || [];
+  } catch (error) {
+    console.error("获取学院列表失败:", error);
+  }
+};
+
+// Fetch teacher's courses
 const fetchCourses = async () => {
   loading.value = true;
   try {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      // Add any other necessary params like sorting
+      // Add filters from searchParams if implemented
     };
-    const res = await getTeacherCourses(params);
-    if (res.code === 200 && res.data) {
-      courseList.value = res.data.records || [];
-      total.value = res.data.total || 0;
-    } else {
-      ElMessage.error(res.message || '获取课程列表失败');
-      courseList.value = [];
-      total.value = 0;
-    }
+    const res = await getTeacherCourses(params); // Corrected
+    courseList.value = res.data?.records || [];
+    total.value = res.data?.total || 0;
   } catch (error) {
     console.error("获取教师课程失败:", error);
-    ElMessage.error('获取课程列表时发生错误');
+    // Error handled by interceptor
     courseList.value = [];
     total.value = 0;
   } finally {
@@ -126,147 +190,95 @@ const fetchCourses = async () => {
   }
 };
 
-// 格式化课程类型 (可以移到 utils)
+// Format course type
 const formatCourseType = (type) => {
-  const typeMap = {
-    COMPULSORY: '必修课',
-    ELECTIVE: '选修课',
-    GENERAL: '通识课'
-  };
+  const typeMap = {COMPULSORY: '必修课', ELECTIVE: '选修课', GENERAL: '通识课'};
   return typeMap[type] || type;
 };
 
-// 分页处理
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1; // Reset to first page
-  fetchCourses();
-};
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchCourses();
-};
+// Open Add Dialog (if teachers can add)
+// const handleAdd = () => {
+//   isEditMode.value = false;
+//   currentCourseForm.value = { credit: 0, hours: 0 }; // Reset form model
+//   dialogVisible.value = true;
+//   nextTick(() => courseFormRef.value?.clearValidate());
+// };
 
-// 打开添加对话框
-const handleAdd = () => {
-  isEditMode.value = false;
-  currentCourse.value = {}; // Clear current data
-  dialogVisible.value = true;
-};
-
-// 打开编辑对话框
+// Open Edit Dialog
 const handleEdit = async (row) => {
   isEditMode.value = true;
   formLoading.value = true;
   dialogVisible.value = true;
+  currentCourseForm.value = {}; // Clear previous form data
   try {
-    // Fetch full details if needed, or use row data directly if sufficient
-    const res = await getCourseById(row.id);
-    if (res.code === 200) {
-      currentCourse.value = res.data;
-    } else {
-      ElMessage.error(res.message || '获取课程详情失败');
-      dialogVisible.value = false;
-    }
+    const res = await getCourseById(row.id); // Corrected
+    currentCourseForm.value = {...res.data}; // Use fetched data for form
   } catch (error) {
     console.error('获取课程详情失败:', error);
     ElMessage.error('获取课程详情失败');
-    dialogVisible.value = false;
+    dialogVisible.value = false; // Close if fetch fails
   } finally {
     formLoading.value = false;
   }
 };
 
-// 处理删除
-const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除课程 "${row.courseName}" 吗?`, '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
-      .then(async () => {
-        try {
-          loading.value = true; // Indicate loading state
-          await deleteCourse(row.id);
-          ElMessage.success('删除成功');
-          // Refresh list, potentially staying on the same page or going to previous if last item deleted
-          if (courseList.value.length === 1 && currentPage.value > 1) {
-            currentPage.value--;
-          }
-          fetchCourses();
-        } catch (error) {
-          console.error("删除课程失败:", error);
-          ElMessage.error(error?.response?.data?.message || '删除失败');
-          loading.value = false; // Reset loading on error
-        }
-      })
-      .catch(() => {
-        // User cancelled
-      });
-};
+// Handle Delete (if teachers can delete)
+// const handleDelete = (row) => {
+//   ElMessageBox.confirm(`确定要删除课程 "${row.courseName}" 吗?`, '警告', { ... })
+//     .then(async () => {
+//       try {
+//         await teacherDeleteCourse(row.id); // Use teacher API
+//         ElMessage.success('删除成功');
+//         fetchCourses();
+//       } catch (error) { ... }
+//     })
+// };
 
-// 处理对话框关闭
+// Dialog close handler
 const handleDialogClose = () => {
-  courseFormRef.value?.resetForm();
-  currentCourse.value = {}; // Clear data when dialog closes
+  courseFormRef.value?.resetFields(); // Reset validation and fields
+  currentCourseForm.value = {};
 };
 
-// 提交表单
+// Submit form (Add or Edit)
 const handleSubmit = async () => {
+  if (!courseFormRef.value) return;
   try {
-    const isValid = await courseFormRef.value?.validate();
+    const isValid = await courseFormRef.value.validate();
     if (!isValid) return;
 
     submitting.value = true;
-    const formData = courseFormRef.value?.getFormData();
+    const payload = {...currentCourseForm.value};
 
     if (isEditMode.value) {
-      // Update existing course
-      await updateCourse(formData.id, formData);
-      ElMessage.success('更新成功');
+      await updateCourse(payload.id, payload); // Corrected
+      ElMessage.success('课程信息更新成功');
     } else {
-      // Add new course
-      await addCourse(formData);
-      ElMessage.success('添加成功');
+      // await teacherAddCourse(payload); // Use teacher API if applicable
+      ElMessage.warning('教师添加课程功能暂未实现');
     }
     dialogVisible.value = false;
-    fetchCourses(); // Refresh the list
+    await fetchCourses(); // Refresh the list
   } catch (error) {
     console.error("提交课程失败:", error);
-    ElMessage.error(error?.response?.data?.message || (isEditMode.value ? '更新失败' : '添加失败'));
+    // Error handled by interceptor
   } finally {
     submitting.value = false;
   }
 };
 
-// 初始化加载
+// Initial load
 onMounted(() => {
+  fetchColleges(); // Fetch colleges for the form select
   fetchCourses();
 });
+
 </script>
 
 <style scoped>
-.teacher-course-management-container {
-  padding: 20px;
-}
-
-.page-container {
-  min-height: 600px; /* Adjust as needed */
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end; /* Align pagination to the right */
-}
-
 .dialog-footer {
   text-align: right;
 }
+
+/* Add other styles if needed */
 </style> 

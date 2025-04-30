@@ -205,7 +205,7 @@
     </select>
 
     <!-- 查找给定课程ID列表中已被排课的课程ID -->
-    <select id="findScheduledCourseIdsInList" resultType="long">
+    <select id="findScheduledCourseIds" resultType="long">
         SELECT DISTINCT course_id
         FROM schedule
         WHERE course_id IN
@@ -215,7 +215,7 @@
     </select>
 
     <!-- 根据学生用户ID查询课程表 -->
-    <select id="findByUserId" resultType="com.campus.entity.Schedule">
+    <select id="findByUserId" resultMap="BaseResultMap">
         SELECT s.*,
                c.course_name as courseName,
                u.real_name   as teacherName,
@@ -281,14 +281,21 @@
         WHERE s.id = #{id}
     </select>
 
-    <!-- 查找给定课程ID列表中已被排课的课程ID (匹配 DAO 接口中的 findScheduledCourseIds) -->
-    <select id="findScheduledCourseIds" resultType="java.lang.Long">
-        SELECT DISTINCT course_id
-        FROM schedule
-        WHERE course_id IN
-        <foreach item="item" collection="courseIds" open="(" separator="," close=")">
+    <!-- 根据课程ID列表和学期信息查询课表记录 -->
+    <select id="findSchedulesByCourseIdsAndTerm" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Details"/>
+        FROM schedule s
+        LEFT JOIN course c ON s.course_id = c.id
+        LEFT JOIN user u ON s.teacher_id = u.id
+        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        WHERE s.term_info = #{termInfo}
+        AND s.course_id IN
+        <foreach item="item" index="index" collection="courseIds" open="(" separator="," close=")">
             #{item}
         </foreach>
+        AND s.status = 1 -- 通常只查询状态正常的排课
+        ORDER BY s.day_of_week, s.start_time
     </select>
 
     <!-- 检查教师时间冲突 -->

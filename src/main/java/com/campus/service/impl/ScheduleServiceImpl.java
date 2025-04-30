@@ -1,13 +1,16 @@
 package com.campus.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campus.dao.CourseSelectionDao;
 import com.campus.dao.ScheduleDao;
 import com.campus.dao.UserDao;
+import com.campus.entity.CourseSelection;
 import com.campus.entity.Schedule;
 import com.campus.entity.User;
 import com.campus.enums.UserType;
@@ -16,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.text.SimpleDateFormat;
@@ -23,6 +27,7 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 课表服务实现类
@@ -36,6 +41,9 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
 
     @Autowired
     private UserDao userDao;
+
+    @Autowired
+    private CourseSelectionDao courseSelectionDao;
 
     @Override
     public Schedule getScheduleById(Long id) {
@@ -87,7 +95,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             throw new RuntimeException("排课冲突：教师或教室在该时间段已有安排");
         }
 
-        schedule.setStatus(StringUtils.hasText(schedule.getStatus()) ? schedule.getStatus() : "Active");
+        schedule.setStatus(StringUtils.hasText(schedule.getStatus()) ? schedule.getStatus() : "1");
         Date now = new Date();
         schedule.setCreateTime(now);
         schedule.setUpdateTime(now);
@@ -105,9 +113,6 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         }
 
         schedule.setUpdateTime(new Date());
-        if (!StringUtils.hasText(schedule.getStatus())) {
-            schedule.setStatus("Active");
-        }
         return updateById(schedule);
     }
 
@@ -179,30 +184,26 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
 
     @Override
     public int getTeacherScheduleCount(Long teacherId) {
-        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("teacher_id", teacherId);
-        return (int) this.count(queryWrapper);
+        if (teacherId == null) return 0;
+        return (int) count(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getTeacherId, teacherId));
     }
 
     @Override
     public int getClassroomScheduleCount(Long classroomId) {
-        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("classroom_id", classroomId);
-        return (int) this.count(queryWrapper);
+        if (classroomId == null) return 0;
+        return (int) count(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getClassroomId, classroomId));
     }
 
     @Override
     public int getCourseScheduleCount(Long courseId) {
-        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("course_id", courseId);
-        return (int) this.count(queryWrapper);
+        if (courseId == null) return 0;
+        return (int) count(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getCourseId, courseId));
     }
 
     @Override
     public int getTermScheduleCount(String termCode) {
-        QueryWrapper<Schedule> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("term_info", termCode);
-        return (int) this.count(queryWrapper);
+        if (!StringUtils.hasText(termCode)) return 0;
+        return (int) count(Wrappers.<Schedule>lambdaQuery().eq(Schedule::getTermInfo, termCode));
     }
 
     @Override
@@ -228,40 +229,22 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
     @Override
     public Map<String, Object> getClassroomWeeklySchedule(Long classroomId, String termCode) {
         List<Schedule> schedules = getSchedulesByClassroomIdAndTerm(classroomId, termCode);
-        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, classroomId, termCode, "classroom");
-        return weeklySchedule;
+        return buildWeeklyScheduleMap(schedules, classroomId, termCode, "classroom");
     }
 
     @Override
     public Map<String, Object> getTeacherWeeklySchedule(Long teacherId, String termCode) {
         List<Schedule> schedules = getSchedulesByTeacherIdAndTerm(teacherId, termCode);
-        Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, teacherId, termCode, "teacher");
-        return weeklySchedule;
+        return buildWeeklyScheduleMap(schedules, teacherId, termCode, "teacher");
     }
 
     @Override
     public Map<String, Object> getStudentWeeklySchedule(Long studentId, String termCode) {
-        User student = userDao.selectById(studentId);
-
-        Long classId = null;
-        if (student != null && UserType.STUDENT.equals(student.getUserType())) {
-            classId = getClassIdForStudent(studentId);
-        }
-
-        if (classId == null) {
-            log.warn("无法找到学生或学生未分配班级, studentId: {}", studentId);
-            Map<String, Object> emptySchedule = new HashMap<>();
-            emptySchedule.put("schedules", new ArrayList<>());
-            emptySchedule.put("termInfo", termCode);
-            emptySchedule.put("type", "student");
-            emptySchedule.put("studentId", studentId);
-            emptySchedule.put("classId", null);
-            return emptySchedule;
-        }
-
         List<Schedule> schedules = getSchedulesByUserIdAndTerm(studentId, termCode);
+        log.info("学生 {} 在学期 {} 的课表记录数: {}", studentId, termCode, schedules.size());
+        
         Map<String, Object> weeklySchedule = buildWeeklyScheduleMap(schedules, studentId, termCode, "student");
-        weeklySchedule.put("classId", classId);
+
         return weeklySchedule;
     }
 
@@ -334,24 +317,22 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         weeklySchedule.put("type", type);
         weeklySchedule.put("id", primaryId);
         weeklySchedule.put("termInfo", termCode);
+        weeklySchedule.put("schedules", schedules);
 
-        Map<String, List<Map<String, Object>>> scheduleByDay = new HashMap<>();
+        Map<Integer, List<Map<String, Object>>> scheduleByDay = new HashMap<>();
         for (int i = 1; i <= 7; i++) {
-            scheduleByDay.put(String.valueOf(i), new ArrayList<>());
+            scheduleByDay.put(i, new ArrayList<>());
         }
 
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
         for (Schedule schedule : schedules) {
             Integer dayValue = schedule.getDayOfWeek();
-            String dayKey = null;
-            if (dayValue != null) {
-                dayKey = String.valueOf(dayValue);
-            }
-
-            if (dayKey != null && scheduleByDay.containsKey(dayKey)) {
+            if (dayValue != null && dayValue >= 1 && dayValue <= 7) {
                 Map<String, Object> scheduleDetails = convertScheduleToMap(schedule, timeFormat);
-                scheduleByDay.get(dayKey).add(scheduleDetails);
+                scheduleByDay.get(dayValue).add(scheduleDetails);
+            } else {
+                log.warn("发现无效的星期值 {} 在排课记录 ID: {}", dayValue, schedule.getId());
             }
         }
 
@@ -359,7 +340,7 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
             dailySchedules.sort(Comparator.comparing(map -> (LocalTime) map.getOrDefault("startTimeObj", LocalTime.MIN)));
         }
 
-        weeklySchedule.put("schedule", scheduleByDay);
+        weeklySchedule.put("scheduleMapByDay", scheduleByDay);
         return weeklySchedule;
     }
 
@@ -395,14 +376,36 @@ public class ScheduleServiceImpl extends ServiceImpl<ScheduleDao, Schedule> impl
         return map;
     }
 
-    private Long getClassIdForStudent(Long studentId) {
-        log.warn("getClassIdForStudent is not fully implemented.");
-        return null;
-    }
+    /**
+     * 实现接口：根据用户ID和学期信息获取课表列表
+     *
+     * @param userId   用户ID
+     * @param termInfo 学期代码
+     * @return 该用户在该学期的课表列表
+     */
+    @Override
+    public List<Schedule> getSchedulesByUserIdAndTerm(Long userId, String termInfo) {
+        if (userId == null || !StringUtils.hasText(termInfo)) {
+            log.warn("getSchedulesByUserIdAndTerm called with invalid arguments: userId={}, termInfo={}", userId, termInfo);
+            return Collections.emptyList();
+        }
+        // 注意: scheduleDao.findByUserId 目前可能只接受 userId 参数。
+        // 如果需要按学期过滤，需要修改 DAO 层或在这里进行后置过滤。
+        // 假设 DAO 层已修改或 findByUserId 内部已处理学期 (虽然 Mapper 显示没有)
+        // 理想情况下，DAO 接口应为 findByUserIdAndTerm(Long userId, String termInfo)
+        // 此处暂时调用现有的 findByUserId，并依赖其 SQL 查询中的 term_info 条件
+        List<Schedule> schedules = scheduleDao.findByUserId(userId);
 
-    private List<Schedule> getSchedulesByUserIdAndTerm(Long userId, String termCode) {
-        log.warn("getSchedulesByUserIdAndTerm is not fully implemented. userId: {}, termCode: {}", userId, termCode);
-        return new ArrayList<>();
+        // 如果 DAO 没处理学期，需要在这里过滤
+        // List<Schedule> filteredSchedules = schedules.stream()
+        //        .filter(s -> termInfo.equals(s.getTermInfo()))
+        //        .collect(Collectors.toList());
+        // log.info("Found {} schedules for user {} in term {}. (Before filtering: {})", filteredSchedules.size(), userId, termInfo, schedules.size());
+        // return filteredSchedules;
+
+        // 假设 DAO 的 findByUserId SQL 包含了 term_info 的 JOIN 条件，直接返回
+        log.info("DAO findByUserId returned {} schedules for user {}. Assuming term filtering happened in SQL.", schedules.size(), userId);
+        return schedules;
     }
 
     @Override

@@ -21,10 +21,10 @@ public interface CourseService {
     /**
      * 根据课程编号查询课程信息
      *
-     * @param courseNo 课程编号
+     * @param courseCode 课程编号
      * @return 课程实体
      */
-    Course getCourseByCourseCode(String courseNo);
+    Course getCourseByCourseCode(String courseCode);
 
     /**
      * 查询所有课程 (分页)
@@ -102,10 +102,10 @@ public interface CourseService {
     /**
      * 检查课程编号是否存在
      *
-     * @param courseNo 课程编号
+     * @param courseCode 课程编号
      * @return 是否存在
      */
-    boolean checkCourseCodeExists(String courseNo);
+    boolean checkCourseCodeExists(String courseCode);
 
     /**
      * 更新课程状态

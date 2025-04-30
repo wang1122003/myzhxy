@@ -1,519 +1,389 @@
 <template>
-  <div class="student-course-container">
-    <div class="header">
-      <h2>课程选择</h2>
-      <div class="filter-container">
-        <el-select
-            v-model="semester"
-            clearable
-            placeholder="学期"
-            @change="fetchCourses"
-        >
-          <el-option
-              v-for="item in semesterOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-          />
-        </el-select>
+  <PageContainer title="选课中心">
+    <FilterForm
+        :items="filterItems"
+        :model="searchParams"
+        @reset="handleReset"
+        @search="handleSearch"
+    />
 
-        <el-select
-            v-model="courseType"
-            clearable
-            placeholder="课程类型"
-            @change="fetchCourses"
-        >
-          <el-option
-              v-for="item in courseTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-          />
-        </el-select>
-
-        <el-input
-            v-model="searchKeyword"
-            clearable
-            placeholder="搜索课程名称或教师"
-            @input="fetchCourses"
-        >
-          <template #prefix>
-            <el-icon>
-              <Search/>
-            </el-icon>
-          </template>
-        </el-input>
-      </div>
-    </div>
-
-    <el-tabs v-model="activeTab">
-      <el-tab-pane
-          label="可选课程"
-          name="available"
-      >
-        <el-table
-            v-loading="loading"
-            :data="availableCourses"
-            style="width: 100%"
-        >
-          <el-table-column
-              label="课程代码"
-              prop="courseCode"
-              width="120"
-          />
-          <el-table-column
-              label="课程名称"
-              prop="courseName"
-              width="180"
-          />
-          <el-table-column
-              label="授课教师"
-              prop="teacher"
-              width="120"
-          />
-          <el-table-column
-              label="课程类型"
-              prop="courseType"
-              width="120"
-          >
-            <template #default="scope">
-              <el-tag :type="getCourseTypeTag(scope.row.courseType)">
-                {{ getCourseTypeName(scope.row.courseType) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-              label="学分"
-              prop="credit"
-              width="80"
-          />
-          <el-table-column
-              label="学期"
-              prop="semester"
-              width="120"
-          />
-          <el-table-column
-              label="上课时间"
-              min-width="180"
-              prop="schedule"
-          />
-          <el-table-column
-              label="上课地点"
-              prop="classroom"
-              width="120"
-          />
-          <el-table-column
-              label="容量"
-              prop="capacity"
-              width="120"
-          >
-            <template #default="scope">
-              {{ scope.row.selectedCount }}/{{ scope.row.capacity }}
-              <el-progress
-                  :percentage="(scope.row.selectedCount / scope.row.capacity) * 100"
-                  :status="getCapacityStatus(scope.row)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column
-              fixed="right"
-              label="操作"
-              width="120"
-          >
-            <template #default="scope">
-              <el-button
-                  :disabled="scope.row.selectedCount >= scope.row.capacity || scope.row.isConflict"
-                  :loading="submitting"
-                  size="small"
-                  type="primary"
-                  @click="selectCourse(scope.row)"
-              >
-                选课
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pagination-container">
-          <el-pagination
-              v-model:current-page="currentPage"
-              v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 30, 50]"
-              :total="totalAvailable"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-          />
-        </div>
-      </el-tab-pane>
-
-      <el-tab-pane
-          label="已选课程"
-          name="selected"
-      >
-        <el-table
-            v-loading="loadingSelected"
-            :data="selectedCourses"
-            style="width: 100%"
-        >
-          <el-table-column
-              label="课程代码"
-              prop="courseCode"
-              width="120"
-          />
-          <el-table-column
-              label="课程名称"
-              prop="courseName"
-              width="180"
-          />
-          <el-table-column
-              label="授课教师"
-              prop="teacher"
-              width="120"
-          />
-          <el-table-column
-              label="课程类型"
-              prop="courseType"
-              width="120"
-          >
-            <template #default="scope">
-              <el-tag :type="getCourseTypeTag(scope.row.courseType)">
-                {{ getCourseTypeName(scope.row.courseType) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-              label="学分"
-              prop="credit"
-              width="80"
-          />
-          <el-table-column
-              label="学期"
-              prop="semester"
-              width="120"
-          />
-          <el-table-column
-              label="上课时间"
-              min-width="180"
-              prop="schedule"
-          />
-          <el-table-column
-              label="上课地点"
-              prop="classroom"
-              width="120"
-          />
-          <el-table-column
-              label="选课时间"
-              prop="selectTime"
-              width="180"
-          />
-          <el-table-column
-              fixed="right"
-              label="操作"
-              width="120"
-          >
-            <template #default="scope">
-              <el-button
-                  :loading="submitting"
-                  size="small"
-                  type="danger"
-                  @click="dropCourse(scope.row)"
-              >
-                退课
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-    </el-tabs>
+    <TableView
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :action-column-config="actionColumnConfig"
+        :columns="tableColumns"
+        :data="courseList"
+        :loading="loading"
+        :total="total"
+        @refresh="fetchData"
+        @select-course="handleCourseAction"
+        @drop-course="handleCourseAction"
+        @view-detail="handleViewDetails"
+    />
 
     <!-- 课程详情对话框 -->
-    <el-dialog
-        v-model="courseDetailVisible"
-        title="课程详情"
-        width="60%"
-    >
-      <template v-if="currentCourse">
-        <el-descriptions
-            :column="2"
-            border
-        >
-          <el-descriptions-item label="课程代码">
-            {{ currentCourse.courseCode }}
+    <el-dialog v-model="courseDetailVisible" :title="selectedCourse.courseName" width="650px">
+      <div v-loading="loadingCourseDetail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="课程代码">{{ selectedCourse.courseCode }}</el-descriptions-item>
+          <el-descriptions-item label="课程类型">{{
+              formatCourseType(selectedCourse.courseType)
+            }}
           </el-descriptions-item>
-          <el-descriptions-item label="课程名称">
-            {{ currentCourse.courseName }}
+          <el-descriptions-item label="学分">{{ selectedCourse.credit }}</el-descriptions-item>
+          <el-descriptions-item label="课时">{{ selectedCourse.hours }}</el-descriptions-item>
+          <el-descriptions-item label="开课学院">{{ selectedCourse.collegeName }}</el-descriptions-item>
+          <el-descriptions-item label="授课教师">{{ selectedCourse.teacherName || '待定' }}</el-descriptions-item>
+          <el-descriptions-item label="限选人数">{{
+              selectedCourse.maxStudents > 0 ? selectedCourse.maxStudents : '不限'
+            }}
           </el-descriptions-item>
-          <el-descriptions-item label="课程类型">
-            <el-tag :type="getCourseTypeTag(currentCourse.courseType)">
-              {{ getCourseTypeName(currentCourse.courseType) }}
-            </el-tag>
+          <el-descriptions-item label="已选人数">{{ selectedCourse.selectedCount || 0 }}</el-descriptions-item>
+          <el-descriptions-item :span="2" label="上课时间">
+            <div v-if="selectedCourse.schedules && selectedCourse.schedules.length">
+              <p v-for="(schedule, index) in selectedCourse.schedules" :key="index">
+                {{ formatScheduleTime(schedule) }}
+              </p>
+            </div>
+            <span v-else>待安排</span>
           </el-descriptions-item>
-          <el-descriptions-item label="学分">
-            {{ currentCourse.credit }}
-          </el-descriptions-item>
-          <el-descriptions-item label="授课教师">
-            {{ currentCourse.teacher }}
-          </el-descriptions-item>
-          <el-descriptions-item label="学期">
-            {{ currentCourse.semester }}
-          </el-descriptions-item>
-          <el-descriptions-item
-              :span="2"
-              label="上课时间"
-          >
-            {{ currentCourse.schedule }}
-          </el-descriptions-item>
-          <el-descriptions-item label="上课地点">
-            {{ currentCourse.classroom }}
-          </el-descriptions-item>
-          <el-descriptions-item label="课程容量">
-            {{ currentCourse.selectedCount }}/{{ currentCourse.capacity }}
-            <el-progress
-                :percentage="(currentCourse.selectedCount / currentCourse.capacity) * 100"
-                :status="getCapacityStatus(currentCourse)"
-            />
-          </el-descriptions-item>
-          <el-descriptions-item
-              :span="2"
-              label="课程简介"
-          >
-            {{ currentCourse.description || '暂无课程简介' }}
+          <el-descriptions-item :span="2" label="课程介绍">
+            <div v-html="selectedCourse.introduction || '暂无介绍'"></div>
           </el-descriptions-item>
         </el-descriptions>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="courseDetailVisible = false">关闭</el-button>
+          <el-button
+              v-if="!isSelected(selectedCourse.id) && canSelectCourse(selectedCourse)"
+              :loading="selectingCourse === selectedCourse.id"
+              type="primary"
+              @click="handleCourseAction(selectedCourse, 'select')"
+          >
+            选课
+          </el-button>
+           <el-button
+               v-if="isSelected(selectedCourse.id)"
+               :loading="selectingCourse === selectedCourse.id"
+               type="danger"
+               @click="handleCourseAction(selectedCourse, 'drop')"
+           >
+            退课
+          </el-button>
+        </span>
       </template>
     </el-dialog>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
-import {Search} from '@element-plus/icons-vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {getAllCourses, getStudentCourses as getSelectedCourses} from '@/api/course'
-import {dropCourse as apiDropCourse, selectCourse as apiSelectCourse} from '@/api/courseSelection'
+import {computed, onMounted, reactive, ref, watch, h, resolveComponent} from 'vue';
+import {ElMessage, ElMessageBox, ElTag, ElButton} from 'element-plus';
+import {getCourseList, getStudentCourses, getCourseById} from '@/api/course'; // Corrected: Use course.js for listing and details
+import {selectCourse, dropCourse} from '@/api/courseSelection'; // Corrected: Use courseSelection.js for actions
+import {formatDateTime} from '@/utils/formatters';
+import PageContainer from '@/components/common/EnhancedPageContainer.vue';
+import TableView from '@/components/common/TableView.vue';
+import FilterForm from '@/components/common/AdvancedFilterForm.vue';
 
-// 可选择的学期选项
-const semesterOptions = ref([
-  {value: '2023-2024-1', label: '2023-2024学年第一学期'},
-  {value: '2023-2024-2', label: '2023-2024学年第二学期'},
-  {value: '2024-2025-1', label: '2024-2025学年第一学期'}
-])
+// --- State ---
+const loading = ref(false);
+const loadingCourseDetail = ref(false);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const courseList = ref([]);
+const myCourseIds = ref(new Set()); // 存储已选课程 ID，查询更快
+const selectingCourse = ref(null); // 正在操作的课程ID
 
-// 课程类型选项
-const courseTypeOptions = ref([
-  {value: 'REQUIRED', label: '必修课'},
+const courseDetailVisible = ref(false);
+const selectedCourse = ref({});
+
+// 搜索参数
+const searchParams = reactive({
+  keyword: '',
+  courseType: ''
+});
+
+// --- Options & Formatters ---
+const courseTypeOptions = [
+  {value: 'COMPULSORY', label: '必修课'},
   {value: 'ELECTIVE', label: '选修课'},
-  {value: 'GENERAL', label: '通识课'},
-  {value: 'PHYSICAL', label: '体育课'}
-])
+  {value: 'GENERAL', label: '通识课'}
+];
 
-// 响应式数据
-const semester = ref(semesterOptions.value[0].value)
-const courseType = ref('')
-const searchKeyword = ref('')
-const activeTab = ref('available')
-const availableCourses = ref([])
-const selectedCourses = ref([])
-const loading = ref(false)
-const loadingSelected = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const totalAvailable = ref(0)
-const courseDetailVisible = ref(false)
-const currentCourse = ref(null)
-const submitting = ref(false)
-
-// 获取可选课程
-const fetchCourses = async () => {
-  loading.value = true
-  try {
-    const params = {
-      page: currentPage.value,
-      size: pageSize.value,
-      semester: semester.value,
-      courseType: courseType.value,
-      keyword: searchKeyword.value
-    }
-
-    const res = await getAllCourses(params)
-    if (res.code === 0 || res.code === 200) {
-      availableCourses.value = res.data.rows || res.data.list || []
-      totalAvailable.value = res.data.total || 0
-    }
-  } catch (error) {
-    console.error('获取可选课程失败', error)
-    ElMessage.error('获取可选课程失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 获取已选课程
-const fetchSelectedCourses = async () => {
-  loadingSelected.value = true
-  try {
-    const res = await getSelectedCourses({semester: semester.value})
-    if (res.code === 0 || res.code === 200) {
-      selectedCourses.value = res.data || []
-    }
-  } catch (error) {
-    console.error('获取已选课程失败', error)
-    ElMessage.error('获取已选课程失败')
-  } finally {
-    loadingSelected.value = false
-  }
-}
-
-// 检查时间冲突
-const checkTimeConflict = (course) => {
-  if (!selectedCourses.value.length) return false
-
-  // 这里简化处理，实际应该解析课程时间并检查冲突
-  // 例如：周一(1-2)、周三(3-4)这样的格式需要解析后比较
-  return selectedCourses.value.some(selected => {
-    return selected.schedule === course.schedule
-  })
-}
-
-// 选课
-const selectCourse = async (course) => {
-  submitting.value = true
-  try {
-    await ElMessageBox.confirm(
-        `确认选择课程《${course.courseName}》吗？`,
-        '选课确认',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'info'
-        }
-    )
-
-    await apiSelectCourse(course.id)
-    ElMessage.success('选课成功')
-    fetchCourses()
-    fetchSelectedCourses()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('选课失败', error)
-      ElMessage.error(error.response?.data?.message || '选课失败')
-    }
-  } finally {
-    submitting.value = false
-  }
-}
-
-// 退课
-const dropCourse = async (course) => {
-  submitting.value = true
-  try {
-    await ElMessageBox.confirm(
-        `确认退选课程《${course.courseName}》吗？`,
-        '退课确认',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-    )
-
-    await apiDropCourse(course.id)
-    ElMessage.success('退课成功')
-    fetchSelectedCourses()
-    fetchCourses()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('退课失败', error)
-      ElMessage.error(error.response?.data?.message || '退课失败')
-    }
-  } finally {
-    submitting.value = false
-  }
-}
-
-// 查看课程详情
-const viewCourseDetail = (course) => {
-  currentCourse.value = course
-  courseDetailVisible.value = true
-}
-
-// 处理分页变化
-const handleSizeChange = (size) => {
-  pageSize.value = size
-  fetchCourses()
-}
-
-const handleCurrentChange = (page) => {
-  currentPage.value = page
-  fetchCourses()
-}
-
-// 获取课程类型标签样式
-const getCourseTypeTag = (type) => {
+const formatCourseType = (type) => {
   const map = {
-    'REQUIRED': 'danger',
-    'ELECTIVE': 'success',
-    'GENERAL': 'info',
-    'PHYSICAL': 'warning'
-  }
-  return map[type] || 'info'
-}
-
-// 获取课程类型名称
-const getCourseTypeName = (type) => {
-  const map = {
-    'REQUIRED': '必修课',
+    'COMPULSORY': '必修课',
     'ELECTIVE': '选修课',
-    'GENERAL': '通识课',
-    'PHYSICAL': '体育课'
+    'GENERAL': '通识课'
+  };
+  return map[type] || type;
+};
+
+const formatStatus = (course) => {
+  if (myCourseIds.value.has(course.id)) return '已选课';
+  if (course.status === 'CLOSED') return '已关闭'; // 假设后端状态
+  if (course.maxStudents && course.selectedCount >= course.maxStudents) return '人数已满';
+  // TODO: Add check for course selection window from settings/backend
+  return '可选课';
+};
+
+const getStatusType = (course) => {
+  if (myCourseIds.value.has(course.id)) return 'success';
+  if (course.status === 'CLOSED') return 'info';
+  if (course.maxStudents && course.selectedCount >= course.maxStudents) return 'danger';
+  return 'primary';
+};
+
+// 判断课程是否可选（仅判断状态和人数，时间窗口需另外考虑）
+const canSelectCourse = (course) => {
+  if (myCourseIds.value.has(course.id)) return false; // 已选，不能再选
+  if (course.status === 'CLOSED' || (course.maxStudents > 0 && course.selectedCount >= course.maxStudents)) return false;
+  // TODO: Add check for course selection window
+  return true;
+};
+
+// 格式化上课时间
+const formatScheduleTime = (schedule) => {
+  if (!schedule) return '待安排';
+  const weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  const day = weekdays[schedule.weekday] || `周${schedule.weekday}`;
+  const time = `${schedule.startTime?.substring(0, 5)}-${schedule.endTime?.substring(0, 5)}`;
+  const weeks = `第${schedule.startWeek}-${schedule.endWeek}周`;
+  const location = schedule.classroomName || '地点待定';
+  return `${day} ${time} (${weeks}) @ ${location}`;
+};
+
+// --- Computed Properties for Components ---
+
+// FilterForm 配置
+const filterItems = computed(() => [
+  {
+    type: 'input',
+    label: '关键词',
+    prop: 'keyword',
+    placeholder: '课程名称/代码',
+    props: {clearable: true, style: {width: '200px'}}
+  },
+  {
+    type: 'select',
+    label: '课程类型',
+    prop: 'courseType',
+    placeholder: '选择类型',
+    options: courseTypeOptions,
+    props: {clearable: true, style: {width: '150px'}}
   }
-  return map[type] || '未知'
-}
+]);
 
-// 获取容量状态
-const getCapacityStatus = (course) => {
-  const ratio = course.selectedCount / course.capacity
-  if (ratio >= 1) return 'exception'
-  if (ratio >= 0.8) return 'warning'
-  return 'success'
-}
+// TableView 列配置
+const tableColumns = computed(() => [
+  {prop: 'courseCode', label: '课程代码', width: 120},
+  {prop: 'courseName', label: '课程名称', minWidth: 180, showOverflowTooltip: true},
+  {prop: 'credit', label: '学分', width: 80},
+  {prop: 'hours', label: '课时', width: 80},
+  {
+    prop: 'courseType',
+    label: '课程类型',
+    width: 100,
+    formatter: (row) => formatCourseType(row.courseType)
+  },
+  {prop: 'collegeName', label: '所属学院', minWidth: 150, showOverflowTooltip: true},
+  {
+    prop: 'capacityInfo',
+    label: '名额 (已选/上限)',
+    width: 150,
+    align: 'center',
+    formatter: (row) => `${row.selectedCount || 0} / ${row.maxStudents > 0 ? row.maxStudents : '不限'}`
+  },
+  {
+    prop: 'status',
+    label: '状态',
+    width: 100,
+    slots: {
+      default: (scope) => h(resolveComponent('ElTag'), {
+        type: getStatusType(scope.row),
+        size: 'small'
+      }, () => formatStatus(scope.row))
+    }
+  }
+]);
 
-// 页面加载时获取数据
+// TableView 操作列配置
+const actionColumnConfig = computed(() => ({
+  width: 120,
+  fixed: 'right',
+  buttons: (
+      row
+  ) => {
+    const actions = [];
+    actions.push({label: '详情', type: 'info', link: true, event: 'view-detail'});
+
+    if (myCourseIds.value.has(row.id)) {
+      actions.push({
+        label: '退课',
+        type: 'danger',
+        link: true,
+        event: 'drop-course',
+        loading: selectingCourse.value === row.id
+      });
+    } else if (canSelectCourse(row)) {
+      actions.push({
+        label: '选课',
+        type: 'primary',
+        link: true,
+        event: 'select-course',
+        loading: selectingCourse.value === row.id
+      });
+    }
+    return actions;
+  }
+}));
+
+
+// --- Methods ---
+
+// 获取课程列表和已选课程
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    // 并行获取可选课程和我的课程
+    const [coursesRes, myCoursesRes] = await Promise.all([
+      getCourseList({
+        page: currentPage.value,
+        size: pageSize.value,
+        keyword: searchParams.keyword || undefined,
+        courseType: searchParams.courseType || undefined
+      }),
+      getStudentCourses() // 获取学生已选课程
+    ]);
+
+    // 处理可选课程数据
+    if (coursesRes && coursesRes.code === 200) {
+      courseList.value = coursesRes.data?.records || [];
+      total.value = coursesRes.data?.total || 0;
+    } else {
+      console.warn('课程API返回非标准格式:', coursesRes);
+      // 尝试直接使用返回的数据
+      if (Array.isArray(coursesRes)) {
+        courseList.value = coursesRes;
+        total.value = coursesRes.length;
+      } else if (coursesRes && coursesRes.records) {
+        courseList.value = coursesRes.records;
+        total.value = coursesRes.total || coursesRes.records.length;
+      } else {
+        courseList.value = [];
+        total.value = 0;
+      }
+    }
+
+    // 处理我的课程数据
+    if (myCoursesRes && myCoursesRes.code === 200) {
+      myCourseIds.value = new Set((myCoursesRes.data || []).map(c => c.id));
+    } else if (Array.isArray(myCoursesRes)) {
+      myCourseIds.value = new Set(myCoursesRes.map(c => c.id));
+    } else {
+      myCourseIds.value = new Set();
+    }
+  } catch (error) {
+    console.error('获取课程数据失败', error);
+    courseList.value = [];
+    total.value = 0;
+    myCourseIds.value = new Set();
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 重置页码
+  fetchData();
+};
+
+// 处理重置
+const handleReset = () => {
+  searchParams.keyword = '';
+  searchParams.courseType = '';
+  currentPage.value = 1;
+  fetchData();
+};
+
+// 处理选课/退课动作
+const handleCourseAction = async (course, actionType) => {
+  // 如果 actionType 未指定 (来自按钮事件)，则根据是否已选判断
+  const action = actionType || (myCourseIds.value.has(course.id) ? 'drop' : 'select');
+  const actionText = action === 'select' ? '选课' : '退课';
+
+  selectingCourse.value = course.id;
+  try {
+    if (action === 'select') {
+      // 可以添加选课前的确认
+      await selectCourse({courseId: course.id}); // Corrected function call
+      ElMessage.success(`【${course.courseName}】${actionText}成功`);
+    } else {
+      // 退课前确认
+      await ElMessageBox.confirm(`确定要退选课程【${course.courseName}】吗？`, '确认退课', {
+        confirmButtonText: '确定退课',
+        cancelButtonText: '取消',
+        type: 'warning',
+      });
+      await dropCourse({courseId: course.id}); // Corrected function call
+      ElMessage.success(`【${course.courseName}】${actionText}成功`);
+        }
+    // 操作成功后刷新列表和我的课程
+    await fetchData();
+    // 如果详情弹窗打开，也关闭它
+    if (courseDetailVisible.value && selectedCourse.value.id === course.id) {
+      courseDetailVisible.value = false;
+    }
+  } catch (error) {
+    // ElMessageBox 的取消会 reject, 单独处理
+    if (error !== 'cancel') {
+      console.error(`${actionText}失败:`, error);
+      // 错误消息通常由拦截器处理
+    }
+  } finally {
+    selectingCourse.value = null;
+  }
+};
+
+// 处理查看详情
+const handleViewDetails = async (course) => {
+  selectedCourse.value = {...course}; // 浅拷贝基础信息
+  courseDetailVisible.value = true;
+  loadingCourseDetail.value = true;
+  try {
+    // 获取更详细的信息，例如课程介绍、教师、具体安排等
+    const res = await getCourseById(course.id); // Corrected function call
+    selectedCourse.value = res.data; // 使用详细数据覆盖
+    // 确保 schedules 存在且是数组
+    if (!Array.isArray(selectedCourse.value.schedules)) {
+      selectedCourse.value.schedules = [];
+        }
+  } catch (error) {
+    console.error("获取课程详情失败:", error);
+    ElMessage.error("获取课程详情失败");
+    courseDetailVisible.value = false; // 获取失败则关闭
+  } finally {
+    loadingCourseDetail.value = false;
+  }
+};
+
+// --- Lifecycle Hooks ---
 onMounted(() => {
-  fetchCourses()
-  fetchSelectedCourses()
-})
+  fetchData();
+});
+
+// 监听分页变化 (TableView 内部处理)
+watch([currentPage, pageSize], fetchData, {immediate: false});
+
 </script>
 
 <style scoped>
-.student-course-container {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-container {
-  display: flex;
-  gap: 15px;
-}
-
-.filter-container .el-select {
-  width: 180px;
-}
-
-.filter-container .el-input {
-  width: 220px;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
+/* Specific styles if needed */
+.dialog-footer {
+  text-align: right;
 }
 </style> 

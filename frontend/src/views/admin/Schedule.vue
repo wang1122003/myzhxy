@@ -1,170 +1,36 @@
 <template>
-  <div class="schedule-management-container">
-    <div class="page-header">
-      <h2>课表管理</h2>
-      <div>
-        <!-- 移除 "自动排课" 按钮 -->
+  <PageContainer title="课表管理">
+    <template #actions>
         <el-button
             type="primary"
+            :icon="Plus"
             @click="handleAddScheduleItem"
         >
           手动添加
         </el-button>
-      </div>
-    </div>
+    </template>
 
-    <!-- 筛选条件 -->
-    <el-card class="filter-card">
-      <el-form
-          :inline="true"
-          :model="searchParams"
-          @submit.prevent="fetchSchedule"
-      >
-        <el-form-item label="学期">
-          <el-select
-              v-model="searchParams.termId"
-              placeholder="选择学期"
-              clearable
-              filterable
-              @change="handleFilterChange"
-              style="width: 200px"
-          >
-            <el-option
-                v-for="term in termList"
-                :key="term.id"
-                :label="term.termName"
-                :value="term.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="星期">
-          <el-select
-              v-model="searchParams.weekDay"
-              placeholder="选择星期"
-              clearable
-              @change="handleFilterChange"
-              style="width: 150px"
-          >
-            <el-option
-                v-for="day in WEEKDAY_OPTIONS"
-                :key="day.value"
-                :label="day.label"
-                :value="day.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关键词">
-          <el-input
-              v-model="searchParams.keyword"
-              placeholder="搜索课程/教师/教室"
-              clearable
-              style="width: 240px"
-              @keyup.enter="handleFilterChange"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleFilterChange" :icon="Search">查询</el-button>
-          <el-button :icon="Plus" @click="handleAddScheduleItem">添加排课</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <FilterForm
+        :items="filterItems"
+        :loading="loadingSemesters"
+        :model="searchParams"
+        @reset="handleReset"
+        @search="handleSearch"
+    />
 
-    <el-card
-        v-loading="loadingSchedule || loadingSemesters"
-        class="schedule-card"
-    >
-      <!-- 列表视图 -->
-      <div class="list-view">
-        <el-table :table-data="scheduleList"
+    <TableView
+        :columns="tableColumns"
             :data="scheduleList"
-            border
-            style="width: 100%"
-        >
-          <el-table-column
-              label="课程名称"
-              prop="courseName"
-          />
-          <el-table-column
-              label="授课教师"
-              prop="teacherName"
-          />
-          <el-table-column
-              label="班级"
-              prop="className"
-          />
-          <el-table-column
-              label="星期"
-              prop="weekday"
-          >
-            <template #default="scope">
-              {{ formatWeekday(scope.row.weekday) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-              label="开始时间"
-              prop="startTime"
-          >
-            <template #default="scope">
-              {{ scope.row.startTime ? String(scope.row.startTime).substring(0, 5) : '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-              label="结束时间"
-              prop="endTime"
-          >
-            <template #default="scope">
-              {{ scope.row.endTime ? String(scope.row.endTime).substring(0, 5) : '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-              label="教室"
-              prop="classroomName"
-          />
-          <el-table-column
-              label="操作"
-              width="150"
-          >
-            <template #default="scope">
-              <el-button
-                  size="small"
-                  type="primary"
-                  @click="handleEditScheduleItem(scope.row)"
-              >
-                编辑
-              </el-button>
-              <el-button
-                  size="small"
-                  type="danger"
-                  @click="handleDeleteScheduleItem(scope.row)"
-              >
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <!-- 分页 -->
-      <div
-          v-if="total > 0"
-          class="pagination-container"
-      >
-        <el-pagination
+        :loading="loadingSchedule"
+        :total="total"
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
+        @delete="handleDeleteScheduleItem"
+        @edit="handleEditScheduleItem"
+        @refresh="fetchSchedule"
         />
-      </div>
-    </el-card>
 
-    <!-- 手动添加/编辑课表项 对话框 -->
+    <!-- 手动添加/编辑课表项 对话框 (保持不变) -->
     <el-dialog
         v-model="dialogVisible"
         :title="dialogTitle"
@@ -209,11 +75,13 @@
                   :loading="loadingCourses"
                   filterable
                   placeholder="选择课程"
+                  style="width: 100%;"
+                  @change="handleCourseChange"
               >
                 <el-option
                     v-for="course in courseOptions"
                     :key="course.id"
-                    :label="`${course.courseNo} - ${course.courseName}`"
+                    :label="`${course.courseCode || course.courseNo || ''} - ${course.courseName}`"
                     :value="course.id"
                 />
               </el-select>
@@ -231,6 +99,7 @@
                   :loading="loadingTeachers"
                   filterable
                   placeholder="选择教师"
+                  style="width: 100%;"
               >
                 <el-option
                     v-for="teacher in teacherOptions"
@@ -251,6 +120,7 @@
                   :loading="loadingClasses"
                   filterable
                   placeholder="选择班级"
+                  style="width: 100%;"
               >
                 <el-option
                     v-for="cls in classOptions"
@@ -262,35 +132,17 @@
             </el-form-item>
           </el-col>
         </el-row>
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-                label="教室"
-                prop="classroomId"
-            >
-              <el-select
-                  v-model="scheduleForm.classroomId"
-                  :loading="loadingClassrooms"
-                  filterable
-                  placeholder="选择教室"
-              >
-                <el-option
-                    v-for="room in classroomOptions"
-                    :key="room.id"
-                    :label="`${room.building} - ${room.name}`"
-                    :value="room.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item
                 label="星期"
-                prop="weekDay"
+                prop="weekday"
             >
               <el-select
-                  v-model="scheduleForm.weekDay"
+                  v-model="scheduleForm.weekday"
                   placeholder="选择星期"
+                  style="width: 100%;"
               >
                 <el-option
                     v-for="day in WEEKDAY_OPTIONS"
@@ -301,177 +153,482 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item
+                label="教室"
+                prop="classroomId"
+            >
+              <el-select
+                  v-model="scheduleForm.classroomId"
+                  :loading="loadingClassrooms"
+                  filterable
+                  placeholder="选择教室"
+                  style="width: 100%;"
+              >
+                <el-option
+                    v-for="room in classroomOptions"
+                    :key="room.id"
+                    :label="`${room.building} - ${room.roomNumber}`"
+                    :value="room.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-                label="开始时间段"
+                label="开始时间"
                 prop="startTime"
             >
               <el-time-select
                   v-model="scheduleForm.startTime"
-                  end="22:00"
-                  format="HH:mm"
-                  start="07:00"
+                  end="21:30"
+                  start="08:00"
+                  step="00:30"
                   placeholder="选择开始时间"
-                  step="00:15"
+                  style="width: 100%;"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-                label="结束时间段"
+                label="结束时间"
                 prop="endTime"
             >
               <el-time-select
                   v-model="scheduleForm.endTime"
-                  end="22:00"
-                  format="HH:mm"
-                  start="07:00"
+                  :min-time="scheduleForm.startTime"
+                  end="21:30"
+                  start="08:00"
                   placeholder="选择结束时间"
-                  step="00:15"
+                  step="00:30"
+                  style="width: 100%;"
               />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item
-                label="开始周"
-                prop="startWeek"
-            >
-              <el-input-number
-                  v-model="scheduleForm.startWeek"
-                  :max="25"
-                  :min="1"
-                  placeholder="起始周"
-              />
+          <el-col :span="24">
+            <el-form-item label="周次范围" prop="weekNumbers">
+              <el-input-number v-model="scheduleForm.startWeek" :max="scheduleForm.endWeek || 20" :min="1"
+                               label="开始周"></el-input-number>
+              <span style="margin: 0 10px;">至</span>
+              <el-input-number v-model="scheduleForm.endWeek" :max="20" :min="scheduleForm.startWeek || 1"
+                               label="结束周"></el-input-number>
+              <el-tooltip content="指定该排课适用的周次范围，例如第1周到第16周" placement="top">
+                <el-icon style="margin-left: 8px; cursor: pointer;">
+                  <InfoFilled/>
+                </el-icon>
+              </el-tooltip>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item
-                label="结束周"
-                prop="endWeek"
-            >
-              <el-input-number
-                  v-model="scheduleForm.endWeek"
-                  :max="25"
-                  :min="1"
-                  placeholder="结束周"
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="备注" prop="notes">
+              <el-input
+                  v-model="scheduleForm.notes"
+                  :rows="2"
+                  placeholder="可选，输入备注信息"
+                  type="textarea"
               />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button
-              :loading="submitting"
               type="primary"
-              @click="submitScheduleForm"
-          >确定</el-button>
-        </span>
+              :loading="submitting"
+              @click="handleSubmitSchedule"
+          >
+            {{ submitButtonText }}
+          </el-button>
       </template>
     </el-dialog>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {ref, reactive, onMounted, computed, watch} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {Plus, Search, Edit, Delete, InfoFilled} from '@element-plus/icons-vue';
+import {getSchedulesPage, addSchedule, updateSchedule, deleteSchedule} from '@/api/schedule'; // Corrected: Use schedule.js
+import {getAllTerms} from '@/api/term'; // Corrected function name
+import {getAllCoursesForSelect} from '@/api/course'; // Corrected function name for select
+import {getTeacherSelectList} from '@/api/user'; // Corrected function name for select
+import {getClasses} from '@/api/common'; // Corrected function name for select
+import {getAllClassroomsList} from '@/api/classroom'; // Corrected function name for select
+import {listClasses} from '@/api/common'; // Corrected: Classes list likely in common.js
+import {listTerms} from '@/api/term'; // Assuming term API exists
 import {
-  ElButton,
-  ElCard,
-  ElCol,
-  ElDialog,
-  ElForm,
-  ElFormItem,
-  ElInput,
-  ElInputNumber,
-  ElMessage,
-  ElMessageBox,
-  ElOption,
-  ElPagination,
-  ElRow,
-  ElSelect,
-  ElTimeSelect,
-} from 'element-plus';
-import {addSchedule, deleteSchedule, getScheduleById, updateSchedule} from '@/api/schedule';
-import {getClasses, getTerms} from '@/api/common';
-import {getAllCoursesForSelect} from '@/api/course';
-import {getTeacherSelectList} from '@/api/user';
-import {getAvailableClassrooms} from '@/api/classroom';
-import {getAllTerms} from '@/api/term';
-import {Plus, Search} from '@element-plus/icons-vue';
-import {WEEKDAY_OPTIONS} from '@/utils/components-config';
-import {fetchList, handleResponse} from '@/utils/apiUtils';
+  adminGetTeachers, adminListAllCourses, adminListAllClassrooms, adminListTerms
+} from '@/api/user'; // Corrected: APIs likely in user.js
 
+
+// --- 常量 ---
+const WEEKDAY_OPTIONS = [
+  {value: 1, label: '星期一'},
+  {value: 2, label: '星期二'},
+  {value: 3, label: '星期三'},
+  {value: 4, label: '星期四'},
+  {value: 5, label: '星期五'},
+  {value: 6, label: '星期六'},
+  {value: 7, label: '星期日'}
+];
+
+// --- 响应式状态 ---
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);
-
 const scheduleList = ref([]);
-const termList = ref([]);
-
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
-
 const searchParams = reactive({
   termId: null,
   weekDay: null,
   keyword: '',
 });
+const termList = ref([]);
 
 const dialogVisible = ref(false);
-const dialogTitle = ref('添加课表项');
-
-const loadingForm = ref(false);
-const submitting = ref(false);
+const dialogTitle = ref('添加排课');
 const isEditMode = ref(false);
 const scheduleFormRef = ref(null);
-
-const scheduleForm = ref({
+const scheduleForm = reactive({
   id: null,
   termId: null,
   courseId: null,
   teacherId: null,
   classId: null,
+  weekday: null,
+  startTime: '',
+  endTime: '',
   classroomId: null,
-  weekDay: null,
-  startTime: null,
-  endTime: null,
   startWeek: 1,
   endWeek: 16,
-  className: '',
+  notes: ''
 });
+const submitting = ref(false);
+const loadingForm = ref(false); // 用于加载表单内下拉框数据
+const loadingCourses = ref(false);
+const loadingTeachers = ref(false);
+const loadingClasses = ref(false);
+const loadingClassrooms = ref(false);
+const courseOptions = ref([]);
+const teacherOptions = ref([]);
+const classOptions = ref([]);
+const classroomOptions = ref([]);
 
-const formRules = {
-  required: {required: true, message: '该字段为必填项', trigger: 'blur'}
+// --- 计算属性 ---
+const submitButtonText = computed(() => (isEditMode.value ? '更新' : '创建'));
+
+// --- FilterForm 配置 ---
+const filterItems = computed(() => [
+  {
+    type: 'select',
+    label: '学期',
+    prop: 'termId',
+    placeholder: '选择学期',
+    options: termList.value.map(term => ({label: term.termName, value: term.id})),
+    props: {clearable: true, filterable: true, style: {width: '200px'}}
+  },
+  {
+    type: 'select',
+    label: '星期',
+    prop: 'weekDay',
+    placeholder: '选择星期',
+    options: WEEKDAY_OPTIONS,
+    props: {clearable: true, style: {width: '150px'}}
+  },
+  {
+    type: 'input',
+    label: '关键词',
+    prop: 'keyword',
+    placeholder: '搜索课程/教师/教室',
+    props: {clearable: true, style: {width: '240px'}}
+  }
+]);
+
+// --- TableView 配置 ---
+const tableColumns = [
+  {prop: 'courseName', label: '课程名称', minWidth: 150},
+  {prop: 'teacherName', label: '授课教师', minWidth: 100},
+  {prop: 'className', label: '班级', minWidth: 120},
+  {
+    prop: 'weekday',
+    label: '星期',
+    width: 100,
+    formatter: (row) => formatWeekday(row.weekday)
+  },
+  {
+    prop: 'startTime',
+    label: '开始时间',
+    width: 100,
+    formatter: (row) => row.startTime ? String(row.startTime).substring(0, 5) : '-'
+  },
+  {
+    prop: 'endTime',
+    label: '结束时间',
+    width: 100,
+    formatter: (row) => row.endTime ? String(row.endTime).substring(0, 5) : '-'
+  },
+  {prop: 'classroomName', label: '教室', minWidth: 120},
+  {prop: 'weeks', label: '周次', width: 100, formatter: (row) => `${row.startWeek}-${row.endWeek}周`},
+  {prop: 'notes', label: '备注', minWidth: 150, showOverflowTooltip: true},
+  {
+    label: '操作',
+    width: 150,
+    type: 'action', // 标记为操作列
+    actions: [ // 定义操作按钮
+      {type: 'primary', label: '编辑', event: 'edit'},
+      {type: 'danger', label: '删除', event: 'delete'},
+    ]
+  }
+];
+
+// --- 方法 ---
+
+// 获取学期列表
+const fetchTermList = async () => {
+  loadingSemesters.value = true;
+  try {
+    const res = await getAllTerms(); // Corrected function name
+    termList.value = res.data || [];
+    // 设置默认学期为当前激活的学期（如果只有一个）
+    if (termList.value.length > 0) {
+      const activeTerm = termList.value.find(t => t.isCurrent); // 假设有 isCurrent 字段
+      searchParams.termId = activeTerm ? activeTerm.id : termList.value[0].id;
+      scheduleForm.termId = activeTerm ? activeTerm.id : termList.value[0].id; // 表单也设置默认值
+    }
+  } catch (error) {
+    console.error("获取学期列表失败:", error);
+    // ElMessage.error('获取学期列表失败'); // FilterForm 会显示加载状态
+  } finally {
+    loadingSemesters.value = false;
+  }
 };
 
-const scheduleFormRules = reactive({
-  termId: [formRules.required],
-  courseId: [formRules.required],
-  teacherId: [formRules.required],
-  classId: [formRules.required],
-  classroomId: [formRules.required],
-  weekDay: [formRules.required],
-  startTime: [formRules.required],
-  endTime: [formRules.required, {
-    validator: (rule, value, callback) => {
-      if (scheduleForm.value.startTime && value <= scheduleForm.value.startTime) {
-        callback(new Error('结束时间必须晚于开始时间'));
-      } else {
-        callback();
+// 获取排课列表
+const fetchSchedule = async () => {
+  loadingSchedule.value = true;
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+      termId: searchParams.termId,
+      weekday: searchParams.weekDay, // 注意属性名匹配
+      keyword: searchParams.keyword,
+    };
+    const res = await getSchedulesPage(params); // Corrected
+    scheduleList.value = res.data.records || [];
+    total.value = res.data.total || 0;
+  } catch (error) {
+    console.error("获取排课列表失败:", error);
+    // ElMessage.error('获取排课列表失败'); // TableView 有自己的错误提示
+  } finally {
+    loadingSchedule.value = false;
+  }
+};
+
+// 处理筛选表单搜索
+const handleSearch = () => {
+  currentPage.value = 1; // 重置到第一页
+  fetchSchedule();
+};
+
+// 处理筛选表单重置 (FilterForm 内部实现)
+const handleReset = () => {
+  searchParams.termId = termList.value.find(t => t.isCurrent)?.id || (termList.value.length > 0 ? termList.value[0].id : null);
+  searchParams.weekDay = null;
+  searchParams.keyword = '';
+  currentPage.value = 1;
+  fetchSchedule();
+};
+
+
+// 格式化星期几
+const formatWeekday = (day) => {
+  const found = WEEKDAY_OPTIONS.find(d => d.value === day);
+  return found ? found.label : day;
+};
+
+// --- 添加/编辑 弹窗逻辑 ---
+
+// 获取表单所需的下拉选项数据
+const fetchFormSupportData = async () => {
+  loadingForm.value = true;
+  loadingCourses.value = true;
+  loadingTeachers.value = true;
+  loadingClasses.value = true;
+  loadingClassrooms.value = true;
+  try {
+    // 并行获取所有数据
+    const [courseRes, teacherRes, classRes, classroomRes] = await Promise.all([
+      getAllCoursesForSelect({size: 1000}), // Corrected
+      getTeacherSelectList({size: 1000}), // Corrected
+      getClasses({size: 1000}), // Corrected
+      getAllClassroomsList({size: 1000}) // Corrected
+    ]);
+    courseOptions.value = courseRes.data?.records || courseRes.data || []; // Adapt based on API response structure (page vs list)
+    teacherOptions.value = teacherRes.data?.records || teacherRes.data || [];
+    classOptions.value = classRes.data?.records || classRes.data || [];
+    classroomOptions.value = classroomRes.data?.records || classroomRes.data || [];
+
+  } catch (error) {
+    console.error("获取表单下拉选项失败:", error);
+    ElMessage.error('加载表单选项失败，请稍后重试');
+    dialogVisible.value = false; // 获取失败则关闭弹窗
+  } finally {
+    loadingForm.value = false;
+    loadingCourses.value = false;
+    loadingTeachers.value = false;
+    loadingClasses.value = false;
+    loadingClassrooms.value = false;
+  }
+};
+
+// 当选择课程时，尝试自动填充教师（如果课程有关联的默认教师）
+// 注意：这需要后端课程数据包含默认教师信息，或者提供一个根据课程查教师的接口
+const handleCourseChange = (courseId) => {
+  const selectedCourse = courseOptions.value.find(c => c.id === courseId);
+  if (selectedCourse && selectedCourse.defaultTeacherId && teacherOptions.value.some(t => t.id === selectedCourse.defaultTeacherId)) {
+    scheduleForm.teacherId = selectedCourse.defaultTeacherId;
+  }
+};
+
+// 重置表单
+const resetScheduleForm = () => {
+  if (scheduleFormRef.value) {
+    scheduleFormRef.value.resetFields();
+  }
+  scheduleForm.id = null;
+  // 保留学期选择或设为默认
+  scheduleForm.termId = searchParams.termId;
+  scheduleForm.courseId = null;
+  scheduleForm.teacherId = null;
+  scheduleForm.classId = null;
+  scheduleForm.weekday = null;
+  scheduleForm.startTime = '';
+  scheduleForm.endTime = '';
+  scheduleForm.classroomId = null;
+  scheduleForm.startWeek = 1;
+  scheduleForm.endWeek = 16;
+  scheduleForm.notes = '';
+  };
+
+// 打开添加弹窗
+const handleAddScheduleItem = () => {
+  isEditMode.value = false;
+  dialogTitle.value = '添加排课';
+  resetScheduleForm();
+  dialogVisible.value = true;
+  fetchFormSupportData(); // 获取下拉数据
+};
+
+// 打开编辑弹窗
+const handleEditScheduleItem = (row) => {
+  isEditMode.value = true;
+  dialogTitle.value = '编辑排课';
+  resetScheduleForm(); // 先重置
+  // 填充表单数据
+  Object.assign(scheduleForm, {
+    id: row.id,
+    termId: row.termId,
+    courseId: row.courseId,
+    teacherId: row.teacherId,
+    classId: row.classId,
+    weekday: row.weekday,
+    startTime: row.startTime ? String(row.startTime).substring(0, 5) : '', // 确保是 HH:mm 格式
+    endTime: row.endTime ? String(row.endTime).substring(0, 5) : '', // 确保是 HH:mm 格式
+    classroomId: row.classroomId,
+    startWeek: row.startWeek,
+    endWeek: row.endWeek,
+    notes: row.notes
+  });
+  dialogVisible.value = true;
+  fetchFormSupportData(); // 获取下拉数据
+};
+
+// 提交表单
+const handleSubmitSchedule = async () => {
+  if (!scheduleFormRef.value) return;
+  await scheduleFormRef.value.validate(async (valid) => {
+    if (valid) {
+      submitting.value = true;
+      try {
+        // 准备提交的数据，确保时间格式正确
+        const dataToSubmit = {...scheduleForm};
+        // 后端需要 HH:mm:ss 格式，如果 TimeSelect 返回的是 HH:mm
+        // dataToSubmit.startTime = dataToSubmit.startTime ? `${dataToSubmit.startTime}:00` : null;
+        // dataToSubmit.endTime = dataToSubmit.endTime ? `${dataToSubmit.endTime}:00` : null;
+
+        if (isEditMode.value) {
+          await updateSchedule(dataToSubmit.id, dataToSubmit); // Corrected
+          ElMessage.success('更新成功');
+        } else {
+          await addSchedule(dataToSubmit); // Corrected
+          ElMessage.success('添加成功');
+        }
+        dialogVisible.value = false;
+        fetchSchedule(); // 刷新列表
+      } catch (error) {
+        console.error("提交排课信息失败:", error);
+        // 错误消息由 request 拦截器处理
+      } finally {
+        submitting.value = false;
       }
-    }, trigger: 'change'
-  }],
-  startWeek: [formRules.required],
+    } else {
+      ElMessage.warning('请检查表单必填项');
+      return false;
+    }
+  });
+};
+
+// 删除排课项
+const handleDeleteScheduleItem = (row) => {
+  ElMessageBox.confirm(
+      `确定要删除课程【${row.courseName}】在【${formatWeekday(row.weekday)} ${row.startTime?.substring(0, 5)}-${row.endTime?.substring(0, 5)}】的排课吗？`,
+      '警告',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+  ).then(async () => {
+    try {
+      await deleteSchedule(row.id); // Corrected
+      ElMessage.success('删除成功');
+      fetchSchedule(); // 刷新列表
+    } catch (error) {
+      console.error("删除排课失败:", error);
+      // 错误消息由 request 拦截器处理
+    }
+  }).catch(() => {
+    // 取消删除
+    ElMessage.info('已取消删除');
+  });
+};
+
+// 表单验证规则
+const scheduleFormRules = reactive({
+  termId: [{required: true, message: '请选择学期', trigger: 'change'}],
+  courseId: [{required: true, message: '请选择课程', trigger: 'change'}],
+  teacherId: [{required: true, message: '请选择教师', trigger: 'change'}],
+  classId: [{required: true, message: '请选择班级', trigger: 'change'}],
+  weekday: [{required: true, message: '请选择星期', trigger: 'change'}],
+  startTime: [{required: true, message: '请选择开始时间', trigger: 'change'}],
+  endTime: [{required: true, message: '请选择结束时间', trigger: 'change'}],
+  classroomId: [{required: true, message: '请选择教室', trigger: 'change'}],
+  startWeek: [{required: true, type: 'number', message: '请输入开始周', trigger: 'blur'}],
   endWeek: [
-    {required: true, message: '请输入结束周', trigger: 'blur'},
+    {required: true, type: 'number', message: '请输入结束周', trigger: 'blur'},
     {
       validator: (rule, value, callback) => {
-        if (scheduleForm.value.startWeek && value < scheduleForm.value.startWeek) {
+        if (value < scheduleForm.startWeek) {
           callback(new Error('结束周不能小于开始周'));
         } else {
           callback();
@@ -481,283 +638,20 @@ const scheduleFormRules = reactive({
   ],
 });
 
-const courseOptions = ref([]);
-const teacherOptions = ref([]);
-const classOptions = ref([]);
-const classroomOptions = ref([]);
-const loadingCourses = ref(false);
-const loadingTeachers = ref(false);
-const loadingClasses = ref(false);
-const loadingClassrooms = ref(false);
-
-const fetchInitialData = async () => {
-  loadingSemesters.value = true;
-  try {
-    const termsRes = await getTerms();
-    termList.value = termsRes.data || [];
-
-    if (termList.value.length > 0 && !searchParams.termId) {
-      const currentTerm = termList.value.find(t => t.current === 1);
-      searchParams.termId = currentTerm ? currentTerm.id : termList.value[0].id;
-      await fetchSchedule();
-    }
-  } catch (error) {
-    console.error('获取初始数据失败', error);
-    ElMessage.error('获取学期数据失败');
-  } finally {
-    loadingSemesters.value = false;
-  }
-};
-
-const fetchSchedule = async () => {
-  loadingSchedule.value = true;
-  try {
-    const params = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      ...searchParams
-    };
-
-    const result = await fetchList('/schedules', params);
-    scheduleList.value = result.list || [];
-    total.value = result.total || 0;
-  } catch (error) {
-    console.error('获取课表失败', error);
-    ElMessage.error('获取课表数据失败');
-  } finally {
-    loadingSchedule.value = false;
-  }
-};
-
-const weekdayMap = computed(() => {
-  const map = {};
-  WEEKDAY_OPTIONS.forEach(day => {
-    map[day.value] = day.label;
-  });
-  return map;
-});
-const formatWeekday = (weekday) => {
-  const day = WEEKDAY_OPTIONS.find(d => d.value === Number(weekday));
-  return day ? day.label : `星期${weekday}`;
-};
-
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1;
-  fetchSchedule();
-};
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchSchedule();
-};
-
-const handleAddScheduleItem = () => {
-  resetScheduleForm();
-  dialogTitle.value = '手动添加课表项';
-  dialogVisible.value = true;
-  fetchSelectOptions();
-};
-
-const handleEditScheduleItem = async (row) => {
-  resetScheduleForm();
-  dialogTitle.value = '编辑课表项';
-  isEditMode.value = true;
-  loadingForm.value = true;
-  dialogVisible.value = true;
-  fetchSelectOptions();
-  try {
-    const res = await getScheduleById(row.id);
-    const loadedData = {...res.data};
-    if (loadedData.startTime && loadedData.startTime.includes(':')) {
-      loadedData.startTime = loadedData.startTime.substring(0, 5);
-    }
-    if (loadedData.endTime && loadedData.endTime.includes(':')) {
-      loadedData.endTime = loadedData.endTime.substring(0, 5);
-    }
-    scheduleForm.value = loadedData;
-  } catch (error) {
-    console.error("获取课表详情失败", error);
-    ElMessage.error("获取课表详情失败");
-    dialogVisible.value = false;
-  } finally {
-    loadingForm.value = false;
-  }
-};
-
-const handleDeleteScheduleItem = (row) => {
-  ElMessageBox.confirm(
-      `确定要删除 ${row.courseName} (星期${formatWeekday(row.weekday)} ${row.startTime}-${row.endTime}) 这条课表记录吗?`,
-      '提示',
-      {confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'}
-  ).then(async () => {
-    try {
-      await deleteSchedule(row.id);
-      ElMessage.success('删除成功');
-      fetchSchedule();
-    } catch (error) {
-      console.error("删除课表项失败", error);
-      ElMessage.error("删除课表项失败");
-    }
-  }).catch(() => {
-  });
-};
-
-const fetchSelectOptions = async () => {
-  loadingCourses.value = true;
-  loadingTeachers.value = true;
-  loadingClasses.value = true;
-  loadingClassrooms.value = true;
-  try {
-    const [courseRes, teacherRes, classRes, classroomRes] = await Promise.all([
-      getAllCoursesForSelect(),
-      getTeacherSelectList(),
-      getClasses(),
-      getAvailableClassrooms()
-    ]);
-    courseOptions.value = courseRes.data || [];
-    teacherOptions.value = teacherRes.data?.list || teacherRes.data || [];
-    classOptions.value = classRes.data || [];
-    classroomOptions.value = classroomRes.data || [];
-  } catch (error) {
-    console.error("获取下拉选项失败", error);
-    ElMessage.error("获取课程/教师/班级/教室列表失败");
-  } finally {
-    loadingCourses.value = false;
-    loadingTeachers.value = false;
-    loadingClasses.value = false;
-    loadingClassrooms.value = false;
-  }
-};
-
-const resetScheduleForm = () => {
-  if (scheduleFormRef.value) {
-    scheduleFormRef.value.resetFields();
-  }
-  scheduleForm.value = {
-    id: null,
-    termId: searchParams.termId,
-    courseId: null,
-    teacherId: null,
-    classId: null,
-    classroomId: null,
-    weekDay: null,
-    startTime: null,
-    endTime: null,
-    startWeek: 1,
-    endWeek: 16,
-    className: '',
-  };
-  isEditMode.value = false;
-};
-
-const submitScheduleForm = async () => {
-  scheduleFormRef.value?.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true;
-      try {
-        // 处理班级名称
-        const formData = {...scheduleForm.value};
-
-        if (isEditMode.value) {
-          // 更新课表
-          const res = await updateSchedule(formData.id, formData);
-          handleResponse(res,
-              () => {
-          ElMessage.success('更新成功');
-                dialogVisible.value = false;
-                fetchSchedule();
-              },
-              (msg) => ElMessage.error(msg || '更新失败')
-          );
-        } else {
-          // 新增课表
-          const res = await addSchedule(formData);
-          handleResponse(res,
-              () => {
-          ElMessage.success('添加成功');
-                dialogVisible.value = false;
-                fetchSchedule();
-              },
-              (msg) => ElMessage.error(msg || '添加失败')
-          );
-        }
-      } catch (error) {
-        console.error('提交失败', error);
-        ElMessage.error('提交失败，请检查网络连接');
-      } finally {
-        submitting.value = false;
-      }
-    }
-  });
-};
-
-const fetchTerms = async () => {
-  try {
-    const res = await getAllTerms({sortByCreateDesc: true});
-    if (res.code === 200 && res.data) {
-      termList.value = res.data;
-      const currentTerm = res.data.find(t => t.current === 1);
-      if (currentTerm && !searchParams.termId) {
-        searchParams.termId = currentTerm.id;
-        fetchSchedule();
-      }
-    } else {
-      ElMessage.error(res.message || '获取学期列表失败');
-    }
-  } catch (error) {
-    console.error("获取学期列表失败", error);
-    ElMessage.error('获取学期列表时发生错误');
-  }
-};
-
-const handleFilterChange = () => {
-  currentPage.value = 1;
-  fetchSchedule();
-};
-
+// --- 生命周期钩子 ---
 onMounted(() => {
-  fetchInitialData();
-  fetchTerms();
+  fetchTermList().then(() => {
+    fetchSchedule(); // 获取学期后再获取排课
+  });
 });
 
-</script>
+// 监听分页变化 (TableView 内部处理 v-model 更新)
+watch([currentPage, pageSize], () => {
+  fetchSchedule();
+}, {immediate: false}); // 不需要立即执行，因为 onMounted 会调用
 
-<script>
-export default {
-  name: 'ScheduleManagement'
-}
 </script>
 
 <style scoped>
-.schedule-management-container {
-  padding: 20px;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-card {
-  margin-bottom: 20px;
-}
-.schedule-card {
-  min-height: 400px;
-}
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-.dialog-footer {
-  text-align: right;
-}
-
-/* 列表视图 */
-.list-view {
-  width: 100%;
-}
-
+/* 可以保留特定于此页面的样式，或移至 common.css */
 </style>

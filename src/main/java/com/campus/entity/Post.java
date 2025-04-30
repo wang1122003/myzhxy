@@ -127,4 +127,10 @@ public class Post implements Serializable {
      */
     @TableField(exist = false)
     private String authorAvatar;
+
+    /**
+     * 关联的作者对象 (非数据库字段，由 ResultMap 映射)
+     */
+    @TableField(exist = false)
+    private User author;
 }

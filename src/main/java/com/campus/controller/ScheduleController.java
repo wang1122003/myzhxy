@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -257,29 +258,35 @@ public class ScheduleController {
     }
 
     /**
-     * 获取当前登录学生的课表
+     * (学生端) 根据用户ID和学期信息获取课表列表
      *
-     * @param termInfo  学期信息
-     * @param request  HTTP请求
-     * @return 课表数据
+     * @param termInfo 学期代码 (可选, 默认当前学期)
+     * @param request  HttpServletRequest 用于获取当前用户信息
+     * @return 学生在该学期的课表列表
      */
     @GetMapping("/student")
-    public Result<Map<String, Object>> getStudentSchedule(
+    public Result<List<Schedule>> getStudentSchedule(
             @RequestParam(required = false) String termInfo,
             HttpServletRequest request) {
-        User currentUser = authService.getCurrentUserFromRequest(request);
-        if (currentUser == null) {
-            return Result.error(401, "用户未认证");
-        }
-        if (currentUser.getUserType() != UserType.STUDENT) {
-            return Result.error(403, "只有学生可以查看课表");
-        }
         try {
-            // 调用 getStudentWeeklySchedule 获取周课表 Map
-            Map<String, Object> weeklySchedule = scheduleService.getStudentWeeklySchedule(currentUser.getId(), termInfo);
-            return Result.success(weeklySchedule);
+            User currentUser = authService.getCurrentUserFromRequest(request);
+            if (currentUser == null || !currentUser.getUserType().equals(UserType.STUDENT)) {
+                return Result.error("用户未登录或非学生用户");
+            }
+
+            String effectiveTermCode = getEffectiveTermCode(termInfo);
+            if (effectiveTermCode == null) {
+                return Result.error("无法确定学期");
+            }
+
+            List<Schedule> schedules = scheduleService.getSchedulesByUserIdAndTerm(currentUser.getId(), effectiveTermCode);
+
+            return Result.success(schedules);
+
+        } catch (CustomException e) {
+            return Result.error(e.getMessage());
         } catch (Exception e) {
-            return Result.error("获取学生课表失败: " + e.getMessage());
+            return Result.error("获取学生课表失败，请稍后重试或联系管理员");
         }
     }
 

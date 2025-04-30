@@ -26,9 +26,11 @@
 
             <div class="post-meta">
               <div class="post-author">
-                <el-avatar :size="40" :src="post.avatar || defaultAvatar"></el-avatar>
+                <el-avatar :size="40" :src="post?.author?.avatar || defaultAvatar"></el-avatar>
                 <div class="author-info">
-                  <div class="author-name">{{ post.author ? (post.author.realName || post.author.username) : post.authorName }}</div>
+                  <div class="author-name">
+                    {{ post?.author?.realName ?? post?.author?.username ?? post?.authorName ?? '匿名用户' }}
+                  </div>
                   <div class="post-time">{{ formatTime(post.createTime) }}</div>
                 </div>
               </div>
@@ -331,6 +333,8 @@ export default {
     const comments = ref([])
     const commentContent = ref('')
     const submittingComment = ref(false)
+    const commentLoading = ref(false)
+    const commentTotal = ref(0)
 
     // 回复数据
     const replyingTo = ref(null)
@@ -344,7 +348,7 @@ export default {
       loading.value = true
       try {
         const res = await getPostById(postId.value)
-        post.value = res.data
+        post.value = res
       } catch (error) {
         console.error('获取帖子详情失败:', error)
         ElMessage.error('获取帖子详情失败')
@@ -354,19 +358,28 @@ export default {
       }
     }
 
-    // 获取评论列表
+    // 获取评论列表 (适配后端临时接口，不分页)
     const fetchComments = async () => {
-      commentLoading.value = true
+      commentLoading.value = true;
       try {
-        const res = await getRootComments(postId.value, {
-          page: commentPage.value,
-          size: commentPageSize.value
-        })
-        comments.value = res.data || []
+        // 不再传递分页参数
+        const responseData = await getRootComments(postId.value);
+        console.log('评论接口返回数据:', responseData);
+
+        // 后端直接返回评论数组 (Result包装已被拦截器处理掉)
+        if (Array.isArray(responseData)) {
+          comments.value = responseData;
+          commentTotal.value = comments.value.length; // 直接使用数组长度作为总数
+        } else {
+          console.error('评论接口返回数据格式不正确，期望是数组:', responseData);
+          comments.value = [];
+          commentTotal.value = 0;
+        }
 
         // 添加点赞加载状态
         comments.value.forEach(comment => {
           comment.likeLoading = false
+          // TODO: Consider if replies are nested or need separate fetching
           if (comment.replies) {
             comment.replies.forEach(subComment => {
               subComment.likeLoading = false
@@ -375,10 +388,15 @@ export default {
         })
       } catch (error) {
         console.error('获取评论失败:', error)
-        ElMessage.error('获取评论失败')
+        // Don't show generic error message if it was a 404, 
+        // maybe the post just has no comments (though API should return empty array ideally)
+        if (!error.message || !error.message.includes('404')) {
+          ElMessage.error('获取评论失败');
+        }
         comments.value = []
+        commentTotal.value = 0;
       } finally {
-        commentLoading.value = false
+        commentLoading.value = false;
       }
     }
 
@@ -609,6 +627,8 @@ export default {
       userInfo,
       isLoggedIn,
       defaultAvatar,
+      commentLoading,
+      commentTotal,
 
       goBack,
       scrollToComments,

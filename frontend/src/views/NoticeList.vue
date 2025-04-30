@@ -1,20 +1,16 @@
 <template>
-  <div class="notice-list-container">
-    <el-page-header
-        title="返回首页"
-        @back="goBack"
-    >
-      <template #content>
-        <span class="text-large font-600 mr-3">通知公告</span>
+  <PageContainer title="通知公告">
+    <template #header-actions>
+      <el-button link type="primary" @click="goBack">返回首页</el-button>
       </template>
-    </el-page-header>
 
-    <el-card class="notice-list-card">
-      <el-table
+    <TableView
           v-loading="loadingNotices"
           :data="noticeList"
-          height="calc(100vh - 260px)"
-          style="width: 100%"
+          v-model="pagination"
+          :height="'calc(100vh - 260px)'"
+          :total="totalNotices"
+          @page-change="handlePageChange"
       >
         <el-table-column
             label="标题"
@@ -63,30 +59,9 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+    </TableView>
 
-      <div
-          v-if="totalNotices > 0"
-          class="pagination-container"
-      >
-        <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="totalNotices"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-        />
-      </div>
-
-      <el-empty
-          v-if="noticeList.length === 0 && !loadingNotices"
-          description="暂无通知公告"
-      />
-    </el-card>
-
-    <!-- 公告详情对话框 (复用 Home.vue 的结构) -->
+    <!-- 公告详情对话框 -->
     <el-dialog
         v-model="noticeDialogVisible"
         :title="currentNotice.title"
@@ -138,28 +113,17 @@
         </span>
       </template>
     </el-dialog>
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
 import {computed, onMounted, reactive, ref} from 'vue';
 import {useRouter} from 'vue-router';
-import {
-  ElButton,
-  ElCard,
-  ElDialog,
-  ElDivider,
-  ElEmpty,
-  ElLink,
-  ElMessage,
-  ElPageHeader,
-  ElPagination,
-  ElTable,
-  ElTableColumn,
-  ElTag
-} from 'element-plus';
+import {ElMessage} from 'element-plus';
 import {getNotificationById, getNotificationsPage} from '@/api/notice';
 import {downloadFile} from '@/api/file';
+import PageContainer from '@/components/common/EnhancedPageContainer.vue';
+import TableView from '@/components/common/TableView.vue';
 
 const router = useRouter();
 
@@ -171,8 +135,10 @@ const downloadingAttachment = reactive({});
 // 数据
 const noticeList = ref([]);
 const totalNotices = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(10);
+const pagination = ref({
+  pageNum: 1,
+  pageSize: 10
+});
 const currentNotice = reactive({
   id: null,
   title: '',
@@ -185,7 +151,7 @@ const currentNotice = reactive({
 // 对话框可见性
 const noticeDialogVisible = ref(false);
 
-// 直接定义静态的类型映射 (与 HomePage 保持一致)
+// 直接定义静态的类型映射
 const noticeTypeMap = {
   "SYSTEM": {name: "系统通知", tag: "info"},
   "COURSE": {name: "教学通知", tag: "success"},
@@ -204,15 +170,14 @@ const fetchNotices = async () => {
   loadingNotices.value = true;
   try {
     const params = {
-      page: currentPage.value,
-      size: pageSize.value
+      page: pagination.value.pageNum,
+      size: pagination.value.pageSize
       // 可以添加其他筛选参数，例如 type
     };
     // getNotificationsPage 返回的是 IPage 对象
     const res = await getNotificationsPage(params);
     // 使用 IPage 的 records 和 total 字段
     noticeList.value = res.records || [];
-    // noticeList.value = res.list || []; // 旧的错误访问方式
     totalNotices.value = res.total || 0;
   } catch (error) {
     console.error("获取通知列表失败", error);
@@ -222,17 +187,14 @@ const fetchNotices = async () => {
   }
 };
 
-// 查看通知详情 (复用 Home.vue 逻辑)
+// 查看通知详情
 const viewNotice = async (row) => {
   loadingNoticeDetail.value = true;
   noticeDialogVisible.value = true;
   currentNotice.id = null; // 重置详情
   try {
-    // 成功时 res 直接是数据对象
     const res = await getNotificationById(row.id);
-    // 直接将返回的数据对象合并到 currentNotice
     Object.assign(currentNotice, res);
-    // Object.assign(currentNotice, res.data); // 旧的访问方式
   } catch (err) {
     console.error("获取通知详情失败", err);
     ElMessage.error("获取通知详情失败");
@@ -242,46 +204,23 @@ const viewNotice = async (row) => {
   }
 };
 
-// 下载附件 (复用 Home.vue 逻辑)
+// 下载附件
 const downloadAttachment = async (file) => {
   if (!file || !file.id) {
     ElMessage.warning('无效的文件信息');
     return;
   }
-  downloadingAttachment[file.id] = true;
+
+  downloadingAttachment[file.id || file.url] = true;
   try {
     await downloadFile(file.id);
-    // downloadFile 函数内部处理下载逻辑和成功提示
+    ElMessage.success('下载成功');
   } catch (error) {
-    console.error("下载附件失败", error);
-    ElMessage.error(`下载附件 ${file.name} 失败`);
+    console.error('下载失败', error);
+    ElMessage.error('下载失败');
   } finally {
-    downloadingAttachment[file.id] = false;
+    downloadingAttachment[file.id || file.url] = false;
   }
-};
-
-// 格式化时间 (复用 Home.vue 逻辑)
-const formatTime = (timeStr) => {
-  if (!timeStr) return '';
-  try {
-    const date = new Date(timeStr);
-    return date.toLocaleString('zh-CN', {hour12: false});
-  } catch (e) {
-    return timeStr;
-  }
-};
-
-// 分页大小改变
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1; // 页大小改变时回到第一页
-  fetchNotices();
-};
-
-// 当前页改变
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchNotices();
 };
 
 // 返回首页
@@ -289,103 +228,46 @@ const goBack = () => {
   router.push('/');
 };
 
-// 组件挂载后加载数据
-onMounted(async () => {
-  // 只需获取通知列表
-  await fetchNotices();
-  // await Promise.all([
-  //   fetchNotices(),
-  //   fetchNoticeTypes() // 移除类型获取
-  // ]);
-});
+// 处理页码变化
+const handlePageChange = () => {
+  fetchNotices();
+};
 
+// 页面加载时获取通知列表
+onMounted(() => {
+  fetchNotices();
+});
 </script>
 
 <style scoped>
-.notice-list-container {
-  padding: 20px;
-}
-
-.el-page-header {
-  margin-bottom: 20px;
-}
-
-.notice-list-card {
-  /* 可以添加一些卡片样式 */
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-/* 复用 Home.vue 的详情样式 */
 .notice-content {
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-right: 15px;
+  padding: 10px;
 }
 
 .notice-info {
   display: flex;
   justify-content: space-between;
-  color: #909399;
+  color: #666;
   font-size: 14px;
   margin-bottom: 10px;
 }
 
 .notice-text {
-  line-height: 1.8;
-  margin-top: 15px;
-  white-space: pre-wrap;
-}
-
-.notice-attachments {
-  margin-top: 20px;
+  line-height: 1.6;
+  margin: 16px 0;
 }
 
 .notice-attachments h4 {
+  margin-top: 15px;
   margin-bottom: 10px;
+  color: #333;
 }
 
 .notice-attachments ul {
-  list-style: none;
-  padding-left: 0;
+  padding-left: 20px;
 }
 
 .notice-attachments li {
-  margin-bottom: 5px;
-}
-
-.dialog-footer {
-  text-align: right;
-}
-
-.el-link.is-loading {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.notice-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 5px;
-  cursor: pointer;
-  color: #303133;
-
-  &:hover {
-    color: #409EFF;
-  }
-}
-
-.notice-meta {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 10px;
-
-  span + span {
-    margin-left: 15px;
-  }
+  margin-bottom: 8px;
 }
 </style> 

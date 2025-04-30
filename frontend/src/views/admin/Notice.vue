@@ -1,440 +1,627 @@
 <template>
-  <div class="notice-management-container">
-    <el-card class="page-container">
-      <template #header>
-        <div class="header">
-          <span>公告管理</span>
-          <el-button :icon="Plus" type="primary" @click="handleAdd">发布公告</el-button>
-        </div>
+  <PageContainer title="通知公告管理">
+    <template #header-actions>
+      <el-button type="primary" @click="handleAddNotice">
+        <el-icon>
+          <Plus/>
+        </el-icon>
+        发布公告
+      </el-button>
       </template>
 
-      <!-- 筛选区域 -->
-      <el-form :inline="true" :model="filters" class="filter-form">
-        <el-form-item label="标题">
-          <el-input v-model="filters.title" clearable placeholder="请输入公告标题关键词"/>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="filters.status" clearable placeholder="请选择状态">
+    <template #filters>
+      <FilterForm :model="searchParams" @reset="resetSearch" @search="handleSearch">
+        <el-form-item label="公告类型">
+          <el-select v-model="searchParams.type" clearable placeholder="选择类型" style="width: 150px;">
             <el-option label="全部" value=""/>
-            <el-option label="已发布" value="PUBLISHED"/>
-            <el-option label="草稿" value="DRAFT"/>
-            <el-option label="已撤回" value="RECALLED"/>
+            <el-option
+                v-for="item in noticeTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="filters.type" clearable placeholder="请选择类型">
-            <el-option label="全部" value=""/>
-            <el-option label="系统通知" value="SYSTEM"/>
-            <el-option label="教学通知" value="ACADEMIC"/>
-            <el-option label="活动通知" value="ACTIVITY"/>
-            <el-option label="其他通知" value="OTHER"/>
-          </el-select>
+        <el-form-item label="关键词">
+          <el-input v-model="searchParams.keyword" clearable placeholder="标题/内容" style="width: 220px;"/>
         </el-form-item>
-        <el-form-item>
-          <el-button :icon="Search" type="primary" @click="fetchNotices">查询</el-button>
-        </el-form-item>
-      </el-form>
+      </FilterForm>
+    </template>
 
-      <!-- 公告列表 -->
-      <el-table
-          v-loading="loading"
+    <TableView
           :data="noticeList"
-          style="width: 100%"
+          v-model="pagination"
+          :loading="loading"
+          :total="total"
+          border
+          @page-change="handlePageChange"
       >
-        <el-table-column label="标题" min-width="200" prop="title" show-overflow-tooltip/>
+      <el-table-column label="标题" min-width="180" prop="title" show-overflow-tooltip/>
         <el-table-column label="类型" prop="type" width="120">
-          <template #default="scope">{{ formatNoticeType(scope.row.type) }}</template>
-        </el-table-column>
-        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-tag :type="getNoticeStatusType(scope.row.status)">
-              {{ formatNoticeStatus(scope.row.status) }}
+            <el-tag :type="getNoticeTagType(scope.row.type)">
+              {{ formatNoticeType(scope.row.type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="发布者" prop="publisherName" width="120"/>
-        <el-table-column label="发布时间" prop="publishTime" width="160">
-          <template #default="scope">{{ formatDateTime(scope.row.publishTime) }}</template>
+      <el-table-column label="发布人" prop="publisherName" show-overflow-tooltip width="120"/>
+      <el-table-column label="发布时间" prop="publishTime" width="160">
+        <template #default="scope">
+          {{ formatTime(scope.row.publishTime) }}
+        </template>
         </el-table-column>
-        <el-table-column label="阅读量" prop="readCount" width="80"/>
-        <el-table-column fixed="right" label="操作" width="220">
+        <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleView(scope.row)">查看</el-button>
-            <el-button
-                :disabled="scope.row.status === 'RECALLED'"
-                size="small"
-                @click="handleEdit(scope.row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-                v-if="scope.row.status === 'PUBLISHED'"
-                size="small"
-                type="warning"
-                @click="handleRecall(scope.row)"
-            >
-              撤回
-            </el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'info'">
+              {{ scope.row.status === 'ACTIVE' ? '已发布' : '草稿' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <template #empty>
-          <el-empty description="暂无公告数据"/>
+      <el-table-column label="置顶" prop="isTop" width="80">
+        <template #default="scope">
+          <el-switch
+              v-model="scope.row.isTop"
+              :active-value="true"
+              :inactive-value="false"
+              @change="handleToggleTop(scope.row)"
+          />
         </template>
-      </el-table>
+        </el-table-column>
+      <el-table-column fixed="right" label="操作" width="180">
+          <template #default="scope">
+            <el-button size="small" type="primary" @click="handleViewNotice(scope.row)">
+              预览
+            </el-button>
+            <el-button size="small" type="warning" @click="handleEditNotice(scope.row)">
+              编辑
+            </el-button>
+            <el-button size="small" type="danger" @click="handleDeleteNotice(scope.row)">
+              删除
+            </el-button>
+          </template>
+      </el-table-column>
+    </TableView>
 
-      <!-- 分页 -->
-      <el-pagination
-          v-if="total > 0"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="total"
-          class="pagination-container"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-      />
-    </el-card>
-
-    <!-- 添加/编辑 对话框 -->
+    <!-- 通知详情对话框 -->
     <el-dialog
-        v-model="dialogVisible"
-        :title="isEditMode ? '编辑公告' : '发布公告'"
-        :close-on-click-modal="false"
-        width="70%"
+        v-model="noticeDetailVisible"
+        :title="currentNotice.title"
+        append-to-body
         top="5vh"
-        @close="handleDialogClose"
+        width="60%"
     >
-      <el-form ref="noticeFormRef" :model="currentNotice" :rules="formRules" label-width="100px">
-        <el-form-item label="公告标题" prop="title">
-          <el-input v-model="currentNotice.title" placeholder="请输入公告标题"/>
-        </el-form-item>
-        <el-form-item label="公告类型" prop="type">
-          <el-select v-model="currentNotice.type" placeholder="请选择公告类型" style="width: 100%;">
-            <el-option label="系统通知" value="SYSTEM"/>
-            <el-option label="教学通知" value="ACADEMIC"/>
-            <el-option label="活动通知" value="ACTIVITY"/>
-            <el-option label="其他通知" value="OTHER"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="公告内容" prop="content">
-          <RichTextEditor v-model="currentNotice.content" @update:modelValue="handleEditorChange"/>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="currentNotice.status">
-            <el-radio label="PUBLISHED">直接发布</el-radio>
-            <el-radio label="DRAFT">存为草稿</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
+      <div v-if="currentNotice.id" v-loading="loadingNoticeDetail">
+        <div class="notice-content">
+          <div class="notice-info">
+            <span>发布人：{{ currentNotice.publisherName }}</span>
+            <span>发布时间：{{ formatTime(currentNotice.publishTime) }}</span>
+          </div>
+          <el-divider/>
+          <div class="notice-text" v-html="currentNotice.content"/>
+          <div v-if="currentNotice.attachmentFiles && currentNotice.attachmentFiles.length" class="notice-attachments">
+            <el-divider/>
+            <h4>附件：</h4>
+            <ul>
+              <li v-for="file in currentNotice.attachmentFiles" :key="file.id">
+                <el-link
+                    :disabled="downloadingAttachment[file.id]"
+                    :loading="downloadingAttachment[file.id]"
+                    type="primary"
+                    @click="handleDownloadFile(file)"
+                >
+                  {{ file.name }}
+                </el-link>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button :loading="submitting" type="primary" @click="handleSubmit">
-            {{ isEditMode ? '保存' : '发布' }}
-          </el-button>
+          <el-button @click="noticeDetailVisible = false">关闭</el-button>
         </span>
       </template>
     </el-dialog>
 
-    <!-- 查看公告详情对话框 -->
-    <NoticeDetailDialog v-model="viewDialogVisible" :notice-id="currentNoticeId"/>
-
-  </div>
+    <!-- 添加/编辑公告对话框 -->
+    <el-dialog
+        v-model="noticeFormVisible"
+        :close-on-click-modal="false"
+        :title="isEditMode ? '编辑公告' : '发布公告'"
+        width="70%"
+        @close="resetForm"
+    >
+      <FormView
+          ref="noticeFormRef"
+          :model="noticeForm"
+          :rules="noticeFormRules"
+          :submitting="submitting"
+          @cancel="noticeFormVisible = false"
+          @submit="submitNoticeForm"
+      >
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="noticeForm.title" placeholder="请输入公告标题"/>
+        </el-form-item>
+        <el-form-item label="类型" prop="type">
+          <el-select v-model="noticeForm.type" placeholder="请选择公告类型" style="width: 100%">
+            <el-option
+                v-for="item in noticeTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="内容" prop="content">
+          <RichTextEditor v-model="noticeForm.content" style="min-height: 300px"/>
+        </el-form-item>
+        <el-form-item label="附件" prop="attachments">
+          <el-upload
+              :action="uploadFileUrl"
+              :before-upload="beforeUploadFile"
+              :file-list="fileList"
+              :headers="uploadHeaders"
+              :limit="5"
+              :on-exceed="handleExceedFiles"
+              :on-remove="handleRemoveFile"
+              :on-success="handleUploadSuccess"
+              class="upload-demo"
+              multiple
+          >
+            <el-button type="primary">
+              <el-icon>
+                <Upload/>
+              </el-icon>
+              添加附件
+            </el-button>
+            <template #tip>
+              <div class="el-upload__tip">文件大小不超过 20MB</div>
+            </template>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="noticeForm.status">
+            <el-radio label="ACTIVE">立即发布</el-radio>
+            <el-radio label="DRAFT">保存为草稿</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="置顶" prop="isTop">
+          <el-switch
+              v-model="noticeForm.isTop"
+              :active-value="true"
+              :inactive-value="false"
+              active-text="是"
+              inactive-text="否"
+          />
+        </el-form-item>
+      </FormView>
+    </el-dialog>
+  </PageContainer>
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {Plus, Search} from '@element-plus/icons-vue'
+import {ref, reactive, computed, onMounted} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {Plus, Upload} from '@element-plus/icons-vue';
 import {
-  addNotification,
-  deleteNotification,
-  getNotificationById,
   getNotificationsPage,
+  getNotificationById,
+  addNotification,
   updateNotification,
+  deleteNotification,
   updateNotificationStatus
-} from '@/api/notice'
-import {formatDateTime} from '@/utils/formatters.js'
-import RichTextEditor from '@/components/common/RichTextEditor.vue'
-import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue'
+} from '@/api/notice';
+import {downloadFile} from '@/api/file';
+import {useUserStore} from '@/stores/userStore';
+import PageContainer from '@/components/common/EnhancedPageContainer.vue';
+import FilterForm from '@/components/common/AdvancedFilterForm.vue';
+import TableView from '@/components/common/TableView.vue';
+import FormView from '@/components/common/SmartForm.vue';
 
-defineOptions({name: 'AdminNoticeManagement'})
+const userStore = useUserStore();
 
-// -------- 数据定义 --------
-const loading = ref(false)
-const noticeList = ref([])
-const total = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const filters = reactive({
-  title: '',
-  status: '',
+// 数据加载状态
+const loading = ref(false);
+const loadingNoticeDetail = ref(false);
+const submitting = ref(false);
+const downloadingAttachment = reactive({});
+
+// 数据列表
+const noticeList = ref([]);
+const total = ref(0);
+const pagination = ref({
+  pageNum: 1,
+  pageSize: 10
+});
+
+// 搜索参数
+const searchParams = reactive({
+  keyword: '',
   type: ''
-})
+});
 
-const dialogVisible = ref(false)
-const viewDialogVisible = ref(false)
-const isEditMode = ref(false)
-const submitting = ref(false)
-const currentNotice = ref({
+// 对话框可见性
+const noticeDetailVisible = ref(false);
+const noticeFormVisible = ref(false);
+
+// 当前查看的通知
+const currentNotice = reactive({
   id: null,
   title: '',
+  type: '',
   content: '',
-  type: 'SYSTEM',
-  status: 'PUBLISHED' // 默认直接发布
-})
-const currentNoticeId = ref(null)
-const noticeFormRef = ref(null) // 表单引用
+  publisherName: '',
+  publishTime: '',
+  attachmentFiles: []
+});
 
-// -------- 表单验证规则 --------
-const formRules = {
-  title: [{required: true, message: '请输入公告标题', trigger: 'blur'}],
-  type: [{required: true, message: '请选择公告类型', trigger: 'change'}],
-  content: [{required: true, message: '请输入公告内容', trigger: 'blur'}], // 可能需要更复杂的验证
-  status: [{required: true, message: '请选择状态', trigger: 'change'}]
-}
+// 表单数据
+const noticeFormRef = ref(null);
+const noticeForm = reactive({
+  id: null,
+  title: '',
+  type: 'GENERAL',
+  content: '',
+  status: 'ACTIVE',
+  isTop: false,
+  attachmentIds: []
+});
 
-// -------- 方法 --------
+// 附件上传
+const fileList = ref([]);
+const uploadFileUrl = `${import.meta.env.VITE_API_URL}/file/upload`;
+const uploadHeaders = computed(() => {
+  return {
+    'Authorization': `Bearer ${userStore.token}`
+  };
+});
 
-// 获取公告列表
-const fetchNotices = async () => {
-  loading.value = true
+// 表单验证规则
+const noticeFormRules = {
+  title: [
+    {required: true, message: '请输入公告标题', trigger: 'blur'},
+    {min: 2, max: 50, message: '标题长度在 2 到 50 个字符', trigger: 'blur'}
+  ],
+  type: [
+    {required: true, message: '请选择公告类型', trigger: 'change'}
+  ],
+  content: [
+    {required: true, message: '请输入公告内容', trigger: 'blur'}
+  ]
+};
+
+// 通知类型选项
+const noticeTypeOptions = [
+  {value: 'SYSTEM', label: '系统通知'},
+  {value: 'COURSE', label: '教学通知'},
+  {value: 'ACTIVITY', label: '活动公告'},
+  {value: 'GENERAL', label: '通用'}
+];
+
+// 计算属性：判断是编辑还是新增模式
+const isEditMode = computed(() => !!noticeForm.id);
+
+// 格式化时间
+const formatTime = (timeStr) => {
+  if (!timeStr) return '';
+  try {
+    const date = new Date(timeStr);
+    return date.toLocaleString('zh-CN', {hour12: false});
+  } catch (e) {
+    return timeStr;
+  }
+};
+
+// 格式化通知类型
+const formatNoticeType = (type) => {
+  const typeMap = {
+    'SYSTEM': '系统通知',
+    'COURSE': '教学通知',
+    'ACTIVITY': '活动公告',
+    'GENERAL': '通用'
+  };
+  return typeMap[type] || type;
+};
+
+// 获取通知类型标签样式
+const getNoticeTagType = (type) => {
+  const typeMap = {
+    'SYSTEM': 'info',
+    'COURSE': 'success',
+    'ACTIVITY': 'warning',
+    'GENERAL': 'danger'
+  };
+  return typeMap[type] || 'info';
+};
+
+// 获取通知列表
+const fetchNoticeList = async () => {
+  loading.value = true;
   try {
     const params = {
-      page: currentPage.value,
-      size: pageSize.value,
-      title: filters.title || null,
-      status: filters.status || null,
-      type: filters.type || null
-    }
-    const res = await getNotificationsPage(params)
-    noticeList.value = res.records || []
-    total.value = res.total || 0
-  } catch (error) {
-    console.error('获取公告列表失败:', error)
-    ElMessage.error('获取公告列表失败')
-  } finally {
-    loading.value = false
-  }
-}
+      pageNum: pagination.value.pageNum,
+      pageSize: pagination.value.pageSize,
+      keyword: searchParams.keyword || undefined,
+      type: searchParams.type || undefined
+    };
 
-// 处理富文本编辑器内容变化
-const handleEditorChange = (newContent) => {
-  if (currentNotice.value) {
-    currentNotice.value.content = newContent
-  }
-}
+    const res = await getNotificationsPage(params);
 
-// 处理添加公告
-const handleAdd = () => {
-  isEditMode.value = false
-  currentNotice.value = {
-    id: null,
-    title: '',
-    content: '',
-    type: 'SYSTEM',
-    status: 'PUBLISHED'
-  }
-  dialogVisible.value = true
-  // 重置表单校验状态
-  noticeFormRef.value?.resetFields()
-}
-
-// 处理编辑公告
-const handleEdit = async (row) => {
-  isEditMode.value = true
-  resetForm()
-  try {
-    const res = await getNotificationById(row.id)
-    if (res.code === 200 && res.data) {
-      currentNotice.value = {...res.data}
-      dialogVisible.value = true
+    if (res && res.records) {
+      noticeList.value = res.records;
+      total.value = res.total;
     } else {
-      ElMessage.error(res.message || '获取公告详情失败')
+      noticeList.value = [];
+      total.value = 0;
     }
   } catch (error) {
-    console.error('获取公告详情失败', error)
-    ElMessage.error('获取公告详情失败')
-  }
-}
-
-// 处理查看公告
-const handleView = (row) => {
-  currentNoticeId.value = row.id
-  viewDialogVisible.value = true
-}
-
-// 处理撤回公告
-const handleRecall = async (row) => {
-  await ElMessageBox.confirm('确定要撤回该公告吗？撤回后将变为草稿状态。 ', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  try {
-    await updateNotificationStatus(row.id, 'DRAFT')
-    ElMessage.success('公告撤回成功')
-    fetchNotices() // 刷新列表
-  } catch (error) {
-    console.error('撤回公告失败:', error)
-    ElMessage.error('撤回公告失败')
-  }
-}
-
-// 处理删除公告
-const handleDelete = async (row) => {
-  await ElMessageBox.confirm('确定要删除该公告吗？此操作不可恢复。 ', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  try {
-    await deleteNotification(row.id)
-    ElMessage.success('公告删除成功')
-    fetchNotices() // 刷新列表
-  } catch (error) {
-    console.error('删除公告失败:', error)
-    ElMessage.error('删除公告失败')
-  }
-}
-
-// 处理对话框关闭
-const handleDialogClose = () => {
-  noticeFormRef.value?.clearValidate() // 关闭时清除校验
-}
-
-// 处理提交 (添加/编辑)
-const handleSubmit = async () => {
-  if (!noticeFormRef.value) return
-  await noticeFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        if (isEditMode.value) {
-          // 编辑
-          await updateNotification(currentNotice.value.id, currentNotice.value)
-          ElMessage.success('公告更新成功')
-        } else {
-          // 添加
-          await addNotification(currentNotice.value)
-          ElMessage.success('公告发布成功')
-        }
-        dialogVisible.value = false
-        fetchNotices() // 刷新列表
-      } catch (error) {
-        console.error('提交公告失败:', error)
-        ElMessage.error(isEditMode.value ? '更新公告失败' : '发布公告失败')
-      } finally {
-        submitting.value = false
-      }
-    }
-  })
-}
-
-// 处理分页大小变化
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1 // 切换每页条数时，回到第一页
-  fetchNotices()
-}
-
-// 处理当前页变化
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-  fetchNotices()
-}
-
-// -------- 格式化函数 --------
-
-// 格式化状态并返回对应的 ElTag 类型
-const getNoticeStatusType = (status) => {
-  switch (status) {
-    case 'PUBLISHED':
-    case 1: // 假设 API 可能返回数字 1 代表已发布
-      return 'success';
-    case 'DRAFT':
-    case 0: // 假设 API 可能返回数字 0 代表草稿
-      return 'warning';
-    case 'RECALLED': // 假设有撤回状态
-      return 'info';
-    default:
-      return 'info'; // 对于未知或 null 状态，返回默认类型
+    console.error('获取通知列表失败', error);
+    ElMessage.error('获取通知列表失败');
+  } finally {
+    loading.value = false;
   }
 };
 
-// 格式化状态文本
-const formatNoticeStatus = (status) => {
-  switch (status) {
-    case 'PUBLISHED':
-    case 1:
-      return '已发布';
-    case 'DRAFT':
-    case 0:
-      return '草稿';
-    case 'RECALLED':
-      return '已撤回';
-    default:
-      return status || '未知';
-  }
-};
+// 查看通知详情
+const handleViewNotice = async (row) => {
+  noticeDetailVisible.value = true;
+  loadingNoticeDetail.value = true;
 
-// 格式化类型文本
-const formatNoticeType = (type) => {
-  switch (type) {
-    case 'SYSTEM':
-      return '系统通知';
-    case 'ACADEMIC':
-      return '教学通知';
-    case 'ACTIVITY':
-      return '活动通知';
-    case 'OTHER':
-      return '其他通知';
-    default:
-      return type || '未知';
-  }
-};
-
-// 重置表单函数 (如果需要的话)
-const resetForm = () => {
-  currentNotice.value = {
+  // 先清空当前通知详情
+  Object.assign(currentNotice, {
     id: null,
     title: '',
+    type: '',
     content: '',
-    type: 'SYSTEM',
-    status: 'PUBLISHED'
-  };
-  noticeFormRef.value?.resetFields(); // 重置校验状态
+    publisherName: '',
+    publishTime: '',
+    attachmentFiles: []
+  });
+  
+  try {
+    const res = await getNotificationById(row.id);
+    Object.assign(currentNotice, res);
+  } catch (error) {
+    console.error('获取通知详情失败', error);
+    ElMessage.error('获取通知详情失败');
+    noticeDetailVisible.value = false;
+  } finally {
+    loadingNoticeDetail.value = false;
+  }
 };
 
-// -------- 生命周期钩子 --------
-onMounted(() => {
-  fetchNotices()
-})
+// 添加通知
+const handleAddNotice = () => {
+  resetForm();
+  noticeFormVisible.value = true;
+};
 
+// 编辑通知
+const handleEditNotice = async (row) => {
+  resetForm();
+  loadingNoticeDetail.value = true;
+  
+  try {
+    const res = await getNotificationById(row.id);
+
+    // 填充表单数据
+    noticeForm.id = res.id;
+    noticeForm.title = res.title;
+    noticeForm.type = res.type;
+    noticeForm.content = res.content;
+    noticeForm.status = res.status;
+    noticeForm.isTop = res.isTop;
+
+    // 填充附件列表
+    fileList.value = (res.attachmentFiles || []).map(file => ({
+      name: file.name,
+      url: file.url,
+      id: file.id
+    }));
+
+    noticeForm.attachmentIds = (res.attachmentFiles || []).map(file => file.id);
+
+    noticeFormVisible.value = true;
+  } catch (error) {
+    console.error('获取通知详情失败', error);
+    ElMessage.error('获取通知详情失败');
+  } finally {
+    loadingNoticeDetail.value = false;
+  }
+};
+
+// 删除通知
+const handleDeleteNotice = (row) => {
+  ElMessageBox.confirm(`确定要删除通知 "${row.title}" 吗?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteNotification(row.id);
+      ElMessage.success('删除成功');
+      fetchNoticeList();
+    } catch (error) {
+      console.error('删除通知失败', error);
+      ElMessage.error('删除通知失败');
+    }
+  }).catch(() => {
+    // 用户取消操作
+  });
+};
+
+// 切换置顶状态
+const handleToggleTop = async (row) => {
+  try {
+    await updateNotificationStatus(row.id, row.isTop);
+    ElMessage.success(`${row.isTop ? '置顶' : '取消置顶'}成功`);
+  } catch (error) {
+    console.error('操作失败', error);
+    ElMessage.error('操作失败');
+    // 还原状态
+    row.isTop = !row.isTop;
+  }
+};
+
+// 表单提交
+const submitNoticeForm = async () => {
+  submitting.value = true;
+
+  try {
+    const formData = {
+      ...noticeForm,
+      attachmentIds: noticeForm.attachmentIds
+    };
+    
+        if (isEditMode.value) {
+          await updateNotification(formData);
+          ElMessage.success('更新成功');
+        } else {
+          await addNotification(formData);
+          ElMessage.success('发布成功');
+        }
+
+    noticeFormVisible.value = false;
+    fetchNoticeList();
+      } catch (error) {
+    console.error('提交表单失败', error);
+    ElMessage.error(error.response?.data?.message || '操作失败');
+      } finally {
+    submitting.value = false;
+  }
+};
+
+// 重置表单
+const resetForm = () => {
+  if (noticeFormRef.value) {
+    noticeFormRef.value.resetFields();
+  }
+
+  Object.assign(noticeForm, {
+    id: null,
+    title: '',
+    type: 'GENERAL',
+    content: '',
+    status: 'ACTIVE',
+    isTop: false,
+    attachmentIds: []
+  });
+
+  fileList.value = [];
+};
+
+// 下载附件
+const handleDownloadFile = async (file) => {
+  if (!file || !file.id) {
+    ElMessage.warning('无效的文件信息');
+    return;
+  }
+
+  downloadingAttachment[file.id] = true;
+  try {
+    await downloadFile(file.id);
+    ElMessage.success('下载成功');
+  } catch (error) {
+    console.error('下载失败', error);
+    ElMessage.error('下载失败');
+  } finally {
+    downloadingAttachment[file.id] = false;
+  }
+};
+
+// 文件上传前检查
+const beforeUploadFile = (file) => {
+  const maxSize = 20 * 1024 * 1024; // 20MB
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过 20MB!');
+    return false;
+  }
+  return true;
+};
+
+// 上传成功回调
+const handleUploadSuccess = (response, file, fileList) => {
+  if (response.code === 200) {
+    noticeForm.attachmentIds.push(response.data.id);
+    ElMessage.success('文件上传成功');
+  } else {
+    ElMessage.error(response.message || '文件上传失败');
+  }
+};
+
+// 移除文件
+const handleRemoveFile = (file, fileList) => {
+  // 从附件ID列表中移除
+  const fileId = file.id || (file.response && file.response.data && file.response.data.id);
+  if (fileId) {
+    const index = noticeForm.attachmentIds.indexOf(fileId);
+    if (index !== -1) {
+      noticeForm.attachmentIds.splice(index, 1);
+    }
+  }
+};
+
+// 文件数量超限
+const handleExceedFiles = () => {
+  ElMessage.warning('最多只能上传 5 个文件');
+};
+
+// 处理搜索
+const handleSearch = () => {
+  pagination.value.pageNum = 1;
+  fetchNoticeList();
+};
+
+// 重置搜索
+const resetSearch = () => {
+  searchParams.keyword = '';
+  searchParams.type = '';
+  pagination.value.pageNum = 1;
+  fetchNoticeList();
+};
+
+// 处理分页变化
+const handlePageChange = () => {
+  fetchNoticeList();
+};
+
+// 加载初始数据
+onMounted(() => {
+  fetchNoticeList();
+});
 </script>
 
-<style lang="scss" scoped>
-.notice-management-container {
-  .page-container {
-    min-height: calc(100vh - 110px); // Adjust based on layout
+<style scoped>
+.notice-content {
+  padding: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
   }
 
-  .header {
+.notice-info {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.notice-text {
+  line-height: 1.6;
+  margin: 16px 0;
+}
+
+.notice-attachments h4 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.notice-attachments ul {
+  padding-left: 20px;
   }
 
-  .filter-form {
-    margin-bottom: 15px;
-  }
-
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
+.notice-attachments li {
+  margin-bottom: 8px;
 }
 </style>

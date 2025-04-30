@@ -78,7 +78,7 @@ export default {
     const userStore = useUserStore()
 
     const isLoggedIn = computed(() => userStore.isLoggedIn())
-    const userName = computed(() => userStore.userInfo?.realName || '')
+    const userName = computed(() => userStore.userInfo?.username || userStore.userInfo?.realName || '')
     const userRoleName = computed(() => {
       const role = userStore.userRole()
       const names = {

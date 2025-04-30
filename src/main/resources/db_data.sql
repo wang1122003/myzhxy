@@ -32,30 +32,32 @@ VALUES ('A101', 60, 'A教学楼', 1, 2),
        ('101', 50, '数学楼', 1, 1),
        ('204', 70, '软件楼', 1, 2);
 
-ALTER TABLE `classroom` AUTO_INCREMENT = 7;
+ALTER TABLE `classroom`
+    AUTO_INCREMENT = 7;
 
 -- 插入课程数据
 INSERT INTO `course` (`course_name`, `course_code`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`,
                       `term_info`, `status`)
-VALUES ('计算机网络', 'CS301', 3.0, 48, 1, '计算机网络基础课程，主要介绍网络协议和网络编程', 2, '2023-2024-1', 1),
-       ('数据结构与算法', 'CS201', 4.0, 64, 1, '数据结构与算法分析，包括常见数据结构和算法设计', 2, '2023-2024-1', 1),
-       ('软件工程', 'SE302', 3.5, 56, 1, '软件开发流程、需求分析、设计模式等内容', 3, '2023-2024-1', 1),
-       ('高等数学', 'MA101', 5.0, 80, 1, '微积分、线性代数等高等数学基础', 4, '2023-2024-1', 1),
-       ('Web前端开发', 'SE2001', 3.0, 48, 2, '学习HTML、CSS、JavaScript等Web前端技术及主流框架应用。', 4, '2023-2024-1',
+VALUES ('计算机网络', 'CS301', 3.0, 48, 1, '计算机网络基础课程，主要介绍网络协议和网络编程', 2, '2024-2025-2', 1),
+       ('数据结构与算法', 'CS201', 4.0, 64, 1, '数据结构与算法分析，包括常见数据结构和算法设计', 2, '2024-2025-2', 1),
+       ('软件工程', 'SE302', 3.5, 56, 1, '软件开发流程、需求分析、设计模式等内容', 3, '2024-2025-2', 1),
+       ('高等数学', 'MA101', 5.0, 80, 1, '微积分、线性代数等高等数学基础', 4, '2024-2025-2', 1),
+       ('Web前端开发', 'SE2001', 3.0, 48, 2, '学习HTML、CSS、JavaScript等Web前端技术及主流框架应用。', 4, '2024-2025-2',
         1); -- 假设 teacher3 (id=4) 也教 Web
 
-ALTER TABLE `course` AUTO_INCREMENT = 6;
+ALTER TABLE `course`
+    AUTO_INCREMENT = 6;
 
 -- 插入课程选课数据
 INSERT INTO `course_selection` (`user_id`, `course_id`, `term_info`, `selection_time`, `status`)
-VALUES (5, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2023-2024-1', NOW(), 1),
-       (5, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2023-2024-1', NOW(), 1),
-       (6, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2023-2024-1', NOW(), 1),
-       (6, (SELECT id FROM `course` WHERE course_code = 'SE302'), '2023-2024-1', NOW(), 1),
-       (7, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2023-2024-1', '2023-09-05', 1),
-       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2023-2024-1', '2023-09-05',
+VALUES (5, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-2', NOW(), 1),
+       (7, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-2', '2023-09-05', 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05',
         1), -- 假设 student1 (id=5) 也选 Web
-       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2023-2024-1', '2023-09-05', 1);
+       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1);
 -- 假设 student2 (id=6) 也选 Web
 
 -- 插入成绩数据 (修正 student_id)
@@ -76,7 +78,7 @@ FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 5
   AND c.course_code = 'CS301'
-  AND cs.term_info = '2023-2024-1';
+  AND cs.term_info = '2024-2025-2';
 
 INSERT INTO `score` (`selection_id`, `student_id`, `course_id`, `term_info`, `total_score`, `grade`, `gpa`,
                      `regular_score`, `midterm_score`, `final_score`, `comment`, `evaluation_date`)
@@ -96,7 +98,7 @@ FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 5
   AND c.course_code = 'CS201'
-  AND cs.term_info = '2023-2024-1';
+  AND cs.term_info = '2024-2025-2';
 
 INSERT INTO `score` (`selection_id`, `student_id`, `course_id`, `term_info`, `total_score`, `grade`, `gpa`,
                      `regular_score`, `midterm_score`, `final_score`, `evaluation_date`)
@@ -115,7 +117,7 @@ FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 6
   AND c.course_code = 'CS201'
-  AND cs.term_info = '2023-2024-1';
+  AND cs.term_info = '2024-2025-2';
 
 INSERT INTO `score` (`selection_id`, `student_id`, `course_id`, `term_info`, `total_score`, `grade`, `gpa`,
                      `regular_score`, `midterm_score`, `final_score`, `evaluation_date`)
@@ -134,7 +136,7 @@ FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 6
   AND c.course_code = 'SE302'
-  AND cs.term_info = '2023-2024-1';
+  AND cs.term_info = '2024-2025-2';
 
 INSERT INTO `score` (`selection_id`, `student_id`, `course_id`, `term_info`, `total_score`, `grade`, `gpa`, `comment`,
                      `evaluation_date`)
@@ -151,24 +153,24 @@ FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 7
   AND c.course_code = 'MA101'
-  AND cs.term_info = '2023-2024-1';
+  AND cs.term_info = '2024-2025-2';
 
 -- 插入课表数据
 INSERT INTO `schedule` (`course_id`, `term_info`, `teacher_id`, `classroom_id`, `day_of_week`, `start_time`, `end_time`,
                         `start_week`, `end_week`, `status`)
-VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2023-2024-1', 2,
+VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2', 2,
         (SELECT id FROM `classroom` WHERE name = 'A101' AND building = 'A教学楼'), 1, '08:00:00', '09:40:00', 1,
         16, 1),
-       ((SELECT id FROM `course` WHERE course_code = 'CS201'), '2023-2024-1', 2,
+       ((SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', 2,
         (SELECT id FROM `classroom` WHERE name = 'A102' AND building = 'A教学楼'), 2, '10:00:00', '11:40:00', 1,
         16, 1),
-       ((SELECT id FROM `course` WHERE course_code = 'SE302'), '2023-2024-1', 3,
+       ((SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-2', 3,
         (SELECT id FROM `classroom` WHERE name = 'B201' AND building = 'B教学楼'), 3, '14:00:00', '15:40:00',
         1, 16, 1),
-       ((SELECT id FROM `course` WHERE course_code = 'MA101'), '2023-2024-1', 4,
+       ((SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-2', 4,
         (SELECT id FROM `classroom` WHERE name = 'C301' AND building = 'C教学楼'), 4, '16:00:00', '17:40:00',
         1, 16, 1),
-       ((SELECT id FROM `course` WHERE course_code = 'SE2001'), '2023-2024-1', 4,
+       ((SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', 4,
         (SELECT id FROM `classroom` WHERE name = '204' AND building = '软件楼'), 3, '14:00:00', '15:40:00', 1,
         16, 1);
 
@@ -221,3 +223,47 @@ VALUES (1, '关于2023学年开学的通知', '各位同学：\n新学期即将�
         'SYSTEM', 0, 'ALL', NULL, '1', 0, 30, NOW(), DATE_ADD(NOW(), INTERVAL 10 DAY), '[]',
         '[{"receiverId": 2, "isRead": 0, "readTime": null}, {"receiverId": 5, "isRead": 0, "readTime": null}, {"receiverId": 6, "isRead": 0, "readTime": null}]',
         NOW(), NOW());
+
+-- 为其他学期补充数据 --
+
+-- 学期: 2023-2024-1
+-- 选课
+INSERT INTO `course_selection` (`user_id`, `course_id`, `term_info`, `selection_time`, `status`)
+VALUES (5, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2023-2024-1', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2023-2024-1', NOW(), 1);
+-- 排课
+INSERT INTO `schedule` (`course_id`, `term_info`, `teacher_id`, `classroom_id`, `day_of_week`, `start_time`, `end_time`,
+                        `start_week`, `end_week`, `status`)
+VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2023-2024-1', 2,
+        (SELECT id FROM `classroom` WHERE name = 'A101'), 1, '08:00:00', '09:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS201'), '2023-2024-1', 2,
+        (SELECT id FROM `classroom` WHERE name = 'A102'), 2, '10:00:00', '11:40:00', 1, 16, 1);
+
+-- 学期: 2023-2024-2
+-- 选课
+INSERT INTO `course_selection` (`user_id`, `course_id`, `term_info`, `selection_time`, `status`)
+VALUES (5, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2023-2024-2', NOW(), 1),
+       (7, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2023-2024-2', NOW(), 1);
+-- 排课
+INSERT INTO `schedule` (`course_id`, `term_info`, `teacher_id`, `classroom_id`, `day_of_week`, `start_time`, `end_time`,
+                        `start_week`, `end_week`, `status`)
+VALUES ((SELECT id FROM `course` WHERE course_code = 'MA101'), '2023-2024-2', 4,
+        (SELECT id FROM `classroom` WHERE name = 'C301'), 3, '14:00:00', '15:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'SE2001'), '2023-2024-2', 4,
+        (SELECT id FROM `classroom` WHERE name = '204' AND building = '软件楼'), 4, '16:00:00', '17:40:00', 1, 16, 1);
+
+-- 学期: 2024-2025-1
+-- 选课
+INSERT INTO `course_selection` (`user_id`, `course_id`, `term_info`, `selection_time`, `status`)
+VALUES (6, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-1', NOW(), 1),
+       (7, (SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-1', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-1', NOW(), 1);
+-- 排课
+INSERT INTO `schedule` (`course_id`, `term_info`, `teacher_id`, `classroom_id`, `day_of_week`, `start_time`, `end_time`,
+                        `start_week`, `end_week`, `status`)
+VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-1', 2,
+        (SELECT id FROM `classroom` WHERE name = 'B201'), 5, '08:00:00', '09:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-1', 3,
+        (SELECT id FROM `classroom` WHERE name = 'A101'), 1, '10:00:00', '11:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-1', 4,
+        (SELECT id FROM `classroom` WHERE name = '101' AND building = '数学楼'), 2, '14:00:00', '15:40:00', 1, 16, 1);

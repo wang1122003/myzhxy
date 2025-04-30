@@ -107,27 +107,6 @@
             />
           </div>
         </div>
-
-        <div class="side-content">
-          <el-card class="hot-post-card">
-            <template #header>
-              <div class="side-card-header">
-                <el-icon>
-                  <Opportunity/>
-                </el-icon>
-                <span>热门帖子</span>
-              </div>
-            </template>
-            <el-skeleton v-if="loadingHotPosts" :rows="5" animated/>
-            <div v-else-if="!hotPosts || hotPosts.length === 0" class="no-data">暂无热门帖子</div>
-            <ul v-else class="hot-post-list">
-              <li v-for="post in hotPosts" :key="post.id" @click="goToPostDetail(post.id)">
-                <span class="hot-post-title">{{ post.title }}</span>
-                <span class="hot-post-count">{{ post.viewCount || 0 }} 浏览</span>
-              </li>
-            </ul>
-          </el-card>
-        </div>
       </div>
 
       <el-dialog
@@ -148,7 +127,7 @@ import {computed, onMounted, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ChatDotRound, EditPen, InfoFilled, Opportunity, Search, Star, View} from '@element-plus/icons-vue'
-import {getAllPosts, getHotPosts, incrementViewCount} from '@/api/post'
+import {getAllPosts, incrementViewCount} from '@/api/post'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
 import CreatePost from '@/components/forum/CreatePost.vue'
@@ -182,9 +161,6 @@ export default {
     const searchKeyword = ref(route.query.q || '')
     const sortBy = ref('createTime')
 
-    const hotPosts = ref([])
-    const loadingHotPosts = ref(false)
-
     const showPostModal = ref(false)
 
     const fetchPosts = async () => {
@@ -196,14 +172,22 @@ export default {
           sortBy: sortBy.value,
           keyword: searchKeyword.value || undefined
         }
-        const res = await getAllPosts(params)
-        if (res.data) {
-          posts.value = res.data.records || []
-          total.value = res.data.total || 0
+        const responseData = await getAllPosts(params)
+        console.log('拦截器处理后的响应数据:', responseData)
+        if (responseData && typeof responseData.total === 'number' && Array.isArray(responseData.rows)) {
+          console.log('成功解析帖子数据:', responseData)
+          posts.value = responseData.rows || []
+          total.value = responseData.total || 0
+        } else {
+          console.error('获取帖子列表失败或返回数据结构不正确:', responseData)
+          const errorMsg = responseData && responseData.message ? `: ${responseData.message}` : ''
+          ElMessage.error('加载帖子列表失败' + errorMsg)
+          posts.value = []
+          total.value = 0
         }
       } catch (error) {
         console.error('获取帖子列表失败:', error)
-        ElMessage.error('加载帖子列表失败')
+        ElMessage.error('加载帖子列表失败: ' + (error.message || '未知错误'))
         posts.value = []
         total.value = 0
       } finally {
@@ -211,21 +195,30 @@ export default {
       }
     }
 
-    const fetchHotPosts = async () => {
-      loadingHotPosts.value = true
-      try {
-        const res = await getHotPosts({limit: 10})
-        hotPosts.value = res.data || []
-      } catch (error) {
-        console.error('获取热门帖子失败:', error)
-      } finally {
-        loadingHotPosts.value = false
-      }
-    }
-
     const formatTime = (time) => {
+      // console.log('Formatting time:', time, 'Type:', typeof time);
       if (!time) return ''
-      return formatDistanceToNow(new Date(time), {addSuffix: true, locale: zhCN})
+      try {
+        let dateObj;
+        // Check if time is in the array format [year, month, day, hour, minute, second]
+        if (Array.isArray(time) && time.length >= 6) {
+          // Month is 0-indexed in JS Date constructor, adjust month by -1
+          dateObj = new Date(time[0], time[1] - 1, time[2], time[3], time[4], time[5]);
+        } else {
+          // Try creating Date object directly (for standard strings or numbers)
+          dateObj = new Date(time);
+        }
+
+        // Check if the created Date object is valid
+        if (isNaN(dateObj.getTime())) {
+          console.error('Invalid time value passed to formatTime or failed to parse:', time);
+          return '日期无效'; // Return an indicator for invalid dates
+        }
+        return formatDistanceToNow(dateObj, {addSuffix: true, locale: zhCN})
+      } catch (error) {
+        console.error('Error formatting time:', time, error);
+        return '日期格式错误'; // Return an error indicator
+      }
     }
 
     const handleSizeChange = (val) => {
@@ -249,31 +242,24 @@ export default {
       } catch (error) {
         console.warn(`Failed to increment view count for post ${postId}:`, error);
       }
-      router.push({name: 'PostDetail', params: {id: postId}})
+      router.push({name: 'PostDetail', params: {id: postId}});
     }
 
     const goToLogin = () => {
-      router.push('/login')
+      router.push({path: '/', query: {redirect: router.currentRoute.value.fullPath}});
     }
 
-    const handlePostCreated = (newPost) => {
-      showPostModal.value = false
-      fetchPosts()
-    }
-
-    watch(() => route.query, (newQuery) => {
-      searchKeyword.value = newQuery.q || '';
+    const handlePostCreated = () => {
+      showPostModal.value = false;
       fetchPosts();
-    }, {deep: true});
+      ElMessage.success('发布成功！');
+    }
 
     onMounted(() => {
-      fetchPosts()
-      fetchHotPosts()
-    })
+      fetchPosts();
+    });
 
     return {
-      isLoggedIn,
-      defaultAvatar,
       posts,
       loading,
       currentPage,
@@ -281,9 +267,10 @@ export default {
       total,
       searchKeyword,
       sortBy,
-      hotPosts,
-      loadingHotPosts,
       showPostModal,
+      isLoggedIn,
+      defaultAvatar,
+      fetchPosts,
       formatTime,
       handleSizeChange,
       handleCurrentChange,
@@ -297,8 +284,7 @@ export default {
       View,
       ChatDotRound,
       Star,
-      Opportunity,
-      fetchPosts
+      Opportunity
     }
   }
 }
@@ -345,17 +331,10 @@ export default {
   flex: 3;
 }
 
-.side-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .post-list-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
 .create-post-card,
@@ -393,58 +372,65 @@ export default {
 
 .post-card {
   cursor: pointer;
-  transition: box-shadow 0.3s;
+  transition: box-shadow 0.3s, background-color 0.3s;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  padding: 18px;
 }
 
 .post-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  background-color: #fcfdfd;
 }
 
 .post-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
 }
 
 .post-author {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .author-info {
   display: flex;
   flex-direction: column;
+  line-height: 1.3;
 }
 
 .author-name {
   font-weight: 600;
   color: #333;
+  font-size: 1.05em;
 }
 
 .post-time {
-  font-size: 0.85em;
-  color: #909399;
+  font-size: 0.8em;
+  color: #a8abb2;
 }
 
 .post-title {
-  font-size: 1.2em;
+  font-size: 1.25em;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #303133;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 .post-summary {
   font-size: 0.95em;
-  color: #606266;
-  margin-bottom: 15px;
-  line-height: 1.6;
+  color: #555;
+  margin-bottom: 18px;
+  line-height: 1.7;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -456,11 +442,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-top: 1px solid #f2f3f5;
+  padding-top: 12px;
+  margin-top: 5px;
 }
 
 .post-stats {
   display: flex;
-  gap: 15px;
+  gap: 20px;
   color: #909399;
   font-size: 0.9em;
 }
@@ -468,7 +457,11 @@ export default {
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+}
+
+.stat-item .el-icon {
+  font-size: 1.1em;
 }
 
 .pagination-container {

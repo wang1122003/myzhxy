@@ -1,143 +1,39 @@
 <template>
-  <div class="forum-management-container">
-    <div class="page-header">
-      <h2>论坛管理</h2>
-      <div class="action-buttons">
-        <!-- 移除分类管理按钮 -->
-        <!-- <el-button type="success" @click="activeTab = 'categories'">
-          <el-icon>
-            <Menu/>
-          </el-icon>
-          板块管理
-        </el-button> -->
-        <el-button type="warning" @click="activeTab = 'comments'">
-          <el-icon>
-            <ChatDotRound/>
-          </el-icon>
-          评论管理
-        </el-button>
-        <el-button
-            type="primary"
-            @click="handleAddPost"
-        >
-          <el-icon>
-            <Plus/>
-          </el-icon>
+  <PageContainer :show-footer="false" title="论坛管理">
+    <template #actions>
+      <el-button :icon="Plus" type="primary" @click="handleAddPost">
           发布帖子
         </el-button>
-      </div>
-    </div>
+      <!-- 可以在这里添加其他全局操作 -->
+    </template>
 
-    <el-tabs v-model="activeTab" type="card" @tab-click="handleTabChange">
+    <el-tabs v-model="activeTab" type="card" @tab-change="handleTabChange">
       <el-tab-pane label="帖子管理" name="post">
-        <el-card class="tab-content-card">
-          <template #header>
-            <div class="card-header">
-              <span>帖子列表</span>
-              <!-- 可以添加刷新按钮等 -->
-              <el-button :icon="Refresh" circle @click="fetchPosts"/>
-            </div>
-          </template>
           <!-- 帖子筛选 -->
-          <el-form :inline="true" :model="postFilters" class="filter-form">
-            <el-form-item label="关键词">
-              <el-input v-model="postFilters.keyword" clearable placeholder="标题/内容/作者"/>
-            </el-form-item>
-            <!-- 移除分类筛选 -->
-            <!-- <el-form-item label="分类">
-              <el-select v-model="postFilters.categoryId" clearable filterable placeholder="选择分类">
-                <el-option label="全部" value=""/>
-                <el-option
-                    v-for="category in categories"
-                    :key="category.id"
-                    :label="category.name"
-                    :value="category.id"
-                />
-              </el-select>
-            </el-form-item> -->
-            <el-form-item label="状态">
-              <el-select v-model="postFilters.status" clearable placeholder="选择状态">
-                <el-option label="全部" value=""/>
-                <el-option label="正常" value="PUBLISHED"/>
-                <el-option label="待审核" value="PENDING"/>
-                <el-option label="已删除" value="DELETED"/>
-                <el-option label="私密" value="PRIVATE"/>
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button :icon="Search" type="primary" @click="fetchPosts">查询</el-button>
-            </el-form-item>
-          </el-form>
-          <!-- 帖子表格 -->
-          <el-table v-loading="postLoading" :data="postList" style="width: 100%">
-            <el-table-column label="标题" min-width="200" prop="title" show-overflow-tooltip/>
-            <!-- 移除分类列 -->
-            <!-- <el-table-column label="分类" prop="categoryName" width="100"/> -->
-            <el-table-column label="作者" prop="authorName" width="120"/>
-            <el-table-column label="浏览/评论/点赞" width="150">
-              <template #default="scope">
-                {{ scope.row.viewCount || 0 }} / {{ scope.row.commentCount || 0 }} / {{ scope.row.likeCount || 0 }}
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" prop="status" width="100">
-              <template #default="scope">
-                <el-tag :type="getPostStatusType(scope.row.status)">
-                  {{ formatPostStatus(scope.row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="置顶/精华" width="100">
-              <template #default="scope">
-                <el-tag v-if="scope.row.isTop" size="small" style="margin-right: 5px;">顶</el-tag>
-                <el-tag v-if="scope.row.isEssence" size="small" type="warning">精</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="发布时间" prop="createTime" width="160">
-              <template #default="scope">{{ formatDateTime(scope.row.createTime) }}</template>
-            </el-table-column>
-            <el-table-column fixed="right" label="操作" width="280">
-              <template #default="scope">
-                <el-button size="small" type="primary" @click="handleViewPost(scope.row)">查看</el-button>
-                <el-button size="small" @click="handleEditPost(scope.row)">编辑</el-button>
-                <el-dropdown style="margin-left: 10px;">
-                  <el-button size="small">更多
-                    <el-icon>
-                      <arrow-down/>
-                    </el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="handleToggleTop(scope.row)">{{
-                          scope.row.isTop ? '取消置顶' : '置顶'
-                        }}
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="handleToggleEssence(scope.row)">
-                        {{ scope.row.isEssence ? '取消加精' : '加精' }}
-                      </el-dropdown-item>
-                      <el-dropdown-item @click="handleDeletePost(scope.row, 'soft')">删除</el-dropdown-item>
-                      <el-dropdown-item divided @click="handleDeletePost(scope.row, 'hard')">彻底删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </template>
-            </el-table-column>
-            <template #empty>
-              <el-empty description="暂无帖子数据"/>
-            </template>
-          </el-table>
-          <!-- 帖子分页 -->
-          <el-pagination
-              v-if="postTotal > 0"
+        <FilterForm
+            :items="postFilterItems"
+            :model="postFilters"
+            :show-add-button="false"
+            @reset="handlePostReset"
+            @search="handlePostSearch"
+        />
+
+        <!-- 帖子表格 -->
+        <TableView
+            :action-column-config="postActionColumnConfig"
+            :columns="postTableColumns"
+            :data="postList"
+            :enable-selection="true"
               v-model:current-page="postCurrentPage"
               v-model:page-size="postPageSize"
-              :page-sizes="[10, 20, 50]"
-              :total="postTotal"
-              class="pagination-container"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handlePostSizeChange"
-              @current-change="handlePostCurrentChange"
+            :loading="postLoading"
+            :show-action-column="true"
+            :total="postTotal"
+            @edit="handleEditPost"
+            @refresh="fetchPosts"
+            @view="handleViewPost"
+            @selection-change="handlePostSelectionChange"
           />
-        </el-card>
       </el-tab-pane>
 
       <el-tab-pane label="评论管理" name="comment">
@@ -156,23 +52,9 @@
         <el-form-item label="标题" prop="title">
           <el-input v-model="currentPost.title" placeholder="请输入标题"/>
         </el-form-item>
-        <!-- 移除分类选择 -->
-        <!-- <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="currentPost.categoryId" placeholder="选择分类">
-            <el-option
-                v-for="category in categories"
-                :key="category.id"
-                :label="category.name"
-                :value="category.id"
-            />
-          </el-select>
-        </el-form-item> -->
         <el-form-item label="内容" prop="content">
-          <!-- Consider using a simple textarea for admin editing or a full rich text editor -->
           <RichTextEditor v-model="currentPost.content" @onCreated="handleEditorReady"/>
-          <!-- <el-input v-model="currentPost.content" type="textarea" :rows="10" placeholder="请输入内容"/> -->
         </el-form-item>
-        <!-- Add more fields if needed, e.g., tags -->
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -185,11 +67,11 @@
     <!-- 查看帖子对话框 -->
     <NoticeDetailDialog v-model="viewPostDialogVisible" :notice-id="currentPostId"/>
 
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
-import {onBeforeUnmount, onMounted, reactive, ref} from 'vue'
+import {onBeforeUnmount, onMounted, reactive, ref, computed, watch, h, resolveComponent} from 'vue'
 import {
   ElButton,
   ElCard,
@@ -214,15 +96,23 @@ import {
   ElTag
 } from 'element-plus'
 // Import necessary icons
-import {ArrowDown, ChatDotRound, Plus, Refresh, Search} from '@element-plus/icons-vue'
+import {ArrowDown, ChatDotRound, Plus, Refresh, Search, Menu} from '@element-plus/icons-vue'
 // Assume API functions are correctly defined
-import {deletePost as deletePostAdmin, getPosts as getPostsAdmin, updatePost as updatePostAdmin} from '@/api/post'
+import {
+  deletePost as deletePostAdmin,
+  getPosts as getPostsAdmin,
+  updatePost as updatePostAdmin,
+  setPostTop,
+  setPostEssence
+} from '@/api/post'
 // Import child components if they exist and are used
 // 移除 CategoryManagement 导入
 // import CategoryManagement from '@/components/forum/CategoryManagement.vue' // Corrected path
 import CommentManagement from '@/components/forum/CommentManagement.vue' // Corrected path
 import RichTextEditor from '@/components/common/RichTextEditor.vue' // Adjust path if needed
 import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue' // Assuming this is for viewing posts
+import {formatDateTime} from '@/utils/formatters' // Corrected import path
+// import TableView from '@/components/common/TableView.vue' // 假设有 TableView 组件 -> Removed incorrect import
 
 // Tab state
 const activeTab = ref('post');
@@ -233,47 +123,99 @@ const postList = ref([]);
 const postTotal = ref(0);
 const postCurrentPage = ref(1);
 const postPageSize = ref(10);
-const postFilters = reactive({ // Initialize postFilters
+const postFilters = reactive({
   keyword: '',
-  // 移除 categoryId
-  // categoryId: '',
   status: ''
 });
-// 移除 categories
-// const categories = ref([]); // For category dropdown in filter
+const selectedPosts = ref([]); // 用于存储表格选中的行
 
 // --- Dialog and Form State ---
-const editPostDialogVisible = ref(false); // Define dialog visibility state
-const viewPostDialogVisible = ref(false); // Define dialog visibility state
+const editPostDialogVisible = ref(false);
+const viewPostDialogVisible = ref(false);
 const editSubmitting = ref(false);
-const currentPost = reactive({ // Form model for editing/creating
-  id: null,
-  title: '',
-  // 移除 categoryId
-  // categoryId: null,
-  content: '',
-  // ... 其他字段 ...
-});
-const editPostFormRef = ref(null); // Ref for edit post form
-const currentPostId = ref(null); // For viewing post detail
+const currentPost = reactive({id: null, title: '', content: ''});
+const currentPostId = ref(null); // 用于查看详情
+const editPostFormRef = ref(null);
+let editorInstance = null; // 存储富文本编辑器实例
 
-const editPostRules = { // Rules for editing post
-  title: [{required: true, message: '标题不能为空', trigger: 'blur'}],
-  content: [{required: true, message: '内容不能为空', trigger: 'blur'}]
-  // 移除 categoryId 验证规则
-  // categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-};
+// --- Computed Properties for Components ---
 
-// Editor instance for RichTextEditor
-let editorInstance = null;
-const handleEditorReady = (editor) => {
-  editorInstance = editor;
-};
-onBeforeUnmount(() => {
-  if (editorInstance) {
-    editorInstance.destroy();
+// 帖子状态选项
+const POST_STATUS_OPTIONS = [
+  {label: '全部', value: ''},
+  {label: '正常', value: 'PUBLISHED'},
+  {label: '待审核', value: 'PENDING'},
+  {label: '已删除', value: 'DELETED'},
+  {label: '私密', value: 'PRIVATE'}
+];
+
+// 帖子筛选表单配置
+const postFilterItems = computed(() => [
+  {type: 'input', label: '关键词', prop: 'keyword', placeholder: '标题/内容/作者', props: {clearable: true}},
+  {
+    type: 'select',
+    label: '状态',
+    prop: 'status',
+    placeholder: '选择状态',
+    options: POST_STATUS_OPTIONS,
+    props: {clearable: true}
   }
-});
+]);
+
+// 帖子表格列配置
+const postTableColumns = computed(() => [
+  {type: 'selection', width: 55}, // 选择列
+  {prop: 'title', label: '标题', minWidth: 200, showOverflowTooltip: true},
+  {prop: 'authorName', label: '作者', width: 120},
+  {
+    label: '浏览/评论/点赞', width: 150,
+    formatter: (row) => `${row.viewCount || 0} / ${row.commentCount || 0} / ${row.likeCount || 0}`
+  },
+  {
+    prop: 'status', label: '状态', width: 100,
+    slots: {
+      default: (scope) =>
+          h(resolveComponent('ElTag'), {
+            type: getPostStatusType(scope.row.status)
+          }, () => formatPostStatus(scope.row.status))
+    }
+  },
+  {
+    label: '置顶/精华', width: 100,
+    slots: {
+      default: (scope) => [
+        scope.row.isTop ? h(resolveComponent('ElTag'), {size: 'small', style: 'margin-right: 5px;'}, () => '顶') : null,
+        scope.row.isEssence ? h(resolveComponent('ElTag'), {size: 'small', type: 'warning'}, () => '精') : null
+      ].filter(v => v !== null) // Filter out nulls if only one tag is present
+    }
+  },
+  {
+    prop: 'createTime', label: '发布时间', width: 160,
+    formatter: (row) => formatDateTime(row.createTime)
+  }
+]);
+
+// 帖子表格操作列配置
+const postActionColumnConfig = computed(() => ({
+  width: 280,
+  fixed: 'right',
+  buttons: [
+    {label: '查看', type: 'primary', size: 'small', event: 'view'},
+    {label: '编辑', size: 'small', event: 'edit'},
+    {
+      label: '更多',
+      size: 'small',
+      isDropdown: true,
+      items: [
+        {label: (row) => row.isTop ? '取消置顶' : '置顶', command: 'toggleTop'},
+        {label: (row) => row.isEssence ? '取消加精' : '加精', command: 'toggleEssence'},
+        {label: '删除', command: 'deleteSoft', divided: true},
+        {label: '彻底删除', command: 'deleteHard', divided: true},
+      ],
+      onCommand: handleMoreCommand, // 处理下拉菜单命令
+    }
+  ]
+}));
 
 // --- Methods ---
 
@@ -281,33 +223,17 @@ onBeforeUnmount(() => {
 const fetchPosts = async () => {
   postLoading.value = true;
   try {
-    // 动态构建 params，仅包含非空值的过滤条件
     const params = {
       page: postCurrentPage.value,
       size: postPageSize.value,
+      ...postFilters
     };
-    if (postFilters.keyword) {
-      params.keyword = postFilters.keyword;
-    }
-    // 移除 categoryId 的处理
-    // if (postFilters.categoryId) {
-    //   params.categoryId = postFilters.categoryId;
-    // }
-    if (postFilters.status) { // 只有当 status 非空时才添加到 params
-      params.status = postFilters.status;
-    }
-
-    const res = await getPostsAdmin(params); // 使用 admin API endpoint
-    if (res && res.data) {
-      postList.value = res.data.rows || [];
+    const res = await getPostsAdmin(params);
+    postList.value = res.data.records || [];
       postTotal.value = res.data.total || 0;
-    } else {
-      postList.value = [];
-      postTotal.value = 0;
-    }
   } catch (error) {
     console.error("获取帖子列表失败:", error);
-    ElMessage.error("获取帖子列表失败");
+    // 错误由拦截器处理
   } finally {
     postLoading.value = false;
   }
@@ -327,7 +253,7 @@ const fetchPosts = async () => {
 // Handle Tab Change
 const handleTabChange = (tab) => {
   activeTab.value = tab.paneName;
-  if (activeTab.value === 'post') {
+  if (activeTab.value === 'post' && postList.value.length === 0) {
     fetchPosts();
   }
   // 如果有 CommentManagement 或其他 Tab，也可能需要刷新
@@ -345,9 +271,13 @@ const handlePostCurrentChange = (val) => {
 
 // Handle Post Actions
 const handleAddPost = () => {
-  // Navigate to CreatePost page or open a dialog
-  // For simplicity, assume navigation
-  window.open('/forum/create', '_blank'); // Open in new tab
+  currentPost.id = null;
+  currentPost.title = '';
+  currentPost.content = '';
+  editPostDialogVisible.value = true; // 使用同一个编辑框
+  if (editorInstance) {
+    editorInstance.setHtml('');
+  }
 };
 
 const handleViewPost = (row) => {
@@ -356,16 +286,9 @@ const handleViewPost = (row) => {
 };
 
 const handleEditPost = (row) => {
-  // Reset form before populating
-  if (editPostFormRef.value) {
-    editPostFormRef.value.resetFields();
-  }
-  // Shallow copy or deep copy depending on need
-  Object.assign(currentPost, row);
-  // Ensure content is loaded correctly for RichTextEditor
-  if (editorInstance) {
-    editorInstance.setHtml(row.content || '');
-  }
+  currentPost.id = row.id;
+  currentPost.title = row.title;
+  currentPost.content = row.content || ''; // 加载内容
   editPostDialogVisible.value = true;
 };
 
@@ -375,88 +298,69 @@ const submitEditPost = async () => {
     if (valid) {
       editSubmitting.value = true;
       try {
-        // Ensure content is up-to-date from editor
-        currentPost.content = editorInstance ? editorInstance.getHtml() : currentPost.content;
-
-        await updatePostAdmin(currentPost.id, {
-          title: currentPost.title,
-          content: currentPost.content,
-          // 移除 categoryId
-          // categoryId: currentPost.categoryId
-          // Include other editable fields if necessary
-        });
-        ElMessage.success("更新成功");
+        const postData = {...currentPost};
+        await updatePostAdmin(postData.id, {title: postData.title, content: postData.content});
+        ElMessage.success('保存成功');
           editPostDialogVisible.value = false;
-          fetchPosts(); // Refresh list
+        fetchPosts(); // 刷新列表
       } catch (error) {
-        console.error("更新帖子失败:", error);
-        ElMessage.error("更新帖子失败");
+        console.error("保存帖子失败:", error);
+        // 错误由拦截器处理
       } finally {
         editSubmitting.value = false;
       }
+    } else {
+      ElMessage.warning("请检查表单项")
+      return false;
     }
   });
 };
 
-const handleDeletePost = async (row, type = 'soft') => {
-  const actionText = type === 'hard' ? '彻底删除' : '删除';
-  await ElMessageBox.confirm(`确定要${actionText}帖子 "${row.title}" 吗？`, '警告', {
+const handleDeletePost = (row, type = 'soft') => {
+  const confirmMessage = type === 'hard'
+      ? `确定要彻底删除帖子【${row.title}】吗？此操作不可恢复！`
+      : `确定要删除帖子【${row.title}】吗？`;
+  const confirmTitle = type === 'hard' ? '警告：彻底删除' : '确认删除';
+
+  ElMessageBox.confirm(confirmMessage, confirmTitle, {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
   }).then(async () => {
     try {
-      // TODO: Differentiate between soft and hard delete if backend supports it
-      // For now, assume both use the same delete endpoint
-      await deletePostAdmin(row.id);
-      ElMessage.success(`${actionText}成功`);
-      fetchPosts(); // Refresh list
+      await deletePostAdmin(row.id, type); // 假设 API 支持 type 参数 ('soft'/'hard')
+      ElMessage.success('删除成功');
+      fetchPosts(); // 刷新列表
     } catch (error) {
-      console.error(`${actionText}帖子失败:`, error);
-      ElMessage.error(`${actionText}失败`);
+      console.error("删除帖子失败:", error);
+      // 错误由拦截器处理
     }
   }).catch(() => {
-    ElMessage.info(`已取消${actionText}`);
+    ElMessage.info('已取消删除');
   });
 };
 
 const handleToggleTop = async (row) => {
-  const action = row.isTop ? '取消置顶' : '置顶';
   try {
-    // Assuming setPostTopAdmin exists and works
-    // await setPostTopAdmin(row.id, !row.isTop);
-    ElMessage.warning(`"${action}" 功能暂未实现`); // Placeholder
-    // fetchPosts(); // Refresh list after successful action
+    await setPostTop(row.id, !row.isTop);
+    ElMessage.success(`${!row.isTop ? '置顶' : '取消置顶'}成功`);
+    fetchPosts(); // 刷新列表
   } catch (error) {
-    console.error(`${action}失败:`, error);
-    ElMessage.error(`${action}失败`);
+    console.error("操作失败:", error);
   }
 };
 
 const handleToggleEssence = async (row) => {
-  const action = row.isEssence ? '取消加精' : '加精';
   try {
-    // Assuming setPostEssenceAdmin exists and works
-    // await setPostEssenceAdmin(row.id, !row.isEssence);
-    ElMessage.warning(`"${action}" 功能暂未实现`); // Placeholder
-    // fetchPosts(); // Refresh list after successful action
+    await setPostEssence(row.id, !row.isEssence);
+    ElMessage.success(`${!row.isEssence ? '加精' : '取消加精'}成功`);
+    fetchPosts(); // 刷新列表
   } catch (error) {
-    console.error(`${action}失败:`, error);
-    ElMessage.error(`${action}失败`);
+    console.error("操作失败:", error);
   }
 };
 
 // Utility Functions
-const formatDateTime = (timeStr) => {
-  if (!timeStr) return '-';
-  try {
-    const date = new Date(timeStr);
-    return date.toLocaleString('zh-CN', {hour12: false});
-  } catch (e) {
-    return timeStr;
-  }
-};
-
 const formatPostStatus = (status) => {
   const statusMap = {
     PUBLISHED: '正常',
@@ -490,6 +394,62 @@ onMounted(() => {
   fetchPosts();
   // 移除 fetchCategories 调用
   // fetchCategories(); 
+});
+
+// 帖子筛选搜索
+const handlePostSearch = () => {
+  postCurrentPage.value = 1;
+  fetchPosts();
+};
+
+// 帖子筛选重置
+const handlePostReset = () => {
+  postFilters.keyword = '';
+  postFilters.status = '';
+  postCurrentPage.value = 1;
+  fetchPosts();
+};
+
+// 处理帖子表格选中项变化
+const handlePostSelectionChange = (selection) => {
+  selectedPosts.value = selection;
+  // console.log('Selected posts:', selection);
+};
+
+// 处理更多操作下拉菜单命令
+const handleMoreCommand = async (command, row) => {
+  switch (command) {
+    case 'toggleTop':
+      await handleToggleTop(row);
+      break;
+    case 'toggleEssence':
+      await handleToggleEssence(row);
+      break;
+    case 'deleteSoft':
+      await handleDeletePost(row, 'soft');
+      break;
+    case 'deleteHard':
+      await handleDeletePost(row, 'hard');
+      break;
+  }
+};
+
+// Editor instance for RichTextEditor
+const handleEditorReady = (editor) => {
+  editorInstance = editor;
+};
+
+// 监听分页变化 (TableView 内部处理)
+watch([postCurrentPage, postPageSize], () => {
+  fetchPosts();
+}, {immediate: false});
+
+// 清理编辑器实例
+onBeforeUnmount(() => {
+  if (editorInstance) {
+    editorInstance.destroy();
+    editorInstance = null;
+  }
 });
 
 </script>
@@ -532,5 +492,9 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style>

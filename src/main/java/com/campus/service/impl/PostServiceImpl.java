@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -121,9 +122,24 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
     @Override
     public List<Post> getHotPosts(int limit) {
+        log.debug("开始执行getHotPosts，请求限制数量: {}", limit);
+        try {
         List<Post> posts = postDao.getHotPosts(limit);
+            log.debug("从DAO获取热门帖子成功，原始数量: {}", posts.size());
+
+            try {
         posts.forEach(this::loadAuthorInfo);
+                log.debug("成功加载所有帖子的作者信息");
+            } catch (Exception e) {
+                log.error("加载帖子作者信息时出错: {}", e.getMessage(), e);
+                // 继续执行，至少返回帖子基本信息
+            }
+            
         return posts;
+        } catch (Exception e) {
+            log.error("获取热门帖子时出现异常: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -541,71 +557,111 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
 
     @Override
     public Map<String, Object> findPageMap(Map<String, Object> params, int page, int size) {
-        Page<Map<String, Object>> pageRequest = new Page<>(page, size);
-        // Call the custom DAO method
-        IPage<Map<String, Object>> resultPage = postDao.findPageMap(pageRequest, params);
+        log.debug("开始执行findPageMap，参数: page={}, size={}, params={}", page, size, params);
 
+        try {
+            Page<Map<String, Object>> pageRequest = new Page<>(page, size);
+            IPage<Map<String, Object>> resultPage = postDao.findPageMap(pageRequest, params);
+
+            if (resultPage == null) {
+                log.error("postDao.findPageMap返回null");
+                return createEmptyResult();
+            }
+
+            List<Map<String, Object>> records = resultPage.getRecords();
+            if (records == null) {
+                log.error("获取到的records列表为null");
+                records = new ArrayList<>();
+            }
+
+            // 将每个记录转换为前端需要的格式
+            for (Map<String, Object> record : records) {
+                try {
+                    // 添加额外的处理以确保数据格式正确
+                    if (record.get("createTime") instanceof Date) {
+                        // 已经是Date类型，不需要额外处理
+                    } else if (record.get("createTime") instanceof String) {
+                        // 如果是字符串，尝试转换为Date
+                        try {
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            record.put("createTime", format.parse((String) record.get("createTime")));
+                        } catch (Exception e) {
+                            log.warn("日期格式转换失败: {}", e.getMessage());
+                        }
+                    }
+
+                    // 同样处理updateTime
+                    if (record.get("updateTime") instanceof Date) {
+                        // 已经是Date类型
+                    } else if (record.get("updateTime") instanceof String) {
+                        try {
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            record.put("updateTime", format.parse((String) record.get("updateTime")));
+                        } catch (Exception e) {
+                            log.warn("日期格式转换失败: {}", e.getMessage());
+                        }
+                    }
+
+                    // 处理作者信息
+                    if (record.get("userId") != null) {
+                        Long userId = 0L;
+                        Object userIdObj = record.get("userId");
+                        if (userIdObj instanceof Long) {
+                            userId = (Long) userIdObj;
+                        } else if (userIdObj instanceof Integer) {
+                            userId = ((Integer) userIdObj).longValue();
+                        } else if (userIdObj instanceof String) {
+                            try {
+                                userId = Long.parseLong((String) userIdObj);
+                            } catch (NumberFormatException e) {
+                                log.warn("用户ID转换失败: {}", e.getMessage());
+                            }
+                        }
+
+                        if (userId > 0) {
+                            try {
+                                User user = userDao.selectById(userId);
+                                if (user != null) {
+                                    Map<String, Object> author = new HashMap<>();
+                                    author.put("id", user.getId());
+                                    author.put("username", user.getUsername());
+                                    author.put("realName", user.getRealName());
+                                    record.put("author", author);
+                                }
+                            } catch (Exception e) {
+                                log.error("加载用户信息时出错: {}", e.getMessage());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("处理帖子记录时出错: {}", e.getMessage());
+                }
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("rows", records);
+            result.put("total", resultPage.getTotal());
+            result.put("size", resultPage.getSize());
+            result.put("current", resultPage.getCurrent());
+
+            log.debug("findPageMap执行成功，共返回{}条记录", records.size());
+            return result;
+        } catch (Exception e) {
+            log.error("findPageMap执行出错: {}", e.getMessage(), e);
+            return createEmptyResult();
+        }
+    }
+
+    /**
+     * 创建空的结果集
+     */
+    private Map<String, Object> createEmptyResult() {
         Map<String, Object> result = new HashMap<>();
-        result.put("total", resultPage.getTotal());
-        result.put("rows", resultPage.getRecords());
+        result.put("rows", new ArrayList<>());
+        result.put("total", 0);
+        result.put("size", 0);
+        result.put("current", 1);
         return result;
-
-        /* Example using BaseMapper and LambdaQueryWrapper (less flexible for joins):
-        Page<Post> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<Post> queryWrapper = Wrappers.<Post>lambdaQuery();
-
-        // Apply filters from params map
-        if (params.containsKey("keyword") && StringUtils.hasText((String)params.get("keyword"))) {
-            String keyword = (String) params.get("keyword");
-            queryWrapper.and(qw -> qw.like(Post::getTitle, keyword)
-                                       .or().like(Post::getContent, keyword)
-                                       // TODO: Add author search if needed (requires join or subquery)
-            );
-        }
-        if (params.containsKey("category") && StringUtils.hasText((String)params.get("category"))) {
-            queryWrapper.eq(Post::getCategory, params.get("category"));
-        }
-        if (params.containsKey("tag") && StringUtils.hasText((String)params.get("tag"))) {
-            // Assuming tags is a JSON array string
-            queryWrapper.apply("JSON_CONTAINS(tags, JSON_ARRAY({0}))", params.get("tag"));
-        }
-        if (params.containsKey("status")) {
-            queryWrapper.eq(Post::getStatus, params.get("status"));
-        }
-        if (params.containsKey("userId")) {
-            queryWrapper.eq(Post::getUserId, params.get("userId"));
-        }
-
-        // Apply sorting
-        String sortBy = (String) params.getOrDefault("sortBy", "createTime");
-        boolean isAsc = "asc".equalsIgnoreCase((String) params.getOrDefault("sortOrder", "desc"));
-        switch (sortBy) {
-            case "viewCount":
-                queryWrapper.orderBy(true, isAsc, Post::getViewCount);
-                break;
-            case "likeCount":
-                queryWrapper.orderBy(true, isAsc, Post::getLikeCount);
-                break;
-            case "commentCount":
-                queryWrapper.orderBy(true, isAsc, Post::getCommentCount);
-                break;
-            case "updateTime":
-                queryWrapper.orderBy(true, isAsc, Post::getLastUpdateTime);
-                break;
-            case "createTime":
-            default:
-                queryWrapper.orderBy(true, isAsc, Post::getCreationTime);
-                break;
-        }
-
-        IPage<Post> resultPage = this.page(pageRequest, queryWrapper);
-        resultPage.getRecords().forEach(this::loadAuthorInfo);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("total", resultPage.getTotal());
-        result.put("rows", resultPage.getRecords());
-        return result;
-        */
     }
 
     // --- Admin Management Methods Implementation ---

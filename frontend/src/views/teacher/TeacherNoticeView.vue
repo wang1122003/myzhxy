@@ -1,81 +1,57 @@
 <template>
-  <div class="teacher-notice-view-container">
-    <el-card class="page-container">
-      <template #header>
-        <div class="header">
-          <span>通知公告</span>
-          <!-- Teachers typically don't add notices, admins do -->
-        </div>
-      </template>
+  <PageContainer title="通知公告">
+    <!-- No filters needed for teacher view? Add FilterForm here if required -->
+    <!--
+    <FilterForm
+      :model="filterParams"
+      :items="filterItems"
+      @search="handleSearch"
+      @reset="handleReset"
+      :show-add-button="false"
+    />
+    -->
 
-      <el-table v-loading="loading" :data="noticeList" style="width: 100%">
-        <el-table-column label="标题" min-width="200" prop="title">
-          <template #default="scope">
-            <span class="notice-title" @click="handleViewDetails(scope.row)">{{ scope.row.title }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="类型" prop="noticeType" width="120">
-          <template #default="scope">
-            {{ formatNoticeType(scope.row.noticeType) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="发布人" prop="publisherName" width="150"/>
-        <!-- Assuming backend provides publisherName -->
-        <el-table-column label="发布时间" prop="publishTime" width="180">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.publishTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" prop="status" width="100">
-          <template #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)">{{ formatStatus(scope.row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100">
-          <template #default="scope">
-            <el-button size="small" text type="primary" @click="handleViewDetails(scope.row)">查看</el-button>
-          </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="暂无通知数据"/>
-        </template>
-      </el-table>
-
-      <!-- 分页 -->
-      <el-pagination
-          v-if="total > 0"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          class="pagination-container"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-      />
-    </el-card>
+    <TableView
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :action-column-config="actionColumnConfig"
+        :columns="tableColumns"
+        :data="noticeList"
+        :loading="loading"
+        :total="total"
+        @refresh="fetchNotices"
+        @view-detail="handleViewDetails"
+    />
 
     <!-- 通知详情对话框 -->
-    <el-dialog v-model="detailsDialogVisible" title="通知详情" top="5vh" width="70%">
-      <div v-if="currentNotice" class="notice-details">
-        <h3>{{ currentNotice.title }}</h3>
-        <div class="meta-info">
-          <span>类型: {{ formatNoticeType(currentNotice.noticeType) }}</span>
-          <span>发布人: {{ currentNotice.publisherName || '系统' }}</span>
-          <span>发布时间: {{ formatDateTime(currentNotice.publishTime) }}</span>
+    <el-dialog v-model="detailsDialogVisible" destroy-on-close title="通知详情" top="5vh" width="70%">
+      <div v-loading="loadingDetails">
+        <div v-if="currentNotice" class="notice-details">
+          <h3>{{ currentNotice.title }}</h3>
+          <div class="meta-info">
+            <span>类型: {{ formatNoticeType(currentNotice.noticeType) }}</span>
+            <span>发布人: {{ currentNotice.publisherName || '系统' }}</span>
+            <span>发布时间: {{ formatDateTime(currentNotice.publishTime) }}</span>
+          </div>
+          <el-divider/>
+          <div class="notice-content ql-editor" v-html="currentNotice.content"></div>
+          <!-- Display attachments if available -->
+          <div v-if="currentNotice.attachments && currentNotice.attachments.length > 0" class="attachments-section">
+            <h4>附件:</h4>
+            <ul>
+              <li v-for="file in currentNotice.attachments" :key="file.id">
+                <el-button link type="primary" @click="downloadAttachment(file)">
+                  <el-icon>
+                    <Document/>
+                  </el-icon>
+                  {{ file.filename || '未知文件名' }}
+                </el-button>
+                <span class="file-size">({{ formatFileSize(file.size) }})</span>
+              </li>
+            </ul>
+          </div>
         </div>
-        <el-divider/>
-        <div class="notice-content" v-html="currentNotice.content"></div>
-        <!-- Display attachments if available -->
-        <div v-if="currentNotice.attachments && currentNotice.attachments.length > 0" class="attachments-section">
-          <h4>附件:</h4>
-          <ul>
-            <li v-for="file in currentNotice.attachments" :key="file.id">
-              <a :href="file.url" target="_blank">{{ file.fileName }}</a>
-              ({{ formatFileSize(file.size) }})
-            </li>
-          </ul>
-        </div>
+        <el-empty v-else description="加载通知详情失败或无数据"/>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -84,25 +60,23 @@
       </template>
     </el-dialog>
 
-  </div>
+  </PageContainer>
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref, h, resolveComponent} from 'vue';
 import {
-  ElButton,
-  ElCard,
-  ElDialog,
-  ElDivider,
-  ElEmpty,
-  ElMessage,
-  ElPagination,
-  ElTable,
-  ElTableColumn,
-  ElTag
+  ElButton, ElDialog, ElDivider, ElEmpty, ElTag, ElIcon
 } from 'element-plus';
-import {getNotificationById, getNotificationsPage} from '@/api/notice';
-import {formatDateTime, formatFileSize} from '@/utils/formatters'; // Corrected import path
+import {Document} from '@element-plus/icons-vue';
+import {getNotificationsPage, getNotificationById} from '@/api/notice'; // Corrected: Use notice.js
+import {downloadFile} from '@/api/file'; // Corrected: Use file.js for download
+import {formatDateTime, formatFileSize} from '@/utils/formatters'; // Corrected path
+import {getNoticeById, updateNotice} from '@/api/notice'; // 假设的API函数
+import Quill from 'quill';
+
+const route = useRoute();
+const router = useRouter();
 
 const loading = ref(false);
 const noticeList = ref([]);
@@ -113,29 +87,72 @@ const pageSize = ref(10);
 const detailsDialogVisible = ref(false);
 const currentNotice = ref(null);
 const loadingDetails = ref(false);
+const downloadLoading = ref(null); // Track which attachment is downloading
 
-// 获取通知列表
+// --- Computed Properties ---
+const tableColumns = computed(() => [
+  {
+    prop: 'title',
+    label: '标题',
+    minWidth: 300,
+    slots: {
+      // Make title clickable to view details
+      default: (scope) => h('a', {
+        style: 'cursor: pointer; color: var(--el-color-primary); text-decoration: none;',
+        onClick: () => handleViewDetails(scope.row)
+      }, scope.row.title)
+    }
+  },
+  {
+    prop: 'noticeType',
+    label: '类型',
+    width: 120,
+    slots: {
+      default: (scope) => h(resolveComponent('ElTag'), {
+        type: getNoticeTypeTag(scope.row.noticeType),
+        size: 'small'
+      }, () => formatNoticeType(scope.row.noticeType))
+    }
+  },
+  {prop: 'publisherName', label: '发布人', width: 150},
+  {
+    prop: 'publishTime',
+    label: '发布时间',
+    width: 180,
+    formatter: (row) => formatDateTime(row.publishTime)
+  },
+  // Status might not be relevant for teachers if they only see PUBLISHED
+  // { prop: 'status', label: '状态', width: 100, slots: { default: (scope) => ... } }
+]);
+
+const actionColumnConfig = computed(() => ({
+  width: 100,
+  fixed: 'right',
+  buttons: [
+    {label: '查看', type: 'primary', link: true, event: 'view-detail'}
+  ]
+}));
+
+// --- Methods ---
+
+// Fetch notices list
 const fetchNotices = async () => {
   loading.value = true;
   try {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      // Add filters if teachers should only see specific types/status
-      // status: 'PUBLISHED', // Example: only show published notices
+      keyword: filters.keyword || undefined,
+      type: filters.type || undefined,
+      // Add teacherId if needed by backend to filter notices created by this teacher
+      // publisherId: userStore.userId
     };
-    const res = await getNotificationsPage(params);
-    if (res.code === 200 && res.data) {
-      noticeList.value = res.data.records || [];
-      total.value = res.data.total || 0;
-    } else {
-      ElMessage.error(res.message || '获取通知列表失败');
-      noticeList.value = [];
-      total.value = 0;
-    }
+    const res = await getNotificationsPage(params); // Corrected
+    noticeList.value = res.data?.records || [];
+    total.value = res.data?.total || 0;
   } catch (error) {
     console.error("获取通知列表失败:", error);
-    ElMessage.error('获取通知列表时发生错误');
+    // Error handled by interceptor
     noticeList.value = [];
     total.value = 0;
   } finally {
@@ -143,89 +160,70 @@ const fetchNotices = async () => {
   }
 };
 
-// 格式化和标签类型 (可以移到 utils)
+// Formatters and Tag Types (can be moved to utils)
 const formatNoticeType = (type) => {
   const typeMap = {SCHOOL: '学校通知', COLLEGE: '学院通知', COURSE: '课程通知', SYSTEM: '系统消息'};
   return typeMap[type] || type || '未知类型';
 };
-const formatStatus = (status) => {
-  const statusMap = {DRAFT: '草稿', PUBLISHED: '已发布', ARCHIVED: '已归档'};
-  return statusMap[status] || status || '未知状态';
-};
-const getStatusTagType = (status) => {
-  return status === 'PUBLISHED' ? 'success' : (status === 'DRAFT' ? 'warning' : 'info');
-};
 
-// 分页处理
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1;
-  fetchNotices();
-};
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  fetchNotices();
-};
+const getNoticeTypeTag = (type) => {
+  const typeMap = {SCHOOL: '', COLLEGE: 'success', COURSE: 'warning', SYSTEM: 'info'};
+  return typeMap[type] || 'info';
+}
 
-// 查看详情
+// View details
 const handleViewDetails = async (row) => {
   loadingDetails.value = true;
   detailsDialogVisible.value = true;
   currentNotice.value = null; // Clear previous data
   try {
-    const res = await getNotificationById(row.id);
-    if (res.code === 200 && res.data) {
-      currentNotice.value = res.data;
-      // Assuming attachments are part of the response
-      // Example: currentNotice.value.attachments = res.data.fileList || [];
-    } else {
-      ElMessage.error(res.message || '获取通知详情失败');
-      detailsDialogVisible.value = false;
+    const res = await getNotificationById(row.id); // Corrected
+    currentNotice.value = res.data;
+    // Ensure attachments is an array
+    if (currentNotice.value && !Array.isArray(currentNotice.value.attachments)) {
+      currentNotice.value.attachments = [];
     }
   } catch (error) {
     console.error("获取通知详情失败:", error);
-    ElMessage.error('获取通知详情失败');
+    // Error handled by interceptor
     detailsDialogVisible.value = false;
   } finally {
     loadingDetails.value = false;
   }
 };
 
-// 初始化加载
+// Download attachment
+const downloadAttachment = async (file) => {
+  // Assuming file object has id and filename
+  if (!file || !file.id || !currentNotice.value?.id) {
+    ElMessage.warning('附件信息不完整，无法下载');
+    return;
+  }
+  downloadLoading.value = file.id;
+  try {
+    await downloadFile({fileId: file.id}, file.filename || 'download'); // Corrected
+    ElMessage.success(`开始下载: ${file.filename || '附件'}`);
+  } catch (error) {
+    console.error('下载附件失败:', error);
+    // Error handled by interceptor or download util
+  } finally {
+    downloadLoading.value = null;
+  }
+};
+
+// Initial load
 onMounted(() => {
   fetchNotices();
 });
+
 </script>
 
 <style scoped>
-.teacher-notice-view-container {
-  padding: 20px;
-}
-
-.page-container {
-  min-height: 600px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.notice-title {
-  cursor: pointer;
-  color: var(--el-color-primary);
-  text-decoration: none;
-}
-
-.notice-title:hover {
-  text-decoration: underline;
+/* Apply Quill styles to content */
+.notice-content :deep(.ql-editor) {
+  padding: 0;
+  line-height: 1.8;
+  min-height: 100px;
 }
 
 .notice-details {
@@ -248,29 +246,30 @@ onMounted(() => {
 
 .attachments-section {
   margin-top: 20px;
-  padding-top: 15px;
   border-top: 1px solid #eee;
+  padding-top: 15px;
 }
-
 .attachments-section h4 {
   margin-bottom: 10px;
 }
-
 .attachments-section ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
-
 .attachments-section li {
   margin-bottom: 5px;
+  display: flex;
+  align-items: center;
 }
 
-.attachments-section a {
-  color: var(--el-color-primary);
-  text-decoration: none;
+.file-size {
+  margin-left: 10px;
+  font-size: 0.9em;
+  color: #909399;
 }
 
-.attachments-section a:hover {
-  text-decoration: underline;
+.dialog-footer {
+  text-align: right;
 }
 </style> 

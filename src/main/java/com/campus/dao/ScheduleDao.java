@@ -84,4 +84,21 @@ public interface ScheduleDao extends BaseMapper<Schedule> {
      * @return 已被排课的课程ID列表
      */
     List<Long> findScheduledCourseIds(@Param("courseIds") List<Long> courseIds);
+
+    /**
+     * 根据课程ID列表和学期信息查询课表记录
+     *
+     * @param courseIds 课程ID列表
+     * @param termInfo  学期信息
+     * @return 对应的课表记录列表
+     */
+    List<Schedule> findSchedulesByCourseIdsAndTerm(@Param("courseIds") List<Long> courseIds, @Param("termInfo") String termInfo);
+
+    /**
+     * 根据学生用户ID查询其选课对应的课表信息 (包含课程、教师、教室名称)
+     *
+     * @param userId 学生的用户ID
+     * @return 课表列表
+     */
+    List<Schedule> findByUserId(@Param("userId") Long userId);
 }

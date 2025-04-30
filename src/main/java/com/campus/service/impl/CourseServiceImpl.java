@@ -31,9 +31,9 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     }
 
     @Override
-    public Course getCourseByCourseCode(String courseNo) {
-        if (!StringUtils.isNotBlank(courseNo)) return null;
-        return getOne(Wrappers.<Course>lambdaQuery().eq(Course::getCourseNo, courseNo));
+    public Course getCourseByCourseCode(String courseCode) {
+        if (!StringUtils.isNotBlank(courseCode)) return null;
+        return getOne(Wrappers.<Course>lambdaQuery().eq(Course::getCourseCode, courseCode));
     }
 
     @Override
@@ -47,8 +47,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     public boolean addCourse(Course course) {
         validateCourse(course);
 
-        if (baseMapper.countByCourseCode(course.getCourseNo()) > 0) {
-            throw new CustomException("课程代码 '" + course.getCourseNo() + "' 已存在");
+        if (baseMapper.countByCourseCode(course.getCourseCode()) > 0) {
+            throw new CustomException("课程代码 '" + course.getCourseCode() + "' 已存在");
         }
 
         Date now = new Date();
@@ -68,10 +68,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
         validateCourse(course);
 
         LambdaQueryWrapper<Course> wrapper = Wrappers.<Course>lambdaQuery()
-                .eq(Course::getCourseNo, course.getCourseNo())
+                .eq(Course::getCourseCode, course.getCourseCode())
                 .ne(Course::getId, course.getId());
         if (this.count(wrapper) > 0) {
-            throw new CustomException("课程代码 '" + course.getCourseNo() + "' 已被其他课程使用");
+            throw new CustomException("课程代码 '" + course.getCourseCode() + "' 已被其他课程使用");
         }
 
         course.setUpdateTime(new Date());
@@ -100,7 +100,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     @Override
     public IPage<Course> getCoursesByPage(int pageNum, int pageSize) {
         IPage<Course> page = new Page<>(pageNum, pageSize);
-        return this.page(page, Wrappers.<Course>lambdaQuery().orderByAsc(Course::getCourseNo));
+        return this.page(page, Wrappers.<Course>lambdaQuery().orderByAsc(Course::getCourseCode));
     }
 
     @Override
@@ -116,15 +116,15 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
     @Override
     public List<Course> searchCourses(String keyword) {
         if (!StringUtils.isNotBlank(keyword)) {
-            return list(Wrappers.<Course>lambdaQuery().orderByAsc(Course::getCourseNo));
+            return list(Wrappers.<Course>lambdaQuery().orderByAsc(Course::getCourseCode));
         }
         return baseMapper.searchCoursesByKeyword(keyword);
     }
 
     @Override
-    public boolean checkCourseCodeExists(String courseNo) {
-        if (!StringUtils.isNotBlank(courseNo)) return false;
-        return baseMapper.countByCourseCode(courseNo) > 0;
+    public boolean checkCourseCodeExists(String courseCode) {
+        if (!StringUtils.isNotBlank(courseCode)) return false;
+        return baseMapper.countByCourseCode(courseCode) > 0;
     }
 
     @Override
@@ -145,7 +145,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseDao, Course> implements
         if (course == null) {
             throw new CustomException("课程信息不能为空");
         }
-        if (StringUtils.isBlank(course.getCourseNo())) {
+        if (StringUtils.isBlank(course.getCourseCode())) {
             throw new CustomException("课程代码不能为空");
         }
         if (StringUtils.isBlank(course.getCourseName())) {

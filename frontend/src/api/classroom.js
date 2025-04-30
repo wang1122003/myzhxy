@@ -11,6 +11,8 @@ const API = {
     BATCH_DELETE: '/classrooms/batch', // 批量删除教室
     UPDATE_STATUS: (id, status) => `/classrooms/${id}/status/${status}`, // 更新教室状态
     GET_AVAILABLE: '/classrooms/available', // 获取可用教室
+    GET_USAGE: '/classrooms/usage', // 获取教室使用情况
+    GET_AVAILABLE_ROOMS: '/classrooms/available-rooms', // 获取可用空闲教室
     // GET_BY_BUILDING: (building) => `/classrooms/building/${building}`, // 原路径，与后端不符
     // GET_BY_TYPE: (roomType) => `/classrooms/type/${roomType}`, // 后端缺失
     // GET_BY_CAPACITY: '/classrooms/capacity' // 后端缺失
@@ -124,4 +126,30 @@ export function getClassroomsByCapacity(params) { // 参数应包含最小/最�
     //     params
     // });
     return Promise.reject('后端 API 缺失');
+}
+
+/**
+ * 获取教室使用情况
+ * @param {Object} params 查询参数，包含 classroomId, termInfo, date
+ * @returns {Promise} 请求结果
+ */
+export function getClassroomUsage(params) {
+    return request({
+        url: API.GET_USAGE,
+        method: 'get',
+        params
+    });
+}
+
+/**
+ * 获取可用的空闲教室
+ * @param {Object} params 查询参数，包含日期、时间段、教学楼等
+ * @returns {Promise} 请求结果
+ */
+export function getAvailableRooms(params) {
+    return request({
+        url: API.GET_AVAILABLE_ROOMS,
+        method: 'get',
+        params
+    });
 }

@@ -27,7 +27,6 @@
         :total="total"
         @refresh="fetchCourses"
         @edit-item="handleEdit"
-        @delete-item="handleDelete"
     />
 
     <!-- 添加/编辑 对话框 -->
@@ -95,11 +94,18 @@
 <script setup>
 import {computed, onMounted, reactive, ref} from 'vue';
 import {
-  ElButton, ElDialog, ElEmpty, ElMessage, ElMessageBox, ElTable, ElTableColumn,
-  ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElInputNumber
+  ElButton,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  ElInputNumber,
+  ElMessage,
+  ElOption,
+  ElSelect
 } from 'element-plus';
-import {Delete, Edit, Plus} from '@element-plus/icons-vue';
-import {getTeacherCourses, getCourseById, updateCourse} from '@/api/course'; // Corrected: Use course.js
+import {Edit} from '@element-plus/icons-vue';
+import {getCourseById, getTeacherCourses, updateCourse} from '@/api/course'; // Corrected: Use course.js
 import {getColleges} from '@/api/common'; // Corrected: Use common.js and correct function name
 
 const loading = ref(false);
@@ -151,8 +157,7 @@ const actionColumnConfig = computed(() => ({
   fixed: 'right',
   buttons: [
     {label: '编辑', type: 'primary', event: 'edit-item', icon: Edit},
-    // Teachers might not be allowed to delete courses, depends on logic
-    // { label: '删除', type: 'danger', event: 'delete-item', icon: Delete },
+    // 移除删除课程按钮
   ]
 }));
 
@@ -221,18 +226,6 @@ const handleEdit = async (row) => {
     formLoading.value = false;
   }
 };
-
-// Handle Delete (if teachers can delete)
-// const handleDelete = (row) => {
-//   ElMessageBox.confirm(`确定要删除课程 "${row.courseName}" 吗?`, '警告', { ... })
-//     .then(async () => {
-//       try {
-//         await teacherDeleteCourse(row.id); // Use teacher API
-//         ElMessage.success('删除成功');
-//         fetchCourses();
-//       } catch (error) { ... }
-//     })
-// };
 
 // Dialog close handler
 const handleDialogClose = () => {

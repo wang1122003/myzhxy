@@ -242,4 +242,55 @@ public class ClassroomController {
             return Result.error("获取可用教室列表失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 获取教室使用情况
+     *
+     * @param classroomId 教室ID
+     * @param termInfo    学期信息
+     * @param date        查询日期（可选，格式：yyyy-MM-dd）
+     * @return 教室使用情况
+     */
+    @GetMapping("/usage")
+    public Result<Map<String, Object>> getClassroomUsage(
+            @RequestParam(required = false) Long classroomId,
+            @RequestParam(required = false) String termInfo,
+            @RequestParam(required = false) String date) {
+        try {
+            Map<String, Object> usageData = classroomService.getClassroomUsage(classroomId, termInfo, date);
+            return Result.success(usageData);
+        } catch (Exception e) {
+            return Result.error("获取教室使用情况失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取可用的空闲教室
+     *
+     * @param date        日期（格式：yyyy-MM-dd）
+     * @param timeSlot    时间段（格式：HH:mm-HH:mm）
+     * @param weekday     星期几（1-7，1代表周一）
+     * @param termInfo    学期信息
+     * @param building    教学楼（可选）
+     * @param roomType    教室类型（可选）
+     * @param minCapacity 最小容量（可选）
+     * @return 符合条件的空闲教室列表
+     */
+    @GetMapping("/available-rooms")
+    public Result<List<Classroom>> getAvailableRooms(
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String timeSlot,
+            @RequestParam(required = false) Integer weekday,
+            @RequestParam(required = false) String termInfo,
+            @RequestParam(required = false) String building,
+            @RequestParam(required = false) String roomType,
+            @RequestParam(required = false) Integer minCapacity) {
+        try {
+            List<Classroom> availableRooms = classroomService.getAvailableRooms(
+                    date, timeSlot, weekday, termInfo, building, roomType, minCapacity);
+            return Result.success(availableRooms);
+        } catch (Exception e) {
+            return Result.error("获取空闲教室失败: " + e.getMessage());
+        }
+    }
 }

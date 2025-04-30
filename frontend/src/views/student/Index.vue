@@ -1,6 +1,8 @@
 <template>
   <el-container class="layout-container">
-    <el-aside :class="{'is-collapse': isCollapsed}" :width="isCollapsed ? '64px' : '200px'" class="sidebar-container">
+    <!-- 桌面端侧边栏 -->
+    <el-aside v-if="!isMobile" :class="{'is-collapse': isCollapsed}" :width="isCollapsed ? '64px' : '200px'"
+              class="sidebar-container">
       <div class="sidebar-header">
         <el-icon class="collapse-icon" @click="toggleCollapse">
           <Expand v-if="isCollapsed"/>
@@ -30,7 +32,26 @@
         </el-menu>
       </el-scrollbar>
     </el-aside>
+
     <el-container class="main-container">
+      <!-- 移动端顶部导航 -->
+      <el-header v-if="isMobile" class="mobile-header">
+        <div class="mobile-header-title">学生工作台</div>
+        <el-dropdown trigger="click" @command="navigateTo">
+          <el-button circle icon="Menu" type="primary"></el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="item in sidebarMenuItems" :key="item.index" :command="item.index">
+                <el-icon>
+                  <component :is="item.icon"/>
+                </el-icon>
+                <span>{{ item.title }}</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-header>
+
       <el-main class="app-main">
         <router-view/>
       </el-main>
@@ -90,6 +111,10 @@ const handleMenuSelect = () => {
   if (isMobile.value) {
     isCollapsed.value = true;
   }
+}
+
+const navigateTo = (path) => {
+  router.push(path);
 }
 </script>
 
@@ -158,5 +183,27 @@ export default {
 
 .scrollbar-wrapper {
   overflow-x: hidden !important;
+}
+
+/* 移动端样式 */
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  background-color: #304156;
+  color: white;
+  height: 50px;
+}
+
+.mobile-header-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding: 10px;
+  }
 }
 </style> 

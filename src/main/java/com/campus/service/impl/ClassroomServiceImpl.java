@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.ClassroomDao;
 import com.campus.entity.Classroom;
+import com.campus.entity.Schedule;
+import com.campus.entity.ScheduleDTO;
 import com.campus.enums.ClassroomStatus;
 import com.campus.exception.CustomException;
 import com.campus.service.ClassroomService;
@@ -18,9 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 教室服务实现类
@@ -152,5 +156,184 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
             throw new CustomException("无法删除，部分或全部所选教室已被排课占用");
         }
         return removeByIds(ids);
+    }
+
+    @Override
+    public Map<String, Object> getClassroomUsage(Long classroomId, String termInfo, String dateStr) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 1. 获取教室信息
+            Classroom classroom = null;
+            if (classroomId != null) {
+                classroom = this.getById(classroomId);
+                if (classroom == null) {
+                    throw new CustomException("教室不存在");
+                }
+                result.put("classroom", classroom);
+            }
+
+            // 2. 处理日期
+            LocalDate queryDate = null;
+            int weekday = -1;
+            if (StringUtils.isNotBlank(dateStr)) {
+                queryDate = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                // 获取星期几 (Java中LocalDate.getDayOfWeek()返回1-7，对应周一至周日)
+                weekday = queryDate.getDayOfWeek().getValue();
+            }
+
+            // 3. 获取排课数据
+            List<Schedule> schedules;
+            if (classroomId != null && StringUtils.isNotBlank(termInfo)) {
+                // 如果同时提供了教室ID和学期，则查询特定教室在特定学期的排课
+                schedules = scheduleService.getSchedulesByClassroomIdAndTerm(classroomId, termInfo);
+
+                // 如果指定了日期，进一步过滤
+                if (weekday > 0) {
+                    final int finalWeekday = weekday;
+                    schedules = schedules.stream()
+                            .filter(s -> s.getDayOfWeek() != null && s.getDayOfWeek().equals(finalWeekday))
+                            .collect(Collectors.toList());
+                }
+            } else if (classroomId != null) {
+                // 只有教室ID，查询该教室的所有排课
+                schedules = scheduleService.getSchedulesByClassroomId(classroomId);
+            } else {
+                // 如果没有提供教室ID，返回空数组
+                schedules = new ArrayList<>();
+            }
+
+            // 4. 构建返回数据
+            // 将Schedule转换为ScheduleDTO
+            List<ScheduleDTO> scheduleDTOs = schedules.stream()
+                    .map(ScheduleDTO::fromSchedule)
+                    .collect(Collectors.toList());
+
+            // 按星期几分组
+            Map<Integer, List<ScheduleDTO>> weekdayUsage = scheduleDTOs.stream()
+                    .collect(Collectors.groupingBy(ScheduleDTO::getWeekday));
+
+            result.put("weekdayUsage", weekdayUsage);
+
+            // 5. 添加利用率统计
+            if (classroomId != null && StringUtils.isNotBlank(termInfo)) {
+                // 假设一天有12个可用时间段
+                int totalSlotsPerDay = 12;
+                int totalSlots = totalSlotsPerDay * 7; // 一周总时间段
+                int occupiedSlots = schedules.size();
+                double usageRate = (double) occupiedSlots / totalSlots;
+
+                Map<String, Object> statistics = new HashMap<>();
+                statistics.put("totalSlots", totalSlots);
+                statistics.put("occupiedSlots", occupiedSlots);
+                statistics.put("usageRate", usageRate);
+
+                result.put("statistics", statistics);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("获取教室使用情况失败", e);
+            throw new RuntimeException("获取教室使用情况失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Classroom> getAvailableRooms(String dateStr, String timeSlot, Integer weekdayParam,
+                                             String termInfo, String building, String roomType,
+                                             Integer minCapacity) {
+        try {
+            // 1. 参数处理
+            // 使用final变量来存储weekday的值
+            final Integer weekday;
+            // 如果提供了日期，则从日期中获取星期几，否则使用提供的weekday参数
+            if (StringUtils.isNotBlank(dateStr) && weekdayParam == null) {
+                LocalDate date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                weekday = date.getDayOfWeek().getValue();
+            } else {
+                weekday = weekdayParam;
+            }
+
+            // 解析时间段
+            LocalTime startTime = null;
+            LocalTime endTime = null;
+            if (StringUtils.isNotBlank(timeSlot)) {
+                String[] times = timeSlot.split("-");
+                if (times.length == 2) {
+                    startTime = LocalTime.parse(times[0], DateTimeFormatter.ofPattern("HH:mm"));
+                    endTime = LocalTime.parse(times[1], DateTimeFormatter.ofPattern("HH:mm"));
+                }
+            }
+
+            // 2. 获取所有可用状态的教室
+            LambdaQueryWrapper<Classroom> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(Classroom::getStatus, ClassroomStatus.NORMAL);
+
+            // 应用其他筛选条件
+            if (StringUtils.isNotBlank(building)) {
+                queryWrapper.eq(Classroom::getBuilding, building);
+            }
+
+            if (StringUtils.isNotBlank(roomType)) {
+                try {
+                    Integer roomTypeCode = Integer.parseInt(roomType);
+                    queryWrapper.eq(Classroom::getRoomType, roomTypeCode);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid roomType provided: " + roomType);
+                }
+            }
+
+            if (minCapacity != null && minCapacity > 0) {
+                queryWrapper.ge(Classroom::getCapacity, minCapacity);
+            }
+
+            List<Classroom> allAvailableRooms = this.list(queryWrapper);
+
+            // 3. 如果没有提供时间相关参数，直接返回结果
+            if (weekday == null || termInfo == null || startTime == null || endTime == null) {
+                return allAvailableRooms;
+            }
+
+            // 4. 获取所有在此时间段已被占用的教室ID
+            List<Long> occupiedClassroomIds = new ArrayList<>();
+
+            // 遍历所有教室，检查是否与现有排课冲突
+            for (Classroom classroom : allAvailableRooms) {
+                List<Schedule> schedules = scheduleService.getSchedulesByClassroomIdAndTerm(classroom.getId(), termInfo);
+
+                // 筛选出同一天的排课
+                List<Schedule> sameWeekdaySchedules = schedules.stream()
+                        .filter(s -> s.getDayOfWeek() != null && s.getDayOfWeek().equals(weekday))
+                        .collect(Collectors.toList());
+
+                // 将Schedule转换为ScheduleDTO进行时间比较
+                for (Schedule schedule : sameWeekdaySchedules) {
+                    ScheduleDTO dto = ScheduleDTO.fromSchedule(schedule);
+                    if (dto == null || dto.getStartTime() == null || dto.getEndTime() == null) {
+                        continue;
+                    }
+
+                    // 解析DTO中的时间字符串
+                    LocalTime scheduleStart = LocalTime.parse(dto.getStartTime(), DateTimeFormatter.ofPattern("HH:mm"));
+                    LocalTime scheduleEnd = LocalTime.parse(dto.getEndTime(), DateTimeFormatter.ofPattern("HH:mm"));
+
+                    // 判断时间是否重叠
+                    if (!(!endTime.isAfter(scheduleStart) || !startTime.isBefore(scheduleEnd))) {
+                        occupiedClassroomIds.add(classroom.getId());
+                        break;
+                    }
+                }
+            }
+
+            // 5. 过滤出可用的教室
+            return allAvailableRooms.stream()
+                    .filter(classroom -> !occupiedClassroomIds.contains(classroom.getId()))
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("获取可用教室失败", e);
+            throw new RuntimeException("获取可用教室失败: " + e.getMessage());
+        }
     }
 }

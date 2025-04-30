@@ -6,6 +6,7 @@ import com.campus.entity.Classroom;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 教室服务接口
@@ -105,4 +106,30 @@ public interface ClassroomService extends IService<Classroom> {
      * @return 是否成功
      */
     boolean batchDeleteClassrooms(List<Long> ids);
+
+    /**
+     * 获取教室使用情况
+     *
+     * @param classroomId 教室ID
+     * @param termInfo    学期信息
+     * @param date        日期（格式：yyyy-MM-dd）
+     * @return 教室使用情况数据
+     */
+    Map<String, Object> getClassroomUsage(Long classroomId, String termInfo, String date);
+
+    /**
+     * 获取可用的空闲教室
+     *
+     * @param date        日期（格式：yyyy-MM-dd）
+     * @param timeSlot    时间段（格式：HH:mm-HH:mm）
+     * @param weekday     星期几（1-7，1代表周一）
+     * @param termInfo    学期信息
+     * @param building    教学楼（可选）
+     * @param roomType    教室类型（可选）
+     * @param minCapacity 最小容量（可选）
+     * @return 符合条件的空闲教室列表
+     */
+    List<Classroom> getAvailableRooms(String date, String timeSlot, Integer weekday,
+                                      String termInfo, String building, String roomType,
+                                      Integer minCapacity);
 }

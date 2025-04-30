@@ -15,13 +15,20 @@ const API = {
 
 /**
  * 获取当前登录学生的成绩列表
- * @param {object} params - 查询参数，例如 { semester: '2023-2024-1' }
+ * @param {object} params - 查询参数，例如 { page: 1, size: 10 }
  */
 export function getMyScores(params) {
+    console.log('调用getMyScores API，参数:', params);
     return request({
         url: API.GET_MY_SCORES,
         method: 'get',
-        params // e.g., termId or courseId filter?
+        params
+    }).then(response => {
+        console.log('成绩API返回数据:', response);
+        return response;
+    }).catch(error => {
+        console.error('成绩API请求失败:', error);
+        throw error;
     });
 }
 

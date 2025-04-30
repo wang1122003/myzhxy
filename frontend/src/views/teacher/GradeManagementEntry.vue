@@ -23,14 +23,10 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref, watch} from 'vue';
+import {computed, h, onMounted, reactive, ref} from 'vue';
 import {useRouter} from 'vue-router';
-import {ElMessage, ElOption, ElSelect} from 'element-plus';
 import {getTeacherCourses} from '@/api/course'; // Corrected: Use course.js, assume it returns grade entry status
 import {getAllTerms} from '@/api/term'; // Corrected function name
-import {teacherGetMyCoursesForGradeEntry} from '@/api/user'; // Corrected: API likely in user.js
-import {listActiveSemesters} from '@/api/term'; // Corrected: Use term.js
-import {h} from 'vue';
 
 const router = useRouter();
 

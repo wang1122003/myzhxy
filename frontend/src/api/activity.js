@@ -25,10 +25,14 @@ const API = {
 
 // 获取所有活动 (可带分页或过滤参数)
 export function getAllActivities(params) {
+    console.log('调用getAllActivities API，参数:', params);
     return request({
         url: API.GET_ALL,
         method: 'get',
         params
+    }).then(response => {
+        console.log('获取所有活动API返回数据:', response);
+        return response;
     });
 }
 
@@ -152,10 +156,14 @@ export function getActivitiesByPublisher(publisherId, params) {
 
 // 获取当前学生参加/报名的活动
 export function getMyActivities(params) {
+    console.log('调用getMyActivities API，参数:', params);
     return request({
         url: API.GET_STUDENT_ACTIVITIES,
         method: 'get',
         params
+    }).then(response => {
+        console.log('获取我参与的活动API返回数据:', response);
+        return response;
     });
 }
 

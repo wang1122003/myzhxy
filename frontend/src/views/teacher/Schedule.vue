@@ -34,27 +34,31 @@
           <!-- 时间列 -->
           <div class="time-column">
             <div class="header-cell">时间</div>
-            <div v-for="time in timeSlotsRef" :key="time.slot" class="time-cell">
+            <div v-for="time in timeSlotsRef.value" :key="time.slot" class="time-cell">
               <div class="time-slot-label">第{{ time.slot }}节</div>
               <div class="time-range">{{ time.startTime }} - {{ time.endTime }}</div>
             </div>
           </div>
           <!-- 星期列 -->
-          <div v-for="day in weekdaysRef" :key="day.value" class="day-column">
+          <div v-for="day in weekdaysRef.value" :key="day.value" class="day-column">
             <div class="header-cell">{{ day.label }}</div>
             <div
-                v-for="time in timeSlotsRef" :key="`${day.value}-${time.slot}`"
-              class="schedule-cell"
+                v-for="time in timeSlotsRef.value" v-show="!isCellCovered(day.value, time.slot)"
+                :key="`${day.value}-${time.slot}`"
                 :style="getGridCellStyle(day.value, time.slot)"
+                class="schedule-cell"
                 @click="cellClickHandler(day.value, time.slot)"
             >
               <div v-if="findCourseForCell(day.value, time.slot)" class="course-item">
                 <div class="course-name">{{ findCourseForCell(day.value, time.slot).courseName }}</div>
-                <div class="course-location">@ {{ findCourseForCell(day.value, time.slot).classroomName }}</div>
+                <div class="course-location">@ {{
+                    findCourseForCell(day.value, time.slot).classroomName || '地点未知'
+                  }}
+                </div>
                 <div class="course-class">班级: {{ findCourseForCell(day.value, time.slot).className || '-' }}</div>
                 <div class="course-weeks">周次: {{
-                    findCourseForCell(day.value, time.slot).startWeek
-                  }}-{{ findCourseForCell(day.value, time.slot).endWeek }}
+                    findCourseForCell(day.value, time.slot).startWeek || '?'
+                  }}-{{ findCourseForCell(day.value, time.slot).endWeek || '?' }}
                 </div>
               </div>
             </div>
@@ -82,11 +86,13 @@
         <el-descriptions :column="1" border>
           <el-descriptions-item label="课程名称">{{ currentCourse.courseName }}</el-descriptions-item>
           <el-descriptions-item label="上课时间">{{ formatWeekday(currentCourse.weekday) }}
-            {{ currentCourse.startTime?.substring(0, 5) }} - {{ currentCourse.endTime?.substring(0, 5) }}
+            {{ currentCourse.startTime?.substring(0, 5) || '--:--' }} -
+            {{ currentCourse.endTime?.substring(0, 5) || '--:--' }}
           </el-descriptions-item>
-          <el-descriptions-item label="上课周次">第 {{ currentCourse.startWeek }} - {{ currentCourse.endWeek }} 周
+          <el-descriptions-item label="上课周次">第 {{ currentCourse.startWeek || '?' }} -
+            {{ currentCourse.endWeek || '?' }} 周
           </el-descriptions-item>
-          <el-descriptions-item label="上课地点">{{ currentCourse.classroomName }}</el-descriptions-item>
+          <el-descriptions-item label="上课地点">{{ currentCourse.classroomName || '地点未知' }}</el-descriptions-item>
           <el-descriptions-item label="授课班级">{{ currentCourse.className || '-' }}</el-descriptions-item>
           <!-- <el-descriptions-item label="学分">{{ currentCourse.credit }}</el-descriptions-item> -->
         </el-descriptions>
@@ -110,12 +116,43 @@ import {Refresh} from '@element-plus/icons-vue';
 import {getTeacherWeeklySchedule} from '@/api/schedule'; // Corrected: Use schedule.js for weekly schedule
 import {getTimeSlots, getWeekdays} from '@/api/common'; // Corrected: Use common.js
 import {getAllTerms} from '@/api/term'; // Corrected function name
+import {useUserStore} from '@/stores/userStore'; // 修正路径：user -> userStore
+import TableView from '@/components/common/TableView.vue'; // 添加表格组件导入
+import PageContainer from '@/components/common/EnhancedPageContainer.vue'; // 添加页面容器组件导入
 
 // --- State ---
 const loadingSchedule = ref(false);
 const loadingSemesters = ref(false);
 const loadingTimeSlots = ref(false);
 // const loadingWeekdays = ref(false); // Weekdays are usually static
+
+// 用户信息
+const userStore = useUserStore();
+
+// 默认时间槽定义
+const defaultTimeSlots = [
+  {slot: 1, startTime: '08:00', endTime: '08:45'},
+  {slot: 2, startTime: '08:55', endTime: '09:40'},
+  {slot: 3, startTime: '10:00', endTime: '10:45'},
+  {slot: 4, startTime: '10:55', endTime: '11:40'},
+  {slot: 5, startTime: '14:00', endTime: '14:45'},
+  {slot: 6, startTime: '14:55', endTime: '15:40'},
+  {slot: 7, startTime: '16:00', endTime: '16:45'},
+  {slot: 8, startTime: '16:55', endTime: '17:40'},
+  {slot: 9, startTime: '19:00', endTime: '19:45'},
+  {slot: 10, startTime: '19:55', endTime: '20:40'}
+];
+
+// 默认星期定义
+const defaultWeekdays = [
+  {value: 1, label: '星期一'},
+  {value: 2, label: '星期二'},
+  {value: 3, label: '星期三'},
+  {value: 4, label: '星期四'},
+  {value: 5, label: '星期五'},
+  {value: 6, label: '星期六'},
+  {value: 7, label: '星期日'}
+];
 
 const scheduleList = ref([]);
 const viewType = ref('week');
@@ -125,7 +162,7 @@ const currentCourse = ref(null);
 
 const semestersRef = ref([]); // Semester options
 const timeSlotsRef = ref([]); // Time slot definitions
-const weekdaysRef = reactive([ // Static weekdays
+const weekdaysRef = ref([ // 修改为ref而不是reactive
   {value: 1, label: '星期一'}, {value: 2, label: '星期二'}, {value: 3, label: '星期三'},
   {value: 4, label: '星期四'}, {value: 5, label: '星期五'}, {value: 6, label: '星期六'},
   {value: 7, label: '星期日'},
@@ -168,7 +205,7 @@ const actionColumnConfig = computed(() => ({
 // --- Helper Functions ---
 
 const formatWeekday = (day) => {
-  const found = weekdaysRef.find(d => d.value === day);
+  const found = weekdaysRef.value.find(d => d.value === day);
   return found ? found.label : `星期${day}`;
 };
 
@@ -187,45 +224,142 @@ const getCourseColor = (courseId) => {
 
 // Find course for a cell in the week view (simplified based on startTime match)
 const findCourseForCell = (day, timeSlot) => {
-  // Needs adjustment based on actual time slot definition / start/end sections
+  // 从时间槽中获取目标开始时间
   const targetStartTime = timeSlotsRef.value.find(t => t.slot === timeSlot)?.startTime;
   if (!targetStartTime) return null;
 
-  return scheduleList.value.find(course =>
-      course.weekday === day &&
-      course.startTime?.startsWith(targetStartTime.substring(0, 5)) // Match HH:mm
-  );
-  // TODO: Implement proper section mapping if backend provides startSection/endSection
+  return scheduleList.value.find(course => {
+    const courseDay = course.weekday || course.dayOfWeek || course.day_of_week || course.day;
+    const rawStartTime = course.startTime || course.start_time;
+
+    // 将各种可能的 startTime 格式转换为 "HH:MM" 字符串
+    let courseStartTimeHHMM = null;
+    if (typeof rawStartTime === 'string') {
+      // 假设是 "HH:MM:SS" 或 "HH:MM"
+      courseStartTimeHHMM = rawStartTime.substring(0, 5);
+    } else if (rawStartTime instanceof Date) {
+      // 如果是 Date 对象
+      const hours = rawStartTime.getHours().toString().padStart(2, '0');
+      const minutes = rawStartTime.getMinutes().toString().padStart(2, '0');
+      courseStartTimeHHMM = `${hours}:${minutes}`;
+    } else if (Array.isArray(rawStartTime) && rawStartTime.length >= 2) {
+      // 假设是 [H, M, ...] 数组
+      const hours = rawStartTime[0].toString().padStart(2, '0');
+      const minutes = rawStartTime[1].toString().padStart(2, '0');
+      courseStartTimeHHMM = `${hours}:${minutes}`;
+    } else if (typeof rawStartTime === 'number') {
+      // 处理毫秒时间戳格式
+      const date = new Date(rawStartTime);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      courseStartTimeHHMM = `${hours}:${minutes}`;
+    }
+
+    // 只有成功转换后才进行比较
+    return courseDay == day && courseStartTimeHHMM === targetStartTime.substring(0, 5);
+  });
 };
 
-// Get style for grid cell (row span and color)
+// 辅助函数：将时间字符串转换为分钟数
+const timeToMinutes = (timeString) => {
+  if (!timeString) return -1;
+
+  let hours = 0;
+  let minutes = 0;
+
+  if (typeof timeString === 'string') {
+    // 处理 "HH:MM:SS" 或 "HH:MM" 格式
+    const parts = timeString.split(':');
+    if (parts.length >= 2) {
+      hours = parseInt(parts[0], 10);
+      minutes = parseInt(parts[1], 10);
+    }
+  } else if (timeString instanceof Date) {
+    // 处理 Date 对象
+    hours = timeString.getHours();
+    minutes = timeString.getMinutes();
+  } else if (Array.isArray(timeString) && timeString.length >= 2) {
+    // 处理 [H, M, ...] 数组
+    hours = parseInt(timeString[0], 10);
+    minutes = parseInt(timeString[1], 10);
+  } else if (typeof timeString === 'number') {
+    // 处理毫秒时间戳
+    const date = new Date(timeString);
+    hours = date.getHours();
+    minutes = date.getMinutes();
+  }
+
+  if (isNaN(hours) || isNaN(minutes)) {
+    return -1;
+  }
+
+  return hours * 60 + minutes;
+};
+
+// Get style for grid cell (row span and background color)
 const getGridCellStyle = (day, timeSlot) => {
   const course = findCourseForCell(day, timeSlot);
   if (!course) return {};
 
-  // Placeholder: assume 1 slot per course for now
-  const rowSpan = 1;
-  // Example: const rowSpan = course.endSection - course.startSection + 1;
+  // --- 以下部分需要根据 startTime/endTime 确定 rowSpan ---
+  const courseStartMinutes = timeToMinutes(course.startTime || course.start_time);
+  const courseEndMinutes = timeToMinutes(course.endTime || course.end_time);
+  const slotStartMinutes = timeToMinutes(timeSlotsRef.value.find(t => t.slot === timeSlot)?.startTime);
+  const slotEndMinutes = timeToMinutes(timeSlotsRef.value.find(t => t.slot === timeSlot)?.endTime);
 
-  // Apply style only to the starting cell
-  const startSlot = timeSlotsRef.value.find(t => course.startTime?.startsWith(t.startTime.substring(0, 5)))?.slot;
-  if (startSlot !== timeSlot) {
-    // Hide cells covered by a multi-slot course starting earlier
-    const courseAbove = findCourseForCell(day, timeSlot - 1);
-    // Determine end slot based on duration/endTime (requires more robust logic)
-    const courseAboveEndSlot = timeSlotsRef.value.find(t => courseAbove?.endTime?.startsWith(t.endTime.substring(0, 5)))?.slot;
-    if (courseAbove && courseAboveEndSlot >= timeSlot) {
-      return {display: 'none'}; // Hide cells covered by the span
-    }
-    return {}; // Not the start cell
+  if (courseStartMinutes === -1 || courseEndMinutes === -1 || slotStartMinutes === -1) {
+    console.warn("getGridCellStyle: Invalid time format for course or slot", course, timeSlotsRef.value.find(t => t.slot === timeSlot));
+    return {}; // Skip styling if time format is bad
   }
 
+  // Check if this cell is the starting cell of the course
+  if (courseStartMinutes !== slotStartMinutes) {
+    return {}; // Not the start cell, apply default style
+  }
+
+  // Calculate row span based on duration
+  let rowSpan = 0;
+  for (let i = timeSlot; i < timeSlotsRef.value.length; i++) {
+    const currentSlotEndMinutes = timeToMinutes(timeSlotsRef.value[i].endTime);
+    if (currentSlotEndMinutes <= courseEndMinutes) {
+      rowSpan++;
+    } else {
+      break;
+    }
+    // Safety break if end time is somehow before start time
+    if (currentSlotEndMinutes === -1 || currentSlotEndMinutes < slotStartMinutes) break;
+  }
+  rowSpan = Math.max(1, rowSpan); // Minimum span is 1
+
   return {
-    // gridRowStart: `span ${rowSpan}`, // Use grid-row-start for spanning
-    backgroundColor: getCourseColor(course.id), // Use course ID for color mapping
+    gridRowEnd: `span ${rowSpan}`, // 使用 gridRowEnd 替代 gridRowStart: span
+    backgroundColor: getCourseColor(course.id || course.courseId),
     color: '#fff',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    zIndex: 1, // Ensure spanned items are on top
+    position: 'relative' // Needed for zIndex
   };
+};
+
+// Hide cells that are covered by a spanning course item
+const isCellCovered = (day, timeSlot) => {
+  for (let prevSlot = timeSlot - 1; prevSlot >= 1; prevSlot--) {
+    const courseAbove = findCourseForCell(day, prevSlot);
+    if (courseAbove) {
+      const startMinutes = timeToMinutes(courseAbove.startTime || courseAbove.start_time);
+      const endMinutes = timeToMinutes(courseAbove.endTime || courseAbove.end_time);
+      const currentSlotStartMinutes = timeToMinutes(timeSlotsRef.value.find(t => t.slot === timeSlot)?.startTime);
+
+      if (startMinutes !== -1 && endMinutes !== -1 && currentSlotStartMinutes !== -1 &&
+          timeToMinutes(timeSlotsRef.value.find(t => t.slot === prevSlot)?.startTime) === startMinutes && // Is it the start cell?
+          currentSlotStartMinutes < endMinutes) { // Is the current cell covered by the duration?
+        return true; // Covered by a course starting above
+      }
+      // If we found a course in a cell above but it doesn't cover the current one, we can stop checking upwards
+      break;
+    }
+  }
+  return false;
 };
 
 // Handle cell click in week view
@@ -321,7 +455,7 @@ onMounted(async () => {
       getWeekdays() // Corrected
     ]);
     timeSlotsRef.value = slotsRes.data || defaultTimeSlots; // Use default if API fails
-    weekdaysRef.value = daysRes.value || defaultWeekdays; // Use default if API fails
+    weekdaysRef.value = daysRes.data || defaultWeekdays; // 修正：使用.data而不是.value
 
   } catch (error) {
     console.error("Error loading schedule page data:", error);

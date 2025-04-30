@@ -64,16 +64,14 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, h, resolveComponent} from 'vue';
-import {
-  ElButton, ElDialog, ElDivider, ElEmpty, ElTag, ElIcon
-} from 'element-plus';
+import {computed, h, onMounted, ref, resolveComponent} from 'vue';
+import {ElButton, ElDialog, ElDivider, ElEmpty, ElIcon, ElMessage} from 'element-plus';
 import {Document} from '@element-plus/icons-vue';
-import {getNotificationsPage, getNotificationById} from '@/api/notice'; // Corrected: Use notice.js
-import {downloadFile} from '@/api/file'; // Corrected: Use file.js for download
-import {formatDateTime, formatFileSize} from '@/utils/formatters'; // Corrected path
-import {getNoticeById, updateNotice} from '@/api/notice'; // 假设的API函数
-import Quill from 'quill';
+import {useRoute, useRouter} from 'vue-router';
+import {getNotificationById, getNotificationsPage} from '@/api/notice'; // 正确的导入
+import {downloadFile} from '@/api/file'; // 正确的文件下载API
+import {formatDateTime, formatFileSize} from '@/utils/formatters'; // 正确的路径
+import PageContainer from '@/components/common/EnhancedPageContainer.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -83,6 +81,10 @@ const noticeList = ref([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
+const filters = ref({
+  keyword: '',
+  type: ''
+});
 
 const detailsDialogVisible = ref(false);
 const currentNotice = ref(null);
@@ -142,8 +144,8 @@ const fetchNotices = async () => {
     const params = {
       page: currentPage.value,
       size: pageSize.value,
-      keyword: filters.keyword || undefined,
-      type: filters.type || undefined,
+      keyword: filters.value.keyword || undefined,
+      type: filters.value.type || undefined,
       // Add teacherId if needed by backend to filter notices created by this teacher
       // publisherId: userStore.userId
     };

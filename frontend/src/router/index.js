@@ -7,12 +7,10 @@ import {
     Collection,
     DataAnalysis,
     Document,
-    Files,
     Flag,
     Notebook,
     OfficeBuilding,
     Reading,
-    Setting,
     User
 } from '@element-plus/icons-vue'
 
@@ -96,6 +94,12 @@ const routes = [
                 path: 'activity/:id',
                 name: 'StudentActivityDetail',
                 component: () => import('../views/student/ActivityDetail.vue')
+            },
+            {
+                path: 'classroom-usage',
+                name: 'StudentClassroomUsage',
+                component: () => import('../views/common/ClassroomUsage.vue'),
+                meta: {title: '教室使用情况', icon: OfficeBuilding, showInSidebar: true}
             }
         ]
     },
@@ -146,8 +150,13 @@ const routes = [
                 path: 'courses/:courseId/grades',
                 name: 'TeacherCourseGradeManagement',
                 component: () => import('../views/teacher/CourseGradeManagement.vue')
+            },
+            {
+                path: 'classroom-usage',
+                name: 'TeacherClassroomUsage',
+                component: () => import('../views/common/ClassroomUsage.vue'),
+                meta: {title: '教室使用情况', icon: OfficeBuilding, showInSidebar: true}
             }
-
         ]
     },
     // 管理员页面路由
@@ -210,6 +219,12 @@ const routes = [
                 name: 'AdminNotices',
                 component: () => import('../views/admin/Notice.vue'),
                 meta: {title: '通知公告', icon: Bell, showInSidebar: true}
+            },
+            {
+                path: 'classroom-usage',
+                name: 'AdminClassroomUsage',
+                component: () => import('../views/common/ClassroomUsage.vue'),
+                meta: {title: '教室使用情况', icon: OfficeBuilding, showInSidebar: true}
             }
         ]
     },

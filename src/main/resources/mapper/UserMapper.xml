@@ -260,6 +260,34 @@
         </if>
     </select>
 
+    <!-- 检查用户名数量 -->
+    <select id="countByUsername" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE username = #{username,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 检查邮箱数量 -->
+    <select id="countByEmail" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE email = #{email,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 检查手机号数量 -->
+    <select id="countByPhone" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE phone = #{phone,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 检查学工号数量 -->
+    <select id="countByUserNo" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user
+        WHERE user_no = #{userNo,jdbcType=VARCHAR}
+    </select>
+
     <!-- 检查邮箱是否存在 -->
     <select id="isEmailExists" parameterType="java.lang.String" resultType="java.lang.Boolean">
         SELECT COUNT(*) > 0

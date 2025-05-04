@@ -72,7 +72,7 @@ public class PostController {
         Map<String, Object> pageResult = postService.findPageMap(params, page, size);
         log.info("获取帖子列表结果: total={}, size={}",
                 pageResult.get("total"),
-                pageResult.get("rows") != null ? ((List) pageResult.get("rows")).size() : 0);
+                pageResult.get("rows") != null ? ((List<?>) pageResult.get("rows")).size() : 0);
         
         return Result.success(pageResult);
     }

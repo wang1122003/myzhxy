@@ -191,11 +191,11 @@ public class FileController {
             }
             // 2. 课程资料：需要校验学生是否选了该课 (或者教师是否是授课教师)
             if ("course".equals(file.getContextType())) {
-                // TODO: 实现学生选课或教师授课的权限校验逻辑
-                // 简化处理：暂时允许所有登录用户下载课程资料 (需要修复)
-                log.warn("课程资料下载权限校验未实现: fileId={}, courseId={}", id, file.getContextId());
-                // boolean hasPermission = checkCoursePermission(user, file.getContextId());
-                // if (!hasPermission) { return ResponseEntity.status(403).build(); }
+                boolean hasPermission = checkCoursePermission(user, file.getContextId());
+                if (!hasPermission) {
+                    log.warn("用户无权访问课程资料：userId={}, courseId={}", user.getId(), file.getContextId());
+                    return ResponseEntity.status(403).build();
+                }
             }
             // --- 权限校验结束 --- 
 
@@ -415,6 +415,32 @@ public class FileController {
         }
     }
 
-    // TODO: 实现课程资料下载权限校验方法
-    // private boolean checkCoursePermission(User user, Long courseId) { ... }
+    // 实现课程资料下载权限校验方法
+    private boolean checkCoursePermission(User user, Long courseId) {
+        if (user == null || courseId == null) {
+            return false;
+        }
+
+        try {
+            // 1. 验证是否为课程的教师
+            Course course = courseService.getCourseById(courseId);
+            if (course != null && Objects.equals(course.getTeacherId(), user.getId())) {
+                return true;
+            }
+
+            // 2. 验证学生是否选课
+            if (user.getUserType() == com.campus.enums.UserType.STUDENT) {
+                return courseSelectionService.isCourseTaken(user.getId(), courseId, "current_term");
+            }
+
+            // 3. 管理员始终有权限
+            if (user.getUserType() == com.campus.enums.UserType.ADMIN) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("检查课程资料下载权限时出错, courseId: {}, userId: {}", courseId, user.getId(), e);
+        }
+
+        return false;
+    }
 } 

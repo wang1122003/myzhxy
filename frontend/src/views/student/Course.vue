@@ -21,70 +21,47 @@
         @view-detail="handleViewDetails"
     />
 
-    <!-- 课程详情对话框 -->
-    <el-dialog v-model="courseDetailVisible" :title="selectedCourse.courseName" width="650px">
-      <div v-loading="loadingCourseDetail">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="课程代码">{{ selectedCourse.courseCode }}</el-descriptions-item>
-          <el-descriptions-item label="课程类型">{{
-              formatCourseType(selectedCourse.courseType)
-            }}
-          </el-descriptions-item>
-          <el-descriptions-item label="学分">{{ selectedCourse.credit }}</el-descriptions-item>
-          <el-descriptions-item label="课时">{{ selectedCourse.hours }}</el-descriptions-item>
-          <el-descriptions-item label="开课学院">{{ selectedCourse.collegeName }}</el-descriptions-item>
-          <el-descriptions-item label="授课教师">{{ selectedCourse.teacherName || '待定' }}</el-descriptions-item>
-          <el-descriptions-item label="限选人数">{{
-              selectedCourse.maxStudents > 0 ? selectedCourse.maxStudents : '不限'
-            }}
-          </el-descriptions-item>
-          <el-descriptions-item label="已选人数">{{ selectedCourse.selectedCount || 0 }}</el-descriptions-item>
-          <el-descriptions-item :span="2" label="上课时间">
-            <div v-if="selectedCourse.schedules && selectedCourse.schedules.length">
-              <p v-for="(schedule, index) in selectedCourse.schedules" :key="index">
-                {{ formatScheduleTime(schedule) }}
-              </p>
-            </div>
-            <span v-else>待安排</span>
-          </el-descriptions-item>
-          <el-descriptions-item :span="2" label="课程介绍">
-            <div v-html="selectedCourse.introduction || '暂无介绍'"></div>
-          </el-descriptions-item>
-        </el-descriptions>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="courseDetailVisible = false">关闭</el-button>
-          <el-button
-              v-if="!isSelected(selectedCourse.id) && canSelectCourse(selectedCourse)"
-              :loading="selectingCourse === selectedCourse.id"
-              type="primary"
-              @click="handleCourseAction(selectedCourse, 'select')"
-          >
-            选课
-          </el-button>
-           <el-button
-               v-if="isSelected(selectedCourse.id)"
-               :loading="selectingCourse === selectedCourse.id"
-               type="danger"
-               @click="handleCourseAction(selectedCourse, 'drop')"
-           >
-            退课
-          </el-button>
-        </span>
+    <!-- 使用通用课程详情对话框 -->
+    <CourseDetailDialog
+        v-model="courseDetailVisible"
+        :course-id="selectedCourseId"
+        :initial-course="selectedCourse"
+        :show-capacity="true"
+        role="student"
+        @close="courseDetailVisible = false"
+        @loaded="onCourseDetailsLoaded"
+    >
+      <template #actions>
+        <el-button
+            v-if="detailsLoadedCourse && !isSelected(detailsLoadedCourse.id) && canSelectCourse(detailsLoadedCourse)"
+            :loading="selectingCourse === detailsLoadedCourse.id"
+            type="primary"
+            @click="handleCourseAction(detailsLoadedCourse, 'select')"
+        >
+          选课
+        </el-button>
+        <el-button
+            v-if="detailsLoadedCourse && isSelected(detailsLoadedCourse.id)"
+            :loading="selectingCourse === detailsLoadedCourse.id"
+            type="danger"
+            @click="handleCourseAction(detailsLoadedCourse, 'drop')"
+        >
+          退课
+        </el-button>
       </template>
-    </el-dialog>
+    </CourseDetailDialog>
   </PageContainer>
 </template>
 
 <script setup>
 import {computed, h, onMounted, reactive, ref, resolveComponent, watch} from 'vue';
 import {ElButton, ElMessage, ElMessageBox} from 'element-plus';
-import {getCourseById, getCourseList, getStudentCourses} from '@/api/course'; // Corrected: Use course.js for listing and details
-import {dropCourse, selectCourse} from '@/api/courseSelection'; // Corrected: Use courseSelection.js for actions
+import {getCourseList, getStudentCourses} from '@/api/course';
+import {dropCourse, selectCourse} from '@/api/courseSelection';
 import PageContainer from '@/components/common/EnhancedPageContainer.vue';
 import TableView from '@/components/common/TableView.vue';
 import FilterForm from '@/components/common/AdvancedFilterForm.vue';
+import CourseDetailDialog from '@/components/course/CourseDetailDialog.vue';
 
 // --- State ---
 const loading = ref(false);
@@ -98,6 +75,8 @@ const selectingCourse = ref(null); // 正在操作的课程ID
 
 const courseDetailVisible = ref(false);
 const selectedCourse = ref({});
+const selectedCourseId = ref(null);
+const detailsLoadedCourse = ref(null);
 
 // 搜索参数
 const searchParams = reactive({
@@ -153,6 +132,11 @@ const formatScheduleTime = (schedule) => {
   const weeks = `第${schedule.startWeek}-${schedule.endWeek}周`;
   const location = schedule.classroomName || '地点待定';
   return `${day} ${time} (${weeks}) @ ${location}`;
+};
+
+// 判断课程是否已选
+const isSelected = (courseId) => {
+  return myCourseIds.value.has(courseId);
 };
 
 // --- Computed Properties for Components ---
@@ -349,25 +333,15 @@ const handleCourseAction = async (course, actionType) => {
 };
 
 // 处理查看详情
-const handleViewDetails = async (course) => {
-  selectedCourse.value = {...course}; // 浅拷贝基础信息
+const handleViewDetails = (course) => {
+  selectedCourse.value = {...course}; // 基础信息
+  selectedCourseId.value = course.id;
   courseDetailVisible.value = true;
-  loadingCourseDetail.value = true;
-  try {
-    // 获取更详细的信息，例如课程介绍、教师、具体安排等
-    const res = await getCourseById(course.id); // Corrected function call
-    selectedCourse.value = res.data; // 使用详细数据覆盖
-    // 确保 schedules 存在且是数组
-    if (!Array.isArray(selectedCourse.value.schedules)) {
-      selectedCourse.value.schedules = [];
-        }
-  } catch (error) {
-    console.error("获取课程详情失败:", error);
-    ElMessage.error("获取课程详情失败");
-    courseDetailVisible.value = false; // 获取失败则关闭
-  } finally {
-    loadingCourseDetail.value = false;
-  }
+};
+
+// 课程详情加载完成回调
+const onCourseDetailsLoaded = (course) => {
+  detailsLoadedCourse.value = course;
 };
 
 // --- Lifecycle Hooks ---

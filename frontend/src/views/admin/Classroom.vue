@@ -42,9 +42,6 @@
         <el-form-item label="教学楼" prop="building">
           <el-input v-model="currentClassroom.building" placeholder="例如: 逸夫楼"/>
         </el-form-item>
-        <el-form-item label="教室编号" prop="roomNumber">
-          <el-input v-model="currentClassroom.roomNumber" placeholder="例如: 101"/>
-        </el-form-item>
         <el-form-item label="类型" prop="type">
           <el-select v-model="currentClassroom.type" placeholder="请选择教室类型" style="width: 100%;">
             <el-option v-for="item in CLASSROOM_TYPE_OPTIONS.filter(o => o.value)" :key="item.value" :label="item.label"
@@ -83,10 +80,10 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref, computed, watch, h, resolveComponent} from 'vue';
-import {ElMessage, ElMessageBox, ElTag} from 'element-plus';
-import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue';
-import {getClassroomsPage, addClassroom, updateClassroom, deleteClassroom} from '@/api/classroom'; // Corrected: Use classroom.js
+import {computed, h, onMounted, reactive, ref, resolveComponent, watch} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {Delete, Edit, Plus} from '@element-plus/icons-vue';
+import {addClassroom, deleteClassroom, getClassroomsPage, updateClassroom} from '@/api/classroom'; // Corrected: Use classroom.js
 
 // --- Constants & Options ---
 const CLASSROOM_TYPE_OPTIONS = [
@@ -124,7 +121,6 @@ const currentClassroom = reactive({
   id: null,
   name: '',
   building: '',
-  roomNumber: '',
   type: 'REGULAR', // Default type
   capacity: 30, // Default capacity
   facilities: '',
@@ -172,7 +168,6 @@ const filterItems = computed(() => [
 const tableColumns = computed(() => [
   {prop: 'name', label: '教室名称', minWidth: 150},
   {prop: 'building', label: '教学楼', width: 120},
-  {prop: 'roomNumber', label: '编号', width: 80},
   {
     prop: 'type',
     label: '类型',
@@ -275,7 +270,6 @@ const resetForm = () => {
     id: null,
     name: '',
     building: '',
-    roomNumber: '',
     type: 'REGULAR',
     capacity: 30,
     facilities: '',
@@ -340,7 +334,7 @@ const handleSubmit = async () => {
 
 // Handle Delete (from TableView event)
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除教室【${row.name} (${row.building} ${row.roomNumber})】吗？`, '警告', {
+  ElMessageBox.confirm(`确定要删除教室【${row.name} (${row.building})】吗？`, '警告', {
     confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'warning',
@@ -362,7 +356,6 @@ const handleDelete = (row) => {
 const formRules = reactive({
   name: [{required: true, message: '请输入教室名称', trigger: 'blur'}],
   building: [{required: true, message: '请输入教学楼名称', trigger: 'blur'}],
-  roomNumber: [{required: true, message: '请输入教室编号', trigger: 'blur'}],
   type: [{required: true, message: '请选择教室类型', trigger: 'change'}],
   capacity: [
     {required: true, message: '请输入容量', trigger: 'blur'},

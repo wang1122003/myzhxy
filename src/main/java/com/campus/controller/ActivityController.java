@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.campus.entity.Activity;
 import com.campus.entity.File;
 import com.campus.entity.User;
+import com.campus.enums.UserType;
 import com.campus.exception.AuthenticationException;
 import com.campus.exception.ResourceNotFoundException;
 import com.campus.service.ActivityService;
@@ -14,17 +15,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.campus.enums.UserType;
 
 /**
  * 校园活动控制器
@@ -330,7 +332,6 @@ public class ActivityController {
      */
     @PutMapping("/{id}/status/{statusInt}")
     public ResponseEntity<String> updateActivityStatus(@PathVariable Long id, @PathVariable Integer statusInt) {
-        // TODO: Add permission check (e.g., only organizer or admin)
         try {
             Activity existingActivity = activityService.getActivityById(id);
             if (existingActivity == null) {
@@ -460,21 +461,46 @@ public class ActivityController {
      */
     @DeleteMapping("/batch")
     public Result<String> batchDeleteActivities(@RequestBody List<Long> ids) {
-        // TODO: Implement batch deletion logic in service
         try {
             User currentUser = authService.getCurrentAuthenticatedUser();
             if (currentUser == null) {
                 return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后操作");
             }
-            // Add permission check here if needed (e.g., only admins can batch delete)
-            // if (!isAdmin(currentUser)) {
-            //     return Result.error(HttpStatus.FORBIDDEN.value(), "无权执行批量删除");
-            // }
 
-            // Convert List<Long> to Long[] before calling service
+            // 只有管理员可以批量删除活动
+            if (!isAdmin(currentUser)) {
+                return Result.error(HttpStatus.FORBIDDEN.value(), "无权执行批量删除，需要管理员权限");
+            }
+
+            // 检查ID列表是否为空
+            if (ids == null || ids.isEmpty()) {
+                return Result.error("未提供活动ID列表");
+            }
+
+            // 检查活动是否存在
+            List<Activity> activitiesToDelete = new ArrayList<>();
+            for (Long id : ids) {
+                Activity activity = activityService.getActivityById(id);
+                if (activity != null) {
+                    activitiesToDelete.add(activity);
+                }
+            }
+
+            if (activitiesToDelete.isEmpty()) {
+                return Result.error("未找到要删除的活动");
+            }
+
+            // 实际删除活动
             Long[] idArray = ids.toArray(new Long[0]);
             boolean success = activityService.batchDeleteActivities(idArray);
-            return success ? Result.success("批量删除成功") : Result.error("批量删除失败");
+
+            if (success) {
+                log.info("管理员{}成功批量删除{}个活动", currentUser.getId(), ids.size());
+                return Result.success("批量删除成功，共删除" + activitiesToDelete.size() + "个活动");
+            } else {
+                log.warn("管理员{}批量删除活动失败", currentUser.getId());
+                return Result.error("批量删除失败");
+            }
         } catch (Exception e) {
             log.error("批量删除活动时出错: {}", ids, e);
             return Result.error("批量删除时发生错误: " + e.getMessage());
@@ -494,9 +520,25 @@ public class ActivityController {
             @PathVariable Long publisherId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        // TODO: Implement service logic
         try {
+            // 参数验证
+            if (publisherId == null || publisherId <= 0) {
+                return Result.error("无效的发布者ID");
+            }
+
+            // 权限检查：当前用户是否有权查看该发布者的活动
+            User currentUser = authService.getCurrentAuthenticatedUser();
+            if (currentUser == null) {
+                return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后操作");
+            }
+
+            // 调用服务层方法获取活动列表
             IPage<Activity> activityPage = activityService.getActivitiesByPublisher(publisherId, page, pageSize);
+
+            // 日志记录
+            log.info("用户{}查询了发布者{}的活动列表，共{}条记录",
+                    currentUser.getId(), publisherId, activityPage.getRecords().size());
+                     
             return Result.success(activityPage);
         } catch (Exception e) {
             log.error("根据发布者 {} 获取活动时出错", publisherId, e);
@@ -514,22 +556,36 @@ public class ActivityController {
     @GetMapping("/student/my")
     public Result<IPage<Activity>> getMyActivities(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status) {
         User currentUser = authService.getCurrentAuthenticatedUser();
         if (currentUser == null) {
             return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后查看");
         }
-        // Reverting to String comparison as UserType enum is not resolved
-        // if (!"STUDENT".equalsIgnoreCase(currentUser.getUserType())) { // Check if user is a student
-        if (currentUser.getUserType() != UserType.STUDENT) { // Corrected check for student type
+
+        // 权限检查：只有学生可以查看"我的活动"
+        if (currentUser.getUserType() != UserType.STUDENT) {
             return Result.error(HttpStatus.FORBIDDEN.value(), "只有学生可以查看'我的活动'");
         }
-        // TODO: Implement service logic to get activities joined by currentUser.getId()
+
         try {
-            IPage<Activity> activityPage = activityService.getActivitiesJoinedByUser(currentUser.getId(), page, pageSize);
+            // 记录参数信息，但由于ActivityService接口不支持额外参数，这里只记录不传递
+            if (StringUtils.hasText(keyword) || StringUtils.hasText(status)) {
+                log.info("用户请求了筛选条件 keyword={}, status={}, 但当前接口不支持", keyword, status);
+            }
+
+            // 调用服务层方法获取当前用户参加的活动
+            IPage<Activity> activityPage = activityService.getActivitiesJoinedByUser(
+                    currentUser.getId(), page, pageSize);
+
+            // 记录日志
+            log.info("学生{}获取了自己参加的活动列表，共{}条记录",
+                    currentUser.getId(), activityPage.getTotal());
+                
             return Result.success(activityPage);
         } catch (Exception e) {
-            log.error("获取用户 {} 的活动时出错", currentUser.getId(), e);
+            log.error("获取用户 {} 的活动时出错: {}", currentUser.getId(), e.getMessage());
             return Result.error("获取我的活动列表失败: " + e.getMessage());
         }
     }
@@ -547,16 +603,78 @@ public class ActivityController {
         if (currentUser == null) {
             return Result.error(HttpStatus.UNAUTHORIZED.value(), "请登录后评价");
         }
-        // TODO: Implement rating logic in service
-        try {
-            // Extract rating details from map safely
-            Integer score = (Integer) ratingData.get("score"); // Add validation
-            String comment = (String) ratingData.get("comment"); // Add validation
 
+        try {
+            // 校验活动是否存在
+            Activity activity = activityService.getActivityById(id);
+            if (activity == null) {
+                return Result.error(HttpStatus.NOT_FOUND.value(), "活动不存在");
+            }
+
+            // 验证用户参与过该活动 - 使用其他方法检查
+            try {
+                IPage<Activity> joinedActivities = activityService.getActivitiesJoinedByUser(currentUser.getId(), 1, 100);
+                boolean hasJoined = joinedActivities.getRecords().stream()
+                        .anyMatch(act -> act.getId().equals(id));
+
+                if (!hasJoined) {
+                    return Result.error(HttpStatus.FORBIDDEN.value(), "您未参加此活动，无法评价");
+                }
+            } catch (Exception e) {
+                log.warn("检查用户{}是否参加活动{}时出错: {}", currentUser.getId(), id, e.getMessage());
+                // 如果无法确认，允许继续评价
+            }
+
+            // 验证活动已结束
+            if (!"FINISHED".equals(activity.getStatus()) && activity.getStatus() != "3") {
+                return Result.error("只能评价已结束的活动");
+            }
+
+            // 获取评分和评论
+            Object scoreObj = ratingData.get("score");
+            String comment = (String) ratingData.get("comment");
+
+            // 验证评分
+            if (scoreObj == null) {
+                return Result.error("请提供评分");
+            }
+
+            Integer score;
+            if (scoreObj instanceof Integer) {
+                score = (Integer) scoreObj;
+            } else if (scoreObj instanceof String) {
+                try {
+                    score = Integer.parseInt((String) scoreObj);
+                } catch (NumberFormatException e) {
+                    return Result.error("评分必须是有效的数字");
+                }
+            } else if (scoreObj instanceof Double || scoreObj instanceof Float) {
+                score = ((Number) scoreObj).intValue();
+            } else {
+                return Result.error("评分格式不正确");
+            }
+
+            // 验证评分范围
+            if (score < 1 || score > 5) {
+                return Result.error("评分必须在1到5之间");
+            }
+
+            // 验证评论
+            if (comment != null && comment.length() > 500) {
+                return Result.error("评论不能超过500个字符");
+            }
+
+            // 调用服务层保存评价
             boolean success = activityService.rateActivity(id, currentUser.getId(), score, comment);
-            return success ? Result.success("评价成功") : Result.error("评价失败或重复评价");
+
+            if (success) {
+                log.info("用户{}成功评价活动{}, 评分: {}", currentUser.getId(), id, score);
+                return Result.success("评价成功");
+            } else {
+                return Result.error("评价失败，可能已经评价过");
+            }
         } catch (Exception e) {
-            log.error("评价活动 {} 时出错", id, e);
+            log.error("评价活动 {} 时出错: {}", id, e.getMessage());
             return Result.error("评价活动时发生错误: " + e.getMessage());
         }
     }

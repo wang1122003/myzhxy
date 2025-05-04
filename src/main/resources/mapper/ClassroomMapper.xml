@@ -26,7 +26,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM classroom
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 
     <!-- 根据ID获取教室 -->
@@ -43,7 +43,7 @@
         <include refid="Base_Column_List"/>
         FROM classroom
         WHERE building = #{building,jdbcType=VARCHAR}
-        ORDER BY room_number
+        ORDER BY name
     </select>
 
     <!-- 根据楼层获取教室 -->
@@ -52,7 +52,7 @@
         <include refid="Base_Column_List"/>
         FROM classroom
         WHERE floor = #{floor,jdbcType=INTEGER}
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 
     <!-- 根据容量获取教室 -->
@@ -61,7 +61,7 @@
         <include refid="Base_Column_List"/>
         FROM classroom
         WHERE capacity >= #{capacity,jdbcType=INTEGER}
-        ORDER BY capacity, building, room_number
+        ORDER BY capacity, building, name
     </select>
 
     <!-- 根据类型获取教室 -->
@@ -70,7 +70,7 @@
         <include refid="Base_Column_List"/>
         FROM classroom
         WHERE type = #{type,jdbcType=VARCHAR}
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 
     <!-- 根据状态获取教室 -->
@@ -79,7 +79,7 @@
         <include refid="Base_Column_List"/>
         FROM classroom
         WHERE status = #{status,jdbcType=INTEGER}
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 
     <!-- 搜索教室 -->
@@ -91,7 +91,7 @@
         OR room_number LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR type LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
         OR equipment LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 
     <!-- 添加教室 -->
@@ -209,6 +209,6 @@
                 AND status = #{status}
             </if>
         </where>
-        ORDER BY building, room_number
+        ORDER BY building, name
     </select>
 </mapper> 

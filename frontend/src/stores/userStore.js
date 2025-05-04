@@ -18,7 +18,37 @@ export const useUserStore = defineStore('user', () => {
     const userRole = () => userInfo.value?.userType?.toLowerCase() || null;
     const userAvatar = () => userInfo.value?.avatarUrl || '';
     const userRealName = () => userInfo.value?.realName || '';
-    const userId = () => userInfo.value?.id || null;
+    const userId = () => {
+        // 更健壮的用户ID获取，添加详细日志以便排查问题
+        console.log("[userStore] 尝试获取用户ID，当前userInfo:", userInfo.value);
+
+        if (userInfo.value) {
+            // 尝试解析数字ID（如果缓存的用户信息中只有字符串形式的ID）
+            const id = userInfo.value.id ||
+                userInfo.value.userId ||
+                userInfo.value.user_id ||
+                userInfo.value.teacherId ||
+                userInfo.value.studentId;
+
+            // 如果角色是学生但ID字段不存在，检查是否有单独的studentId字段
+            if (userRole() === 'student' && userInfo.value.student && userInfo.value.student.id) {
+                console.log("[userStore] 从student子对象获取ID:", userInfo.value.student.id);
+                return userInfo.value.student.id;
+            }
+
+            // 如果角色是教师但ID字段不存在，检查是否有单独的teacherId字段
+            if (userRole() === 'teacher' && userInfo.value.teacher && userInfo.value.teacher.id) {
+                console.log("[userStore] 从teacher子对象获取ID:", userInfo.value.teacher.id);
+                return userInfo.value.teacher.id;
+            }
+
+            console.log("[userStore] 返回用户ID:", id);
+            return id || null;
+        }
+
+        console.warn("[userStore] userInfo为空，无法获取用户ID");
+        return null;
+    };
     const hasSessionError = () => sessionError.value;  // 新增：会话错误检查
 
     // Actions

@@ -246,11 +246,11 @@ public interface ScheduleService extends IService<Schedule> {
     boolean isAnyClassroomScheduled(List<Long> classroomIds);
 
     /**
-     * 根据用户ID和学期信息获取课表列表
+     * 根据用户ID和学期信息获取详细课表列表 (包含关联名称)
      *
      * @param userId   用户ID
      * @param termInfo 学期代码
-     * @return 该用户在该学期的课表列表
+     * @return 包含详细信息的课表列表
      */
-    List<Schedule> getSchedulesByUserIdAndTerm(Long userId, String termInfo);
+    List<Schedule> getStudentScheduleListWithDetails(Long userId, String termInfo);
 }

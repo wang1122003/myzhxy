@@ -18,10 +18,14 @@ VALUES (1, 'admin', '123456', '管理员', 1, '13800000000', 'admin@example.com'
        (6, 'student2', '123456', '钱同学', 0, '13800000005', 'student2@example.com',
         'Student', 'Active', '2023002', NOW(), NOW()),
        (7, 'student3', '123456', '孙同学', 1, '13800000006', 'student3@example.com',
-        'Student', 'Active', '2023003', NOW(), NOW());
+        'Student', 'Active', '2023003', NOW(), NOW()),
+       (8, 'student4', '123456', '周同学', 0, '13800000007', 'student4@example.com',
+        'Student', 'Active', '2023004', NOW(), NOW()),
+       (9, 'student5', '123456', '吴同学', 1, '13800000008', 'student5@example.com',
+        'Student', 'Active', '2023005', NOW(), NOW());
 
 ALTER TABLE `user`
-    AUTO_INCREMENT = 8;
+    AUTO_INCREMENT = 10;
 
 -- 插入教室数据
 INSERT INTO `classroom` (`name`, `capacity`, `building`, `status`, `room_type`)
@@ -30,10 +34,14 @@ VALUES ('A101', 60, 'A教学楼', 1, 2),
        ('B201', 80, 'B教学楼', 1, 1),
        ('C301', 40, 'C教学楼', 1, 3),
        ('101', 50, '数学楼', 1, 1),
-       ('204', 70, '软件楼', 1, 2);
+       ('204', 70, '软件楼', 1, 2),
+       ('D101', 80, 'D教学楼', 1, 2),
+       ('D102', 100, 'D教学楼', 1, 1),
+       ('E201', 60, 'E教学楼', 1, 2),
+       ('实验楼301', 40, '实验楼', 1, 3);
 
 ALTER TABLE `classroom`
-    AUTO_INCREMENT = 7;
+    AUTO_INCREMENT = 11;
 
 -- 插入课程数据
 INSERT INTO `course` (`course_name`, `course_code`, `credit`, `hours`, `course_type`, `introduction`, `teacher_id`,
@@ -43,24 +51,41 @@ VALUES ('计算机网络', 'CS301', 3.0, 48, 1, '计算机网络基础课程，�
        ('软件工程', 'SE302', 3.5, 56, 1, '软件开发流程、需求分析、设计模式等内容', 3, '2024-2025-2', 1),
        ('高等数学', 'MA101', 5.0, 80, 1, '微积分、线性代数等高等数学基础', 4, '2024-2025-2', 1),
        ('Web前端开发', 'SE2001', 3.0, 48, 2, '学习HTML、CSS、JavaScript等Web前端技术及主流框架应用。', 4, '2024-2025-2',
-        1); -- 假设 teacher3 (id=4) 也教 Web
+        1),
+       ('操作系统原理', 'CS302', 4.0, 64, 1, '操作系统基本原理、进程管理、内存管理、文件系统等内容', 2, '2024-2025-2', 1),
+       ('数据库系统', 'CS401', 4.0, 64, 1, '数据库设计、SQL语言、事务处理与并发控制等内容', 3, '2024-2025-2', 1),
+       ('人工智能导论', 'CS501', 3.5, 56, 2, '人工智能基础、搜索算法、机器学习、神经网络等内容', 4, '2024-2025-2', 1),
+       ('计算机图形学', 'CS402', 3.0, 48, 2, '图形学基础、渲染技术、三维建模等内容', 2, '2024-2025-2', 1),
+       ('程序设计实践', 'SE401', 4.0, 64, 1, '综合性程序设计实践课程，包括各类实用项目开发', 3, '2024-2025-2', 1),
+       ('Java高级程序设计', 'SE301', 3.5, 56, 2, 'Java高级特性、多线程编程、网络编程等内容', 4, '2024-2025-2', 1);
 
 ALTER TABLE `course`
-    AUTO_INCREMENT = 6;
+    AUTO_INCREMENT = 12;
 
 -- 插入课程选课数据
 INSERT INTO `course_selection` (`user_id`, `course_id`, `term_info`, `selection_time`, `status`)
 VALUES (5, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2', NOW(), 1),
        (5, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'CS302'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'CS501'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', NOW(), 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-2', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'CS302'), '2024-2025-2', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'SE401'), '2024-2025-2', NOW(), 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1),
        (7, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-2', '2023-09-05', 1),
-       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05',
-        1), -- 假设 student1 (id=5) 也选 Web
-       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1);
--- 假设 student2 (id=6) 也选 Web
+       (7, (SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', NOW(), 1),
+       (7, (SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', NOW(), 1),
+       (8, (SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', NOW(), 1),
+       (8, (SELECT id FROM `course` WHERE course_code = 'CS501'), '2024-2025-2', NOW(), 1),
+       (9, (SELECT id FROM `course` WHERE course_code = 'SE401'), '2024-2025-2', NOW(), 1),
+       (9, (SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', NOW(), 1);
 
--- 插入成绩数据 (修正 student_id)
+-- 插入成绩数据
 INSERT INTO `score` (`selection_id`, `student_id`, `course_id`, `term_info`, `total_score`, `grade`, `gpa`,
                      `regular_score`, `midterm_score`, `final_score`, `evaluation_date`)
 SELECT cs.id,
@@ -172,7 +197,31 @@ VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2', 2,
         1, 16, 1),
        ((SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', 4,
         (SELECT id FROM `classroom` WHERE name = '204' AND building = '软件楼'), 3, '14:00:00', '15:40:00', 1,
-        16, 1);
+        16, 1),
+       -- 以下是additional_courses.sql中添加的排课记录
+       ((SELECT id FROM `course` WHERE course_code = 'CS302'), '2024-2025-2', 2,
+        (SELECT id FROM `classroom` WHERE name = 'D101'), 1, '14:00:00', '15:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', 3,
+        (SELECT id FROM `classroom` WHERE name = 'D102'), 2, '08:00:00', '09:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS501'), '2024-2025-2', 4,
+        (SELECT id FROM `classroom` WHERE name = 'E201'), 3, '08:00:00', '11:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'SE401'), '2024-2025-2', 3,
+        (SELECT id FROM `classroom` WHERE name = '实验楼301'), 4, '14:00:00', '17:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', 2,
+        (SELECT id FROM `classroom` WHERE name = 'A101'), 5, '10:00:00', '15:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', 4,
+        (SELECT id FROM `classroom` WHERE name = 'B201'), 2, '19:00:00', '21:35:00', 1, 16, 1),
+       -- 为学生5添加连续上课的课程安排
+       ((SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', 4,
+        (SELECT id FROM `classroom` WHERE name = 'A101'), 3, '08:00:00', '09:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', 2,
+        (SELECT id FROM `classroom` WHERE name = 'A102'), 3, '10:00:00', '11:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', 3,
+        (SELECT id FROM `classroom` WHERE name = 'B201'), 3, '14:00:00', '15:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS302'), '2024-2025-2', 2,
+        (SELECT id FROM `classroom` WHERE name = 'C301'), 3, '16:00:00', '17:40:00', 1, 16, 1),
+       ((SELECT id FROM `course` WHERE course_code = 'CS501'), '2024-2025-2', 4,
+        (SELECT id FROM `classroom` WHERE name = 'D101'), 3, '19:00:00', '21:35:00', 1, 16, 1);
 
 -- 插入活动数据
 INSERT INTO `activity` (`id`, `title`, `description`, `type`, `poster_url`, `organizer_id`, `contact`, `location`,

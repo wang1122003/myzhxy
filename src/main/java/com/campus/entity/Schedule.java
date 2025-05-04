@@ -18,43 +18,43 @@ public class Schedule implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 课表ID (主键)
+     * 课表ID (主键, 自增)
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
-     * 课程ID (关联 course 表)
+     * 课程ID (外键, 关联 course 表)
      */
     @TableField("course_id")
     private Long courseId;
 
     /**
-     * 教师ID (关联 teacher/user 表)
+     * 教师ID (外键, 关联 user 表)
      */
     @TableField("teacher_id")
     private Long teacherId;
 
     /**
-     * 教室ID (关联 classroom 表)
+     * 教室ID (外键, 关联 classroom 表)
      */
     @TableField("classroom_id")
     private Long classroomId;
 
     /**
-     * 星期几 (存储为数字 1-7)
+     * 星期几 (存储为数字 1-7, 1代表星期一)
      */
     @TableField("day_of_week")
     private Integer dayOfWeek;
 
     /**
-     * 上课开始时间 (时分秒，通常和 week_day 配合)
+     * 上课开始时间 (数据库 TIME 类型)
      */
     @TableField("start_time")
     private Date startTime;
 
     /**
-     * 上课结束时间 (时分秒)
+     * 上课结束时间 (数据库 TIME 类型)
      */
     @TableField("end_time")
     private Date endTime;
@@ -72,31 +72,37 @@ public class Schedule implements Serializable {
     private Integer endWeek;
 
     /**
-     * 学期信息 (数据库字段)
+     * 学期信息 (例如 "2023-2024-1")
      */
     @TableField("term_info")
     private String termInfo;
 
     /**
-     * 课程名称 (非数据库字段, 通过JOIN查询得到)
+     * 课程名称 (非数据库持久化字段, 通过 JOIN 查询填充)
      */
     @TableField(exist = false)
     private String courseName;
 
     /**
-     * 教师名称 (非数据库字段, 通过JOIN查询得到)
+     * 教师名称 (非数据库持久化字段, 通过 JOIN 查询填充)
      */
     @TableField(exist = false)
     private String teacherName;
 
     /**
-     * 教室名称 (非数据库字段, 通过JOIN查询得到)
+     * 教室名称 (非数据库持久化字段, 通过 JOIN 查询填充)
      */
     @TableField(exist = false)
     private String classroomName;
 
     /**
-     * 状态 (e.g., "Active", "Inactive")
+     * 教室所在建筑 (非数据库持久化字段, 通过 JOIN 查询填充)
+     */
+    @TableField(exist = false)
+    private String building;
+
+    /**
+     * 状态 (例如, "1" 代表有效, "0" 代表无效或取消)
      */
     @TableField("status")
     private String status;
@@ -108,43 +114,22 @@ public class Schedule implements Serializable {
     private Date createTime;
 
     /**
-     * 记录更新时间
+     * 记录最后更新时间
      */
     @TableField("update_time")
     private Date updateTime;
 
-    /**
-     * 设置课程名称 (显式Setter，解决可能的MyBatis映射问题)
-     *
-     * @param courseName 课程名称
-     */
+    // --- Getters 和 Setters 由 @Data (Lombok) 自动生成 --- 
+    // 如果 JOIN 映射有问题，可以取消注释或添加显式的 Setter 方法
+    /*
     public void setCourseName(String courseName) {
         this.courseName = courseName;
     }
-
-    /**
-     * 设置教师名称 (显式Setter)
-     *
-     * @param teacherName 教师名称
-     */
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
     }
-
-    /**
-     * 设置教室名称 (显式Setter)
-     *
-     * @param classroomName 教室名称
-     */
     public void setClassroomName(String classroomName) {
         this.classroomName = classroomName;
     }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    */
 }

@@ -459,21 +459,48 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
     @Override
     @Transactional
     public boolean likePost(Long id) {
-        // TODO: Add logic to prevent multiple likes from the same user
-        // (Requires tracking likes, e.g., in a separate table or user's liked posts list)
-        log.info("帖子 {} 被点赞 (计数增加)", id);
-        return incrementLikeCount(id);
+        // 获取当前用户ID
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            log.warn("未登录用户尝试点赞帖子 {}", id);
+            throw new AuthenticationException("请登录后再点赞");
+        }
+
+        // 检查用户是否已经点赞过该帖子
+        // 在实际项目中，我们需要检查用户是否已经点赞过该帖子
+        // 为简化实现（因为没有点赞表），我们暂时允许重复点赞，但在日志中记录
+
+        log.info("用户 {} 点赞帖子 {} (未检查是否重复点赞)", userId, id);
+
+        // 增加点赞计数
+        try {
+            // 在实际项目中应该同时记录点赞关系
+            log.info("帖子 {} 被用户 {} 点赞 (计数增加)", id, userId);
+            return incrementLikeCount(id);
+        } catch (Exception e) {
+            log.error("点赞失败: {}", e.getMessage());
+            return false;
+        }
     }
 
     @Override
     @Transactional
     public boolean unlikePost(Long id) {
-        // TODO: Add logic to check if the user actually liked the post before unliking
-        // (Requires tracking likes)
-        log.info("帖子 {} 被取消点赞 (计数减少)", id);
+        // 获取当前用户ID
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            log.warn("未登录用户尝试取消点赞帖子 {}", id);
+            throw new AuthenticationException("请登录后操作");
+        }
+
+        // 在实际项目中，应该先检查用户是否已经点赞过该帖子
+        // 由于没有点赞表，我们简化处理，直接减少点赞计数
+        log.info("用户 {} 取消点赞帖子 {} (未检查是否已点赞)", userId, id);
+
+        // 减少点赞计数，确保不小于0
         return update(Wrappers.<Post>lambdaUpdate()
                 .eq(Post::getId, id)
-                .setSql("like_count = GREATEST(0, like_count - 1)")); // Ensure count >= 0
+                .setSql("like_count = GREATEST(0, like_count - 1)")); // 确保计数 >= 0
     }
 
     @Override
@@ -482,15 +509,20 @@ public class PostServiceImpl extends ServiceImpl<PostDao, Post> implements PostS
         if (ids == null || ids.length == 0) {
             return true;
         }
-        // TODO: Add permission checks - only admin should batch delete?
+
+        // 验证权限：只有管理员才能批量删除帖子
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(ga -> ga.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin) {
-            throw new AuthenticationException("无权执行批量删除操作");
+            log.warn("非管理员用户尝试批量删除帖子");
+            throw new AuthenticationException("只有管理员才能执行批量删除操作");
         }
 
-        // TODO: Implement soft delete or add pre-delete checks
+        log.info("管理员执行批量删除帖子: {}", Arrays.toString(ids));
+
+        // 实际应用中应该考虑软删除或者在删除前检查相关依赖，如评论和附件
+        // 这里简化处理，直接物理删除
         return removeByIds(Arrays.asList(ids));
     }
 

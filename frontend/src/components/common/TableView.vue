@@ -32,14 +32,15 @@
         <el-table-column
             v-for="column in columns"
             :key="column.prop || column.name || column.label"
-            :align="column.align"
+            :align="column.align || 'left'"
             :fixed="column.fixed"
             :label="column.label"
             :min-width="column.minWidth || column.min_width"
             :prop="column.prop"
-            :show-overflow-tooltip="column.showOverflowTooltip"
+            :class-name="column.className"
             :sortable="column.sortable"
             :width="column.width"
+            :show-overflow-tooltip="column.showOverflowTooltip !== false"
         >
           <template v-if="column.slots && column.slots.default" #default="scope">
             <component :is="renderColumn(column, scope)"/>
@@ -54,6 +55,7 @@
             v-if="actionColumnConfig"
             :fixed="actionColumnConfig.fixed || 'right'"
             :width="actionColumnConfig.width || 150"
+            :align="actionColumnConfig.align || 'center'"
             label="操作"
         >
           <template #default="scope">
@@ -96,7 +98,20 @@
       <!-- 空数据插槽 -->
       <template #empty>
         <slot name="empty">
-          <el-empty :description="emptyText || '暂无数据'"/>
+          <div class="empty-state">
+            <el-empty :description="emptyText || '暂无数据'" :image-size="120">
+              <template #image>
+                <slot name="empty-image">
+                  <el-icon class="empty-icon">
+                    <Collection/>
+                  </el-icon>
+                </slot>
+              </template>
+              <template v-if="$slots['empty-action']" #default>
+                <slot name="empty-action"></slot>
+              </template>
+            </el-empty>
+          </div>
         </slot>
       </template>
     </el-table>
@@ -119,7 +134,8 @@
 </template>
 
 <script setup>
-import {h, markRaw, ref, resolveComponent} from 'vue';
+import {h} from 'vue';
+import {Collection} from '@element-plus/icons-vue';
 
 const props = defineProps({
   // 数据源
@@ -310,5 +326,33 @@ defineExpose({
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.empty-state {
+  padding: 30px 0;
+}
+
+.empty-icon {
+  font-size: 60px;
+  color: #c0c4cc;
+}
+
+:deep(.el-table) {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:deep(.el-table th) {
+  background-color: #f5f7fa;
+  font-weight: bold;
+  color: #303133;
+}
+
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background-color: #fafafa;
+}
+
+:deep(.el-table__row:hover td) {
+  background-color: #f0f7ff !important;
 }
 </style> 

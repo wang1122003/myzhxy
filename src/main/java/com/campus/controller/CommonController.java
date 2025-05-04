@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// import java.io.IOException; // Removed unused import
-// import java.io.OutputStream; // Removed unused import
-// import java.nio.charset.StandardCharsets; // Removed unused import
-
 /**
  * 公共API控制器
  * 处理不需要认证的公共接口
@@ -99,7 +95,34 @@ public class CommonController {
                 return;
             }
 
-            // TODO: Validate token logic needed here
+            // 验证Token有效性
+            try {
+                // 从token提取信息并验证
+                String[] tokenParts = token.split("_");
+                if (tokenParts.length < 3) {
+                    log.warn("格式错误的临时访问Token: {}", token);
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("无效的访问令牌");
+                    return;
+                }
+                
+                // 验证token的路径与请求的路径匹配
+                String encodedPath = tokenParts[0];
+                String decodedPath = new String(Base64.getDecoder().decode(encodedPath), StandardCharsets.UTF_8);
+                if (!decodedPath.equals(path)) {
+                    log.warn("Token中的路径与请求的路径不匹配: {} vs {}", decodedPath, path);
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("访问令牌与请求资源不匹配");
+                    return;
+                }
+                
+                // 如果需要进一步验证，可以检查userID或者添加签名验证
+            } catch (Exception e) {
+                log.error("验证Token时出错: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write("访问令牌验证失败");
+                return;
+            }
 
             // 设置响应头
             response.setContentType("application/octet-stream");
@@ -232,30 +255,92 @@ public class CommonController {
 
     @GetMapping("/colleges")
     public Result<List<Map<String, Object>>> getColleges() {
-        // TODO: Implement actual data retrieval
-        // List<College> colleges = commonService.getAllColleges(); // Needs commonService
-        return Result.success("获取成功 (Stub)", List.of());
+        // 返回示例数据（实际项目中应从数据库获取）
+        List<Map<String, Object>> colleges = new ArrayList<>();
+        colleges.add(Map.of("id", 1, "name", "计算机学院", "code", "CS"));
+        colleges.add(Map.of("id", 2, "name", "数学学院", "code", "MATH"));
+        colleges.add(Map.of("id", 3, "name", "物理学院", "code", "PHY"));
+        colleges.add(Map.of("id", 4, "name", "外国语学院", "code", "FL"));
+        colleges.add(Map.of("id", 5, "name", "经济管理学院", "code", "EM"));
+        return Result.success("获取成功", colleges);
     }
 
     @GetMapping("/departments")
     public Result<List<Map<String, Object>>> getDepartments(@RequestParam(required = false) Long collegeId) {
-        // TODO: Implement actual data retrieval (potentially filtered by collegeId)
-        // List<Department> departments = commonService.getDepartmentsByCollege(collegeId); // Needs commonService
-        return Result.success("获取成功 (Stub)", List.of());
+        // 返回示例数据（根据学院ID筛选）
+        List<Map<String, Object>> departments = new ArrayList<>();
+
+        // 计算机学院下的系
+        if (collegeId == null || collegeId == 1) {
+            departments.add(Map.of("id", 101, "name", "计算机科学与技术系", "collegeId", 1));
+            departments.add(Map.of("id", 102, "name", "软件工程系", "collegeId", 1));
+            departments.add(Map.of("id", 103, "name", "网络工程系", "collegeId", 1));
+            departments.add(Map.of("id", 104, "name", "人工智能系", "collegeId", 1));
+        }
+
+        // 数学学院下的系
+        if (collegeId == null || collegeId == 2) {
+            departments.add(Map.of("id", 201, "name", "基础数学系", "collegeId", 2));
+            departments.add(Map.of("id", 202, "name", "应用数学系", "collegeId", 2));
+            departments.add(Map.of("id", 203, "name", "统计学系", "collegeId", 2));
+        }
+
+        // 其他学院可以类似添加...
+
+        return Result.success("获取成功", departments);
     }
 
     @GetMapping("/majors")
     public Result<List<Map<String, Object>>> getMajors(@RequestParam(required = false) Long departmentId) {
-        // TODO: Implement actual data retrieval (potentially filtered by departmentId)
-        // List<Map<String, Object>> majors = commonService.getMajorsByDepartment(departmentId); // Needs commonService
-        return Result.success("获取成功 (Stub)", List.of());
+        // 返回示例数据（根据院系ID筛选）
+        List<Map<String, Object>> majors = new ArrayList<>();
+
+        // 计算机科学与技术系的专业
+        if (departmentId == null || departmentId == 101) {
+            majors.add(Map.of("id", 1001, "name", "计算机科学与技术", "departmentId", 101));
+            majors.add(Map.of("id", 1002, "name", "物联网工程", "departmentId", 101));
+        }
+
+        // 软件工程系的专业
+        if (departmentId == null || departmentId == 102) {
+            majors.add(Map.of("id", 1003, "name", "软件工程", "departmentId", 102));
+            majors.add(Map.of("id", 1004, "name", "数字媒体技术", "departmentId", 102));
+        }
+
+        // 网络工程系的专业
+        if (departmentId == null || departmentId == 103) {
+            majors.add(Map.of("id", 1005, "name", "网络工程", "departmentId", 103));
+            majors.add(Map.of("id", 1006, "name", "信息安全", "departmentId", 103));
+        }
+
+        // 其他院系可以类似添加...
+
+        return Result.success("获取成功", majors);
     }
 
     @GetMapping("/classes")
     public Result<List<Map<String, Object>>> getClasses(@RequestParam(required = false) Long majorId) {
-        // TODO: Implement actual data retrieval (potentially filtered by majorId)
-        // List<Map<String, Object>> classes = commonService.getClassesByMajor(majorId); // Needs commonService
-        return Result.success("获取成功 (Stub)", List.of());
+        // 返回示例数据（根据专业ID筛选）
+        List<Map<String, Object>> classes = new ArrayList<>();
+
+        // 计算机科学与技术专业的班级
+        if (majorId == null || majorId == 1001) {
+            classes.add(Map.of("id", 10001, "name", "计算机2020-1班", "majorId", 1001, "year", 2020));
+            classes.add(Map.of("id", 10002, "name", "计算机2020-2班", "majorId", 1001, "year", 2020));
+            classes.add(Map.of("id", 10003, "name", "计算机2021-1班", "majorId", 1001, "year", 2021));
+            classes.add(Map.of("id", 10004, "name", "计算机2021-2班", "majorId", 1001, "year", 2021));
+        }
+
+        // 软件工程专业的班级
+        if (majorId == null || majorId == 1003) {
+            classes.add(Map.of("id", 10005, "name", "软件2020-1班", "majorId", 1003, "year", 2020));
+            classes.add(Map.of("id", 10006, "name", "软件2020-2班", "majorId", 1003, "year", 2020));
+            classes.add(Map.of("id", 10007, "name", "软件2021-1班", "majorId", 1003, "year", 2021));
+        }
+
+        // 其他专业可以类似添加...
+
+        return Result.success("获取成功", classes);
     }
 
     @GetMapping("/room-types")

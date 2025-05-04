@@ -18,28 +18,9 @@
         <el-form-item label="课程类型">
           <el-select v-model="searchParams.courseType" clearable placeholder="请选择课程类型" style="width: 150px;">
             <el-option label="全部" value=""/>
-            <el-option label="必修课" value="COMPULSORY"/>
-            <el-option label="选修课" value="ELECTIVE"/>
-            <el-option label="通识课" value="GENERAL"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属学院">
-          <el-select v-model="searchParams.collegeId" clearable filterable placeholder="请选择学院"
-                     style="width: 200px;">
-            <el-option label="全部" value=""/>
-            <el-option
-                v-for="college in collegeList"
-                :key="college.id"
-                :label="college.collegeName"
-                :value="college.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchParams.status" clearable placeholder="请选择课程状态" style="width: 120px;">
-            <el-option label="全部" value=""/>
-            <el-option label="启用" value="1"/>
-            <el-option label="禁用" value="0"/>
+            <el-option label="必修课" value="1"/>
+            <el-option label="选修课" value="2"/>
+            <el-option label="通识课" value="3"/>
           </el-select>
         </el-form-item>
       </FilterForm>
@@ -83,22 +64,6 @@
           <template #default="scope">{{ formatCourseType(scope.row.courseType) }}</template>
         </el-table-column>
         <el-table-column
-            label="所属学院"
-            min-width="150"
-            prop="collegeName"
-        />
-        <el-table-column
-            label="状态"
-            prop="status"
-            width="80"
-        >
-          <template #default="scope">
-            <el-tag :type="scope.row.status === '1' ? 'success' : 'danger'">
-              {{ scope.row.status === '1' ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
             fixed="right"
             label="操作"
             width="180"
@@ -126,6 +91,10 @@
         :close-on-click-modal="false"
         :title="isEditMode ? '编辑课程' : '添加课程'"
         width="600px"
+        :append-to-body="true"
+        :destroy-on-close="false"
+        :modal-append-to-body="true"
+        :show-close="true"
         @close="handleDialogClose"
     >
       <FormView
@@ -152,25 +121,13 @@
                            style="width: 180px;"/>
         </el-form-item>
         <el-form-item label="课程类型" prop="courseType">
-          <el-select v-model="currentCourse.courseType" placeholder="请选择课程类型" style="width: 100%;">
-            <el-option label="必修课" value="COMPULSORY"/>
-            <el-option label="选修课" value="ELECTIVE"/>
-            <el-option label="通识课" value="GENERAL"/>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属学院" prop="collegeId">
-          <el-select
-              v-model="currentCourse.collegeId"
-              clearable
-              filterable
-              placeholder="请选择所属学院"
-              style="width: 100%;"
-          >
+          <el-select v-model="currentCourse.courseType" placeholder="请选择课程类型" style="width: 100%;"
+                     @change="(val) => console.log('课程类型变更:', val)">
             <el-option
-                v-for="college in collegeList"
-                :key="college.id"
-                :label="college.collegeName"
-                :value="college.id"
+                v-for="item in courseTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
             />
           </el-select>
         </el-form-item>
@@ -182,28 +139,16 @@
               type="textarea"
           />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-switch
-              v-model="currentCourse.status"
-              :active-value="'1'"
-              :inactive-value="'0'"
-              active-text="启用"
-              inactive-text="禁用"
-          />
-        </el-form-item>
       </FormView>
     </el-dialog>
   </PageContainer>
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue';
+import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {
   ElButton,
-  ElCard,
   ElDialog,
-  ElEmpty,
-  ElForm,
   ElFormItem,
   ElIcon,
   ElInput,
@@ -211,19 +156,13 @@ import {
   ElMessage,
   ElMessageBox,
   ElOption,
-  ElPagination,
-  ElRadio,
-  ElRadioGroup,
   ElSelect,
-  ElTable,
-  ElTableColumn,
-  ElTag
+  ElTableColumn
 } from 'element-plus';
-import {Delete, Edit, Plus, Search} from '@element-plus/icons-vue';
+import {Plus} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 import {getTeacherList} from '@/api/user';
 import {getAllTerms} from '@/api/term';
-import {getColleges} from '@/api/common';
 import PageContainer from '@/components/common/EnhancedPageContainer.vue';
 import FilterForm from '@/components/common/AdvancedFilterForm.vue';
 import TableView from '@/components/common/TableView.vue';
@@ -239,8 +178,6 @@ const pagination = ref({
 const searchParams = reactive({
   keyword: '',
   courseType: '',
-  collegeId: '',
-  status: '',
   termId: null,
 });
 
@@ -253,10 +190,7 @@ const currentCourse = ref({
   credit: 0.0,
   hours: 0,
   courseType: null,
-  collegeId: null,
-  collegeName: '',
   introduction: '',
-  status: '1',
 });
 
 const courseFormRules = reactive({
@@ -281,9 +215,6 @@ const courseFormRules = reactive({
   ],
   courseType: [
     {required: true, message: '请选择课程类型', trigger: 'change'}
-  ],
-  collegeId: [
-    {required: true, message: '请选择所属学院', trigger: 'change'}
   ]
 });
 
@@ -291,9 +222,15 @@ const isEditMode = computed(() => !!currentCourse.value.id);
 
 const teacherList = ref([]);
 const termList = ref([]);
-const collegeList = ref([]);
 const formLoading = ref(false);
 const submitting = ref(false);
+
+// 课程类型选项
+const courseTypeOptions = [
+  {label: '必修课', value: 1},
+  {label: '选修课', value: 2},
+  {label: '通识课', value: 3}
+];
 
 const fetchCourseList = async () => {
   loading.value = true;
@@ -303,18 +240,35 @@ const fetchCourseList = async () => {
       pageSize: pagination.value.pageSize,
       keyword: searchParams.keyword || undefined,
       courseType: searchParams.courseType || undefined,
-      collegeId: searchParams.collegeId || undefined,
-      status: searchParams.status !== null && searchParams.status !== '' ? searchParams.status : undefined,
       termId: searchParams.termId || undefined
     };
+    console.log('课程查询请求参数:', params);
+    
     const res = await getCourseList(params);
+    console.log('课程API返回数据:', res);
+    
     if (res && res.records !== undefined && res.total !== undefined) {
+      console.log('获取课程成功，分页格式1:', res.records);
+      if (res.records.length > 0) {
+        console.log('第一条课程数据:', JSON.stringify(res.records[0]));
+      }
       courseList.value = res.records;
       total.value = res.total;
+    } else if (res && res.list !== undefined && res.total !== undefined) {
+      console.log('获取课程成功，分页格式2:', res.list);
+      courseList.value = res.list;
+      total.value = res.total;
+    } else if (res && res.data && res.data.records) {
+      courseList.value = res.data.records;
+      total.value = res.data.total;
     } else if (Array.isArray(res)) {
       console.warn('后端 /courses 返回了纯数组，分页信息可能丢失');
       courseList.value = res;
       total.value = res.length;
+    } else if (res && Array.isArray(res.data)) {
+      console.warn('后端 /courses 返回了包装在data中的数组');
+      courseList.value = res.data;
+      total.value = res.data.length;
     } else {
       console.warn('从 /courses 获取的数据格式不符合预期:', res);
       courseList.value = [];
@@ -342,15 +296,25 @@ const fetchTeachers = async () => {
 const fetchTerms = async () => {
   try {
     const res = await getAllTerms();
-    if (res.code === 200 && res.data) {
-      termList.value = res.data;
-      const currentTerm = res.data.find(t => t.current === 1);
+    console.log('获取学期列表返回数据:', res);
+
+    if (Array.isArray(res)) {
+      termList.value = res;
+      const currentTerm = res.find(t => t.isCurrent === true);
       if (currentTerm && !searchParams.termId) {
-        searchParams.termId = currentTerm.id;
+        searchParams.termId = currentTerm.code;
+        fetchCourseList();
+      }
+    } else if (res && res.code === 200 && res.data) {
+      termList.value = res.data;
+      const currentTerm = res.data.find(t => t.current === 1 || t.isCurrent === true);
+      if (currentTerm && !searchParams.termId) {
+        searchParams.termId = currentTerm.id || currentTerm.code;
         fetchCourseList();
       }
     } else {
-      ElMessage.error(res.message || '获取学期列表失败');
+      console.error('获取学期列表失败, 响应格式不符合预期:', res);
+      ElMessage.error('获取学期列表失败');
     }
   } catch (error) {
     console.error("获取学期列表失败", error);
@@ -358,20 +322,9 @@ const fetchTerms = async () => {
   }
 };
 
-const fetchColleges = async () => {
-  try {
-    const res = await getColleges();
-    if (res.code === 200 && res.data) {
-      collegeList.value = res.data;
-    }
-  } catch (error) {
-    console.error("获取学院列表失败", error);
-    ElMessage.error('获取学院列表时发生错误');
-  }
-};
-
 const handleSearch = () => {
   pagination.value.pageNum = 1;
+  console.log('执行搜索，参数:', searchParams);
   fetchCourseList();
 };
 
@@ -382,7 +335,6 @@ const handlePageChange = () => {
 const resetSearch = () => {
   searchParams.keyword = '';
   searchParams.courseType = '';
-  searchParams.collegeId = '';
   pagination.value.pageNum = 1;
   fetchCourseList();
 };
@@ -397,11 +349,9 @@ const resetForm = () => {
     courseName: '',
     credit: 0.0,
     hours: 0,
-    courseType: null,
-    collegeId: null,
-    collegeName: '',
+    courseType: 1,
     introduction: '',
-    status: '1',
+    status: '1'
   };
 };
 
@@ -412,8 +362,43 @@ const handleAddCourse = () => {
 
 const handleEditCourse = (row) => {
   resetForm();
-  currentCourse.value = {...row};
+  const formattedRow = {...row};
+
+  // 如果courseType是字符串类型，转换为数字
+  if (typeof formattedRow.courseType === 'string') {
+    switch (formattedRow.courseType) {
+      case 'COMPULSORY':
+        formattedRow.courseType = 1;
+        break;
+      case 'ELECTIVE':
+        formattedRow.courseType = 2;
+        break;
+      case 'GENERAL':
+        formattedRow.courseType = 3;
+        break;
+      default: {
+        // 尝试将字符串转换为数字
+        const typeNum = parseInt(formattedRow.courseType);
+        if (!isNaN(typeNum)) {
+          formattedRow.courseType = typeNum;
+        } else {
+          // 如果无法识别，使用默认值
+          formattedRow.courseType = 1;
+        }
+      }
+    }
+  }
+
+  // 确保courseType是数字类型
+  if (formattedRow.courseType === null || formattedRow.courseType === undefined) {
+    formattedRow.courseType = 1;
+  }
+
+  currentCourse.value = formattedRow;
+
+  nextTick(() => {
   dialogVisible.value = true;
+  });
 };
 
 const handleDeleteCourse = (row) => {
@@ -438,17 +423,52 @@ const handleDeleteCourse = (row) => {
 const submitCourseForm = async () => {
   submitting.value = true;
       try {
+        // 创建数据副本，避免直接修改原始数据
+        const courseData = {...currentCourse.value};
+
+        // 确保课程类型数据正确 - 将字符串转换为数字
+        if (typeof courseData.courseType === 'string') {
+          switch (courseData.courseType) {
+            case 'COMPULSORY':
+              courseData.courseType = 1;
+              break;
+            case 'ELECTIVE':
+              courseData.courseType = 2;
+              break;
+            case 'GENERAL':
+              courseData.courseType = 3;
+              break;
+              // 尝试从字符串转换为数字
+            default:
+              const typeNum = parseInt(courseData.courseType);
+              if (!isNaN(typeNum)) {
+                courseData.courseType = typeNum;
+              }
+          }
+        }
+
+        // 确保其他必要字段存在
+        if (courseData.status === undefined) {
+          courseData.status = '1'; // 默认启用状态
+        }
+
+        console.log('提交课程数据:', courseData);
+    
         if (isEditMode.value) {
-          await updateCourse(currentCourse.value.id, currentCourse.value);
+          await updateCourse(courseData.id, courseData);
           ElMessage.success('课程更新成功');
         } else {
-          await addCourse(currentCourse.value);
+          await addCourse(courseData);
           ElMessage.success('课程添加成功');
         }
         dialogVisible.value = false;
         fetchCourseList();
       } catch (error) {
         console.error('提交表单失败', error);
+        if (error.response) {
+          console.log('错误状态码:', error.response.status);
+          console.log('错误响应数据:', error.response.data);
+        }
         ElMessage.error(error.response?.data?.message || '操作失败');
       } finally {
         submitting.value = false;
@@ -461,18 +481,25 @@ const handleDialogClose = () => {
 
 const formatCourseType = (type) => {
   const types = {
+    1: '必修课',
+    2: '选修课',
+    3: '通识课',
+    // 兼容字符串值
+    '1': '必修课',
+    '2': '选修课',
+    '3': '通识课',
+    // 兼容旧的字符串枚举值
     'COMPULSORY': '必修课',
     'ELECTIVE': '选修课',
     'GENERAL': '通识课'
   };
-  return types[type] || type;
+  return types[type] || (type ? `未知类型(${type})` : '');
 };
 
 onMounted(() => {
   fetchCourseList();
   fetchTeachers();
   fetchTerms();
-  fetchColleges();
 });
 
 </script>

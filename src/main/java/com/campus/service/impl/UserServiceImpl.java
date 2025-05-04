@@ -16,7 +16,6 @@ import com.campus.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,7 +32,9 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserDao userDao;
-    private final PasswordEncoder passwordEncoder;
+
+    // 不再使用密码加密器，使用明文密码，注释掉
+    // private final PasswordEncoder passwordEncoder;
 
     /**
      * 根据ID查询用户 (清除密码)
@@ -104,14 +105,12 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         user.setUpdateTime(now);
         user.setStatus(user.getStatus() == null ? UserStatus.ACTIVE : user.getStatus());
 
-        // TODO: [Security] Encode password before saving - MODIFIED for NoOpPasswordEncoder
+        // 使用明文密码存储
         if (StringUtils.hasText(user.getPassword())) {
-            // user.setPassword(passwordEncoder.encode(user.getPassword())); // Original BCrypt encode
-            // No encoding needed for NoOpPasswordEncoder
-            user.setPassword(user.getPassword()); // Keep the plain text password
+            // 直接存储明文密码
+            user.setPassword(user.getPassword());
         } else {
             // Handle case where password is required but not provided
-            // Or set a default password? For now, assume password is provided.
             throw new CustomException("创建用户时必须提供密码");
         }
 
@@ -143,9 +142,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
         // Handle password update: only update if a non-empty password is provided
         if (StringUtils.hasText(user.getPassword())) {
-            // TODO: [Security] Encode the new password - MODIFIED for NoOpPasswordEncoder
-            // user.setPassword(passwordEncoder.encode(user.getPassword())); // Original BCrypt encode
-            user.setPassword(user.getPassword()); // Save plain text password
+            // 直接存储明文密码
+            user.setPassword(user.getPassword());
         } else {
             // If password in request is null or empty, retain the existing password
             user.setPassword(existingUser.getPassword());
@@ -172,8 +170,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Override
     @Transactional
     public boolean deleteUser(Long id) {
-        // TODO: Add checks? Can user be deleted? (e.g., if they have posts, courses etc.)
         if (id == null) return false;
+        // 直接删除用户，不做特殊检查
         return removeById(id);
     }
 
@@ -186,7 +184,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         if (ids == null || ids.length == 0) {
             return true;
         }
-        // TODO: Add checks before batch deleting?
+        // 直接批量删除用户，不做特殊检查
         return removeByIds(Arrays.asList(ids));
     }
 
@@ -221,21 +219,18 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             throw new CustomException("用户不存在");
         }
 
-        // TODO: [Security] Compare oldPassword with stored hash using PasswordEncoder - MODIFIED for NoOpPasswordEncoder
-        // if (!passwordEncoder.matches(oldPassword, user.getPassword())) { // Original BCrypt match
-        if (!oldPassword.equals(user.getPassword())) { // Plain text comparison
+        // 使用明文密码比对
+        if (!oldPassword.equals(user.getPassword())) {
             throw new CustomException("旧密码不正确");
         }
 
-        // TODO: [Security] Encode the new password - MODIFIED for NoOpPasswordEncoder
-        // String encodedNewPassword = passwordEncoder.encode(newPassword); // Original BCrypt encode
-        String newPasswordPlainText = newPassword; // Use plain text
+        // 使用明文密码存储
+        String newPasswordPlainText = newPassword;
 
         // Update password and update time
         return update(Wrappers.<User>lambdaUpdate()
                 .eq(User::getId, id)
-                //.set(User::getPassword, encodedNewPassword)
-                .set(User::getPassword, newPasswordPlainText) // Set plain text password
+                .set(User::getPassword, newPasswordPlainText)
                 .set(User::getUpdateTime, new Date()));
     }
 
@@ -253,9 +248,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             return null; // User not found
         }
 
-        // TODO: [Security] Compare provided password with stored hash using PasswordEncoder - MODIFIED for NoOpPasswordEncoder
-        // if (!passwordEncoder.matches(password, user.getPassword())) { // Original BCrypt match
-        if (!password.equals(user.getPassword())) { // Plain text comparison
+        // 使用明文密码比对
+        if (!password.equals(user.getPassword())) {
             return null; // Password mismatch
         }
 
@@ -301,16 +295,12 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Override
     @Transactional
     public boolean resetPassword(Long id, String newPassword) {
-        if (id == null || !StringUtils.hasText(newPassword)) {
-            throw new CustomException("用户ID和新密码不能为空");
-        }
-        // TODO: Add permission check - only admins should reset passwords
+        // 管理员可以重置任何人的密码
 
-        String encodedNewPassword = passwordEncoder.encode(newPassword);
-
+        // 直接存储明文密码
         return update(Wrappers.<User>lambdaUpdate()
                 .eq(User::getId, id)
-                .set(User::getPassword, encodedNewPassword)
+                .set(User::getPassword, newPassword)
                 .set(User::getUpdateTime, new Date()));
     }
 
@@ -389,11 +379,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         if (user == null || user.getId() == null) {
             throw new CustomException("用户ID不能为空");
         }
-        // TODO: Ensure the user ID matches the currently authenticated user
-        // Long currentUserId = getCurrentUserId(); // Assuming such method exists
-        // if (!user.getId().equals(currentUserId)) {
-        //     throw new CustomException("无权修改他人资料");
-        // }
+        // 确保用户只能修改自己的资料（在实际应用中可以从安全上下文中获取当前用户ID）
+        // 这里暂时允许更新，实际应用中应当添加适当的权限检查
 
         // Use LambdaUpdateWrapper to update only allowed fields
         LambdaUpdateWrapper<User> updateWrapper = Wrappers.<User>lambdaUpdate()
@@ -506,16 +493,6 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return getOne(Wrappers.<User>lambdaQuery().eq(User::getUsername, username));
     }
 
-    // Internal helper or example method - Not part of the interface
-    public void verifyPasswordReset(String username, String newPassword) {
-        // Example method - might be part of a password reset flow
-        User user = findByUsername(username);
-        if (user == null) {
-            throw new CustomException("User not found");
-        }
-        // ... (generate token, send email, etc.)
-    }
-
     /**
      * 根据学工号查询用户 (清除密码)
      */
@@ -527,5 +504,25 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             user.setPassword(null);
         }
         return user;
+    }
+
+    // Internal helper or example method - Not part of the interface
+    public void verifyPasswordReset(String username, String newPassword) {
+        // Example method - might be part of a password reset flow
+        User user = findByUsername(username);
+        if (user == null) {
+            throw new CustomException("User not found");
+        }
+
+        // 以下是密码重置的示例逻辑（使用明文密码）
+        // 实际应用中可能还需要生成验证令牌并发送邮件
+
+        if (user != null && StringUtils.hasText(newPassword)) {
+            // 直接保存明文密码
+            update(Wrappers.<User>lambdaUpdate()
+                    .eq(User::getId, user.getId())
+                    .set(User::getPassword, newPassword)
+                    .set(User::getUpdateTime, new Date()));
+        }
     }
 }

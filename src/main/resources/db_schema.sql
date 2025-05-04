@@ -1,7 +1,5 @@
-# 检查数据库是否存在，存在则删除
+# 重置数据库
 DROP DATABASE IF EXISTS campus_db;
-
-# 检查数据库是否存在，不存在则创建
 CREATE DATABASE IF NOT EXISTS campus_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE campus_db;
@@ -51,13 +49,13 @@ CREATE TABLE IF NOT EXISTS `course`
     `course_code`  VARCHAR(50)   NOT NULL COMMENT '课程代码, 如 CS101',
     `credit`       DECIMAL(3, 1) NOT NULL COMMENT '学分 (允许小数)',
     `hours`        INT           NULL COMMENT '学时',
-    `course_type`  TINYINT  DEFAULT 1 COMMENT '课程类型：1-必修，2-选修, 3-通识 等',
+    `course_type` TINYINT  DEFAULT 1 COMMENT '课程类型：1-必修，2-选修, 3-通识 等',
     `introduction` TEXT          NULL COMMENT '课程简介',
     `teacher_id`   BIGINT        NULL COMMENT '授课教师 ID (user.id)',
     `term_info`    VARCHAR(50)   NULL COMMENT '学期信息, 如 2023-2024-1',
-    `status`       TINYINT  DEFAULT 1 COMMENT '课程状态：0-禁用，1-启用',
-    `create_time`  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `status`      TINYINT  DEFAULT 1 COMMENT '课程状态：0-禁用，1-启用',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`) ON DELETE SET NULL,
     UNIQUE KEY `uk_course_code` (`course_code`)
@@ -99,8 +97,8 @@ CREATE TABLE IF NOT EXISTS `score`
     `score_type`      VARCHAR(20)   NULL COMMENT '成绩类型',
     `comment`         VARCHAR(500)  NULL COMMENT '教师评语',
     `evaluation_date` DATETIME      NULL COMMENT '成绩评定日期',
-    `create_time`     DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time`     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`selection_id`) REFERENCES `course_selection` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
@@ -123,9 +121,9 @@ CREATE TABLE IF NOT EXISTS `schedule`
     `start_week`   INT         NULL COMMENT '开始周',
     `end_week`     INT         NULL COMMENT '结束周',
     `week_parity`  TINYINT     NULL COMMENT '周次奇偶性: 0-所有周, 1-奇数周, 2-偶数周',
-    `status`       TINYINT DEFAULT 1 COMMENT '排课状态：0-取消，1-正常',
-    `create_time`  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `update_time`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `status`      TINYINT  DEFAULT 1 COMMENT '排课状态：0-取消，1-正常',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`) ON DELETE SET NULL,
@@ -147,12 +145,12 @@ CREATE TABLE IF NOT EXISTS `activity`
     `start_time`            DATETIME     NOT NULL COMMENT '活动开始时间',
     `end_time`              DATETIME     NOT NULL COMMENT '活动结束时间',
     `registration_deadline` DATETIME     NULL COMMENT '报名截止时间',
-    `max_participants`      INT         DEFAULT 0 COMMENT '最大参与人数，0表示不限',
-    `current_participants`  INT         DEFAULT 0 COMMENT '当前参与人数',
+    `max_participants`     INT         DEFAULT 0 COMMENT '最大参与人数，0表示不限',
+    `current_participants` INT         DEFAULT 0 COMMENT '当前参与人数',
     `participants_json`     TEXT         NULL COMMENT '活动参与者JSON数据 [{"userId": 1, "registrationTime": "2023-01-01 10:00:00", "status": 1}]',
-    `status`                VARCHAR(20) DEFAULT '1' COMMENT '状态：0-已取消, 1-进行中, 2-已结束',
-    `create_time`           DATETIME    DEFAULT CURRENT_TIMESTAMP,
-    `update_time`           DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `status`               VARCHAR(20) DEFAULT '1' COMMENT '状态：0-已取消, 1-进行中, 2-已结束',
+    `create_time`          DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    `update_time`          DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     FOREIGN KEY (`organizer_id`) REFERENCES `user` (`id`) ON DELETE SET NULL,
     INDEX `idx_activity_type` (`type`),

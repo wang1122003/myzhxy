@@ -3,6 +3,7 @@ package com.campus.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.campus.entity.Activity;
+import com.campus.exception.ResourceNotFoundException;
 
 import java.util.List;
 

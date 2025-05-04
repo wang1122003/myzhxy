@@ -20,7 +20,7 @@
         <result column="course_name" property="courseName" jdbcType="VARCHAR"/>
         <result column="teacher_name" property="teacherName" jdbcType="VARCHAR"/>
         <result column="classroom_name" property="classroomName" jdbcType="VARCHAR"/>
-        <result column="building" property="classroomBuilding" jdbcType="VARCHAR"/>
+        <result column="building" property="building" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
@@ -39,17 +39,20 @@
         cr.building as building
     </sql>
 
-    <!-- 查询所有课程表 -->
-    <select id="findAll" resultMap="BaseResultMap">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM schedule s
+    <!-- JOIN 子句 (公用) -->
+    <sql id="Schedule_Joins">
         LEFT JOIN course c ON s.course_id = c.id
         LEFT JOIN user u ON s.teacher_id = u.id
         LEFT JOIN classroom cr ON s.classroom_id = cr.id
-        LEFT JOIN term tm ON s.term_id = tm.id
-        LEFT JOIN clazz cl ON s.class_id = cl.id
-        ORDER BY s.term_id DESC, s.week_day, s.start_time
+    </sql>
+
+    <!-- 查询所有课程表 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Details"/>
+        FROM schedule s
+        <include refid="Schedule_Joins"/>
+        ORDER BY s.term_info DESC, s.day_of_week, s.start_time
     </select>
 
     <!-- 分页查询课程表 -->
@@ -57,9 +60,7 @@
         SELECT
         <include refid="Columns_With_Details"/>
         FROM schedule s
-        LEFT JOIN course c ON s.course_id = c.id
-        LEFT JOIN user u ON s.teacher_id = u.id
-        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        <include refid="Schedule_Joins"/>
         ORDER BY s.term_info DESC, s.day_of_week, s.start_time
         limit #{offset}, #{limit}
     </select>
@@ -74,9 +75,7 @@
         SELECT
         <include refid="Columns_With_Details"/>
         FROM schedule s
-        LEFT JOIN course c ON s.course_id = c.id
-        LEFT JOIN user u ON s.teacher_id = u.id
-        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        <include refid="Schedule_Joins"/>
         WHERE s.day_of_week = #{dayOfWeek}
         AND s.start_time = #{startTime} AND s.end_time = #{endTime}
         ORDER BY s.term_info DESC
@@ -190,9 +189,7 @@
         SELECT
         <include refid="Columns_With_Details"/>
         FROM schedule s
-        LEFT JOIN course c ON s.course_id = c.id
-        LEFT JOIN user u ON s.teacher_id = u.id
-        LEFT JOIN classroom cr ON s.classroom_id = cr.id
+        <include refid="Schedule_Joins"/>
         WHERE s.teacher_id = #{teacherId} AND s.term_info = #{termInfo}
         ORDER BY s.day_of_week, s.start_time
     </select>
@@ -214,21 +211,56 @@
         </foreach>
     </select>
 
-    <!-- 根据学生用户ID查询课程表 -->
-    <select id="findByUserId" resultMap="BaseResultMap">
-        SELECT s.*,
-               c.course_name as courseName,
-               u.real_name   as teacherName,
-               cr.name       as classroomName,
-               cr.building   as classroomBuilding
+    <!-- 根据学生用户ID和学期查询课程表 (带详情) -->
+    <select id="findByUserIdAndTermWithDetails" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Details"/>
         FROM schedule s
-                 JOIN course_selection cs ON s.course_id = cs.course_id AND s.term_info = cs.term_info
+        JOIN course_selection cs ON s.course_id = cs.course_id AND s.term_info = cs.term_info
+        <include refid="Schedule_Joins"/>
+        WHERE cs.user_id = #{userId}
+        AND s.term_info = #{termInfo}
+        AND cs.status = 1
+        AND s.status = 1
+        ORDER BY s.day_of_week, s.start_time
+    </select>
+
+    <!-- 根据教师ID和学期查询课程表 (带详情) -->
+    <select id="findByTeacherIdAndTermWithDetails" resultMap="BaseResultMap">
+        SELECT s.id,
+               s.course_id,
+               s.term_info,
+               s.teacher_id,
+               s.classroom_id,
+               s.day_of_week,
+               s.start_time,
+               s.end_time,
+               s.start_week,
+               s.end_week,
+               s.week_parity,
+               s.status,
+               s.create_time,
+               s.update_time,
+               c.course_name as course_name,
+               u.real_name   as teacher_name,
+               cr.name       as classroom_name,
+               cr.building   as building
+        FROM schedule s
                  LEFT JOIN course c ON s.course_id = c.id
                  LEFT JOIN user u ON s.teacher_id = u.id
                  LEFT JOIN classroom cr ON s.classroom_id = cr.id
-        WHERE cs.user_id = #{userId}
-          AND cs.status = 1
-          AND s.status = 1
+        WHERE s.teacher_id = #{teacherId}
+          AND s.term_info = #{termInfo}
+        ORDER BY s.day_of_week, s.start_time
+    </select>
+
+    <!-- 根据教室ID和学期查询课程表 (带详情) -->
+    <select id="findByClassroomIdAndTermWithDetails" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Columns_With_Details"/>
+        FROM schedule s
+        <include refid="Schedule_Joins"/>
+        WHERE s.classroom_id = #{classroomId} AND s.term_info = #{termInfo}
         ORDER BY s.day_of_week, s.start_time
     </select>
 

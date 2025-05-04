@@ -12,17 +12,18 @@ import com.campus.service.AuthService;
 import com.campus.service.ScheduleService;
 import com.campus.utils.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * 课程表管理控制器
  * 提供课程安排查询和管理的相关API
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/schedules")
 public class ScheduleController {
@@ -34,7 +35,7 @@ public class ScheduleController {
     private AuthService authService;
 
     // @Autowired
-    // private TermService termService; // Removed TermService injection
+    // private TermService termService; // 移除 TermService 注入
 
     /**
      * 分页获取课表列表，支持多条件模糊查询
@@ -60,7 +61,7 @@ public class ScheduleController {
         try {
             Map<String, Object> params = new HashMap<>();
             // Long termId = null;
-            // Term entity and service removed, handle termCode filtering differently if needed
+            // Term 实体和服务已移除，如果需要，请以不同方式处理 termCode 过滤
             /*
             if (termCode != null && !termCode.isEmpty()) {
                 Term term = termService.getByCode(termCode);
@@ -70,7 +71,7 @@ public class ScheduleController {
             }
             if (termId != null) params.put("termId", termId); 
             */
-            // Pass termCode directly to service if it handles string-based filtering
+            // 如果服务支持基于字符串的过滤，则直接将 termCode 传递给服务
             if (termCode != null && !termCode.isEmpty()) params.put("termInfo", termCode);
 
             if (courseName != null && !courseName.isEmpty()) params.put("courseName", courseName);
@@ -265,7 +266,7 @@ public class ScheduleController {
      * @return 学生在该学期的课表列表
      */
     @GetMapping("/student")
-    public Result<List<Schedule>> getStudentSchedule(
+    public Result<Map<String, Object>> getStudentSchedule(
             @RequestParam(required = false) String termInfo,
             HttpServletRequest request) {
         try {
@@ -279,34 +280,43 @@ public class ScheduleController {
                 return Result.error("无法确定学期");
             }
 
-            List<Schedule> schedules = scheduleService.getSchedulesByUserIdAndTerm(currentUser.getId(), effectiveTermCode);
-
-            return Result.success(schedules);
+            // 使用周视图格式的数据，这样在前端可以同时支持周视图和列表视图
+            Map<String, Object> schedule = scheduleService.getStudentWeeklySchedule(currentUser.getId(), effectiveTermCode);
+            return Result.success(schedule);
 
         } catch (CustomException e) {
-            return Result.error(e.getMessage());
+            // log.warn("获取学生课表时发生业务异常: {}", e.getMessage());
+            // 根据异常类型决定返回的状态码和信息
+            return Result.error(e.getCode() != null ? e.getCode() : 400, e.getMessage());
         } catch (Exception e) {
-            return Result.error("获取学生课表失败，请稍后重试或联系管理员");
+            log.error("获取学生课表时发生未知错误", e); // 取消日志记录注释
+            return Result.error(500, "获取学生课表失败，请稍后重试或联系管理员");
         }
     }
 
-    // Helper method to get current term code if not provided
+    /**
+     * 获取有效的学期代码
+     * 如果提供了学期代码且有效，则使用提供的代码，否则尝试获取当前学期
+     *
+     * @param providedTermCode 提供的学期代码
+     * @return 有效的学期代码，如果无法确定则返回null
+     */
     private String getEffectiveTermCode(String providedTermCode) {
         if (providedTermCode != null && !providedTermCode.trim().isEmpty()) {
-            // Optionally validate if providedTermCode exists in Term enum
+            // 可选：验证providedTermCode是否存在于Term枚举中
             if (Term.fromCode(providedTermCode) != null) {
                 return providedTermCode;
             } else {
-                // log.warn("Provided term code is invalid: {}", providedTermCode);
-                return null; // Indicate error
+                // log.warn("提供的学期代码无效: {}", providedTermCode);
+                return null; // 表示错误
             }
         }
         Term currentTerm = Term.getCurrentTerm();
         if (currentTerm != null) {
             return currentTerm.getCode();
         } else {
-            // log.error("Current term is not defined in Term enum.");
-            return null; // Indicate error
+            // log.error("当前学期未在Term枚举中定义。");
+            return null; // 表示错误
         }
     }
 }

@@ -1,6 +1,6 @@
 <template>
   <PageContainer :title="`成绩录入 - ${courseInfo?.courseName || courseId}`" @back="goBack">
-    <template #actions>
+    <template #header-actions>
       <el-button :disabled="!hasUnsavedChanges" :loading="saveLoading" type="primary" @click="saveAllChanges">
         <el-icon>
           <Finished/>
@@ -73,13 +73,20 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, reactive, watch} from 'vue';
+import {computed, onMounted, reactive, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import {
-  ElButton, ElDialog, ElEmpty, ElInput, ElInputNumber, ElMessage, ElMessageBox, ElTag,
-  ElUpload, ElIcon, ElAlert
+  ElAlert,
+  ElButton,
+  ElDialog,
+  ElIcon,
+  ElInputNumber,
+  ElMessage,
+  ElMessageBox,
+  ElTag,
+  ElUpload
 } from 'element-plus';
-import {Search, Finished, Upload, Download} from '@element-plus/icons-vue';
+import {Download, Finished, Search, Upload} from '@element-plus/icons-vue';
 import {getCourseById} from '@/api/course';
 import {getCourseScores, recordScore} from '@/api/grade';
 import {formatDateTime} from '@/utils/formatters';

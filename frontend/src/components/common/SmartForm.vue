@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue';
+import {ref} from 'vue';
 
 const props = defineProps({
   model: {
@@ -227,7 +227,7 @@ defineExpose({
 
 /* 表单项间距 */
 :deep(.el-form-item) {
-  margin-bottom: var(--el-form-item-margin-bottom, 18px);
+  margin-bottom: 18px;
 }
 
 /* 内联表单特殊处理 */

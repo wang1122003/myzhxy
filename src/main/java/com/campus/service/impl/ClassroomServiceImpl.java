@@ -62,7 +62,7 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
 
         // 构建查询条件
         if (StringUtils.isNotBlank(keyword)) {
-            queryWrapper.and(wrapper -> wrapper.like("room_number", keyword).or().like("name", keyword));
+            queryWrapper.and(wrapper -> wrapper.like("name", keyword));
         }
         if (StringUtils.isNotBlank(building)) {
             queryWrapper.like("building", building);
@@ -73,7 +73,7 @@ public class ClassroomServiceImpl extends ServiceImpl<ClassroomDao, Classroom> i
         if (StringUtils.isNotBlank(roomType)) {
             queryWrapper.eq("room_type", roomType); // 修正为实际数据库字段名，假设是 room_type
         }
-        queryWrapper.orderByAsc("building", "room_number"); // 排序
+        queryWrapper.orderByAsc("building", "name"); // 按building和name排序，不再使用不存在的room_number字段
 
         return classroomDao.selectPage(pager, queryWrapper);
     }

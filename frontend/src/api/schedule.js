@@ -119,12 +119,24 @@ export function getStudentWeeklySchedule(params) {
         params // 需要传递 termInfo
     }).then(res => {
         console.log('[API] 学生周课表 API 返回:', res);
-        // 假设后端 /schedules/student 返回的直接是包含 schedules 的 Map
-        // 拦截器已经处理了 Result 包装
+        // 检测并适应多种可能的返回格式
         if (res && typeof res === 'object' && res.schedules) {
-            return res; // 直接返回 Map 对象
+            return res; // 返回包含schedules属性的对象
+        } else if (Array.isArray(res)) {
+            // 如果直接返回数组，转换为标准格式
+            console.log('[API] 学生周课表返回数组格式，已转换为标准格式');
+            return {
+                schedules: res,
+                type: 'student'
+            };
+        } else if (res && res.data && Array.isArray(res.data)) {
+            // 如果是常见的包装格式 {data: [...]}
+            return {
+                schedules: res.data,
+                type: 'student'
+            };
         } else {
-            console.warn('[API] 学生周课表返回格式非预期，需要包含 schedules 数组');
+            console.warn('[API] 学生周课表返回格式非预期，已创建空schedules数组');
             // 返回一个默认结构，防止前端报错
             return {schedules: [], type: 'student'};
         }

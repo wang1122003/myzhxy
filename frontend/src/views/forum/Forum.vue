@@ -123,7 +123,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ChatDotRound, EditPen, InfoFilled, Opportunity, Search, Star, View} from '@element-plus/icons-vue'
@@ -174,14 +174,42 @@ export default {
         }
         const responseData = await getAllPosts(params)
         console.log('拦截器处理后的响应数据:', responseData)
-        if (responseData && typeof responseData.total === 'number' && Array.isArray(responseData.rows)) {
-          console.log('成功解析帖子数据:', responseData)
-          posts.value = responseData.rows || []
-          total.value = responseData.total || 0
+
+        // 处理不同的响应格式
+        if (responseData && typeof responseData === 'object') {
+          // 情况1：标准分页响应 {records: [], total: 0}
+          if (Array.isArray(responseData.records) && typeof responseData.total === 'number') {
+            posts.value = responseData.records || []
+            total.value = responseData.total || 0
+          }
+          // 情况2：嵌套在data中 {data: {records: [], total: 0}}
+          else if (responseData.data && Array.isArray(responseData.data.records) && typeof responseData.data.total === 'number') {
+            posts.value = responseData.data.records || []
+            total.value = responseData.data.total || 0
+          }
+          // 情况3：使用rows代替records {rows: [], total: 0}
+          else if (Array.isArray(responseData.rows) && typeof responseData.total === 'number') {
+            posts.value = responseData.rows || []
+            total.value = responseData.total || 0
+          }
+          // 情况4：直接返回数组
+          else if (Array.isArray(responseData)) {
+            posts.value = responseData
+            total.value = responseData.length
+          }
+          // 情况5：数组包装在data中 {data: []}
+          else if (responseData.data && Array.isArray(responseData.data)) {
+            posts.value = responseData.data
+            total.value = responseData.data.length
+          } else {
+            console.error('获取帖子列表失败:未知的响应格式', responseData)
+            ElMessage.error('加载帖子列表失败: 未知的响应格式')
+            posts.value = []
+            total.value = 0
+          }
         } else {
-          console.error('获取帖子列表失败或返回数据结构不正确:', responseData)
-          const errorMsg = responseData && responseData.message ? `: ${responseData.message}` : ''
-          ElMessage.error('加载帖子列表失败' + errorMsg)
+          console.error('获取帖子列表失败:', responseData)
+          ElMessage.error('加载帖子列表失败')
           posts.value = []
           total.value = 0
         }

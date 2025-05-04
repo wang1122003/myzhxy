@@ -6,6 +6,8 @@ import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 // 导入Pinia
 import {createPinia} from 'pinia'
+// 导入Element Plus图标
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 // 导入全局样式
 import './assets/styles/global.scss'
@@ -44,6 +46,11 @@ const app = createApp(App)
 
 // 创建Pinia实例
 const pinia = createPinia()
+
+// 注册Element Plus图标
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+}
 
 // 注册通用组件
 app.component('PageHeader', PageHeader)

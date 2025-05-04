@@ -4,7 +4,6 @@ import {
     Bell,
     Calendar,
     ChatDotRound,
-    Collection,
     DataAnalysis,
     Document,
     Flag,
@@ -75,7 +74,7 @@ const routes = [
             {
                 path: 'grades',
                 name: 'StudentMyGrades',
-                component: () => import('../views/student/MyGrades.vue'),
+                component: () => import('@/views/common/GradeSystem.vue'),
                 meta: {title: '我的成绩', icon: Document, showInSidebar: true}
             },
             {
@@ -131,19 +130,13 @@ const routes = [
             {
                 path: 'courses',
                 name: 'TeacherCourses',
-                component: () => import('../views/teacher/Courses.vue'),
-                meta: {title: '课程列表', icon: Reading, showInSidebar: true}
-            },
-            {
-                path: 'course-management',
-                name: 'TeacherCourseManagement',
                 component: () => import('../views/teacher/TeacherCourseManagement.vue'),
-                meta: {title: '我的课程管理', icon: Collection, showInSidebar: true}
+                meta: {title: '我的课程', icon: Reading, showInSidebar: true}
             },
             {
                 path: 'grades',
                 name: 'TeacherGradeManagementEntry',
-                component: () => import('../views/teacher/GradeManagementEntry.vue'),
+                component: () => import('@/views/common/GradeSystem.vue'),
                 meta: {title: '成绩管理', icon: DataAnalysis, showInSidebar: true}
             },
             {
@@ -238,7 +231,17 @@ const routes = [
         path: '/notices',
         name: 'NoticeList',
         component: () => import('../views/NoticeList.vue'),
-        meta: {title: '通知公告'} 
+        meta: {title: '通知公告'}
+    },
+    // 添加统一成绩组件的路由
+    {
+        path: '/grade',
+        name: 'GradeSystem',
+        component: () => import('@/views/common/GradeSystem.vue'),
+        meta: {
+            title: '成绩管理',
+            requiresAuth: true
+        }
     }
 ]
 

@@ -143,6 +143,112 @@ export function getCourseScoreStats(courseId, params) {
 //     });
 // }
 
+/**
+ * 获取教师课程下的学生成绩列表
+ * @param {Object} params 查询参数，包括courseId和termId
+ * @returns {Promise}
+ */
+export function getCourseStudents(params) {
+    // 首先确保courseId是有效值
+    if (!params.courseId) {
+        console.error('课程ID不能为空:', params);
+        return Promise.reject(new Error('课程ID不能为空'));
+    }
+
+    const courseId = params.courseId;
+
+    // 根据是否有termId决定使用哪个API
+    const url = params.termId
+        ? `/scores/course/${courseId}/term`
+        : `/scores/course/${courseId}`;
+
+    console.log('请求课程学生成绩，URL:', url, '参数:', params);
+
+    return request({
+        url,
+        method: 'get',
+        params: params.termId ? {termInfo: params.termId} : {}
+    }).then(response => {
+        // 记录原始响应以便调试
+        console.log('成绩API原始响应:', response);
+
+        // 直接返回响应，让组件处理数据结构
+        return response;
+    }).catch(error => {
+        console.error('获取课程学生成绩失败:', error);
+        throw error;
+    });
+}
+
+/**
+ * 保存学生成绩
+ * @param {Array} data 成绩数据数组
+ * @returns {Promise}
+ */
+export function saveStudentGrades(data) {
+    // 如果是数组，则需要循环调用单个成绩保存接口
+    if (Array.isArray(data)) {
+        // 创建一个包含所有保存请求的Promise数组
+        const savePromises = data.map(scoreItem => {
+            return request({
+                url: '/scores',
+                method: 'post',
+                data: scoreItem
+            });
+        });
+
+        // 返回所有请求的Promise.all结果
+        return Promise.all(savePromises);
+    } else {
+        // 单个成绩保存
+        return request({
+            url: '/scores',
+            method: 'post',
+            data
+        });
+    }
+}
+
+/**
+ * 导出成绩单
+ * @param {Object} params 导出参数
+ * @returns {Promise}
+ */
+export function exportGradeSheet(params) {
+    return request({
+        url: '/scores/export',
+        method: 'get',
+        params,
+        responseType: 'blob' // 导出文件需要设置responseType为blob
+    });
+}
+
+/**
+ * 获取学生成绩统计数据
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getStudentGradeStats(params) {
+    return request({
+        url: '/scores/stats/student',
+        method: 'get',
+        params
+    });
+}
+
+/**
+ * 获取课程成绩统计数据
+ * @param {Object} params 查询参数
+ * @returns {Promise}
+ */
+export function getCourseGradeStats(params) {
+    return request({
+        url: '/scores/stats/course',
+        method: 'get',
+        params
+    });
+}
+
 // --- 移除或注释掉不再使用的旧 API 函数 ---
 /*
 // 获取课程学生成绩列表 (旧，使用 getCourseScores 替代)

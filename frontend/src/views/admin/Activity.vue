@@ -1,6 +1,6 @@
 <template>
   <PageContainer title="活动管理">
-    <template #actions>
+    <template #header-actions>
       <el-button
           type="primary"
           :icon="Plus"

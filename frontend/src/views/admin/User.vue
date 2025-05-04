@@ -26,12 +26,6 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchParams.status" clearable placeholder="选择状态" style="width: 120px;">
-            <el-option label="正常" value="ACTIVE"/>
-            <el-option label="禁用" value="INACTIVE"/>
-          </el-select>
-        </el-form-item>
       </FilterForm>
     </template>
 
@@ -54,16 +48,6 @@
       </el-table-column>
       <el-table-column label="邮箱" min-width="180" prop="email"/>
       <el-table-column label="手机号" prop="phone" width="150"/>
-      <el-table-column label="状态" prop="status" width="100">
-        <template #default="scope">
-          <el-switch
-              v-model="scope.row.status"
-              :active-value="'ACTIVE'"
-              :inactive-value="'INACTIVE'"
-              @change="handleStatusChange(scope.row)"
-          />
-        </template>
-      </el-table-column>
       <el-table-column fixed="right" label="操作" width="200">
         <template #default="scope">
           <div class="table-action-buttons">
@@ -78,14 +62,23 @@
     </TableView>
 
     <!-- 添加/编辑用户对话框 -->
-    <el-dialog v-model="dialogVisible" :close-on-click-modal="false" :title="dialogTitle" width="600px"
-               @close="resetForm">
-      <FormView
+    <el-dialog
+        v-model="dialogVisible"
+        :append-to-body="true"
+        :close-on-click-modal="false"
+        :close-on-press-escape="false"
+        :destroy-on-close="false"
+        :show-close="true"
+        :title="dialogTitle"
+        width="600px"
+        @close="resetForm"
+    >
+      <SmartForm
           ref="userFormRef"
           :model="userForm"
-          :rules="userFormRules"
+          :rules="userFormRules.value"
           :submitting="submitting"
-          @cancel="dialogVisible = false"
+          @cancel="handleCancel"
           @submit="submitUserForm"
       >
         <el-form-item label="用户名" prop="username">
@@ -113,28 +106,17 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="userForm.phone" placeholder="请输入手机号"/>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-switch
-              v-model="userForm.status"
-              :active-value="'ACTIVE'"
-              :inactive-value="'INACTIVE'"
-              active-text="正常"
-              inactive-text="禁用"
-          />
-        </el-form-item>
-      </FormView>
+      </SmartForm>
     </el-dialog>
   </PageContainer>
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue';
-import {
-  ElMessage,
-  ElMessageBox
-} from 'element-plus';
+import {computed, nextTick, onMounted, reactive, ref} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
-import {addUser, deleteUser, getUserList, resetPassword, updateUser, updateUserStatus} from '@/api/user';
+import {addUser, deleteUser, getUserList, resetPassword, updateUser} from '@/api/user';
+import SmartForm from '@/components/common/SmartForm.vue';
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -147,7 +129,6 @@ const pagination = ref({
 const searchParams = reactive({
   keyword: '',
   role: '',
-  status: ''
 });
 
 const dialogVisible = ref(false);
@@ -161,13 +142,12 @@ const userForm = ref({
   userType: '',
   email: '',
   phone: '',
-  status: 'ACTIVE'
 });
 
 // 计算属性判断是添加还是编辑模式
 const isEditMode = computed(() => !!userForm.value.id);
 
-const userFormRules = reactive({ // 表单验证规则
+const userFormRules = computed(() => ({ // 表单验证规则
   username: [
     {required: true, message: '请输入用户名', trigger: 'blur'},
     {min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur'}
@@ -179,7 +159,6 @@ const userFormRules = reactive({ // 表单验证规则
   realName: [{required: true, message: '请输入姓名', trigger: 'blur'}],
   userType: [{required: true, message: '请选择角色', trigger: 'change'}],
   email: [
-    {required: true, message: '请输入邮箱地址', trigger: 'blur'},
     {
       type: 'email',
       message: '请输入正确的邮箱地址',
@@ -193,13 +172,13 @@ const userFormRules = reactive({ // 表单验证规则
       trigger: ['blur', 'change']
     }
   ]
-});
+}));
 
 // 角色选项
 const userRoleOptions = [
-  {value: 'Admin', label: '管理员'},
-  {value: 'Teacher', label: '教师'},
-  {value: 'Student', label: '学生'}
+  {value: 'ADMIN', label: '管理员'},
+  {value: 'TEACHER', label: '教师'},
+  {value: 'STUDENT', label: '学生'}
 ];
 
 // 获取用户列表
@@ -211,7 +190,6 @@ const fetchUserList = async () => {
       pageSize: pagination.value.pageSize,
       keyword: searchParams.keyword || undefined,
       userType: searchParams.role || undefined,
-      status: searchParams.status || undefined
     };
 
     const res = await getUserList(params);
@@ -251,17 +229,30 @@ const handlePageChange = () => {
 
 // 处理添加用户
 const handleAddUser = () => {
+  // 先重置表单
   resetForm();
+  // 设置弹窗标题
   dialogTitle.value = '添加用户';
-  dialogVisible.value = true;
+  // 使用nextTick确保DOM更新完成后再显示弹窗
+  nextTick(() => {
+    dialogVisible.value = true;
+  });
 };
 
 // 处理编辑用户
 const handleEditUser = (row) => {
+  // 先重置表单
   resetForm();
+  // 设置弹窗标题
   dialogTitle.value = '编辑用户';
-  userForm.value = {...row};
-  dialogVisible.value = true;
+  // 等待DOM更新后再设置表单值并打开弹窗
+  nextTick(() => {
+    userForm.value = {...row};
+    // 再次等待表单值更新后打开弹窗
+    nextTick(() => {
+      dialogVisible.value = true;
+    });
+  });
 };
 
 // 处理重置密码
@@ -272,11 +263,27 @@ const handleResetPassword = (row) => {
     type: 'warning'
   }).then(async () => {
     try {
-      await resetPassword(row.id);
-      ElMessage.success('密码重置成功');
+      // 生成随机密码 (6位数字+字母组合)
+      const newPassword = Math.random().toString(36).substring(2, 8);
+
+      // 发送重置密码请求，包含新密码
+      await resetPassword(row.id, {password: newPassword});
+
+      // 显示新密码给管理员
+      ElMessageBox.alert(`密码已重置为: ${newPassword}`, '重置成功', {
+        confirmButtonText: '确定',
+        type: 'success',
+        callback: () => {
+          ElMessage.success('密码重置成功');
+        }
+      });
     } catch (error) {
       console.error('重置密码失败', error);
-      ElMessage.error('重置密码失败');
+      let errorMsg = '重置密码失败';
+      if (error.message) {
+        errorMsg += ': ' + error.message;
+      }
+      ElMessage.error(errorMsg);
     }
   }).catch(() => {
     // 用户取消操作
@@ -308,41 +315,107 @@ const handleDeleteUser = (row) => {
   });
 };
 
-// 处理状态变更
-const handleStatusChange = async (row) => {
-  if (row.username === 'admin' && row.status === 'INACTIVE') {
-    ElMessage.error('不能禁用超级管理员账号');
-    row.status = 'ACTIVE';
-    return;
-  }
-
-  try {
-    await updateUserStatus(row.id, row.status);
-    ElMessage.success(`状态已${row.status === 'ACTIVE' ? '启用' : '禁用'}`);
-  } catch (error) {
-    console.error('更新状态失败', error);
-    ElMessage.error('更新状态失败');
-    // 恢复状态
-    row.status = row.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-  }
-};
-
 // 提交用户表单
 const submitUserForm = async () => {
   submitting.value = true;
   try {
+    console.log('原始表单数据:', userForm.value);
+    
     if (isEditMode.value) {
-      await updateUser(userForm.value);
+      // 更新用户
+      const updateData = {
+        id: userForm.value.id,
+        realName: userForm.value.realName?.trim(),
+        userType: userForm.value.userType,
+        email: userForm.value.email?.trim() || null,
+        phone: userForm.value.phone?.trim() || null,
+        // 如果有密码则传递，否则不传递（后端会保留原密码）
+        ...(userForm.value.password ? {password: userForm.value.password} : {})
+      };
+
+      console.log('发送更新请求数据:', updateData);
+      await updateUser(updateData.id, updateData);
       ElMessage.success('更新成功');
     } else {
-      await addUser(userForm.value);
+      // 新增用户 - 按照后端要求格式化数据
+      // 1. 验证表单
+      await userFormRef.value.validate();
+
+      // 2. 创建符合后端实体类的数据对象
+      const userData = {
+        username: userForm.value.username.trim(),
+        password: userForm.value.password.trim(),
+        realName: userForm.value.realName.trim(),
+        userType: userForm.value.userType,
+      };
+
+      // 3. 添加可选字段（如有值）
+      if (userForm.value.email?.trim()) {
+        userData.email = userForm.value.email.trim();
+      }
+
+      if (userForm.value.phone?.trim()) {
+        userData.phone = userForm.value.phone.trim();
+      }
+
+      console.log('发送注册请求数据:', userData);
+      const response = await addUser(userData);
+      console.log('注册响应:', response);
       ElMessage.success('添加成功');
     }
+
     dialogVisible.value = false;
     fetchUserList();
   } catch (error) {
-    console.error('提交表单失败', error);
-    ElMessage.error(error.response?.data?.message || '操作失败');
+    console.error('提交表单失败:', error);
+
+    if (error.response) {
+      console.log('错误状态码:', error.response.status);
+      console.log('错误头信息:', error.response.headers);
+      console.log('错误数据:', error.response.data);
+    }
+
+    // 提取错误信息
+    let errorMsg = '操作失败';
+
+    // 处理500错误中的特定信息
+    if (error.response?.status === 500) {
+      errorMsg = '服务器内部错误';
+      if (error.response.data && typeof error.response.data === 'string') {
+        // 从HTML错误响应中提取更有用的信息
+        try {
+          const messageMatch = error.response.data.match(/<b>消息<\/b>\s*(.*?)<\/p>/);
+          if (messageMatch && messageMatch[1]) {
+            // 如果包含"countByUsername"，这是一个已知的后端问题，提供更友好的错误信息
+            if (messageMatch[1].includes('countByUsername')) {
+              errorMsg = '用户注册失败，后端验证用户名唯一性的功能暂时不可用，请联系管理员';
+            } else {
+              errorMsg += ': ' + messageMatch[1].trim();
+            }
+          }
+        } catch (e) {
+          console.error('从错误响应中提取信息失败:', e);
+        }
+      }
+    } else if (error.response?.data?.message) {
+      errorMsg = error.response.data.message;
+    } else if (typeof error.response?.data === 'string') {
+      console.log('错误响应HTML:', error.response.data);
+      // 从HTML错误页面中提取信息
+      errorMsg = '服务器处理请求时发生错误，请检查输入数据格式';
+
+      // 尝试从HTML错误页面提取更具体的错误信息
+      try {
+        const errorMatch = error.response.data.match(/<b>描述<\/b>(.*?)<\/p>/);
+        if (errorMatch && errorMatch[1]) {
+          errorMsg += ': ' + errorMatch[1].trim();
+        }
+      } catch (e) {
+        console.error('从错误响应中提取信息失败:', e);
+      }
+    }
+
+    ElMessage.error(errorMsg);
   } finally {
     submitting.value = false;
   }
@@ -350,9 +423,7 @@ const submitUserForm = async () => {
 
 // 重置表单
 const resetForm = () => {
-  if (userFormRef.value) {
-    userFormRef.value.resetFields();
-  }
+  // 确保先重置表单对象
   userForm.value = {
     id: null,
     username: '',
@@ -361,16 +432,22 @@ const resetForm = () => {
     userType: '',
     email: '',
     phone: '',
-    status: 'ACTIVE'
   };
+
+  // 然后重置验证状态
+  nextTick(() => {
+    if (userFormRef.value) {
+      userFormRef.value.resetFields();
+    }
+  });
 };
 
 // 格式化角色显示
 const formatRole = (role) => {
   const roleMap = {
-    'Admin': '管理员',
-    'Teacher': '教师',
-    'Student': '学生'
+    'ADMIN': '管理员',
+    'TEACHER': '教师',
+    'STUDENT': '学生'
   };
   return roleMap[role] || role;
 };
@@ -378,9 +455,9 @@ const formatRole = (role) => {
 // 获取角色标签类型
 const getRoleTagType = (role) => {
   const typeMap = {
-    'Admin': 'danger',
-    'Teacher': 'warning',
-    'Student': 'success'
+    'ADMIN': 'danger',
+    'TEACHER': 'warning',
+    'STUDENT': 'success'
   };
   return typeMap[role] || 'info';
 };
@@ -389,6 +466,22 @@ const getRoleTagType = (role) => {
 onMounted(() => {
   fetchUserList();
 });
+
+// 处理弹窗打开事件
+const handleDialogOpen = () => {
+  // 确保表单验证状态重置
+  if (userFormRef.value) {
+    userFormRef.value.resetFields();
+  }
+  console.log('弹窗已打开，表单数据:', userForm.value);
+};
+
+// 处理取消按钮点击事件
+const handleCancel = () => {
+  console.log('取消添加/编辑用户');
+  // 直接关闭弹窗，不需要setTimeout
+  dialogVisible.value = false;
+};
 </script>
 
 <style scoped>

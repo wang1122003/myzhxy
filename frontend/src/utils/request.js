@@ -49,10 +49,26 @@ request.interceptors.request.use(
 request.interceptors.response.use(
     response => {
         const res = response.data;
+        const url = response.config.url;
 
         // 如果返回的是二进制数据或文件下载，直接返回
         if (response.config.responseType === 'blob' || response.config.responseType === 'arraybuffer') {
             return response;
+        }
+
+        // 记录响应以便调试
+        console.log(`请求 ${url} 响应数据:`, res);
+
+        // 特殊API路径的处理
+        if (url === '/common/terms' || url.endsWith('/common/terms')) {
+            // 特殊处理学期API 
+            if (res && res.code === 200 && res.data) {
+                // 已经包装在Result对象中
+                return res.data;
+            } else if (Array.isArray(res)) {
+                // 直接返回数组
+                return res;
+            }
         }
 
         // 如果是Result包装对象且成功状态，直接返回data

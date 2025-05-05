@@ -14,6 +14,11 @@ const API = {
  * @param {object} data - 包含 userId, courseId, termInfo
  */
 export function selectCourse(data) {
+    // 确保必要的参数存在
+    if (!data.userId || !data.courseId || !data.termInfo) {
+        throw new Error('学生ID、课程ID和学期信息不能为空');
+    }
+    
     return request({
         url: API.SELECT,
         method: 'post',

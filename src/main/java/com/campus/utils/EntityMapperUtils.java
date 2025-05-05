@@ -1,9 +1,13 @@
 package com.campus.utils;
 
 import com.campus.entity.CourseSelection;
+import com.campus.entity.Post;
 import com.campus.entity.Score;
+import com.campus.entity.Term;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -95,16 +99,16 @@ public class EntityMapperUtils {
                             field.set(entity, Boolean.valueOf((String) value));
                         } else if (field.getType().isEnum() && value instanceof String) {
                             try {
-                                // Use helper method for safe enum conversion
+                                // 使用辅助方法进行安全的枚举转换
                                 Object enumValue = getEnumConstant(field.getType(), (String) value);
                                 field.set(entity, enumValue);
                             } catch (IllegalArgumentException e) {
-                                log.warn("Invalid enum value '{}' for enum type {}: {}", value, field.getType().getName(), e.getMessage());
+                                log.warn("枚举类型 {} 的值 '{}' 无效: {}", field.getType().getName(), value, e.getMessage());
                             }
                         } else if (value instanceof Enum) {
-                            // Handle Enums: Store their names or ordinal values
-                            // return ((Enum<?>) value).name(); // Store name
-                            field.set(entity, ((Enum<?>) value).ordinal()); // Store ordinal (integer)
+                            // 处理枚举：存储它们的名称或序数值
+                            // return ((Enum<?>) value).name(); // 存储名称
+                            field.set(entity, ((Enum<?>) value).ordinal()); // 存储序数（整数）
                         } else if (value instanceof Date) {
                             field.set(entity, value);
                         } else {
@@ -137,40 +141,48 @@ public class EntityMapperUtils {
 
     /**
      * 将评论对象转换为JSON字符串并添加到Post对象中
-     * TODO: [评论功能] - Code related to Comment entity was removed due to compilation errors (Comment class missing). Needs review/re-implementation.
+     * 使用Map<String, Object>替代Comment实体类，规避了Comment实体不存在的问题
      */
-    /*
-    public static Post convertCommentsToPostJson(Post post, List<Comment> comments) {
+    public static Post convertCommentsToPostJson(Post post, List<Map<String, Object>> comments) {
         if (comments == null || comments.isEmpty()) {
             post.setCommentsJson("[]");
             post.setComments(new ArrayList<>());
             return post;
         }
 
-        List<Map<String, Object>> commentsList = comments.stream()
-                .map(comment -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", comment.getId());
-                    map.put("userId", comment.getUserId());
-                    map.put("content", comment.getContent());
-                    map.put("creationTime", comment.getCreationTime());
-                    map.put("likeCount", comment.getLikeCount());
-                    map.put("status", comment.getStatus());
-                    // 处理父评论ID
-                    if (comment.getParentId() != null) {
-                        map.put("parentId", comment.getParentId());
-                    }
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        // Requires JsonUtils which is also missing
-        // String commentsJson = JsonUtils.toJsonString(commentsList);
-        // post.setCommentsJson(commentsJson);
-        post.setComments(commentsList);
-        return post;
+        try {
+            // 使用Jackson的ObjectMapper来序列化评论列表
+            ObjectMapper objectMapper = new ObjectMapper();
+            String commentsJson = objectMapper.writeValueAsString(comments);
+            post.setCommentsJson(commentsJson);
+            post.setComments(comments);
+            return post;
+        } catch (Exception e) {
+            // 处理序列化异常
+            post.setCommentsJson("[]");
+            post.setComments(new ArrayList<>());
+            return post;
+        }
     }
-    */
+
+    /**
+     * 从JSON字符串解析评论列表
+     */
+    public static List<Map<String, Object>> parseCommentsFromJson(String commentsJson) {
+        if (commentsJson == null || commentsJson.isEmpty() || commentsJson.equals("[]")) {
+            return new ArrayList<>();
+        }
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(commentsJson,
+                    new TypeReference<List<Map<String, Object>>>() {
+                    });
+        } catch (Exception e) {
+            // 处理解析异常
+            return new ArrayList<>();
+        }
+    }
 
     /**
      * 将Score对象的数据合并到CourseSelection对象中
@@ -190,76 +202,160 @@ public class EntityMapperUtils {
     }
 
     /**
-     * 将Term对象的信息转换为字符串表示
-     * TODO: [学期功能] - Code related to Term entity was removed due to compilation errors (Term class missing). Needs review/re-implementation.
+     * 将学期信息转换为字符串表示
+     * 使用Map代替Term实体类
      */
-    /*
-    public static String convertTermToString(Term term) {
+    public static String convertTermMapToString(Map<String, Object> term) {
         if (term == null) {
             return null;
         }
-        return term.getCode(); // 使用学期代码作为字符串表示
-    }
-    */
 
+        // 尝试从Map中获取code字段作为字符串表示
+        Object codeObj = term.get("code");
+        if (codeObj != null) {
+            return codeObj.toString();
+        }
+
+        // 如果没有code字段，尝试name字段
+        Object nameObj = term.get("name");
+        if (nameObj != null) {
+            return nameObj.toString();
+        }
+
+        // 如果都没有，返回term的字符串表示
+        return term.toString();
+    }
+    
     /**
      * 将班级ID转换为班级名称字符串
-     * TODO: [班级功能] - Code related to Clazz entity was removed due to compilation errors (Clazz class missing). Needs review/re-implementation.
+     * 使用Map<String, Object>列表替代Clazz实体类列表
      */
-    /*
-    public static String convertClassIdToName(Long classId, List<Clazz> classList) {
+    public static String convertClassIdToName(Long classId, List<Map<String, Object>> classList) {
         if (classId == null || classList == null || classList.isEmpty()) {
             return null;
         }
         
         return classList.stream()
-                .filter(clazz -> clazz.getId().equals(classId))
-                .map(Clazz::getName)
+                .filter(clazz -> {
+                    Object idObj = clazz.get("id");
+                    if (idObj instanceof Number) {
+                        return ((Number) idObj).longValue() == classId;
+                    } else if (idObj instanceof String) {
+                        try {
+                            return Long.parseLong((String) idObj) == classId;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    }
+                    return false;
+                })
+                .map(clazz -> {
+                    Object nameObj = clazz.get("name");
+                    return nameObj != null ? nameObj.toString() : null;
+                })
                 .findFirst()
                 .orElse(null);
     }
-    */
 
     /**
      * 将活动参与者和注册记录信息合并到活动对象中
-     * TODO: [活动参与者] - This method requires JsonUtils which is missing.
      */
-    /*
-    public static Activity mergeParticipantsToActivity(Activity activity, List<Map<String, Object>> participants) {
+    public static <T> T mergeParticipantsToActivity(T activity, List<Map<String, Object>> participants) {
+        if (activity == null) {
+            return null;
+        }
+        
         if (participants == null || participants.isEmpty()) {
-            activity.setParticipantsJson("[]");
-            activity.setParticipants(new ArrayList<>());
+            try {
+                // 使用反射设置字段
+                Field jsonField = activity.getClass().getDeclaredField("participantsJson");
+                Field listField = activity.getClass().getDeclaredField("participants");
+
+                jsonField.setAccessible(true);
+                listField.setAccessible(true);
+
+                jsonField.set(activity, "[]");
+                listField.set(activity, new ArrayList<>());
+            } catch (Exception e) {
+                log.error("设置活动参与者信息失败", e);
+            }
             return activity;
         }
 
-        // String participantsJson = JsonUtils.toJsonString(participants);
-        // activity.setParticipantsJson(participantsJson);
-        activity.setParticipants(participants);
+        try {
+            // 使用Jackson ObjectMapper序列化参与者列表
+            ObjectMapper objectMapper = new ObjectMapper();
+            String participantsJson = objectMapper.writeValueAsString(participants);
+
+            // 使用反射设置字段
+            Field jsonField = activity.getClass().getDeclaredField("participantsJson");
+            Field listField = activity.getClass().getDeclaredField("participants");
+
+            jsonField.setAccessible(true);
+            listField.setAccessible(true);
+
+            jsonField.set(activity, participantsJson);
+            listField.set(activity, participants);
+        } catch (Exception e) {
+            log.error("设置活动参与者信息失败", e);
+            try {
+                // 设置空值
+                Field jsonField = activity.getClass().getDeclaredField("participantsJson");
+                Field listField = activity.getClass().getDeclaredField("participants");
+
+                jsonField.setAccessible(true);
+                listField.setAccessible(true);
+
+                jsonField.set(activity, "[]");
+                listField.set(activity, new ArrayList<>());
+            } catch (Exception ex) {
+                log.error("重置活动参与者信息失败", ex);
+            }
+        }
+        
         return activity;
     }
-    */
 
     /**
-     * Converts an enum constant to its string representation (name).
-     * If the enum constant is null, returns null.
+     * 从JSON字符串解析活动参与者列表
+     */
+    public static List<Map<String, Object>> parseParticipantsFromJson(String participantsJson) {
+        if (participantsJson == null || participantsJson.isEmpty() || participantsJson.equals("[]")) {
+            return new ArrayList<>();
+        }
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(participantsJson,
+                    new TypeReference<List<Map<String, Object>>>() {
+                    });
+        } catch (Exception e) {
+            log.error("解析活动参与者JSON数据失败", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 将枚举常量转换为其字符串表示（名称）。
+     * 如果枚举常量为null，则返回null。
      *
-     * @param enumConstant The enum constant.
-     * @param <E>          The enum type.
-     * @return The name of the enum constant, or null if the input is null.
+     * @param enumConstant 枚举常量。
+     * @param <E>          枚举类型。
+     * @return 枚举常量的名称，如果输入为null则返回null。
      */
     public static <E extends Enum<?>> String enumToString(E enumConstant) {
         return enumConstant != null ? enumConstant.name() : null;
     }
 
     /**
-     * Converts a string value to an enum constant of the specified enum type.
-     * If the string value is null or empty, or if no matching enum constant is found,
-     * returns null.
+     * 将字符串值转换为指定枚举类型的枚举常量。
+     * 如果字符串值为null或为空，或者找不到匹配的枚举常量，
+     * 则返回null。
      *
-     * @param value     The string value to convert.
-     * @param enumClass The class object of the enum type.
-     * @param <E>       The enum type.
-     * @return The corresponding enum constant, or null if not found or input is invalid.
+     * @param value     要转换的字符串值。
+     * @param enumClass 枚举类型的类对象。
+     * @param <E>       枚举类型。
+     * @return 对应的枚举常量，如果未找到或输入无效则返回null。
      */
     public static <E extends Enum<E>> E stringToEnum(String value, Class<E> enumClass) {
         if (value == null || value.isEmpty() || enumClass == null || !enumClass.isEnum()) {
@@ -268,24 +364,36 @@ public class EntityMapperUtils {
         try {
             return Enum.valueOf(enumClass, value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            // Log or handle the error if the string doesn't match any enum constant
-            System.err.println("Error converting string '" + value + "' to enum " + enumClass.getSimpleName() + ": " + e.getMessage());
+            // 记录或处理错误，如果字符串与任何枚举常量不匹配
+            System.err.println("将字符串 '" + value + "' 转换为枚举 " + enumClass.getSimpleName() + " 时出错: " + e.getMessage());
             return null;
         }
     }
 
+    /**
+     * 将枚举实例转换为Map
+     *
+     * @param enumInstance 枚举实例
+     * @return 包含枚举信息的Map
+     */
     public static Map<String, Object> enumToMap(Enum<?> enumInstance) {
         if (enumInstance == null) return Collections.emptyMap();
         Map<String, Object> map = new HashMap<>();
         map.put("name", enumInstance.name());
-        // Add other common enum properties if needed (e.g., ordinal, description via interface)
-        // Example assuming an interface `DescribableEnum` with `getDescription()`
+        // 如果需要，添加其他常见的枚举属性（例如序数，通过接口的描述）
+        // 例如假设有一个接口 `DescribableEnum` 带有 `getDescription()`
         // if (enumInstance instanceof DescribableEnum) {
         //     map.put("description", ((DescribableEnum) enumInstance).getDescription());
         // }
         return map;
     }
 
+    /**
+     * 将枚举类的所有常量转换为Map列表
+     *
+     * @param enumClass 枚举类
+     * @return 包含所有枚举常量信息的Map列表
+     */
     public static List<Map<String, Object>> enumListToMapList(Class<? extends Enum<?>> enumClass) {
         if (enumClass == null || !enumClass.isEnum()) return Collections.emptyList();
         return Arrays.stream(enumClass.getEnumConstants())
@@ -294,15 +402,114 @@ public class EntityMapperUtils {
     }
 
     /**
-     * Helper method to safely get an enum constant from a String value,
-     * handling wildcard types.
+     * 辅助方法，用于从字符串值安全地获取枚举常量，
+     * 处理通配符类型。
      */
     @SuppressWarnings("unchecked")
     private static <T extends Enum<T>> T getEnumConstant(Class<?> enumType, String value) {
         if (!enumType.isEnum()) {
-            throw new IllegalArgumentException("Type is not an enum: " + enumType);
+            throw new IllegalArgumentException("类型不是枚举: " + enumType);
         }
-        // Cast the Class object to the appropriate Enum type
+        // 将Class对象转换为适当的Enum类型
         return Enum.valueOf((Class<T>) enumType, value);
+    }
+
+    /**
+     * 将Term对象的信息转换为字符串表示
+     */
+    public static String convertTermToString(Term term) {
+        if (term == null) {
+            return null;
+        }
+
+        return term.getCode(); // 使用学期代码作为字符串表示
+    }
+
+    /**
+     * 将Term实体转换为Map
+     */
+    public static Map<String, Object> termToMap(Term term) {
+        if (term == null) {
+            return Collections.emptyMap();
+        }
+
+        return entityToMap(term);
+    }
+
+    /**
+     * 将Map转换为Term实体
+     */
+    public static Term mapToTerm(Map<String, Object> map) {
+        if (map == null || map.isEmpty()) {
+            return null;
+        }
+
+        return mapToEntity(map, Term.class);
+    }
+
+    /**
+     * 将Term列表转换为Map列表
+     */
+    public static List<Map<String, Object>> termListToMapList(List<Term> termList) {
+        if (termList == null || termList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return entityListToMapList(termList);
+    }
+
+    /**
+     * 将Map列表转换为Term列表
+     */
+    public static List<Term> mapListToTermList(List<Map<String, Object>> mapList) {
+        if (mapList == null || mapList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return mapListToEntityList(mapList, Term.class);
+    }
+
+    /**
+     * 将JSON格式的参与者字符串转为Map列表
+     *
+     * @param participantsJson 参与者JSON字符串
+     * @return 参与者列表
+     */
+    public static List<Map<String, Object>> parseParticipantsJson(String participantsJson) {
+        if (participantsJson == null || participantsJson.isEmpty() || "[]".equals(participantsJson.trim())) {
+            return new ArrayList<>();
+        }
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(
+                    participantsJson,
+                    new TypeReference<List<Map<String, Object>>>() {
+                    }
+            );
+        } catch (Exception e) {
+            log.error("解析参与者JSON数据失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 将参与者列表转换为JSON字符串
+     *
+     * @param participants 参与者列表
+     * @return 参与者JSON字符串
+     */
+    public static String convertParticipantsToJson(List<Map<String, Object>> participants) {
+        if (participants == null || participants.isEmpty()) {
+            return "[]";
+        }
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(participants);
+        } catch (Exception e) {
+            log.error("转换参与者列表为JSON失败: {}", e.getMessage(), e);
+            return "[]";
+        }
     }
 }

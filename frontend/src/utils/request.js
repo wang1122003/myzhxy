@@ -120,6 +120,14 @@ request.interceptors.response.use(
 
             // 401 未授权
             if (response.status === 401) {
+                // 首先检查请求是否标记为不要刷新token
+                if (originalRequest._skipRefreshToken) {
+                    console.log('请求被标记为跳过token刷新:', originalRequest.url);
+                    // 此处直接返回错误，不触发token刷新
+                    ElMessage.error(message);
+                    return Promise.reject(error);
+                }
+                
                 // 检查原始请求是否携带了 Authorization 头
                 if (originalRequest.headers['Authorization']) {
                     // 如果携带了 Token，说明可能是 Token 过期，尝试刷新
@@ -131,7 +139,7 @@ request.interceptors.response.use(
                     // 调用 handleUnauthorized 会提示并引导到登录页
                     handleUnauthorized();
                     return Promise.reject(error); // 拒绝原始请求
-            }
+                }
             }
         }
 
@@ -168,7 +176,13 @@ const handleTokenExpired = async (error) => {
             console.log('尝试刷新 token...');
             // 尝试刷新token
             const newToken = await refreshToken();
-            console.log('Token 刷新成功:', newToken);
+
+            // 如果newToken是null或undefined，直接抛出错误
+            if (!newToken) {
+                throw new Error('刷新token失败: 服务器未返回有效token');
+            }
+
+            console.log('Token 刷新成功:', newToken.substring(0, 10) + '...');
 
             // 处理队列中的请求
             waitingQueue.forEach(callback => callback(newToken));
@@ -181,23 +195,33 @@ const handleTokenExpired = async (error) => {
             return request(originalRequest); // 使用 request 实例重试，确保应用新的拦截器
 
         } catch (refreshError) {
-            // 刷新token失败，已经在 refreshToken 中处理了 handleUnauthorized
-            console.error('无法刷新token，需要重新登录:', refreshError);
-            // 不需要再次调用 handleUnauthorized，因为 refreshToken 内部会调用
+            console.error('刷新token失败:', refreshError);
+            // 清理队列中的请求（全部失败）
+            waitingQueue.forEach(callback => callback(null));
+            waitingQueue = [];
             // 清除标志位
             isRefreshing = false;
+
+            // 判断是否需要处理未授权情况
+            if (error.response && error.response.status === 401) {
+                console.warn('Token刷新失败且状态为401，引导用户登录');
+                // 异步处理未授权情况，避免阻塞当前Promise链
+                setTimeout(() => handleUnauthorized(), 100);
+            }
+            
             return Promise.reject(refreshError);
         }
-        // finally {
-        //     // 在请求重试或失败后清除标志位
-        //     // isRefreshing = false; // 移到 try 和 catch 内部确保正确时机清除
-        // }
     } else {
         // 创建一个Promise，加入等待队列
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             waitingQueue.push((token) => {
-                originalRequest.headers['Authorization'] = `Bearer ${token}`;
-                resolve(request(originalRequest)); // 使用 request 实例重试
+                if (token) {
+                    originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                    resolve(request(originalRequest)); // 使用 request 实例重试
+                } else {
+                    // 如果token为null，表示刷新失败，拒绝请求
+                    reject(new Error('Token刷新失败'));
+                }
             });
         });
     }

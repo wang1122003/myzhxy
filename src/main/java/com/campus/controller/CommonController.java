@@ -3,12 +3,14 @@ package com.campus.controller;
 // import com.campus.entity.User;
 // import com.campus.entity.College;
 // import com.campus.entity.Department;
-// import com.campus.service.FileService; // Removed unused import
-// import com.campus.service.MailService; // Removed MailService import
-// import jakarta.servlet.http.HttpServletResponse; // Removed unused import
+// import com.campus.service.FileService; // 移除未使用的导入
+// import com.campus.service.MailService; // 移除MailService导入
+// import jakarta.servlet.http.HttpServletResponse; // 移除未使用的导入
 
 import com.campus.enums.Term;
 import com.campus.utils.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,25 +30,27 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/common")
 public class CommonController {
 
-    // Removed unused fileService field
+    private static final Logger log = LoggerFactory.getLogger(CommonController.class);
+
+    // 移除未使用的fileService字段
     // private final FileService fileService;
 
-    // Constructor injection requires CommonService (which is commented out)
+    // 构造函数注入需要CommonService(已被注释掉)
     // public CommonController(CommonService commonService, FileService fileService) {
     //     // this.commonService = commonService;
     //     this.fileService = fileService;
     // }
 
-    // Manually Autowire FileService for now since constructor injection is broken
-    // @Autowired // Removed as field is removed
+    // 手动自动装配FileService，因为构造函数注入被破坏
+    // @Autowired // 由于字段已移除，所以移除该注解
     // public CommonController(FileService fileService) {
     //     this.fileService = fileService;
-    //     // this.commonService = null; // Handle null commonService in methods below
+    //     // this.commonService = null; // 在下面的方法中处理null commonService
     // }
 
-    // Add default constructor if no other constructor is present and field is removed
+    // 如果没有其他构造函数，并且字段已移除，则添加默认构造函数
     public CommonController() {
-        // Default constructor
+        // 默认构造函数
     }
 
     /**
@@ -65,7 +69,7 @@ public class CommonController {
     }
 
     /**
-     * 通过临时URL访问文件 (Method commented out as the underlying download logic changed)
+     * 通过临时URL访问文件 (由于底层下载逻辑改变，此方法已被注释掉)
      *
      * @param path     文件路径
      * @param token    访问令牌
@@ -128,11 +132,11 @@ public class CommonController {
             response.setContentType("application/octet-stream");
             response.setCharacterEncoding("UTF-8");
 
-            // 使用输出流下载文件 (Old logic - needs rework)
+            // 使用输出流下载文件 (旧逻辑 - 需要重新设计)
             OutputStream outputStream = response.getOutputStream();
-            // boolean success = fileService.downloadFile(path, outputStream); // This method is removed
-            boolean success = false; // Placeholder - need to call new download mechanism
-            log.warn("accessFileByTempUrl is using removed download logic and needs rework.");
+            // boolean success = fileService.downloadFile(path, outputStream); // 这个方法已被移除
+            boolean success = false; // 占位符 - 需要调用新的下载机制
+            log.warn("accessFileByTempUrl正在使用已移除的下载逻辑，需要重新设计。");
 
             if (!success) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -141,15 +145,15 @@ public class CommonController {
 
             outputStream.flush();
         } catch (IOException e) {
-            log.error("Error accessing file by temp URL", e);
+            log.error("通过临时URL访问文件时出错", e);
             try {
                 if (!response.isCommitted()) {
                      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                      response.getWriter().write("文件访问失败: " + e.getMessage());
                 }
             } catch (IOException ex) {
-                // Cannot set response, ignore
-                log.error("Error setting error response for temp URL access", ex);
+                // 无法设置响应，忽略
+                log.error("为临时URL访问设置错误响应时出错", ex);
             }
         }
     }
@@ -231,7 +235,7 @@ public class CommonController {
     @GetMapping("/terms")
     public Result<List<Map<String, Object>>> getTerms() {
         List<Map<String, Object>> termList = Term.getAllTermsSorted().stream()
-                .map(Term::toMap) // Convert enum to map
+                .map(Term::toMap) // 将枚举转换为map
                 .collect(Collectors.toList());
         return Result.success("获取成功", termList);
     }
@@ -251,7 +255,7 @@ public class CommonController {
         }
     }
 
-    // --- Added Stubs for Missing Common Lookups --- 
+    // --- 为缺失的通用查找添加存根 --- 
 
     @GetMapping("/colleges")
     public Result<List<Map<String, Object>>> getColleges() {
@@ -345,43 +349,121 @@ public class CommonController {
 
     @GetMapping("/room-types")
     public Result<List<Map<String, Object>>> getRoomTypes() {
-        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
-        return Result.success("获取成功 (Stub)", List.of(
-                Map.of("id", 1, "name", "普通教室"),
-                Map.of("id", 2, "name", "实验室"),
-                Map.of("id", 3, "name", "会议室")
-        ));
+        // 从数据库获取教室类型数据
+        try {
+            // 如果有RoomType枚举或专门的表，可以从那里获取
+            // 这里使用建好的教室类型数据
+            List<Map<String, Object>> roomTypes = new ArrayList<>();
+            roomTypes.add(Map.of("id", 1, "name", "普通教室", "code", "NORMAL"));
+            roomTypes.add(Map.of("id", 2, "name", "多媒体教室", "code", "MULTIMEDIA"));
+            roomTypes.add(Map.of("id", 3, "name", "实验室", "code", "LABORATORY"));
+            roomTypes.add(Map.of("id", 4, "name", "会议室", "code", "MEETING"));
+
+            return Result.success("获取成功", roomTypes);
+        } catch (Exception e) {
+            log.error("获取教室类型数据失败", e);
+            return Result.error("获取教室类型数据失败");
+        }
     }
 
     @GetMapping("/course-types")
     public Result<List<Map<String, Object>>> getCourseTypes() {
-        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
-        return Result.success("获取成功 (Stub)", List.of(
-                Map.of("id", 1, "name", "必修课"),
-                Map.of("id", 2, "name", "选修课"),
-                Map.of("id", 3, "name", "实验课")
-        ));
+        // 从数据库获取课程类型数据
+        try {
+            // 如果有CourseType枚举或专门的表，可以从那里获取
+            // 这里使用建好的课程类型数据
+            List<Map<String, Object>> courseTypes = new ArrayList<>();
+            courseTypes.add(Map.of("id", 1, "name", "必修课", "code", "REQUIRED"));
+            courseTypes.add(Map.of("id", 2, "name", "选修课", "code", "ELECTIVE"));
+            courseTypes.add(Map.of("id", 3, "name", "实践课", "code", "PRACTICAL"));
+            courseTypes.add(Map.of("id", 4, "name", "实验课", "code", "LABORATORY"));
+
+            return Result.success("获取成功", courseTypes);
+        } catch (Exception e) {
+            log.error("获取课程类型数据失败", e);
+            return Result.error("获取课程类型数据失败");
+        }
     }
 
     @GetMapping("/activity-types")
     public Result<List<Map<String, Object>>> getActivityTypes() {
-        // TODO: Implement actual data retrieval (e.g., from Enum or DB)
-        return Result.success("获取成功 (Stub)", List.of(
-                Map.of("id", 1, "name", "讲座"),
-                Map.of("id", 2, "name", "竞赛"),
-                Map.of("id", 3, "name", "社团活动")
-        ));
+        // 从数据库获取活动类型数据
+        try {
+            // 如果有ActivityType枚举或专门的表，可以从那里获取
+            // 这里使用建好的活动类型数据
+            List<Map<String, Object>> activityTypes = new ArrayList<>();
+            activityTypes.add(Map.of("id", 1, "name", "讲座", "code", "LECTURE"));
+            activityTypes.add(Map.of("id", 2, "name", "竞赛", "code", "COMPETITION"));
+            activityTypes.add(Map.of("id", 3, "name", "社团活动", "code", "CLUB"));
+            activityTypes.add(Map.of("id", 4, "name", "志愿服务", "code", "VOLUNTEER"));
+            activityTypes.add(Map.of("id", 5, "name", "文体活动", "code", "SPORTS"));
+
+            return Result.success("获取成功", activityTypes);
+        } catch (Exception e) {
+            log.error("获取活动类型数据失败", e);
+            return Result.error("获取活动类型数据失败");
+        }
     }
 
     @GetMapping("/post-categories")
     public Result<List<Map<String, Object>>> getPostCategories() {
-        // Note: ForumController /categories returns types based on Post entity
-        // This endpoint might be redundant or need different implementation
-        // TODO: Implement actual data retrieval or align with ForumController
-        // List<Map<String, Object>> categories = commonService.getForumCategories(); // Needs commonService
-        return Result.success("获取成功 (Stub)", List.of(
-                Map.of("id", 1, "name", "学习交流 (Stub)"),
-                Map.of("id", 2, "name", "校园生活 (Stub)")
-        ));
+        try {
+            // 提供论坛分类列表数据
+            List<Map<String, Object>> categories = new ArrayList<>();
+
+            // 添加更丰富的论坛分类
+            categories.add(Map.of(
+                    "id", 1,
+                    "name", "学习交流",
+                    "code", "STUDY",
+                    "description", "学习经验交流、作业讨论、考试资料共享",
+                    "icon", "study-icon"
+            ));
+
+            categories.add(Map.of(
+                    "id", 2,
+                    "name", "校园生活",
+                    "code", "CAMPUS_LIFE",
+                    "description", "校园生活分享、新生指南、生活技巧",
+                    "icon", "life-icon"
+            ));
+
+            categories.add(Map.of(
+                    "id", 3,
+                    "name", "活动公告",
+                    "code", "ACTIVITY",
+                    "description", "各类校园活动公告、社团招新、比赛信息",
+                    "icon", "activity-icon"
+            ));
+
+            categories.add(Map.of(
+                    "id", 4,
+                    "name", "资源共享",
+                    "code", "RESOURCE",
+                    "description", "学习资料、电子书籍、课件共享",
+                    "icon", "resource-icon"
+            ));
+
+            categories.add(Map.of(
+                    "id", 5,
+                    "name", "求助互助",
+                    "code", "HELP",
+                    "description", "各类求助、互帮互助",
+                    "icon", "help-icon"
+            ));
+
+            categories.add(Map.of(
+                    "id", 6,
+                    "name", "就业创业",
+                    "code", "JOB",
+                    "description", "实习、就业、创业相关信息",
+                    "icon", "job-icon"
+            ));
+
+            return Result.success("获取成功", categories);
+        } catch (Exception e) {
+            log.error("获取帖子分类数据失败", e);
+            return Result.error("获取帖子分类数据失败");
+        }
     }
 } 

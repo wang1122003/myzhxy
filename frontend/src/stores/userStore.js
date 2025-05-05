@@ -131,20 +131,44 @@ export const useUserStore = defineStore('user', () => {
     // 尝试刷新token
     async function refreshToken() {
         if (!token.value) {
+            console.error('[userStore] 无token可供刷新');
             throw new Error('没有token可供刷新');
         }
 
         try {
+            console.log('[userStore] 尝试刷新token...');
             const response = await apiRefreshToken();
-            if (response.code === 0 && response.data && response.data.token) {
-                const newToken = response.data.token;
+
+            // 检查response是否有token字段，兼容不同的返回格式
+            let newToken = null;
+
+            if (response && typeof response === 'object') {
+                // 直接检查response顶层是否有token字段
+                if (response.token) {
+                    newToken = response.token;
+                }
+                // 检查response.data是否有token字段 (符合Result格式)
+                else if (response.data && response.data.token) {
+                    newToken = response.data.token;
+                }
+                // 有些API可能直接返回包含token的对象
+                else if (response.code === 200 && response.data) {
+                    newToken = response.data.token || response.data;
+                }
+            }
+
+            if (newToken) {
+                console.log('[userStore] 刷新token成功');
                 setToken(newToken);
                 return newToken;
             } else {
-                throw new Error(response.message || '刷新token失败');
+                console.error('[userStore] 刷新token失败：响应中未找到token', response);
+                throw new Error('刷新token失败：响应中未找到token');
             }
         } catch (error) {
             console.error('[userStore] 刷新token失败:', error);
+            // 清除无效的token
+            setToken('');
             throw error;
         }
     }

@@ -61,14 +61,14 @@
     </bean>
 
     <!-- 6. 视图控制器 -->
-    <mvc:view-controller path="/" view-name="forward:/index.html" />
-    <mvc:view-controller path="/campus" view-name="forward:/index.html"/>
-    <mvc:view-controller path="/campus/" view-name="forward:/index.html"/>
+    <mvc:view-controller path="/" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus/" view-name="redirect:/index.html"/>
     <!-- Vue Router History Mode 支持 -->
-    <mvc:view-controller path="/campus/login" view-name="forward:/index.html"/>
-    <mvc:view-controller path="/campus/error" view-name="forward:/index.html"/>
-    <mvc:view-controller path="/campus/student/**" view-name="forward:/index.html"/>
-    <mvc:view-controller path="/campus/teacher/**" view-name="forward:/index.html"/>
-    <mvc:view-controller path="/campus/admin/**" view-name="forward:/index.html"/>
+    <mvc:view-controller path="/campus/login" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus/error" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus/student/**" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus/teacher/**" view-name="redirect:/index.html"/>
+    <mvc:view-controller path="/campus/admin/**" view-name="redirect:/index.html"/>
 
 </beans>

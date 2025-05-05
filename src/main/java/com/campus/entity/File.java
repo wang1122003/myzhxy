@@ -48,7 +48,7 @@ public class File implements Serializable {
     private String filePath;
 
     /**
-     * 文件大小 (bytes)
+     * 文件大小 (字节)
      */
     @TableField("file_size")
     private Long fileSize;
@@ -66,13 +66,13 @@ public class File implements Serializable {
     private Date uploadTime;
 
     /**
-     * 文件上下文类型 (personal, course, avatar, activity_poster, etc.)
+     * 文件上下文类型 (个人文件, 课程资料, 头像, 活动海报等)
      */
     @TableField("context_type")
     private String contextType;
 
     /**
-     * 关联上下文的ID (如 course_id)
+     * 关联上下文的ID (如课程ID)
      */
     @TableField("context_id")
     private Long contextId;
@@ -84,7 +84,7 @@ public class File implements Serializable {
     private Integer status;
 
     /**
-     * 存储类型 (local, s3, etc.)
+     * 存储类型 (本地存储, S3云存储等)
      */
     @TableField("storage_type")
     private String storageType;
@@ -96,6 +96,12 @@ public class File implements Serializable {
      */
     @TableField(exist = false)
     private String uploaderName;
+
+    /**
+     * 上传者真实姓名 (查询时JOIN)
+     */
+    @TableField(exist = false)
+    private String uploaderRealName;
 
     /**
      * 课程名称 (查询课程资源时JOIN)

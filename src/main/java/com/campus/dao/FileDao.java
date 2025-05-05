@@ -42,6 +42,25 @@ public interface FileDao extends BaseMapper<File> {
     IPage<File> selectCourseResourcePageForStudent(Page<File> page, @Param("studentId") Long studentId, @Param("courseId") Long courseId);
 
     /**
+     * 文件列表查询（关联用户表获取上传者信息）
+     *
+     * @param page   分页对象
+     * @param params 查询参数（filename、uploaderName、fileType等）
+     * @return 分页结果
+     */
+    @Select("<script>" +
+            "SELECT f.*, u.username as uploaderName, u.real_name as uploaderRealName " +
+            "FROM file f " +
+            "LEFT JOIN user u ON f.user_id = u.id " +
+            "WHERE f.status = 1 " +
+            "<if test='params.filename != null and params.filename != \"\"'> AND f.filename LIKE CONCAT('%', #{params.filename}, '%') </if>" +
+            "<if test='params.uploaderName != null and params.uploaderName != \"\"'> AND (u.username LIKE CONCAT('%', #{params.uploaderName}, '%') OR u.real_name LIKE CONCAT('%', #{params.uploaderName}, '%')) </if>" +
+            "<if test='params.fileType != null and params.fileType != \"\"'> AND f.file_type LIKE CONCAT('%', #{params.fileType}, '%') </if>" +
+            "ORDER BY f.upload_time DESC" +
+            "</script>")
+    IPage<File> getFileListWithUserInfo(Page<File> page, @Param("params") Map<String, Object> params);
+
+    /**
      * 分页查询个人文件列表
      *
      * @param page   分页对象

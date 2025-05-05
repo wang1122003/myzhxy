@@ -184,6 +184,12 @@ const routes = [
                 meta: {title: '课程管理', icon: Notebook, showInSidebar: true}
             },
             {
+                path: 'term',
+                name: 'AdminTerm',
+                component: () => import('../views/admin/Term.vue'),
+                meta: {title: '学期管理', icon: Calendar, showInSidebar: true}
+            },
+            {
                 path: 'classroom',
                 name: 'AdminClassroom',
                 component: () => import('../views/admin/Classroom.vue'),

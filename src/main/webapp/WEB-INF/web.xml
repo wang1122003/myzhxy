@@ -62,7 +62,6 @@
         <dispatcher>FORWARD</dispatcher>
         <dispatcher>ERROR</dispatcher>
         <dispatcher>INCLUDE</dispatcher>
-        <dispatcher>OPTIONS</dispatcher>
     </filter-mapping>
 
 

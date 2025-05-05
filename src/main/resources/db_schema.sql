@@ -231,3 +231,23 @@ CREATE TABLE IF NOT EXISTS `file`
     INDEX `idx_file_context` (`context_type`, `context_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT = '文件上传记录表';
+
+-- 创建学期表
+CREATE TABLE IF NOT EXISTS `term`
+(
+    `id`               BIGINT       NOT NULL AUTO_INCREMENT,
+    `code`             VARCHAR(50)  NOT NULL COMMENT '学期代码, 如 2023-2024-1',
+    `name`             VARCHAR(100) NOT NULL COMMENT '学期名称, 如 2023-2024学年第一学期',
+    `start_date`       DATE         NULL COMMENT '开始日期',
+    `end_date`         DATE         NULL COMMENT '结束日期',
+    `is_current`       TINYINT  DEFAULT 0 COMMENT '是否当前学期：0-否，1-是',
+    `academic_year`    VARCHAR(20)  NULL COMMENT '学年，如：2023-2024',
+    `term_number`      TINYINT  DEFAULT 1 COMMENT '学期序号：1-第一学期，2-第二学期，3-第三学期（短学期/暑期）',
+    `status`           TINYINT  DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+    `description`      VARCHAR(255) NULL COMMENT '描述',
+    `creation_time`    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `last_update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_term_code` (`code`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT = '学期表';

@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ import java.util.function.Function;
  */
 @Component
 public class JwtUtil {
+    private static final Logger filterLogger = LoggerFactory.getLogger(JwtUtil.class);
 
     // 密钥
     @Value("${jwt.secret:campus-management-system-secret-key-for-jwt-authentication}")
@@ -165,28 +168,42 @@ public class JwtUtil {
             return secretKey;
         }
 
-        // 检查配置的密钥是否足够长
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        try {
+            // 检查配置的密钥是否足够长
+            byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+            filterLogger.info("正在初始化JWT密钥，配置的密钥长度: {} 字节", keyBytes.length);
 
-        // 如果配置的密钥不够长(小于64字节)，则生成更长的密钥
-        if (keyBytes.length < 64) {
-            // 创建一个至少512位（64字节）的密钥
-            byte[] newKeyBytes = new byte[64];
+            // 如果配置的密钥不够长(小于64字节)，则生成更长的密钥
+            if (keyBytes.length < 64) {
+                filterLogger.warn("配置的JWT密钥长度不足64字节，将自动扩展");
+                // 创建一个至少512位（64字节）的密钥
+                byte[] newKeyBytes = new byte[64];
 
-            // 将现有密钥复制到新数组
-            System.arraycopy(keyBytes, 0, newKeyBytes, 0, Math.min(keyBytes.length, 64));
+                // 将现有密钥复制到新数组
+                System.arraycopy(keyBytes, 0, newKeyBytes, 0, Math.min(keyBytes.length, 64));
 
-            // 使用SecureRandom填充剩余空间以确保密钥强度
-            new SecureRandom().nextBytes(newKeyBytes);
+                // 使用SecureRandom填充剩余空间以确保密钥强度
+                new SecureRandom().nextBytes(newKeyBytes);
 
-            // 创建并缓存密钥
-            secretKey = Keys.hmacShaKeyFor(newKeyBytes);
-        } else {
-            // 如果配置的密钥足够长，直接使用
-            secretKey = Keys.hmacShaKeyFor(keyBytes);
+                // 创建并缓存密钥
+                secretKey = Keys.hmacShaKeyFor(newKeyBytes);
+                filterLogger.info("JWT密钥已扩展并成功创建");
+            } else {
+                // 如果配置的密钥足够长，直接使用
+                secretKey = Keys.hmacShaKeyFor(keyBytes);
+                filterLogger.info("JWT密钥已成功创建");
+            }
+
+            return secretKey;
+        } catch (Exception e) {
+            filterLogger.error("创建JWT密钥时出错: {}", e.getMessage(), e);
+            // 创建默认密钥以防止程序崩溃
+            byte[] fallbackKeyBytes = new byte[64];
+            new SecureRandom().nextBytes(fallbackKeyBytes);
+            secretKey = Keys.hmacShaKeyFor(fallbackKeyBytes);
+            filterLogger.warn("已创建默认JWT密钥（应用重启后会变更）");
+            return secretKey;
         }
-
-        return secretKey;
     }
 
     /**

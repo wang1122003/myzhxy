@@ -3,25 +3,25 @@
   <div class="base-table-container">
     <!-- Element Plus 表格组件 -->
     <el-table
-        v-loading="loading"       <!-- 加载状态 -->
-    :border="border"           <!-- 是否显示纵向边框 -->
-    :data="tableData"         <!-- 表格数据源 -->
-    :height="height"           <!-- 表格固定高度 -->
-    :highlight-current-row="highlightCurrentRow" <!-- 是否高亮当前行 -->
-    :max-height="maxHeight"     <!-- 表格最大高度 -->
-    :row-key="rowKey"           <!-- 行数据的 Key，用于优化渲染或特定功能 (如树形表格、展开行) -->
-    :show-header="showHeader"   <!-- 是否显示表头 -->
-    :size="size"             <!-- 表格尺寸 -->
-    :stripe="stripe"           <!-- 是否显示斑马纹 -->
-    :tree-props="treeProps"     <!-- 树形表格配置 -->
-    @row-click="onRowClick"     <!-- 行点击事件 -->
-    @selection-change="onSelectionChange" <!-- 多选框选中状态改变事件 -->
-    @sort-change="onSortChange"     <!-- 排序条件改变事件 -->
-    :ref="tableId"              <!-- 绑定表格实例引用 (可选，但修复了潜在的 tableId 错误) -->
+        :ref="tableId"
+        v-loading="loading"
+        :border="border"
+        :data="tableData"
+        :height="height"
+        :highlight-current-row="highlightCurrentRow"
+        :max-height="maxHeight"
+        :row-key="rowKey"
+        :show-header="showHeader"
+        :size="size"
+        :stripe="stripe"
+        :tree-props="treeProps"
+        @row-click="onRowClick"
+        @selection-change="onSelectionChange"
+        @sort-change="onSortChange"
     >
-    <!-- 默认插槽，用于插入表格列 (el-table-column) -->
+      <!-- 默认插槽，用于插入表格列 (el-table-column) -->
       <slot></slot>
-    <!-- 空数据状态插槽 -->
+      <!-- 空数据状态插槽 -->
       <template #empty>
         <!-- 允许父组件通过 "empty" 插槽自定义空状态内容 -->
         <slot name="empty">
@@ -34,15 +34,15 @@
     <div v-if="isPagination" class="pagination-container">
       <!-- Element Plus 分页组件 -->
       <el-pagination
-          :current-page="currentPage"  <!-- 当前页码 (通过 prop 接收) -->
-      :page-size="pageSize"       <!-- 每页显示条目个数 (通过 prop 接收) -->
-      :layout="paginationLayout" <!-- 分页组件布局 -->
-      :page-sizes="pageSizes"     <!-- 可选的每页显示条目数 -->
-      :total="total"             <!-- 总条目数 -->
-      @size-change="onSizeChange"    <!-- pageSize 改变时触发 -->
-      @current-change="onCurrentChange" <!-- currentPage 改变时触发 -->
-      @update:current-page="val => emit('update:current-page', val)" <!-- 支持 currentPage 的 v-model 双向绑定 -->
-      @update:page-size="val => emit('update:page-size', val)"       <!-- 支持 pageSize 的 v-model 双向绑定 -->
+          :current-page="currentPage"
+          :layout="paginationLayout"
+          :page-size="pageSize"
+          :page-sizes="pageSizes"
+          :total="total"
+          @size-change="onSizeChange"
+          @current-change="onCurrentChange"
+          @update:current-page="val => emit('update:current-page', val)"
+          @update:page-size="val => emit('update:page-size', val)"
       />
     </div>
   </div>
@@ -50,7 +50,6 @@
 
 <script setup>
 import {defineEmits, defineProps, onMounted, ref} from 'vue';
-import type {ElTable} from 'element-plus'; // 引入 ElTable 类型，用于 tableId 的类型提示 (可选)
 
 // 定义组件的 props
 const props = defineProps({
@@ -98,75 +97,68 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
-  // 行数据的 Key，用来优化 Table 的渲染；在使用 reserve-selection 功能与显示树形数据时，该属性是必填的。类型为 String 时，支持多层访问：user.info.id，但不支持 user.info[0].id，此种情况请使用 Function。
+  // 行数据的 Key
   rowKey: {
     type: [String, Function],
-    default: 'id' // 默认为 'id'
+    default: 'id'
   },
   // 渲染树形数据时的配置项
   treeProps: {
-    type: Object as()
-=>
-{
-  children ? : string;
-  hasChildren ? : string
-}
-, // 类型断言，指定对象结构
+    type: Object,
     default: () => ({
-  children: 'children',       // 指定子节点列表的字段名
-  hasChildren: 'hasChildren'  // 指定当前节点是否包含子节点的字段名
+      children: 'children',
+      hasChildren: 'hasChildren'
     })
   },
-// 是否要高亮当前行
-{
-  Boolean,
+  // 是否要高亮当前行
+  highlightCurrentRow: {
+    type: Boolean,
     default: false
   },
-// 是否显示分页
-{
-  Boolean,
+  // 是否显示分页
+  isPagination: {
+    type: Boolean,
     default: false
   },
-// 当前页数 (用于分页)
-{
-  Number,
+  // 当前页数 (用于分页)
+  currentPage: {
+    type: Number,
     default: 1
   },
-// 每页显示条目个数 (用于分页)
-{
-  Number,
+  // 每页显示条目个数 (用于分页)
+  pageSize: {
+    type: Number,
     default: 10
   },
-// 每页显示个数选择器的选项设置 (用于分页)
-{
-  Array,
+  // 每页显示个数选择器的选项设置 (用于分页)
+  pageSizes: {
+    type: Array,
     default: () => [10, 20, 50, 100]
   },
-// 分页组件布局，子组件名用逗号分隔
-{
-  String,
+  // 分页组件布局，子组件名用逗号分隔
+  paginationLayout: {
+    type: String,
     default: 'total, sizes, prev, pager, next, jumper'
   },
-// 总条目数 (用于分页)
-{
-  Number,
+  // 总条目数 (用于分页)
+  total: {
+    type: Number,
     default: 0
   }
-})
+});
 
 // 定义组件的 emits
 const emit = defineEmits([
   'row-click',          // 行点击事件
-  'selection-change', // 多选选中项改变事件
+  'selection-change',   // 多选选中项改变事件
   'sort-change',        // 排序改变事件
   'size-change',        // 分页大小改变事件
   'current-change',     // 分页页码改变事件
   'update:current-page', // 用于 v-model:current-page
-  'update:page-size'      // 用于 v-model:page-size
+  'update:page-size'     // 用于 v-model:page-size
 ]);
 
-// 表格实例引用 (可选，但修复了潜在的 tableId 读取错误)
-// 也可以使用 const tableRef = ref<InstanceType<typeof ElTable> | null>(null);
+// 表格实例引用
 const tableId = ref(`el-table-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`);
 
 // --- 表格事件处理函数 --- 
@@ -205,7 +197,6 @@ const onSortChange = (column) => {
  */
 const onSizeChange = (val) => {
   emit('size-change', val);
-  // 注意: 如果使用了 v-model:page-size，这里不需要手动 emit 'update:page-size'
 };
 
 /**
@@ -214,17 +205,12 @@ const onSizeChange = (val) => {
  */
 const onCurrentChange = (val) => {
   emit('current-change', val);
-  // 注意: 如果使用了 v-model:current-page，这里不需要手动 emit 'update:current-page'
 };
 
 // --- 生命周期钩子 ---
 onMounted(() => {
-  // 可以在组件挂载后执行一些初始化逻辑，例如获取数据等
-  // 但通常数据获取的逻辑会在父组件中处理
+  // 可以在组件挂载后执行一些初始化逻辑
 });
-
-// 可以暴露一些方法给父组件调用 (如果需要)
-// defineExpose({ ... });
 
 </script>
 

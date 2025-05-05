@@ -379,7 +379,7 @@ export default {
         // 添加点赞加载状态
         comments.value.forEach(comment => {
           comment.likeLoading = false
-          // TODO: Consider if replies are nested or need separate fetching
+          // 考虑是否嵌套回复或需要单独获取
           if (comment.replies) {
             comment.replies.forEach(subComment => {
               subComment.likeLoading = false

@@ -7,9 +7,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.dao.FileDao;
 import com.campus.entity.Course;
 import com.campus.entity.File;
+import com.campus.entity.User;
 import com.campus.exception.CustomException;
 import com.campus.service.CourseService;
 import com.campus.service.FileService;
+import com.campus.dao.UserDao;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +42,9 @@ public class FileImpl extends ServiceImpl<FileDao, File> implements FileService 
 
     @Autowired
     private CourseService courseService;
+
+    @Autowired
+    private UserDao userDao;
 
     @Override
     @Transactional
@@ -167,12 +172,12 @@ public class FileImpl extends ServiceImpl<FileDao, File> implements FileService 
         } else if ("course".equals(file.getContextType())) {
             // 2. 课程资料：允许上传者删除，或课程的授课教师删除
             boolean canDelete = Objects.equals(file.getUserId(), userId);
-            // Check if operator is the uploader
-            // Check if operator is the teacher of the course
+            // 检查操作者是否是上传者
+            // 检查操作者是否是课程的教师
             if (!canDelete && file.getContextId() != null) {
                 try {
                     Course course = courseService.getCourseById(file.getContextId());
-                    // Assuming Course entity has a teacherId field or similar
+                    // 假设Course实体有teacherId字段或类似
                     if (course != null && Objects.equals(course.getTeacherId(), userId)) {
                         canDelete = true;
                     } else {
@@ -182,7 +187,7 @@ public class FileImpl extends ServiceImpl<FileDao, File> implements FileService 
                 } catch (Exception e) {
                     log.error("校验课程资料删除权限时获取课程信息出错, courseId: {}, operatorId: {}",
                             file.getContextId(), userId, e);
-                    // Fallback: Do not allow deletion if course info check fails
+                    // 回退：如果课程信息检查失败，则不允许删除
                 }
             }
 
@@ -270,28 +275,67 @@ public class FileImpl extends ServiceImpl<FileDao, File> implements FileService 
     @Override
     public IPage<File> getFileList(int page, int size, String filename, String uploaderName, String fileType) {
         Page<File> pageRequest = new Page<>(page, size);
-        LambdaQueryWrapper<File> queryWrapper = new LambdaQueryWrapper<>();
 
-        // 基础条件：只查询状态正常的文件
-        queryWrapper.eq(File::getStatus, 1);
+        try {
+            if (uploaderName != null && !uploaderName.isEmpty()) {
+                // 使用自定义SQL或MyBatis-Plus的方式处理关联查询
+                Map<String, Object> params = new HashMap<>();
+                params.put("page", page);
+                params.put("size", size);
+                params.put("filename", filename);
+                params.put("uploaderName", uploaderName);
+                params.put("fileType", fileType);
 
-        // 添加过滤条件
-        if (filename != null && !filename.isEmpty()) {
-            queryWrapper.like(File::getFilename, filename);
+                // 通过DAO层执行关联查询
+                IPage<File> resultPage = baseMapper.getFileListWithUserInfo(pageRequest, params);
+                return resultPage;
+            } else {
+                // 如果不需要按上传者名称过滤，使用简单查询
+                LambdaQueryWrapper<File> queryWrapper = new LambdaQueryWrapper<>();
+
+                // 基础条件：只查询状态正常的文件
+                queryWrapper.eq(File::getStatus, 1);
+
+                // 添加过滤条件
+                if (filename != null && !filename.isEmpty()) {
+                    queryWrapper.like(File::getFilename, filename);
+                }
+
+                if (fileType != null && !fileType.isEmpty()) {
+                    queryWrapper.like(File::getFileType, fileType);
+                }
+
+                // 按上传时间降序排列
+                queryWrapper.orderByDesc(File::getUploadTime);
+
+                IPage<File> resultPage = baseMapper.selectPage(pageRequest, queryWrapper);
+
+                // 为每个文件记录加载上传者信息
+                if (resultPage.getRecords() != null && !resultPage.getRecords().isEmpty()) {
+                    for (File file : resultPage.getRecords()) {
+                        if (file.getUserId() != null) {
+                            try {
+                                // 查询用户信息
+                                User uploader = userDao.selectById(file.getUserId());
+                                if (uploader != null) {
+                                    // 将用户信息设置到文件记录中
+                                    file.setUploaderName(uploader.getUsername());
+                                    file.setUploaderRealName(uploader.getRealName());
+                                }
+                            } catch (Exception e) {
+                                log.error("加载文件上传者信息失败", e);
+                            }
+                        }
+                    }
+                }
+
+                return resultPage;
+            }
+        } catch (Exception e) {
+            log.error("获取文件列表失败", e);
+            // 发生异常时返回空页
+            return new Page<>();
         }
-
-        // 如果需要根据上传者名称过滤，这里可能需要关联查询用户表
-        // 这里简化处理，实际实现应根据数据库结构调整
-        // TODO: 优化为关联查询用户表
-
-        if (fileType != null && !fileType.isEmpty()) {
-            queryWrapper.like(File::getFileType, fileType);
-        }
-
-        // 按上传时间降序排列
-        queryWrapper.orderByDesc(File::getUploadTime);
-
-        return baseMapper.selectPage(pageRequest, queryWrapper);
     }
 
     /**

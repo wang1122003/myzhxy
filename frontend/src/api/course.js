@@ -129,9 +129,17 @@ export function getTeacherCourses(params) {
 
 // 学生获取自己的课程列表
 export function getStudentCourses(params) {
+    const userStore = window._pinia && window._pinia.state.value.user;
+    const userId = userStore ? userStore.userInfo.id : null;
+
+    if (!userId) {
+        console.warn('获取学生课程: 无法获取用户ID');
+        return Promise.reject(new Error('用户未登录或ID不可用'));
+    }
+    
     return request({
-        url: API.GET_ALL, // 使用定义的路径
+        url: `/course-selections/student/${userId}`, // 使用选课API获取学生已选课程
         method: 'get',
         params
-    })
+    });
 } 

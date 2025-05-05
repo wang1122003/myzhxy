@@ -153,13 +153,24 @@
         <security:custom-filter ref="jwtAuthenticationFilter" before="FORM_LOGIN_FILTER"/>
 
         <!-- 配置拦截规则 -->
-        <!-- 明确放行 OPTIONS 请求 -->
+        <!-- 明确放行 OPTIONS 请求，支持预检请求 -->
         <security:intercept-url pattern="/**" method="OPTIONS" access="permitAll"/>
+
+        <!-- 放行静态资源 -->
+        <security:intercept-url pattern="/assets/**" access="permitAll"/>
+        <security:intercept-url pattern="/css/**" access="permitAll"/>
+        <security:intercept-url pattern="/js/**" access="permitAll"/>
+        <security:intercept-url pattern="/images/**" access="permitAll"/>
+        <security:intercept-url pattern="/favicon.ico" access="permitAll"/>
+        <security:intercept-url pattern="/index.html" access="permitAll"/>
+        <security:intercept-url pattern="/logo.png" access="permitAll"/>
 
         <!-- 先列出所有需要明确放行的 API -->
         <security:intercept-url pattern="/api/users/login" access="permitAll"/>
         <security:intercept-url pattern="/api/users/register" access="permitAll"/>
+        <security:intercept-url pattern="/api/users/refresh-token" access="permitAll"/>
         <security:intercept-url pattern="/api/common/**" access="permitAll"/>
+
         <!-- 放行通知公告的公共接口 -->
         <security:intercept-url pattern="/api/notifications/recent" access="permitAll"/>
         <security:intercept-url pattern="/api/notifications/types" access="permitAll"/>
@@ -193,7 +204,14 @@
 
     <!-- 7. 通用 Bean -->
     <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" init-method="findAndRegisterModules">
-        <!-- 移除 property 配置，改为使用 init-method -->
+        <!-- 添加必要的配置 -->
+        <property name="dateFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="yyyy-MM-dd HH:mm:ss"/>
+            </bean>
+        </property>
+        <property name="serializationInclusion" value="NON_NULL"/>
+        <property name="propertyNamingStrategy" value="LOWER_CAMEL_CASE"/>
     </bean>
 
 </beans>

@@ -145,7 +145,11 @@ export function logout() {
 export function refreshToken() {
     return request({
         url: API.REFRESH_TOKEN,
-        method: 'post'
+        method: 'post',
+        // 重要：防止形成无限循环
+        _skipRefreshToken: true, // 标记此请求在401时不要触发刷新token
+        // 增加超时时间，确保有足够时间响应
+        timeout: 10000
     })
 }
 

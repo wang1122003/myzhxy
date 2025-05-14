@@ -44,7 +44,6 @@
             </el-tag>
           </template>
         </el-table-column>
-      <el-table-column label="发布人" prop="publisherName" show-overflow-tooltip width="120"/>
       <el-table-column label="发布时间" prop="publishTime" width="160">
         <template #default="scope">
           {{ formatTime(scope.row.publishTime) }}
@@ -52,48 +51,38 @@
         </el-table-column>
         <el-table-column label="状态" prop="status" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'info'">
-              {{ scope.row.status === 'ACTIVE' ? '已发布' : '草稿' }}
+            <el-tag :type="scope.row.status === 'ACTIVE' || scope.row.status === '1' ? 'success' : 'info'">
+              {{ (scope.row.status === 'ACTIVE' || scope.row.status === '1') ? '已发布' : '草稿' }}
             </el-tag>
           </template>
         </el-table-column>
-      <el-table-column label="置顶" prop="isTop" width="80">
-        <template #default="scope">
-          <el-switch
-              v-model="scope.row.isTop"
-              :active-value="true"
-              :inactive-value="false"
-              @change="handleToggleTop(scope.row)"
-          />
-        </template>
-        </el-table-column>
-      <el-table-column fixed="right" label="操作" width="180">
+      <el-table-column fixed="right" label="操作" width="220">
           <template #default="scope">
-            <el-button size="small" type="primary" @click="handleViewNotice(scope.row)">
-              预览
-            </el-button>
-            <el-button size="small" type="warning" @click="handleEditNotice(scope.row)">
-              编辑
-            </el-button>
-            <el-button size="small" type="danger" @click="handleDeleteNotice(scope.row)">
-              删除
-            </el-button>
+            <div style="display: flex; gap: 5px;">
+              <el-button size="small" type="primary" @click="handleViewNotice(scope.row)">
+                预览
+              </el-button>
+              <el-button size="small" type="warning" @click="handleEditNotice(scope.row)">
+                编辑
+              </el-button>
+              <el-button size="small" type="danger" @click="handleDeleteNotice(scope.row)">
+                删除
+              </el-button>
+            </div>
           </template>
       </el-table-column>
     </TableView>
 
     <!-- 通知详情对话框 -->
-    <el-dialog
-        v-model="noticeDetailVisible"
+    <DialogWrapper
+        v-model:visible="noticeDetailVisible"
         :title="currentNotice.title"
-        append-to-body
-        top="5vh"
         width="60%"
+        @close="noticeDetailVisible = false"
     >
       <div v-if="currentNotice.id" v-loading="loadingNoticeDetail">
         <div class="notice-content">
           <div class="notice-info">
-            <span>发布人：{{ currentNotice.publisherName }}</span>
             <span>发布时间：{{ formatTime(currentNotice.publishTime) }}</span>
           </div>
           <el-divider/>
@@ -121,12 +110,11 @@
           <el-button @click="noticeDetailVisible = false">关闭</el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
 
     <!-- 添加/编辑公告对话框 -->
-    <el-dialog
-        v-model="noticeFormVisible"
-        :close-on-click-modal="false"
+    <DialogWrapper
+        v-model:visible="noticeFormVisible"
         :title="isEditMode ? '编辑公告' : '发布公告'"
         width="70%"
         @close="resetForm"
@@ -138,6 +126,7 @@
           :submitting="submitting"
           @cancel="noticeFormVisible = false"
           @submit="submitNoticeForm"
+          class="form-container"
       >
         <el-form-item label="标题" prop="title">
           <el-input v-model="noticeForm.title" placeholder="请输入公告标题"/>
@@ -181,21 +170,21 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="noticeForm.status">
-            <el-radio label="ACTIVE">立即发布</el-radio>
-            <el-radio label="DRAFT">保存为草稿</el-radio>
+            <el-radio :value="'ACTIVE'">立即发布</el-radio>
+            <el-radio :value="'DRAFT'">保存为草稿</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="置顶" prop="isTop">
           <el-switch
               v-model="noticeForm.isTop"
-              :active-value="true"
-              :inactive-value="false"
+              :active-value="1"
+              :inactive-value="0"
               active-text="是"
               inactive-text="否"
           />
         </el-form-item>
       </FormView>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -209,14 +198,18 @@ import {
   addNotification,
   updateNotification,
   deleteNotification,
-  updateNotificationStatus
+  updateNotificationStatus,
+  updateNotificationTopStatus
 } from '@/api/notice';
 import {downloadFile} from '@/api/file';
 import {useUserStore} from '@/stores/userStore';
-import PageContainer from '@/components/common/EnhancedPageContainer.vue';
-import FilterForm from '@/components/common/AdvancedFilterForm.vue';
-import TableView from '@/components/common/TableView.vue';
-import FormView from '@/components/common/SmartForm.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FormView from '@/views/ui/SmartForm.vue';
+import RichTextEditor from '@/views/ui/RichTextEditor.vue';
+import {formatDateTime, formatFileSize} from '@/utils/formatters';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 const userStore = useUserStore();
 
@@ -263,7 +256,7 @@ const noticeForm = reactive({
   type: 'GENERAL',
   content: '',
   status: 'ACTIVE',
-  isTop: false,
+  isTop: 0,
   attachmentIds: []
 });
 
@@ -293,9 +286,10 @@ const noticeFormRules = {
 // 通知类型选项
 const noticeTypeOptions = [
   {value: 'SYSTEM', label: '系统通知'},
-  {value: 'COURSE', label: '教学通知'},
+  {value: 'ACADEMIC', label: '教学通知'},
   {value: 'ACTIVITY', label: '活动公告'},
-  {value: 'GENERAL', label: '通用'}
+  {value: 'FACILITY', label: '设施维护'},
+  {value: 'GENERAL', label: '通用公告'}
 ];
 
 // 计算属性：判断是编辑还是新增模式
@@ -316,22 +310,18 @@ const formatTime = (timeStr) => {
 const formatNoticeType = (type) => {
   const typeMap = {
     'SYSTEM': '系统通知',
-    'COURSE': '教学通知',
+    'ACADEMIC': '教学通知',
     'ACTIVITY': '活动公告',
-    'GENERAL': '通用'
+    'FACILITY': '设施维护',
+    'GENERAL': '通用公告'
   };
   return typeMap[type] || type;
 };
 
 // 获取通知类型标签样式
 const getNoticeTagType = (type) => {
-  const typeMap = {
-    'SYSTEM': 'info',
-    'COURSE': 'success',
-    'ACTIVITY': 'warning',
-    'GENERAL': 'danger'
-  };
-  return typeMap[type] || 'info';
+  const foundType = noticeTypeOptions.find(option => option.value === type);
+  return foundType ? foundType.tagType : 'info'; // 返回 'info' 作为默认类型
 };
 
 // 获取通知列表
@@ -350,6 +340,13 @@ const fetchNoticeList = async () => {
     if (res && res.records) {
       noticeList.value = res.records;
       total.value = res.total;
+
+      // 确保状态字段正确
+      noticeList.value.forEach(notice => {
+        if (notice.status === undefined || notice.status === null) {
+          notice.status = 'ACTIVE'; // 默认为已发布状态
+        }
+      });
     } else {
       noticeList.value = [];
       total.value = 0;
@@ -362,7 +359,7 @@ const fetchNoticeList = async () => {
   }
 };
 
-// 查看通知详情
+// 获取通知详情
 const handleViewNotice = async (row) => {
   noticeDetailVisible.value = true;
   loadingNoticeDetail.value = true;
@@ -380,6 +377,10 @@ const handleViewNotice = async (row) => {
   
   try {
     const res = await getNotificationById(row.id);
+    // 确保isTop字段值类型一致
+    if (res.isTop === 0 || res.isTop === 1) {
+      res.isTop = Number(res.isTop);
+    }
     Object.assign(currentNotice, res);
   } catch (error) {
     console.error('获取通知详情失败', error);
@@ -403,6 +404,11 @@ const handleEditNotice = async (row) => {
   
   try {
     const res = await getNotificationById(row.id);
+
+    // 确保isTop字段值类型一致
+    if (res.isTop === 0 || res.isTop === 1) {
+      res.isTop = Number(res.isTop);
+    }
 
     // 填充表单数据
     noticeForm.id = res.id;
@@ -450,16 +456,16 @@ const handleDeleteNotice = (row) => {
   });
 };
 
-// 切换置顶状态
-const handleToggleTop = async (row) => {
+// 切换置顶状态 - 将此函数保留为内部辅助函数，在编辑通知时可能需要使用
+const handleToggleTop = async (id, isTop) => {
   try {
-    await updateNotificationStatus(row.id, row.isTop);
-    ElMessage.success(`${row.isTop ? '置顶' : '取消置顶'}成功`);
+    await updateNotificationTopStatus(id, isTop);
+    ElMessage.success(`${isTop ? '置顶' : '取消置顶'}成功`);
+    // 刷新列表确保显示最新状态
+    await fetchNoticeList();
   } catch (error) {
     console.error('操作失败', error);
     ElMessage.error('操作失败');
-    // 还原状态
-    row.isTop = !row.isTop;
   }
 };
 
@@ -468,25 +474,31 @@ const submitNoticeForm = async () => {
   submitting.value = true;
 
   try {
+    // 转换表单数据，确保JSON字段正确
     const formData = {
       ...noticeForm,
-      attachmentIds: noticeForm.attachmentIds
+      attachmentIds: noticeForm.attachmentIds,
+      // 发布人ID设为admin用户ID
+      publisherId: 1,
+      senderId: 1,
+      // 如果是新建，设置发送时间为当前时间
+      sendTime: isEditMode.value ? undefined : new Date().toISOString()
     };
-    
-        if (isEditMode.value) {
-          await updateNotification(formData);
-          ElMessage.success('更新成功');
-        } else {
-          await addNotification(formData);
-          ElMessage.success('发布成功');
-        }
+
+    if (isEditMode.value) {
+      await updateNotification(formData.id, formData);
+      ElMessage.success('更新成功');
+    } else {
+      await addNotification(formData);
+      ElMessage.success('发布成功');
+    }
 
     noticeFormVisible.value = false;
     fetchNoticeList();
-      } catch (error) {
+  } catch (error) {
     console.error('提交表单失败', error);
     ElMessage.error(error.response?.data?.message || '操作失败');
-      } finally {
+  } finally {
     submitting.value = false;
   }
 };
@@ -503,7 +515,7 @@ const resetForm = () => {
     type: 'GENERAL',
     content: '',
     status: 'ACTIVE',
-    isTop: false,
+    isTop: 0,
     attachmentIds: []
   });
 
@@ -596,11 +608,13 @@ onMounted(() => {
   padding: 16px;
   max-height: 70vh;
   overflow-y: auto;
-  }
+  position: relative;
+  z-index: 10;
+}
 
 .notice-info {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: center;
   color: #666;
   font-size: 14px;
   margin-bottom: 16px;
@@ -623,5 +637,14 @@ onMounted(() => {
 
 .notice-attachments li {
   margin-bottom: 8px;
+}
+
+.el-form-item {
+  margin-bottom: 20px;
+}
+
+.form-container {
+  position: relative;
+  z-index: 10;
 }
 </style>

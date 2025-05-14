@@ -156,9 +156,9 @@ import {cancelJoinActivity, getAllActivities, getMyActivities, joinActivity} fro
 // 引入日期时间格式化工具函数
 import {formatDateTime} from '@/utils/formatters';
 // 引入自定义的页面容器、表格视图和筛选表单组件
-import PageContainer from '@/components/common/EnhancedPageContainer.vue';
-import TableView from '@/components/common/TableView.vue';
-import FilterForm from '@/components/common/AdvancedFilterForm.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
 
 // --- 响应式状态定义 ---
 const router = useRouter(); // Vue Router 实例
@@ -397,45 +397,51 @@ const fetchData = async (fetchType = activeTab.value) => {
 
     // --- 处理活动列表响应 ---
     console.log(`获取到 ${fetchType} 活动数据响应:`, activitiesRes);
-    if (activitiesRes && activitiesRes.code === 200) {
-      // 检查标准分页响应格式
+
+    // 优先处理用户提供的直接JSON结构 { list: [], total: N, ... }
+    if (activitiesRes && Array.isArray(activitiesRes.list) && typeof activitiesRes.total !== 'undefined') {
+      activityList.value = activitiesRes.list;
+      total.value = activitiesRes.total;
+      // console.log('成功解析直接的活动列表数据。');
+      // 如果响应中包含 pageSize 和 currentPage，可以考虑更新组件的 ref，但这需要小心处理以避免无限循环
+      // 例如，如果分页组件的 pageSize 是双向绑定的，并且 watch 了 pageSize，则更新 pageSize.value 会触发重新获取数据
+      // if (typeof activitiesRes.pageSize === 'number' && pageSize.value !== activitiesRes.pageSize) {
+      //   pageSize.value = activitiesRes.pageSize;
+      // }
+      // if (typeof activitiesRes.currentPage === 'number' && currentPage.value !== activitiesRes.currentPage) {
+      //   // currentPage.value = activitiesRes.currentPage; // 更新这个要非常小心 watch 触发的 refetch
+      // }
+    }
+    // 备选：处理常见的 { code: 200, data: { ... } } 包装结构
+    else if (activitiesRes && activitiesRes.code === 200 && activitiesRes.data) {
       const data = activitiesRes.data;
-      if (data) {
-        // 格式1: { data: { records: [], total, size, current } } - 新分页格式
-        if (data.records && Array.isArray(data.records)) {
-          activityList.value = data.records;
-          total.value = data.total || 0;
-        }
-        // 格式2: { data: { list: [], total, pageSize, currentPage } } - 旧分页格式
-        else if (data.list && Array.isArray(data.list)) {
-          activityList.value = data.list;
-          total.value = data.total || 0;
-        }
-        // 格式3: { data: [] } - 直接返回数组
-        else if (Array.isArray(data)) {
-          activityList.value = data;
-          total.value = data.length;
-        }
-        // 其他未知格式
-        else {
-          console.warn('未能识别的活动数据格式:', data);
-          activityList.value = [];
-          total.value = 0;
-        }
+      if (Array.isArray(data.list) && typeof data.total !== 'undefined') { // 对应旧格式: { data: { list: [], total, ... } }
+        activityList.value = data.list;
+        total.value = data.total;
+        // console.log('成功解析包装后的活动列表数据 (data.list)。');
+      } else if (Array.isArray(data.records) && typeof data.total !== 'undefined') { // 对应新格式: { data: { records: [], total, ... } }
+        activityList.value = data.records;
+        total.value = data.total;
+        // console.log('成功解析包装后的活动列表数据 (data.records)。');
+      } else if (Array.isArray(data)) { // 对应直接返回数组: { data: [] }
+        activityList.value = data;
+        total.value = data.length;
+        //  console.log('成功解析包装后的活动列表数据 (data is array)。');
       } else {
-        // data为空
-        console.warn('活动数据为空');
-        activityList.value = [];
+        console.warn('未能识别的包装后活动数据格式 (activitiesRes.data):', data);
+        ElMessage.error(activitiesRes.message || '活动数据格式错误 (code 200, data unknown)');
+        activityList.value = []; // 清空数据
         total.value = 0;
       }
-    } else {
-      // API 返回错误或非预期格式
-      console.error('API返回错误:', activitiesRes);
+    }
+    // 其他所有情况，视为错误或无法处理的格式
+    else {
+      console.error('API返回错误或未能识别的活动数据格式:', activitiesRes);
       ElMessage.error(activitiesRes?.message || `获取${fetchType === 'enrolled' ? '我报名的' : ''}活动列表失败`);
-      activityList.value = [];
+      activityList.value = []; // 清空数据
       total.value = 0;
     }
-    console.log('处理后的活动列表:', activityList.value);
+    console.log('处理后的活动列表:', activityList.value, '总数:', total.value);
 
     // --- 处理我报名的活动 ID 响应 ---
     console.log('获取到已报名活动 ID 数据响应:', myActivitiesIdsRes);

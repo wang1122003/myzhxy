@@ -134,8 +134,8 @@
     </el-row>
 
     <!-- 公告详情对话框 -->
-    <el-dialog
-        v-model="noticeDialogVisible"
+    <DialogWrapper
+        v-model:visible="noticeDialogVisible"
         :title="currentNotice.title"
         append-to-body
         top="5vh"
@@ -185,7 +185,7 @@
           <el-button @click="noticeDialogVisible = false">关 闭</el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
   </div>
 </template>
 
@@ -198,6 +198,7 @@ import {useUserStore} from '@/stores/userStore'
 import {getNotificationById, getRecentNotifications} from '@/api/notice'
 import {login} from '@/api/user'
 import {downloadFile} from '@/api/file'
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 // defineOptions({
 //   name: 'HomePage'
@@ -312,45 +313,55 @@ const handleLogin = () => {
     if (valid) {
       loginLoading.value = true
       try {
-        const response = await login({
+        const loggedInRole = await userStore.login({
           username: loginForm.username,
-          password: loginForm.password
-        })
+          password: loginForm.password,
+          remember: loginForm.remember
+        });
 
-        if (response && response.token && response.user) {
-          // 使用userStore设置token和用户信息
-          const userStore = useUserStore()
-          userStore.setToken(response.token)
-          userStore.setUserInfo(response.user)
-          
-          // 根据 remember 状态存储或移除用户名
-          if (loginForm.remember) {
-            localStorage.setItem('username', loginForm.username)
-          } else {
-            localStorage.removeItem('username')
-          }
-
+        if (loggedInRole) {
           ElMessage.success('登录成功')
+          const role = loggedInRole;
+          console.log(`[HomePage] Login successful (role: ${role}), preparing to navigate directly via nextTick.`);
 
-          // 根据角色重定向
-          const role = userStore.userRole()
-          console.log('[HomePage] Redirecting based on role:', role)
-          if (role === 'admin') {
-            router.push('/admin/notice')
-          } else if (role === 'teacher') {
-            router.push('/teacher')
-          } else if (role === 'student') {
-            router.push('/student')
-          } else {
-            router.push('/') // Fallback to home if role is unexpected
-          }
+          nextTick(async () => {
+            try {
+              let targetPath = '/'; // Default fallback
+              if (role === 'admin') {
+                targetPath = '/admin/notice';
+              } else if (role === 'teacher') {
+                targetPath = '/teacher';
+              } else if (role === 'student') {
+                targetPath = '/student';
+              } else {
+                console.warn('[HomePage] Unknown role after login, navigating to /');
+              }
+
+              console.log(`[HomePage] Inside nextTick, calling router.push('${targetPath}')...`);
+              await router.push(targetPath);
+              console.log(`[HomePage] router.push('${targetPath}') promise resolved.`);
+            } catch (navigationFailure) {
+              // 如果导航被守卫取消或重定向，也可能进入 catch
+              // Vue Router 导航失败/中止通常不会抛出错误，除非配置了 throw：true
+              // 但捕获以防万一
+              console.error(`[HomePage] router.push to target path failed or was aborted:`, navigationFailure);
+              // 检查是否是 NavigationFailure 类型（需要从 vue-router 导入）
+              // import { NavigationFailureType, isNavigationFailure } from 'vue-router';
+              // if (isNavigationFailure(navigationFailure, NavigationFailureType.aborted)) {
+              //   console.log('[HomePage] Navigation aborted, likely by guard.');
+              // } else {
+              //   ElMessage.error('页面跳转失败。');
+              // }
+              // 简化处理：假定 promise reject 就是问题
+              ElMessage.error('页面跳转时发生错误。');
+            }
+          });
+
         } else {
-          // 使用后端返回的错误消息，如果存在的话
-          ElMessage.error(response?.message || '登录失败，请检查用户名或密码')
+          ElMessage.error('登录失败，请检查用户名或密码')
         }
       } catch (error) {
-        console.error('登录请求失败:', error)
-        // 检查 error 对象是否有更具体的后端错误信息
+        console.error('登录过程中发生错误:', error)
         const backendMessage = error?.response?.data?.message || error?.message
         ElMessage.error(backendMessage || '登录请求失败')
       } finally {

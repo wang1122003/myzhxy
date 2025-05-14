@@ -1,5 +1,5 @@
 <template>
-  <PageContainer title="课表管理">
+  <PageContainer title="选课管理">
     <template #actions>
         <el-button
             type="primary"
@@ -30,9 +30,9 @@
         @refresh="fetchSchedule"
         />
 
-    <!-- 手动添加/编辑课表项 对话框 (保持不变) -->
-    <el-dialog
-        v-model="dialogVisible"
+    <!-- 手动添加/编辑课表项 对话框 -->
+    <DialogWrapper
+        v-model:visible="dialogVisible"
         :title="dialogTitle"
         width="700px"
         @close="resetScheduleForm"
@@ -55,12 +55,13 @@
                   :disabled="isEditMode"
                   filterable
                   placeholder="选择学期"
+                  style="width: 100%"
               >
                 <el-option
                     v-for="item in termList"
                     :key="item.id"
-                    :label="item.termName"
-                    :value="item.id"
+                    :label="item.termName || item.name"
+                    :value="item.id || item.code"
                 />
               </el-select>
             </el-form-item>
@@ -110,37 +111,16 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item
-                label="班级"
-                prop="classId"
-            >
-              <el-select
-                  v-model="scheduleForm.classId"
-                  :loading="loadingClasses"
-                  filterable
-                  placeholder="选择班级"
-                  style="width: 100%;"
-              >
-                <el-option
-                    v-for="cls in classOptions"
-                    :key="cls.id"
-                    :label="cls.name"
-                    :value="cls.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
                 label="星期"
-                prop="weekday"
+                prop="dayOfWeek"
             >
               <el-select
-                  v-model="scheduleForm.weekday"
+                  v-model="scheduleForm.dayOfWeek"
                   placeholder="选择星期"
                   style="width: 100%;"
               >
@@ -248,7 +228,7 @@
             {{ submitButtonText }}
           </el-button>
       </template>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -260,8 +240,11 @@ import {addSchedule, deleteSchedule, getSchedulesPage, updateSchedule} from '@/a
 import {getAllTerms} from '@/api/term';
 import {getAllCoursesForSelect} from '@/api/course';
 import {getTeacherList} from '@/api/user';
-import {getClasses} from '@/api/common';
 import {getAllClassroomsList} from '@/api/classroom';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import TableView from '@/views/ui/TableView.vue';
 
 
 // --- 常量 ---
@@ -284,7 +267,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const searchParams = reactive({
   termId: null,
-  weekDay: null,
+  dayOfWeek: null,
   keyword: '',
 });
 const termList = ref([]);
@@ -298,24 +281,22 @@ const scheduleForm = reactive({
   termId: null,
   courseId: null,
   teacherId: null,
-  classId: null,
-  weekday: null,
+  dayOfWeek: null,
   startTime: '',
   endTime: '',
   classroomId: null,
   startWeek: 1,
   endWeek: 16,
-  notes: ''
+  notes: '',
+  capacity: 0,
 });
 const submitting = ref(false);
 const loadingForm = ref(false); // 用于加载表单内下拉框数据
 const loadingCourses = ref(false);
 const loadingTeachers = ref(false);
-const loadingClasses = ref(false);
 const loadingClassrooms = ref(false);
 const courseOptions = ref([]);
 const teacherOptions = ref([]);
-const classOptions = ref([]);
 const classroomOptions = ref([]);
 
 // --- 计算属性 ---
@@ -328,13 +309,13 @@ const filterItems = computed(() => [
     label: '学期',
     prop: 'termId',
     placeholder: '选择学期',
-    options: termList.value.map(term => ({label: term.termName, value: term.id})),
+    options: termList.value.map(term => ({label: term.termName || term.name, value: term.id})),
     props: {clearable: true, filterable: true, style: {width: '200px'}}
   },
   {
     type: 'select',
     label: '星期',
-    prop: 'weekDay',
+    prop: 'dayOfWeek',
     placeholder: '选择星期',
     options: WEEKDAY_OPTIONS,
     props: {clearable: true, style: {width: '150px'}}
@@ -352,12 +333,11 @@ const filterItems = computed(() => [
 const tableColumns = [
   {prop: 'courseName', label: '课程名称', minWidth: 150},
   {prop: 'teacherName', label: '授课教师', minWidth: 100},
-  {prop: 'className', label: '班级', minWidth: 120},
   {
-    prop: 'weekday',
+    prop: 'dayOfWeek',
     label: '星期',
     width: 100,
-    formatter: (row) => formatWeekday(row.weekday)
+    formatter: (row) => formatWeekday(row.dayOfWeek)
   },
   {
     prop: 'startTime',
@@ -373,19 +353,42 @@ const tableColumns = [
   },
   {prop: 'classroomName', label: '教室', minWidth: 120},
   {prop: 'weeks', label: '周次', width: 100, formatter: (row) => `${row.startWeek}-${row.endWeek}周`},
-  {prop: 'notes', label: '备注', minWidth: 150, showOverflowTooltip: true},
+  {prop: 'capacity', label: '容量', width: 80},
+  {prop: 'selectedCount', label: '已选', width: 80},
+  {
+    label: '余量',
+    width: 80,
+    formatter: (row) => {
+      const capacity = parseInt(row.capacity, 10) || 0;
+      const selected = parseInt(row.selectedCount, 10) || 0;
+      return capacity - selected;
+    }
+  },
+  {prop: 'notes', label: '备注', minWidth: 100, showOverflowTooltip: true},
   {
     label: '操作',
-    width: 150,
-    type: 'action', // 标记为操作列
-    actions: [ // 定义操作按钮
+    width: 220,
+    type: 'action',
+    actions: [
       {type: 'primary', label: '编辑', event: 'edit'},
       {type: 'danger', label: '删除', event: 'delete'},
+      {type: 'success', label: '查看选课', event: 'viewEnrollments', icon: 'View'}
     ]
   }
 ];
 
 // --- 方法 ---
+
+// 辅助函数：通过ID从选项列表获取名称
+const getNameFromOptions = (id, optionsArray, idKey = 'id', nameKey = 'name') => {
+  if (id === null || id === undefined || !optionsArray || !optionsArray.value) return `ID: ${id}`;
+  const found = optionsArray.value.find(opt => opt[idKey] === id);
+  // 尝试多个可能的名称字段
+  if (found) {
+    return found[nameKey] || found.courseName || found.realName || found.username || `存在但无名 (ID: ${id})`;
+  }
+  return `未知 (ID: ${id})`;
+};
 
 // 获取学期列表
 const fetchTermList = async () => {
@@ -430,40 +433,53 @@ const fetchTermList = async () => {
   }
 };
 
-// 获取排课列表
+// 获取排课列表并转换名称
 const fetchSchedule = async () => {
   loadingSchedule.value = true;
   try {
+    // 确保辅助数据已加载,如果未加载，应有提示或机制去加载它们
+    // 为简化，这里假设它们已在 onMounted 中被 fetchFormSupportData 填充
+
     const params = {
       page: currentPage.value,
       size: pageSize.value,
       termId: searchParams.termId,
-      weekday: searchParams.weekDay, // 注意属性名匹配
+      dayOfWeek: searchParams.dayOfWeek, // 使用更新后的属性名
       keyword: searchParams.keyword,
     };
-    const res = await getSchedulesPage(params);
-    console.log('排课数据响应:', res);
+    const res = await getSchedulesPage(params); // res 结构: {success, data: {records, total}}
 
-    // 添加对不同响应格式的处理
-    if (res && res.data && res.data.records) {
-      // 标准分页响应格式：{data: {records: [], total: 0}}
-      scheduleList.value = res.data.records;
-    total.value = res.data.total || 0;
-    } else if (res && res.records) {
-      // 简化响应格式：{records: [], total: 0}
-      scheduleList.value = res.records;
+    if (res && res.success && res.data && res.data.records) {
+      const rawSchedules = res.data.records;
+      total.value = res.data.total || 0;
+
+      scheduleList.value = rawSchedules.map(item => ({
+        ...item,
+        courseName: getNameFromOptions(item.courseId, courseOptions, 'id', 'courseName'),
+        teacherName: getNameFromOptions(item.teacherId, teacherOptions, 'id', 'realName'), // 假设教师的主要显示名是 realName
+        classroomName: classroomOptions.value.find(opt => opt.id === item.classroomId)
+            ? `${classroomOptions.value.find(opt => opt.id === item.classroomId).building} - ${classroomOptions.value.find(opt => opt.id === item.classroomId).name || classroomOptions.value.find(opt => opt.id === item.classroomId).roomNumber}`
+            : `未知教室 (ID: ${item.classroomId})`,
+        notes: item.notes || '-', // 如果后端可能不返回notes，给个默认值
+        capacity: item.capacity || 0,
+        selectedCount: item.selectedCount || 0
+      }));
+    } else if (res && res.records) { // 兼容没有 success 和 data 外包装，直接是 {records, total} 的情况
+      const rawSchedules = res.records;
       total.value = res.total || 0;
-    } else if (Array.isArray(res)) {
-      // 直接返回数组
-      scheduleList.value = res;
-      total.value = res.length;
-    } else if (res && Array.isArray(res.data)) {
-      // 数组包装在data字段中
-      scheduleList.value = res.data;
-      total.value = res.data.length;
+      scheduleList.value = rawSchedules.map(item => ({
+        ...item,
+        courseName: getNameFromOptions(item.courseId, courseOptions, 'id', 'courseName'),
+        teacherName: getNameFromOptions(item.teacherId, teacherOptions, 'id', 'realName'),
+        classroomName: classroomOptions.value.find(opt => opt.id === item.classroomId)
+            ? `${classroomOptions.value.find(opt => opt.id === item.classroomId).building} - ${classroomOptions.value.find(opt => opt.id === item.classroomId).name || classroomOptions.value.find(opt => opt.id === item.classroomId).roomNumber}`
+            : `未知教室 (ID: ${item.classroomId})`,
+        notes: item.notes || '-',
+        capacity: item.capacity || 0,
+        selectedCount: item.selectedCount || 0
+      }));
     } else {
-      // 未知格式或空数据
-      console.warn('未能识别的排课数据格式:', res);
+      console.warn('未能识别的排课数据格式或请求失败:', res);
       scheduleList.value = [];
       total.value = 0;
     }
@@ -477,22 +493,6 @@ const fetchSchedule = async () => {
   }
 };
 
-// 处理筛选表单搜索
-const handleSearch = () => {
-  currentPage.value = 1; // 重置到第一页
-  fetchSchedule();
-};
-
-// 处理筛选表单重置 (FilterForm 内部实现)
-const handleReset = () => {
-  searchParams.termId = termList.value.find(t => t.isCurrent)?.id || (termList.value.length > 0 ? termList.value[0].id : null);
-  searchParams.weekDay = null;
-  searchParams.keyword = '';
-  currentPage.value = 1;
-  fetchSchedule();
-};
-
-
 // 格式化星期几
 const formatWeekday = (day) => {
   const found = WEEKDAY_OPTIONS.find(d => d.value === day);
@@ -500,62 +500,45 @@ const formatWeekday = (day) => {
 };
 
 // 格式化时间显示
-const formatTime = (time) => {
-  if (!time) return '-';
-
-  // 如果是数字(时间戳)，尝试转换
-  if (typeof time === 'number') {
-    // 假设这是毫秒级的时间戳，只保留时分
-    const date = new Date(time);
+const formatTime = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return '-';
+  // 期望格式 YYYY-MM-DD HH:mm:ss
+  if (timeStr.length === 19 && timeStr.charAt(10) === ' ' && timeStr.charAt(13) === ':') {
+    return timeStr.substring(11, 16); // 提取 HH:mm
+  }
+  // 如果已经是 HH:mm 格式
+  if (timeStr.length === 5 && timeStr.charAt(2) === ':') {
+    return timeStr;
+  }
+  // 尝试通过Date对象解析，作为备选，但要注意时区问题和性能
+  try {
+    const date = new Date(timeStr);
     if (!isNaN(date.getTime())) {
       return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
+  } catch (e) {
+    // 静默处理，返回原始值
   }
-
-  // 如果是字符串，确保格式为HH:mm
-  if (typeof time === 'string') {
-    // 如果已经是HH:mm格式，直接返回前5个字符
-    if (time.length >= 5 && time.includes(':')) {
-      return time.substring(0, 5);
-    }
-
-    // 如果是ISO格式的时间字符串，尝试转换
-    try {
-      const date = new Date(time);
-      if (!isNaN(date.getTime())) {
-        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-      }
-    } catch (e) {
-      console.warn('无法解析时间字符串:', time, e);
-    }
-  }
-
-  // 默认返回原始值
-  return String(time);
+  return timeStr; // 返回原始或部分解析的值作为最后的手段
 };
-
-// --- 添加/编辑 弹窗逻辑 ---
 
 // 获取表单所需的下拉选项数据
 const fetchFormSupportData = async () => {
   loadingForm.value = true;
   loadingCourses.value = true;
   loadingTeachers.value = true;
-  loadingClasses.value = true;
   loadingClassrooms.value = true;
   try {
     // 并行获取所有数据
-    const [courseRes, teacherRes, classRes, classroomRes] = await Promise.all([
+    const [courseRes, teacherRes, classroomRes] = await Promise.all([
       getAllCoursesForSelect({size: 1000}),
       getTeacherList({size: 1000}),
-      getClasses({size: 1000}),
       getAllClassroomsList({size: 1000})
     ]);
 
     console.log('下拉数据响应:', {
       课程: courseRes,
       教师: teacherRes,
-      班级: classRes,
       教室: classroomRes
     });
 
@@ -587,20 +570,6 @@ const fetchFormSupportData = async () => {
       console.warn('未能识别的教师数据格式');
     }
 
-    // 处理班级数据
-    if (classRes && classRes.data && classRes.data.records) {
-      classOptions.value = classRes.data.records;
-    } else if (classRes && classRes.records) {
-      classOptions.value = classRes.records;
-    } else if (Array.isArray(classRes)) {
-      classOptions.value = classRes;
-    } else if (classRes && Array.isArray(classRes.data)) {
-      classOptions.value = classRes.data;
-    } else {
-      classOptions.value = [];
-      console.warn('未能识别的班级数据格式');
-    }
-
     // 处理教室数据
     if (classroomRes && classroomRes.data && classroomRes.data.records) {
       classroomOptions.value = classroomRes.data.records;
@@ -623,7 +592,6 @@ const fetchFormSupportData = async () => {
     loadingForm.value = false;
     loadingCourses.value = false;
     loadingTeachers.value = false;
-    loadingClasses.value = false;
     loadingClassrooms.value = false;
   }
 };
@@ -647,15 +615,15 @@ const resetScheduleForm = () => {
   scheduleForm.termId = searchParams.termId;
   scheduleForm.courseId = null;
   scheduleForm.teacherId = null;
-  scheduleForm.classId = null;
-  scheduleForm.weekday = null;
+  scheduleForm.dayOfWeek = null;
   scheduleForm.startTime = '';
   scheduleForm.endTime = '';
   scheduleForm.classroomId = null;
   scheduleForm.startWeek = 1;
   scheduleForm.endWeek = 16;
   scheduleForm.notes = '';
-  };
+  scheduleForm.capacity = 0;
+};
 
 // 打开添加弹窗
 const handleAddScheduleItem = () => {
@@ -690,14 +658,14 @@ const handleEditScheduleItem = (row) => {
     termId: row.termId,
     courseId: row.courseId,
     teacherId: row.teacherId,
-    classId: row.classId,
-    weekday: row.weekday,
+    dayOfWeek: row.dayOfWeek,
     startTime: startTimeFormatted, // 使用格式化后的时间
     endTime: endTimeFormatted, // 使用格式化后的时间
     classroomId: row.classroomId,
     startWeek: row.startWeek,
     endWeek: row.endWeek,
-    notes: row.notes
+    notes: row.notes,
+    capacity: row.capacity || 0
   });
   dialogVisible.value = true;
   fetchFormSupportData(); // 获取下拉数据
@@ -745,7 +713,7 @@ const handleDeleteScheduleItem = (row) => {
   const endTimeFormatted = formatTime(row.endTime);
   
   ElMessageBox.confirm(
-      `确定要删除课程【${row.courseName}】在【${formatWeekday(row.weekday)} ${startTimeFormatted}-${endTimeFormatted}】的排课吗？`,
+      `确定要删除课程【${row.courseName}】在【${formatWeekday(row.dayOfWeek)} ${startTimeFormatted}-${endTimeFormatted}】的排课吗？`,
       '警告',
       {
         confirmButtonText: '确定删除',
@@ -772,8 +740,7 @@ const scheduleFormRules = reactive({
   termId: [{required: true, message: '请选择学期', trigger: 'change'}],
   courseId: [{required: true, message: '请选择课程', trigger: 'change'}],
   teacherId: [{required: true, message: '请选择教师', trigger: 'change'}],
-  classId: [{required: true, message: '请选择班级', trigger: 'change'}],
-  weekday: [{required: true, message: '请选择星期', trigger: 'change'}],
+  dayOfWeek: [{required: true, message: '请选择星期', trigger: 'change'}],
   startTime: [{required: true, message: '请选择开始时间', trigger: 'change'}],
   endTime: [{required: true, message: '请选择结束时间', trigger: 'change'}],
   classroomId: [{required: true, message: '请选择教室', trigger: 'change'}],
@@ -790,19 +757,59 @@ const scheduleFormRules = reactive({
       }, trigger: 'blur'
     }
   ],
+  capacity: [{required: true, type: 'number', message: '请输入课程容量', trigger: 'blur', min: 0}]
 });
 
 // --- 生命周期钩子 ---
-onMounted(() => {
-  fetchTermList().then(() => {
-    fetchSchedule(); // 获取学期后再获取排课
-  });
+onMounted(async () => {
+  await fetchTermList(); // 获取学期列表，并设置默认学期 (searchParams.termId)
+  await fetchFormSupportData(); // *确保先加载辅助数据*
+
+  if (searchParams.termId) {
+    fetchSchedule(); // 使用已更新的 fetchSchedule
+  } else {
+    ElMessage.info('请先选择一个学期以查看排课');
+    loadingSchedule.value = false;
+  }
 });
 
-// 监听分页变化 (TableView 内部处理 v-model 更新)
-watch([currentPage, pageSize], () => {
-  fetchSchedule();
-}, {immediate: false}); // 不需要立即执行，因为 onMounted 会调用
+watch(() => searchParams.termId, (newTermId) => {
+  if (newTermId) {
+    currentPage.value = 1;
+    fetchSchedule(); // 使用已更新的 fetchSchedule
+  } else {
+    scheduleList.value = [];
+    total.value = 0;
+  }
+});
+
+// 确保 searchParams 中的 weekday 也改为 dayOfWeek
+watch(() => searchParams.dayOfWeek, () => {
+  if (searchParams.termId) { // 只有当学期也选定时才触发搜索
+    currentPage.value = 1;
+    fetchSchedule();
+  }
+});
+
+// 处理筛选表单搜索
+const handleSearch = () => {
+  currentPage.value = 1;
+  fetchSchedule(); // 使用已更新的 fetchSchedule
+};
+
+// 处理筛选表单重置
+const handleReset = () => {
+  if (termList.value.length > 0) {
+    const activeTerm = termList.value.find(t => t.isCurrent === true || t.current === 1);
+    searchParams.termId = activeTerm ? activeTerm.id : termList.value[0].id;
+  } else {
+    searchParams.termId = null;
+  }
+  searchParams.dayOfWeek = null; // 重置 dayOfWeek
+  searchParams.keyword = '';
+  currentPage.value = 1;
+  fetchSchedule(); // 使用已更新的 fetchSchedule
+};
 
 </script>
 

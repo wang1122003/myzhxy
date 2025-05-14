@@ -62,8 +62,8 @@
     </TableView>
 
     <!-- 公告详情对话框 -->
-    <el-dialog
-        v-model="noticeDialogVisible"
+    <DialogWrapper
+        v-model:visible="noticeDialogVisible"
         :title="currentNotice.title"
         append-to-body
         top="5vh"
@@ -112,7 +112,7 @@
           <el-button @click="noticeDialogVisible = false">关 闭</el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -122,8 +122,11 @@ import {useRouter} from 'vue-router';
 import {ElMessage} from 'element-plus';
 import {getNotificationById, getNotificationsPage} from '@/api/notice';
 import {downloadFile} from '@/api/file';
-import PageContainer from '@/components/common/EnhancedPageContainer.vue';
-import TableView from '@/components/common/TableView.vue';
+import {formatDateTime, formatFileSize} from '@/utils/formatters';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 const router = useRouter();
 

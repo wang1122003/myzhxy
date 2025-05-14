@@ -29,9 +29,9 @@
         <div class="main-content">
           <div class="post-list-container">
             <el-card v-if="!loading && isLoggedIn" class="create-post-card">
-              <div class="create-post-btn" @click="showPostModal = true">
+              <div class="create-post-btn" @click="openCreatePostModal">
                 <el-icon>
-                  <EditPen/>
+                  <Plus/>
                 </el-icon>
                 <span>发布新帖子</span>
               </div>
@@ -108,16 +108,6 @@
           </div>
         </div>
       </div>
-
-      <el-dialog
-          v-model="showPostModal"
-          :close-on-click-modal="false"
-          append-to-body
-          destroy-on-close
-          title="发布新帖子"
-          width="70%">
-        <CreatePost @post-created="handlePostCreated"/>
-      </el-dialog>
     </div>
   </div>
 </template>
@@ -126,24 +116,18 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {ChatDotRound, EditPen, InfoFilled, Opportunity, Search, Star, View} from '@element-plus/icons-vue'
+import {ChatDotRound, EditPen, InfoFilled, Opportunity, Search, Star, View, Plus} from '@element-plus/icons-vue'
 import {getAllPosts, incrementViewCount} from '@/api/post'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
-import CreatePost from '@/components/forum/CreatePost.vue'
+import {searchPosts} from '@/api/post'
 import {useUserStore} from '@/stores/userStore'
 
 export default {
   name: 'ForumPage',
   components: {
-    CreatePost,
-    EditPen,
-    InfoFilled,
-    View,
-    ChatDotRound,
-    Star,
-    Opportunity,
-    Search
+    Search,
+    Plus
   },
   setup() {
     const router = useRouter()
@@ -161,7 +145,7 @@ export default {
     const searchKeyword = ref(route.query.q || '')
     const sortBy = ref('createTime')
 
-    const showPostModal = ref(false)
+    const showCreatePostModal = ref(false)
 
     const fetchPosts = async () => {
       loading.value = true
@@ -277,10 +261,8 @@ export default {
       router.push({path: '/', query: {redirect: router.currentRoute.value.fullPath}});
     }
 
-    const handlePostCreated = () => {
-      showPostModal.value = false;
-      fetchPosts();
-      ElMessage.success('发布成功！');
+    const openCreatePostModal = () => {
+      router.push('/forum/create')
     }
 
     onMounted(() => {
@@ -295,7 +277,7 @@ export default {
       total,
       searchKeyword,
       sortBy,
-      showPostModal,
+      showCreatePostModal,
       isLoggedIn,
       defaultAvatar,
       fetchPosts,
@@ -305,14 +287,14 @@ export default {
       handleSearch,
       goToPostDetail,
       goToLogin,
-      handlePostCreated,
+      openCreatePostModal,
       Search,
       EditPen,
       InfoFilled,
       View,
       ChatDotRound,
       Star,
-      Opportunity
+      Plus
     }
   }
 }

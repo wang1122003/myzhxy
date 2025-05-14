@@ -15,20 +15,15 @@ import './assets/styles/common.css'
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 
-// 导入通用组件
-import PageHeader from './components/common/PageHeader.vue'
-import StatsCard from './components/common/StatsCard.vue'
-import NavMenu from './components/common/NavMenu.vue'
-import DataDisplay from './components/common/DataDisplay.vue'
-import AppHeader from './components/common/AppHeader.vue'
-import NoticeDetailDialog from './components/common/NoticeDetailDialog.vue'
-import RichTextEditor from './components/common/RichTextEditor.vue'
-
-// 导入核心组件
-import EnhancedPageContainer from './components/common/EnhancedPageContainer.vue'
-import DataTable from './components/common/DataTable.vue'
-import SmartForm from './components/common/SmartForm.vue'
-import AdvancedFilterForm from './components/common/AdvancedFilterForm.vue'
+// 通用/核心组件不再全局导入和注册，改为在使用的页面中局部导入
+// import StatsCard from './components/common/StatsCard.vue' 
+// import DataDisplay from './components/common/DataDisplay.vue' 
+// import NoticeDetailDialog from './components/common/NoticeDetailDialog.vue'
+// import RichTextEditor from './components/common/RichTextEditor.vue' 
+// import DataTable from './components/common/DataTable.vue' // 废弃，使用 TableView.vue
+// import TableView from './components/common/TableView.vue' // 改为局部导入
+// import SmartForm from './components/common/SmartForm.vue' // 改为局部导入
+// import AdvancedFilterForm from './components/common/AdvancedFilterForm.vue' // 改为局部导入
 
 // 添加Vue特性标志配置
 window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false
@@ -52,20 +47,15 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
 
-// 注册通用组件
-app.component('PageHeader', PageHeader)
-app.component('StatsCard', StatsCard)
-app.component('NavMenu', NavMenu)
-app.component('DataDisplay', DataDisplay)
-app.component('AppHeader', AppHeader)
-app.component('NoticeDetailDialog', NoticeDetailDialog)
-app.component('RichTextEditor', RichTextEditor)
-
-// 注册核心组件（使用简单统一的名称）
-app.component('PageContainer', EnhancedPageContainer) // 保持与旧版的兼容性
-app.component('TableView', DataTable)
-app.component('FormView', SmartForm)
-app.component('FilterForm', AdvancedFilterForm)
+// 不再全局注册通用组件
+// app.component('StatsCard', StatsCard)
+// app.component('DataDisplay', DataDisplay)
+// app.component('NoticeDetailDialog', NoticeDetailDialog)
+// app.component('RichTextEditor', RichTextEditor)
+// app.component('TableView', DataTable) // 移除错误注册
+// app.component('TableView', TableView) // 移除全局注册，改为局部导入
+// app.component('FormView', SmartForm) // 移除全局注册，改为局部导入
+// app.component('FilterForm', AdvancedFilterForm) // 移除全局注册，改为局部导入
 
 // 使用Pinia（必须在使用router前初始化）
 app.use(pinia)

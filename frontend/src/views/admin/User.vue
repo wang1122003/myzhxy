@@ -62,13 +62,8 @@
     </TableView>
 
     <!-- 添加/编辑用户对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        :append-to-body="true"
-        :close-on-click-modal="false"
-        :close-on-press-escape="false"
-        :destroy-on-close="false"
-        :show-close="true"
+    <DialogWrapper
+        v-model:visible="dialogVisible"
         :title="dialogTitle"
         width="600px"
         @close="resetForm"
@@ -107,7 +102,7 @@
           <el-input v-model="userForm.phone" placeholder="请输入手机号"/>
         </el-form-item>
       </SmartForm>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -116,7 +111,11 @@ import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {Plus} from '@element-plus/icons-vue';
 import {addUser, deleteUser, getUserList, resetPassword, updateUser} from '@/api/user';
-import SmartForm from '@/components/common/SmartForm.vue';
+import SmartForm from '@/views/ui/SmartForm.vue';
+import TableView from '@/views/ui/TableView.vue';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
 
 const loading = ref(false);
 const submitting = ref(false);

@@ -92,6 +92,15 @@ public interface NotificationService extends IService<Notification> {
     boolean updateNotificationStatus(Long id, String status);
 
     /**
+     * 更新通知置顶状态
+     *
+     * @param id    通知ID
+     * @param isTop 置顶状态 (1-置顶, 0-不置顶)
+     * @return 是否成功
+     */
+    boolean updateNotificationTopStatus(Long id, Integer isTop);
+
+    /**
      * 增加阅读次数
      *
      * @param id 通知ID

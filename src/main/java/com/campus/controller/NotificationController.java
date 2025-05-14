@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -313,6 +314,24 @@ public class NotificationController {
     }
 
     /**
+     * 更新通知置顶状态
+     *
+     * @param id    通知ID
+     * @param isTop 是否置顶 (true/false)
+     * @return 更新结果
+     */
+    @PutMapping("/top/{id}")
+    public Result<Void> updateNotificationTopStatus(@PathVariable Long id, @RequestParam Boolean isTop) {
+        try {
+            // 调用service更新置顶状态
+            boolean success = notificationService.updateNotificationTopStatus(id, isTop ? 1 : 0);
+            return success ? Result.success("更新置顶状态成功") : Result.error("更新置顶状态失败");
+        } catch (Exception e) {
+            return Result.error("更新置顶状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 删除通知
      *
      * @param id 通知ID
@@ -399,6 +418,27 @@ public class NotificationController {
         //         ))
         //         .collect(Collectors.toList());
         // return Result.success("获取成功", typeList);
+    }
+
+    /**
+     * 更新通知信息
+     *
+     * @param id           通知ID
+     * @param notification 更新后的通知数据
+     * @return
+     */
+    @PutMapping("/{id}")
+    public Result<Void> updateNotification(@PathVariable Long id, @RequestBody Notification notification) {
+        try {
+            notification.setId(id); // 确保ID被设置
+            boolean success = notificationService.updateById(notification);
+            return success ? Result.success() : Result.error("更新失败或通知不存在");
+        } catch (ResourceNotFoundException e) {
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            // logger.error("更新通知 {} 失败", id, e);
+            return Result.error("更新通知失败: " + e.getMessage());
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 <template>
   <div class="data-display">
-    <!-- 加载状态 -->
+    <!-- 加载状态骨架屏 -->
     <el-skeleton
         v-if="loading && skeletonRows > 0"
         :rows="skeletonRows"
@@ -8,7 +8,7 @@
         animated
     />
 
-    <!-- 加载图标 -->
+    <!-- 加载图标状态 -->
     <div v-else-if="loading" class="loading-container">
       <el-icon :size="32" class="loading-icon">
         <Loading/>
@@ -42,12 +42,12 @@
       </el-button>
     </div>
 
-    <!-- 数据内容 -->
+    <!-- 数据内容区域 -->
     <div v-else class="data-content">
       <slot></slot>
     </div>
 
-    <!-- 底部插槽（例如：分页） -->
+    <!-- 底部插槽 (例如：用于分页) -->
     <div v-if="!loading && !isEmpty && !error && $slots.footer" class="data-footer">
       <slot name="footer"></slot>
     </div>
@@ -61,85 +61,87 @@ import {Loading, Warning} from '@element-plus/icons-vue'
 export default {
   name: 'DataDisplay',
   components: {
-    Loading,
-    Warning
+    Loading, // 加载图标组件
+    Warning  // 警告图标组件
   },
   props: {
-    // 数据状态
+    // 数据加载状态
     loading: {
       type: Boolean,
       default: false
     },
+    // 传入的数据 (数组或对象)
     data: {
       type: [Array, Object],
       default: () => []
     },
+    // 错误信息 (字符串或对象)
     error: {
       type: [String, Object],
       default: null
     },
 
-    // 加载状态配置
+    // 加载状态相关配置
     loadingText: {
       type: String,
-      default: '正在加载数据...'
+      default: '正在加载数据...' // 加载时显示的文本
     },
     skeletonRows: {
       type: Number,
-      default: 0 // 0 表示使用加载图标，>0 表示使用骨架屏
+      default: 0 // 骨架屏行数，0 表示使用加载图标，大于0表示使用骨架屏
     },
 
-    // 空数据状态配置
+    // 空数据状态相关配置
     emptyText: {
       type: String,
-      default: '暂无数据'
+      default: '暂无数据' // 空状态时显示的描述文字
     },
     emptyImage: {
       type: String,
-      default: ''
+      default: '' // 空状态时显示的图片 URL
     },
     emptyImageSize: {
       type: Number,
-      default: 100
+      default: 100 // 空状态图片尺寸
     },
     showEmptyButton: {
       type: Boolean,
-      default: false
+      default: false // 是否显示空状态下的操作按钮
     },
     emptyButtonText: {
       type: String,
-      default: '添加数据'
+      default: '添加数据' // 空状态按钮文本
     },
 
-    // 错误状态配置
+    // 错误状态相关配置
     errorTitle: {
       type: String,
-      default: '加载失败'
+      default: '加载失败' // 错误状态标题
     },
     showRetryButton: {
       type: Boolean,
-      default: true
+      default: true // 是否显示错误状态下的重试按钮
     },
     retryButtonText: {
       type: String,
-      default: '重试'
+      default: '重试' // 重试按钮文本
     }
   },
-  emits: ['empty-action', 'retry'],
+  emits: ['empty-action', 'retry'], // 定义组件可能触发的事件
   setup(props) {
-    // 判断数据是否为空
+    // 计算数据是否为空
     const isEmpty = computed(() => {
       if (Array.isArray(props.data)) {
-        return props.data.length === 0
+        return props.data.length === 0;
       } else if (props.data && typeof props.data === 'object') {
-        return Object.keys(props.data).length === 0
+        return Object.keys(props.data).length === 0;
       }
-      return !props.data
-    })
+      return !props.data;
+    });
 
     return {
       isEmpty
-    }
+    };
   }
 }
 </script>
@@ -160,7 +162,7 @@ export default {
 
 .loading-icon {
   color: #409EFF;
-  animation: rotate 1.5s linear infinite;
+  animation: rotate 1.5s linear infinite; /* 旋转动画 */
 }
 
 @keyframes rotate {

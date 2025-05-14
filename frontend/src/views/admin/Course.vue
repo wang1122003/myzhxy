@@ -86,15 +86,10 @@
     </TableView>
 
     <!-- 添加/编辑 对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        :close-on-click-modal="false"
+    <DialogWrapper
+        v-model:visible="dialogVisible"
         :title="isEditMode ? '编辑课程' : '添加课程'"
         width="600px"
-        :append-to-body="true"
-        :destroy-on-close="false"
-        :modal-append-to-body="true"
-        :show-close="true"
         @close="handleDialogClose"
     >
       <FormView
@@ -140,7 +135,7 @@
           />
         </el-form-item>
       </FormView>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -148,7 +143,6 @@
 import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {
   ElButton,
-  ElDialog,
   ElFormItem,
   ElIcon,
   ElInput,
@@ -163,10 +157,11 @@ import {Plus} from '@element-plus/icons-vue';
 import {addCourse, deleteCourse, getCourseList, updateCourse} from '@/api/course';
 import {getTeacherList} from '@/api/user';
 import {getAllTerms} from '@/api/term';
-import PageContainer from '@/components/common/EnhancedPageContainer.vue';
-import FilterForm from '@/components/common/AdvancedFilterForm.vue';
-import TableView from '@/components/common/TableView.vue';
-import FormView from '@/components/common/SmartForm.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FormView from '@/views/ui/SmartForm.vue';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 const loading = ref(false);
 const courseList = ref([]);

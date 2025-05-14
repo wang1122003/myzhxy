@@ -31,99 +31,16 @@
 
     <div class="forum-content">
       <div class="main-content">
-        <div class="post-list-container">
-          <el-card v-if="!loading && isLoggedIn" class="create-post-card">
-            <div class="create-post-btn" @click="showPostModal = true">
-              <el-icon>
-                <EditPen/>
-              </el-icon>
-              <span>发布新帖子</span>
-            </div>
-          </el-card>
-
-          <el-card v-else-if="!loading && !isLoggedIn" class="login-hint-card">
-            <div class="login-hint">
-              <el-icon>
-                <InfoFilled/>
-              </el-icon>
-              <span>登录后可发布新帖子和参与评论</span>
-              <el-button size="small" type="primary" @click="goToLogin">去登录</el-button>
-            </div>
-          </el-card>
-
-          <el-empty v-if="!loading && posts.length === 0" description="暂无相关帖子"/>
-
-          <template v-else>
-            <el-card v-for="post in posts" :key="post.id" class="post-card" @click="goToPostDetail(post.id)">
-              <div class="post-header">
-                <div class="post-author">
-                  <el-avatar :size="40" :src="post.avatar || defaultAvatar"></el-avatar>
-                  <div class="author-info">
-                    <div class="author-name">{{
-                        post.author ? (post.author.realName || post.author.username) : ''
-                      }}
-                    </div>
-                    <div class="post-time">{{ formatTime(post.createTime) }}</div>
-                  </div>
-                </div>
-                <div v-if="post.forumType" class="post-category">
-                  <el-tag :style="{ backgroundColor: post.forumColor || '#cccccc' }" size="small">
-                    {{ getForumName(post.forumType) }}
-                  </el-tag>
-                </div>
-              </div>
-
-              <div class="post-title">{{ post.title }}</div>
-              <div class="post-summary">{{ post.summary || post.content.substring(0, 100) + '...' }}</div>
-
-              <div class="post-footer">
-                <div class="post-stats">
-                  <div class="stat-item">
-                    <el-icon>
-                      <View/>
-                    </el-icon>
-                    <span>{{ post.viewCount }}</span>
-                  </div>
-                  <div class="stat-item">
-                    <el-icon>
-                      <ChatDotRound/>
-                    </el-icon>
-                    <span>{{ post.commentCount }}</span>
-                  </div>
-                  <div class="stat-item">
-                    <el-icon>
-                      <Star/>
-                    </el-icon>
-                    <span>{{ post.likeCount }}</span>
-                  </div>
-                </div>
-                <div v-if="Array.isArray(post.tags) && post.tags.length > 0" class="post-tags">
-                  <el-tag
-                      v-for="tag in post.tags.slice(0, 3)"
-                      :key="tag.id"
-                      effect="plain"
-                      size="small">
-                    {{ tag.name }}
-                  </el-tag>
-                  <span v-if="Array.isArray(post.tags) && post.tags.length > 3">...</span>
-                </div>
-              </div>
-            </el-card>
-          </template>
+        <div class="forum-header">
+          <h2>{{ currentCategory ? currentCategory.name : '所有帖子' }}</h2>
+          <el-button type="primary" @click="navigateToCreate">
+            <el-icon>
+              <Plus/>
+            </el-icon>
+            发布新帖
+          </el-button>
         </div>
-
-        <!-- 分页控件 -->
-        <div v-if="posts.length > 0" class="pagination-container">
-          <el-pagination
-              v-model:current-page="currentPage"
-              v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 50, 100]"
-              :total="total"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-          />
-        </div>
+        <PostList :category-id="selectedCategoryId" @post-selected="handlePostSelect"/>
       </div>
 
       <div class="side-content">
@@ -171,14 +88,8 @@
       </div>
     </div>
 
-    <!-- 发帖弹窗 -->
-    <el-dialog
-        v-model="showPostModal"
-        :close-on-click-modal="false"
-        title="发布新帖子"
-        width="70%">
-      <CreatePost @post-created="handlePostCreated"/>
-    </el-dialog>
+    <!-- Post Detail Dialog (if needed) -->
+    <!-- ... -->
   </div>
 </template>
 
@@ -186,17 +97,17 @@
 import {computed, onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {ChatDotRound, Collection, EditPen, Hot, InfoFilled, Search, Star, View} from '@element-plus/icons-vue'
+import {ChatDotRound, Collection, EditPen, Hot, InfoFilled, Search, Star, View, Plus} from '@element-plus/icons-vue'
 import {getAllPosts, getHotPosts, incrementViewCount} from '@/api/post'
 import request from '@/utils/request'
 import {formatDistanceToNow} from 'date-fns'
 import {zhCN} from 'date-fns/locale'
-import CreatePost from '@/components/forum/CreatePost.vue'
+import PostList from './components/PostList.vue'
 
 export default {
   name: 'ForumIndex',
   components: {
-    CreatePost
+    PostList,
   },
   setup() {
     const router = useRouter()
@@ -365,6 +276,10 @@ export default {
       router.push('/login')
     }
 
+    const navigateToCreate = () => {
+      router.push('/forum/create')
+    }
+
     onMounted(() => {
       fetchForums()
       fetchPosts()
@@ -404,6 +319,7 @@ export default {
       formatTime,
       handlePostCreated,
       goToLogin,
+      navigateToCreate,
 
       // 图标
       Search,
@@ -413,7 +329,8 @@ export default {
       Hot,
       Collection,
       EditPen,
-      InfoFilled
+      InfoFilled,
+      Plus
     }
   }
 }

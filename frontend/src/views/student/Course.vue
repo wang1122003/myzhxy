@@ -74,17 +74,57 @@
         @view-detail="handleViewDetails"
     />
 
-    <!-- 使用通用课程详情对话框 -->
-    <CourseDetailDialog
-        v-model="courseDetailVisible"
-        :course-id="selectedCourseId"
-        :initial-course="selectedCourse"
-        :show-capacity="true"
-        role="student"
-        @close="courseDetailVisible = false"
-        @loaded="onCourseDetailsLoaded"
+    <!-- 课程详情对话框 (内联替代 CourseDetailDialog) -->
+    <DialogWrapper
+        v-model:visible="courseDetailVisible"
+        :title="detailsLoadedCourse?.courseName || selectedCourse?.courseName || '课程详情'"
+        width="650px"
     >
-      <template #actions>
+      <div v-loading="loadingCourseDetail">
+        <el-descriptions v-if="detailsLoadedCourse" :column="2" border>
+          <!-- 基本信息 -->
+          <el-descriptions-item label="课程代码">{{ detailsLoadedCourse.courseCode || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="课程类型">{{
+              formatDetailCourseType(detailsLoadedCourse.courseType)
+            }}
+          </el-descriptions-item>
+          <el-descriptions-item label="学分">{{ detailsLoadedCourse.credit || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="课时">{{ detailsLoadedCourse.hours || 0 }}</el-descriptions-item>
+
+          <!-- 学生视图信息 -->
+          <el-descriptions-item label="开课学院">{{ detailsLoadedCourse.collegeName || '暂无' }}</el-descriptions-item>
+          <el-descriptions-item label="授课教师">{{ detailsLoadedCourse.teacherName || '待定' }}</el-descriptions-item>
+          <el-descriptions-item label="限选人数">
+            {{ detailsLoadedCourse.maxStudents > 0 ? detailsLoadedCourse.maxStudents : '不限' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="已选人数">
+            {{ detailsLoadedCourse.selectedCount || 0 }}
+          </el-descriptions-item>
+
+          <!-- 课程安排/上课时间 -->
+          <el-descriptions-item :span="2" label="上课时间">
+            <div v-if="detailsLoadedCourse.schedules && detailsLoadedCourse.schedules.length">
+              <p v-for="(schedule, index) in detailsLoadedCourse.schedules" :key="index">
+                {{ formatScheduleTime(schedule) }}
+              </p>
+            </div>
+            <span v-else>待安排</span>
+          </el-descriptions-item>
+
+          <!-- 课程介绍 -->
+          <el-descriptions-item :span="2" label="课程介绍">
+            <div v-html="detailsLoadedCourse.introduction || '暂无介绍'"></div>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div v-else class="empty-content">
+          <el-empty description="暂无课程详情"/>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+           <el-button @click="courseDetailVisible = false">关闭</el-button>
+          <!-- 保留原有的 #actions 插槽内容 -->
         <el-button
             v-if="detailsLoadedCourse && !isSelected(detailsLoadedCourse.id) && canSelectCourse(detailsLoadedCourse)"
             :loading="selectingCourse === detailsLoadedCourse.id"
@@ -101,20 +141,25 @@
         >
           退课
         </el-button>
+        </span>
       </template>
-    </CourseDetailDialog>
+    </DialogWrapper>
+
   </PageContainer>
 </template>
 
 <script setup>
 import {computed, h, onMounted, reactive, ref, resolveComponent, watch} from 'vue';
-import {ElButton, ElMessage, ElMessageBox, ElEmpty, ElTable, ElTableColumn} from 'element-plus';
-import {getCourseList, getStudentCourses} from '@/api/course';
+import {
+  ElButton, ElMessage, ElMessageBox, ElEmpty, ElTable, ElTableColumn,
+  ElDescriptions, ElDescriptionsItem
+} from 'element-plus';
+import {getCourseList, getStudentCourses, getCourseById} from '@/api/course';
 import {dropCourse, selectCourse} from '@/api/courseSelection';
-import PageContainer from '@/components/common/EnhancedPageContainer.vue';
-import TableView from '@/components/common/TableView.vue';
-import FilterForm from '@/components/common/AdvancedFilterForm.vue';
-import CourseDetailDialog from '@/components/course/CourseDetailDialog.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 import axios from 'axios';
 import {useUserStore} from '@/stores/userStore';
 
@@ -151,9 +196,20 @@ const formatCourseType = (type) => {
   const map = {
     'REQUIRED': '必修课',
     'ELECTIVE': '选修课',
-    'PRACTICAL': '实践课'
+    'PRACTICAL': '实践课',
+    'COMPULSORY': '必修课',
+    'GENERAL': '通识课'
   };
   return map[type] || type;
+};
+
+const formatDetailCourseType = (type) => {
+  const map = {
+    'COMPULSORY': '必修课',
+    'ELECTIVE': '选修课',
+    'GENERAL': '通识课'
+  };
+  return map[type] || type || '未知';
 };
 
 const formatStatus = (course) => {
@@ -208,8 +264,8 @@ const formatScheduleTime = (schedule) => {
   if (!schedule) return '待安排';
   const weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   const day = weekdays[schedule.weekday] || `周${schedule.weekday}`;
-  const time = `${schedule.startTime?.substring(0, 5)}-${schedule.endTime?.substring(0, 5)}`;
-  const weeks = `第${schedule.startWeek}-${schedule.endWeek}周`;
+  const time = `${schedule.startTime?.substring(0, 5) || '?'}-${schedule.endTime?.substring(0, 5) || '?'}`;
+  const weeks = `第${schedule.startWeek || '?'}-${schedule.endWeek || '?'}周`;
   const location = schedule.classroomName || '地点待定';
   return `${day} ${time} (${weeks}) @ ${location}`;
 };
@@ -325,7 +381,7 @@ const fetchSystemSettings = async () => {
 const fetchMySelectedCourses = async () => {
   try {
     const userStore = useUserStore();
-    const userId = userStore.userId();
+    const userId = userStore.userId.value;
     if (!userId) {
       console.warn('无法获取用户ID，无法获取已选课程');
       return;
@@ -421,7 +477,7 @@ const handleCourseAction = async (course, actionType) => {
   try {
     // 获取用户ID和当前学期信息
     const userStore = useUserStore();
-    const userId = userStore.userId();
+    const userId = userStore.userId.value;
     const currentTerm = localStorage.getItem('currentTerm') || '2023-2024-2'; // 默认当前学期
 
     if (action === 'select') {
@@ -466,14 +522,38 @@ const handleCourseAction = async (course, actionType) => {
 
 // 处理查看详情
 const handleViewDetails = (course) => {
-  selectedCourse.value = {...course}; // 基础信息
   selectedCourseId.value = course.id;
+  selectedCourse.value = {...course}; // 存储基础信息
+  detailsLoadedCourse.value = null; // 清空旧的详细数据
   courseDetailVisible.value = true;
+  loadCourseDetails(course.id); // 打开对话框时加载
 };
 
-// 课程详情加载完成回调
-const onCourseDetailsLoaded = (course) => {
-  detailsLoadedCourse.value = course;
+// 新增加载详情的函数
+const loadCourseDetails = async (id) => {
+  if (!id) return;
+  loadingCourseDetail.value = true;
+  detailsLoadedCourse.value = null; // 清空旧数据
+  try {
+    const res = await getCourseById(id);
+    if (res && res.data) {
+      detailsLoadedCourse.value = res.data;
+      if (!detailsLoadedCourse.value.schedules) {
+        detailsLoadedCourse.value.schedules = [];
+      } else if (!Array.isArray(detailsLoadedCourse.value.schedules)) {
+        detailsLoadedCourse.value.schedules = [];
+      }
+      // 触发 loaded 事件的替代逻辑（如果需要的话，例如更新按钮状态）
+      // onCourseDetailsLoaded(detailsLoadedCourse.value); // 调用之前的回调
+    } else {
+      ElMessage.error('加载课程详情失败');
+    }
+  } catch (error) {
+    console.error("获取课程详情失败:", error);
+    ElMessage.error('获取课程详情失败');
+  } finally {
+    loadingCourseDetail.value = false;
+  }
 };
 
 // --- Lifecycle Hooks ---

@@ -14,7 +14,7 @@
 <script>
 import {computed, onMounted} from 'vue'
 import {useUserStore} from '@/stores/userStore'
-import AppHeader from '@/components/common/AppHeader.vue'
+import AppHeader from '@/views/layouts/AppHeader.vue'
 
 export default {
   name: 'App',
@@ -25,12 +25,21 @@ export default {
     const userStore = useUserStore()
     const currentYear = computed(() => new Date().getFullYear())
 
-    onMounted(async () => {
-      document.body.classList.add('app-loaded')
-      try {
-        if (userStore.isLoggedIn()) {
-          console.log('[App.vue] 用户已登录，尝试获取/验证用户信息...');
+    const tryRestoreUserSession = async () => {
+      console.log("[App.vue] 尝试恢复用户会话...");
+      // 检查localStorage中是否有token
+      const token = localStorage.getItem('token');
+      if (token) {
+        console.log("[App.vue] 发现token，设置到store中...");
+        userStore.setToken(token); // 更新Pinia store中的token
+
+        // 即使有token，也需要验证会话有效性并获取最新用户信息
+        // 如果 userStore.isLoggedIn.value 已经是 true (因为 setToken 可能触发其更新)
+        // 并且 userInfo 还没有被填充，则尝试获取
+        if (userStore.isLoggedIn.value) { // 使用 .value
+          console.log("[App.vue] 用户已登录，尝试获取/验证用户信息...");
           try {
+            // fetchAndSetUserInfo 会验证token并在成功时设置userInfo
             await userStore.fetchAndSetUserInfo();
             console.log('[App.vue] 用户信息获取完成。');
           } catch (fetchError) {
@@ -44,6 +53,13 @@ export default {
         } else {
           console.log('[App.vue] 用户未在本地登录，跳过用户信息获取。');
         }
+      }
+    }
+
+    onMounted(async () => {
+      document.body.classList.add('app-loaded')
+      try {
+        await tryRestoreUserSession();
       } catch (error) {
         console.error('App挂载：初始用户信息获取过程中出错:', error);
       }

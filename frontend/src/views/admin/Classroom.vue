@@ -27,13 +27,11 @@
     />
 
     <!-- 添加/编辑 对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
-        :close-on-click-modal="false"
+    <DialogWrapper
+        v-model:visible="dialogVisible"
         :title="isEditMode ? '编辑教室' : '添加教室'"
         width="600px"
         @close="handleDialogClose"
-        destroy-on-close
     >
       <el-form ref="classroomFormRef" :model="currentClassroom" :rules="formRules" label-width="100px">
         <el-form-item label="教室名称" prop="name">
@@ -75,7 +73,7 @@
           </el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
   </PageContainer>
 </template>
 
@@ -83,7 +81,17 @@
 import {computed, h, onMounted, reactive, ref, resolveComponent, watch} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {Delete, Edit, Plus} from '@element-plus/icons-vue';
-import {addClassroom, deleteClassroom, getClassroomsPage, updateClassroom} from '@/api/classroom'; // Corrected: Use classroom.js
+import {
+  getClassroomsPage,
+  addClassroom,
+  updateClassroom,
+  deleteClassroom,
+  getClassroomById
+} from '@/api/classroom';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import TableView from '@/views/ui/TableView.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 // --- Constants & Options ---
 const CLASSROOM_TYPE_OPTIONS = [

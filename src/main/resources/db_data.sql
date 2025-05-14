@@ -70,14 +70,14 @@ VALUES (5, (SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2',
        (5, (SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', NOW(), 1),
        (5, (SELECT id FROM `course` WHERE course_code = 'CS501'), '2024-2025-2', NOW(), 1),
        (5, (SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', NOW(), 1),
-       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1),
+       (5, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2024-09-05', 1),
        (5, (SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'CS201'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'SE302'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'CS302'), '2024-2025-2', NOW(), 1),
        (6, (SELECT id FROM `course` WHERE course_code = 'SE401'), '2024-2025-2', NOW(), 1),
-       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2023-09-05', 1),
-       (7, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-2', '2023-09-05', 1),
+       (6, (SELECT id FROM `course` WHERE course_code = 'SE2001'), '2024-2025-2', '2024-09-05', 1),
+       (7, (SELECT id FROM `course` WHERE course_code = 'MA101'), '2024-2025-2', '2024-09-05', 1),
        (7, (SELECT id FROM `course` WHERE course_code = 'SE301'), '2024-2025-2', NOW(), 1),
        (7, (SELECT id FROM `course` WHERE course_code = 'CS402'), '2024-2025-2', NOW(), 1),
        (8, (SELECT id FROM `course` WHERE course_code = 'CS401'), '2024-2025-2', NOW(), 1),
@@ -98,7 +98,7 @@ SELECT cs.id,
        80.00,
        85.00,
        88.00,
-       '2024-01-15'
+       '2025-07-10'
 FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 5
@@ -118,7 +118,7 @@ SELECT cs.id,
        92.00,
        93.00,
        '表现优秀',
-       '2024-01-15'
+       '2025-07-10'
 FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 5
@@ -137,7 +137,7 @@ SELECT cs.id,
        75.00,
        78.00,
        80.00,
-       '2024-01-15'
+       '2025-07-10'
 FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 6
@@ -156,7 +156,7 @@ SELECT cs.id,
        85.00,
        88.00,
        90.00,
-       '2024-01-15'
+       '2025-07-10'
 FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 6
@@ -173,7 +173,7 @@ SELECT cs.id,
        'B+',
        3.7,
        '基础扎实，逻辑清晰，有进步空间。',
-       '2024-01-20'
+       '2025-07-10'
 FROM `course_selection` cs
          JOIN `course` c ON cs.course_id = c.id
 WHERE cs.user_id = 7
@@ -227,18 +227,16 @@ VALUES ((SELECT id FROM `course` WHERE course_code = 'CS301'), '2024-2025-2', 2,
 INSERT INTO `activity` (`id`, `title`, `description`, `type`, `poster_url`, `organizer_id`, `contact`, `location`,
                         `start_time`, `end_time`, `max_participants`, `current_participants`, `participants_json`,
                         `status`, `create_time`, `update_time`, `registration_deadline`)
-VALUES (1, '迎新晚会', '2023年大学迎新晚会', '文化活动', '/posters/activity1.jpg', 1, '13800000000', '大礼堂',
-        DATE_ADD(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 8 DAY), 200, 50,
-        '[{"userId": 5, "joinTime": "2023-09-01 10:00:00", "status": 1}, {"userId": 6, "joinTime": "2023-09-01 11:00:00", "status": 1}]',
-        '1', NOW(), NOW(), DATE_ADD(NOW(), INTERVAL 5 DAY)),
-       (2, '编程比赛', '2023年大学生编程挑战赛', '竞赛', '/posters/activity2.jpg', 2, '13800000001', '计算机楼102',
-        DATE_ADD(NOW(), INTERVAL 14 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 50, 20,
-        '[{"userId": 5, "joinTime": "2023-09-05 10:00:00", "status": 1}]', '1', NOW(), NOW(),
-        DATE_ADD(NOW(), INTERVAL 12 DAY)),
-       (3, '校园马拉松', '2023年校园健康马拉松', '体育活动', '/posters/activity3.jpg', 1, '13800000000', '校园操场',
-        DATE_ADD(NOW(), INTERVAL 21 DAY), DATE_ADD(NOW(), INTERVAL 21 DAY), 300, 150,
-        '[{"userId": 4, "joinTime": "2023-09-10 10:00:00", "status": 1}]', '1', NOW(), NOW(),
-        DATE_ADD(NOW(), INTERVAL 19 DAY));
+VALUES (1, '2025迎新晚会', '2025年大学迎新晚会', '文化活动', '/posters/activity1.jpg', 1, '13800000000', '大礼堂',
+        '2025-05-15 19:00:00', '2025-05-15 21:30:00', 200, 2,
+        '[{"userId": 5, "joinTime": "2025-05-10 10:00:00", "status": 1}, {"userId": 6, "joinTime": "2025-05-11 11:00:00", "status": 1}]',
+        '1', NOW(), NOW(), '2025-05-13 23:59:59'),
+       (2, '2025编程比赛', '2025年大学生编程挑战赛', '竞赛', '/posters/activity2.jpg', 2, '13800000001', '计算机楼102',
+        '2025-06-10 09:00:00', '2025-06-10 17:00:00', 50, 1,
+        '[{"userId": 5, "joinTime": "2025-06-01 10:00:00", "status": 1}]', '1', NOW(), NOW(), '2025-06-08 23:59:59'),
+       (3, '2025校园马拉松', '2025年校园健康马拉松', '体育活动', '/posters/activity3.jpg', 1, '13800000000', '校园操场',
+        '2025-05-25 08:00:00', '2025-05-25 12:00:00', 300, 1,
+        '[{"userId": 4, "joinTime": "2025-05-20 10:00:00", "status": 1}]', '1', NOW(), NOW(), '2025-05-23 23:59:59');
 
 -- 插入论坛帖子数据
 INSERT INTO `post` (`title`, `content`, `user_id`, `tags`, `status`)
@@ -256,22 +254,45 @@ VALUES ('计算机网络期末复习资料分享',
 INSERT INTO `notification` (`id`, `title`, `content`, `sender_id`, `publisher_id`, `type`, `priority`, `target_type`,
                             `target_ids`, `status`, `is_top`, `view_count`, `send_time`, `expire_time`,
                             `attachments_json`, `receivers_json`, `create_time`, `update_time`)
-VALUES (1, '关于2023学年开学的通知', '各位同学：\n新学期即将开始，请大家做好开学准备。\n开学时间：2023年9月1日', 2, 2,
-        'SYSTEM', 1, 'ALL', NULL, '1', 1, 150, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY),
-        '[{"name": "开学手册.pdf", "url": "/files/handbook.pdf"}, {"name": "校历.pdf", "url": "/files/calendar.pdf"}]',
-        '[{"receiverId": 5, "isRead": 1, "readTime": "2023-08-20 10:00:00"}, {"receiverId": 6, "isRead": 0, "readTime": null}]',
+VALUES (1, '关于2025学年秋季学期开学的通知', '各位同学：
+新学期即将开始，请大家做好开学准备。
+开学时间：2025年9月1日', 1, 1,
+        'SYSTEM', 1, 'ALL', NULL, '1', 1, 150, NOW(), DATE_ADD(NOW(), INTERVAL 1 MONTH),
+        '[{"id": "file1", "filename": "2025秋季开学手册.pdf", "size": 1048576}, {"id": "file2", "filename": "2025-2026学年校历.pdf", "size": 512000}]',
+        '[{"userId": 5, "isRead": 1, "readTime": "2025-05-09 10:00:00"}, {"userId": 6, "isRead": 0, "readTime": null}]',
         NOW(), NOW()),
-       (2, '关于2023年奖学金评定的通知',
-        '各位同学：\n2023年奖学金评定工作即将开始，请符合条件的同学准备材料。\n截止时间：2023年10月15日', 1, 1, 'ACADEMIC',
-        2, 'USER', '5,6', '1', 0, 50, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY),
-        '[{"name": "奖学金申请表.docx", "url": "/files/scholarship_form.docx"}]',
-        '[{"receiverId": 5, "isRead": 1, "readTime": "2023-08-23 10:00:00"}, {"receiverId": 6, "isRead": 1, "readTime": "2023-08-23 11:00:00"}]',
+       (2, '关于2025年国家奖学金评定的通知',
+        '各位同学：
+2025年国家奖学金评定工作即将开始，请符合条件的同学准备材料并按时提交。
+截止时间：2025年10月15日', 1, 1, 'ACADEMIC',
+        2, 'USER', '5,6,7,8,9', '1', 0, 50, NOW(), DATE_ADD(NOW(), INTERVAL 20 DAY),
+        '[{"id": "file3", "filename": "国家奖学金申请表.docx", "size": 25600}]',
+        '[{"userId": 5, "isRead": 1, "readTime": "2025-05-09 11:00:00"}, {"userId": 6, "isRead": 1, "readTime": "2025-05-09 12:00:00"}, {"userId": 7, "isRead": 0, "readTime": null}]',
         NOW(), NOW()),
-       (3, '关于校园网络维护的通知',
-        '各位师生：\n为了提升校园网络服务质量，将于本周六进行网络设备维护。\n维护时间：2023年9月2日 00:00-06:00', 1, 1,
-        'SYSTEM', 0, 'ALL', NULL, '1', 0, 30, NOW(), DATE_ADD(NOW(), INTERVAL 10 DAY), '[]',
+       (3, '关于校园网络维护的通知（2025年9月）',
+        '各位师生：
+为了提升校园网络服务质量，信息中心计划于本周六凌晨进行网络核心设备维护。
+维护时间：2025年05月18日 00:00 - 06:00
+期间校园网及相关服务可能会出现短暂中断，敬请谅解。', 1, 1,
+        'SYSTEM', 0, 'ALL', NULL, '1', 0, 30, NOW(), '2025-05-19 00:00:00', '[]',
         '[{"receiverId": 2, "isRead": 0, "readTime": null}, {"receiverId": 5, "isRead": 0, "readTime": null}, {"receiverId": 6, "isRead": 0, "readTime": null}]',
-        NOW(), NOW());
+        NOW(), NOW()),
+       (4, '图书馆国庆节开放时间调整通知',
+        '各位读者：
+根据学校后续安排，图书馆开放时间调整如下：
+具体日期待定
+请各位读者相互转告。', 1, 1,
+        'GENERAL', 0, 'ALL', NULL, '1', 0, 120, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '[]', '[]', NOW(), NOW()),
+       (5, '计算机学院"代码之星"编程竞赛报名通知',
+        '计算机学院将举办第三届"代码之星"编程竞赛，旨在激发学生编程兴趣，提升实践能力。
+报名时间：即日起至2025年05月25日
+比赛时间：2025年06月01日
+欢迎各位同学踊跃报名！', 2, 2,
+        'ACTIVITY', 1, 'COLLEGE', '1', '1', 0, 88, NOW(), '2025-05-26 00:00:00',
+        '[{"id": "file4", "filename": "编程竞赛规程.pdf", "size": 307200}]', '[]', NOW(), NOW());
+
+ALTER TABLE `notification`
+    AUTO_INCREMENT = 6;
 
 -- 为其他学期补充数据 --
 

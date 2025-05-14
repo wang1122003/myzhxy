@@ -84,7 +84,11 @@
     </el-card>
 
     <!-- 编辑个人信息对话框 -->
-    <el-dialog v-model="dialogVisible" title="编辑个人信息" width="500px">
+    <DialogWrapper
+        v-model:visible="dialogVisible"
+        title="编辑个人信息"
+        width="500px"
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" :disabled="true"/>
@@ -131,10 +135,14 @@
           <el-button type="primary" @click="handleSubmit">保存</el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
 
     <!-- 修改密码对话框 -->
-    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
+    <DialogWrapper
+        v-model:visible="passwordDialogVisible"
+        title="修改密码"
+        width="400px"
+    >
       <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
         <el-form-item label="旧密码" prop="oldPassword">
           <el-input v-model="passwordForm.oldPassword" show-password type="password"/>
@@ -150,7 +158,7 @@
         <el-button @click="passwordDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handlePasswordSubmit">确认修改</el-button>
       </template>
-    </el-dialog>
+    </DialogWrapper>
   </div>
 </template>
 
@@ -161,6 +169,8 @@ import {Upload} from '@element-plus/icons-vue';
 import {changePassword as changePasswordApi, getCurrentUser, updateUserProfile} from '@/api/user'; // 引入修改密码API
 import {useUserStore} from '@/stores/userStore'; // Correct import for userStore
 import {useRouter} from 'vue-router';
+import {storeToRefs} from 'pinia';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 const router = useRouter();
 const dialogVisible = ref(false);
@@ -191,11 +201,15 @@ const passwordForm = reactive({
 
 // Get user store instance
 const userStore = useUserStore();
-// Access state/getters via userStore
-const token = computed(() => userStore.token);
-const userInfo = computed(() => userStore.userInfo);
-const userRole = computed(() => userStore.userRole());
-const userAvatar = computed(() => userStore.userAvatar());
+
+// 使用 storeToRefs 来确保响应性，如果这些值要在模板中直接使用或进一步传递给组合式函数
+// 如果仅在 computed 内部使用一次，直接 .value 也可以，但 storeToRefs 更通用
+const {userInfo, userId, userRole, userAvatar} = storeToRefs(userStore);
+
+const currentUserRole = computed(() => userRole.value); // 直接使用 storeToRefs 的 userRole
+const currentUserAvatar = computed(() => userAvatar.value); // 直接使用 storeToRefs 的 userAvatar
+
+const isStudent = computed(() => currentUserRole.value === 'student');
 
 // 将 userInfo 的值同步到 form
 const syncFormWithUserInfo = () => {
@@ -218,7 +232,7 @@ const uploadAvatarUrl = computed(() => {
 });
 
 const headers = computed(() => ({
-  Authorization: token.value // Use the computed token here
+  Authorization: userStore.token // Use the computed token here
 }));
 
 const rules = {
@@ -256,26 +270,29 @@ const passwordRules = {
 const fetchProfile = async () => {
   loading.value = true;
   try {
-    const response = await getCurrentUser();
-    if (response.code === 200 && response.data) {
-      userStore.setUserInfo(response.data); // 使用Pinia store更新用户信息
-      // 更新全局头像
-      if (response.data.avatar) {
-        userStore.setAvatar(response.data.avatar);
-      }
-      syncFormWithUserInfo(); // 将获取到的信息同步到表单
+    // 调用 store action 来获取并设置用户信息
+    await userStore.fetchAndSetUserInfo();
+    // action 内部会处理 setUserInfo 和 setAvatar (如果需要的话)
+    // action 内部也会处理 sessionError 状态
+
+    // 检查 sessionError 状态
+    if (userStore.hasSessionError.value) {
+      ElMessage.error('获取用户信息失败，可能需要重新登录');
+      // 可以在这里决定是否强制登出
+      // await handleLogout();
     } else {
-      ElMessage.error(response.message || '获取用户信息失败');
-      if (response.code === 401) {
-        await handleLogout();
-      }
+      // 如果 action 成功执行，同步表单
+      syncFormWithUserInfo();
     }
   } catch (error) {
-    console.error('获取用户信息异常:', error);
-    ElMessage.error('获取用户信息异常');
-    if (error?.response?.status === 401) {
-      await handleLogout();
-    }
+    // fetchAndSetUserInfo 内部已处理大部分错误并设置 sessionError
+    // 这里捕获的是 store action 本身可能抛出的意外错误
+    console.error('调用 fetchAndSetUserInfo 时发生意外错误:', error);
+    ElMessage.error('加载用户信息时发生未知错误');
+    // 也可以考虑检查 error 类型决定是否登出
+    // if (error?.response?.status === 401) { 
+    //   await handleLogout(); 
+    // }
   } finally {
     loading.value = false;
   }

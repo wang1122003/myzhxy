@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia';
-import {ref} from 'vue';
+import {ref, computed} from 'vue';
 import {
     getCurrentUser,
     login as apiUserLogin,
@@ -14,13 +14,13 @@ export const useUserStore = defineStore('user', () => {
     const sessionError = ref(false);  // 新增：会话错误状态
 
     // 计算属性（Getters）
-    const isLoggedIn = () => !!token.value;
-    const userRole = () => userInfo.value?.userType?.toLowerCase() || null;
-    const userAvatar = () => userInfo.value?.avatarUrl || '';
-    const userRealName = () => userInfo.value?.realName || '';
-    const userId = () => {
-        // 更健壮的用户ID获取，添加详细日志以便排查问题
-        console.log("[userStore] 尝试获取用户ID，当前userInfo:", userInfo.value);
+    const isLoggedIn = computed(() => !!token.value);
+    const userRole = computed(() => userInfo.value?.userType?.toLowerCase() || null);
+    const userAvatar = computed(() => userInfo.value?.avatarUrl || '');
+    const userRealName = computed(() => userInfo.value?.realName || '');
+
+    const userId = computed(() => {
+        console.log("[userStore] (computed) 尝试获取用户ID，当前userInfo:", userInfo.value);
 
         if (userInfo.value) {
             // 尝试解析数字ID（如果缓存的用户信息中只有字符串形式的ID）
@@ -31,25 +31,25 @@ export const useUserStore = defineStore('user', () => {
                 userInfo.value.studentId;
 
             // 如果角色是学生但ID字段不存在，检查是否有单独的studentId字段
-            if (userRole() === 'student' && userInfo.value.student && userInfo.value.student.id) {
-                console.log("[userStore] 从student子对象获取ID:", userInfo.value.student.id);
-                return userInfo.value.student.id;
+            if (userRole.value === 'student' && userInfo.value.student && userInfo.value.student.id) {
+                console.log("[userStore] (computed) 从student子对象获取ID:", userInfo.value.student.id);
+                return Number(userInfo.value.student.id);
             }
 
             // 如果角色是教师但ID字段不存在，检查是否有单独的teacherId字段
-            if (userRole() === 'teacher' && userInfo.value.teacher && userInfo.value.teacher.id) {
-                console.log("[userStore] 从teacher子对象获取ID:", userInfo.value.teacher.id);
-                return userInfo.value.teacher.id;
+            if (userRole.value === 'teacher' && userInfo.value.teacher && userInfo.value.teacher.id) {
+                console.log("[userStore] (computed) 从teacher子对象获取ID:", userInfo.value.teacher.id);
+                return Number(userInfo.value.teacher.id);
             }
 
-            console.log("[userStore] 返回用户ID:", id);
-            return id || null;
+            console.log("[userStore] (computed) 返回用户ID:", id);
+            return id ? Number(id) : null; // 确保返回数字或null
         }
 
-        console.warn("[userStore] userInfo为空，无法获取用户ID");
+        console.warn("[userStore] (computed) userInfo为空，无法获取用户ID");
         return null;
-    };
-    const hasSessionError = () => sessionError.value;  // 新增：会话错误检查
+    });
+    const hasSessionError = computed(() => sessionError.value);
 
     // Actions
     function setUserInfo(newUserInfo) {
@@ -57,7 +57,7 @@ export const useUserStore = defineStore('user', () => {
             userInfo.value = newUserInfo;
             localStorage.setItem('userInfo', JSON.stringify(newUserInfo));
         } else {
-            userInfo.value = {};
+            userInfo.value = {}; // 设置为空对象而不是null，以避免userInfo.value?.property 访问出错
             localStorage.removeItem('userInfo');
         }
     }
@@ -76,29 +76,54 @@ export const useUserStore = defineStore('user', () => {
     }
 
     function setAvatar(newAvatarUrl) {
-        if (userInfo.value && newAvatarUrl) {
+        if (userInfo.value && newUserInfo) { // 应该检查 userInfo.value 是否为真，而不是 newUserInfo
             userInfo.value.avatarUrl = newAvatarUrl;
-            // 更新localStorage中的用户信息
             localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
         }
     }
 
     async function login(credentials) {
+        // credentials 应该包含: { username, password, remember (optional) }
+        console.log("[userStore] Login action called with credentials:", credentials);
         try {
-            const response = await apiUserLogin(credentials);
-            const newToken = response.data.token;
+            const response = await apiUserLogin({
+                username: credentials.username,
+                password: credentials.password
+            });
+
+            // 安全地访问 token
+            let newToken = null;
+            if (response && response.data && response.data.token) { // 确保 response, response.data 都存在
+                newToken = response.data.token;
+            } else if (response && response.token) {
+                // 兼容拦截器可能直接返回 data 部分，或者API直接返回token的情况
+                newToken = response.token;
+            } else {
+                console.warn("[userStore] Login API response structure unexpected:", response);
+            }
+
             if (newToken) {
                 setToken(newToken);
-                await fetchAndSetUserInfo();
+                await fetchAndSetUserInfo(); // 获取并设置用户信息
                 console.log('[userStore] 登录成功，已获取用户信息。');
-                return userRole();
+
+                // 处理记住用户名
+                if (credentials.remember) {
+                    localStorage.setItem('username', credentials.username);
+                    console.log('[userStore] Username remembered:', credentials.username);
+                } else {
+                    localStorage.removeItem('username');
+                    console.log('[userStore] Username not remembered or removed.');
+                }
+
+                return userRole.value; // 返回角色
             } else {
-                console.error('[userStore] 登录失败：未收到token。');
+                console.error('[userStore] 登录失败：未从响应中获取到token。', response);
                 logout();
                 return null;
             }
         } catch (error) {
-            console.error('[userStore] 登录失败:', error);
+            console.error('[userStore] 登录 API 调用失败:', error);
             logout();
             return null;
         }
@@ -106,57 +131,38 @@ export const useUserStore = defineStore('user', () => {
 
     async function logout() {
         try {
-            // 尝试调用登出API（如果有）
-            if (isLoggedIn()) {
+            if (isLoggedIn.value) { // 调用computed属性的.value
                 await apiUserLogout().catch(error => {
                     console.warn('[userStore] 登出API调用失败，但会继续清理本地状态:', error);
                 });
             }
         } finally {
-            // 无论API是否成功，都清除本地状态
             console.log('[userStore] 清理用户状态...');
-
-            // 先将token和用户信息引用置空
-            setToken('');
-            setUserInfo({});
-
-            // 再删除localStorage中的数据
-            localStorage.removeItem('token');
-            localStorage.removeItem('userInfo');
-
+            setToken(''); // 首先清除 token ref
+            setUserInfo({}); // 然后清除 userInfo ref (设置为空对象)
+            // localStorage的清理已在setToken和setUserInfo内部处理
             console.log('[userStore] 用户状态已完全清除');
         }
     }
 
-    // 尝试刷新token
     async function refreshToken() {
         if (!token.value) {
             console.error('[userStore] 无token可供刷新');
             throw new Error('没有token可供刷新');
         }
-
         try {
             console.log('[userStore] 尝试刷新token...');
             const response = await apiRefreshToken();
-
-            // 检查response是否有token字段，兼容不同的返回格式
             let newToken = null;
-
             if (response && typeof response === 'object') {
-                // 直接检查response顶层是否有token字段
                 if (response.token) {
                     newToken = response.token;
-                }
-                // 检查response.data是否有token字段 (符合Result格式)
-                else if (response.data && response.data.token) {
+                } else if (response.data && response.data.token) {
                     newToken = response.data.token;
-                }
-                // 有些API可能直接返回包含token的对象
-                else if (response.code === 200 && response.data) {
-                    newToken = response.data.token || response.data;
+                } else if (response.code === 200 && response.data) { // 兼容直接返回 token 字符串或包含 token 的对象
+                    newToken = (typeof response.data === 'string' && response.data) || response.data.token;
                 }
             }
-
             if (newToken) {
                 console.log('[userStore] 刷新token成功');
                 setToken(newToken);
@@ -167,55 +173,53 @@ export const useUserStore = defineStore('user', () => {
             }
         } catch (error) {
             console.error('[userStore] 刷新token失败:', error);
-            // 清除无效的token
             setToken('');
             throw error;
         }
     }
 
-    // 从API获取用户信息并更新store的action
     async function fetchAndSetUserInfo() {
         if (!token.value) {
             console.warn('[userStore] fetchAndSetUserInfo在没有token的情况下被调用。');
-            return;
+            return; // 或者 throw new Error('No token available');
         }
         try {
             console.log('[userStore] 正在获取用户信息...');
-            const userData = await getCurrentUser(); // 拦截器已返回 data 部分
+            const userData = await getCurrentUser();
+            // 确保userData有效，并且包含一个可识别的ID字段
+            const idField = userData?.id || userData?.userId || userData?.user_id || userData?.teacherId || userData?.studentId;
 
-            // ！！！ 直接使用拦截器处理后的 userData ！！！
-            if (userData && userData.userId) { // 简单检查 userData 是否有效 (例如检查 userId)
+            if (userData && idField) { 
                 console.log('[userStore] 用户信息已获取:', userData);
-                setUserInfo(userData); // 直接设置用户信息
-                setSessionError(false); // 获取成功，清除错误标记
+                setUserInfo(userData);
+                setSessionError(false); 
             } else {
-                // 如果 userData 无效或缺少关键信息
-                console.error('[userStore] 获取用户信息失败: 拦截器返回的数据无效', userData);
-                throw new Error('获取用户信息失败：数据无效');
+                console.error('[userStore] 获取用户信息失败: 拦截器返回的数据无效或缺少ID', userData);
+                // 在这里不应该抛出错误然后被外部捕获导致登出，而应该标记会话错误
+                setSessionError(true);
+                // 可以选择清除本地可能无效的用户信息
+                // setUserInfo({}); 
+                // 抛出一个特定的错误类型如果需要
+                // throw new Error('获取用户信息失败：数据无效或缺少ID');
             }
         } catch (error) {
             console.error('[userStore] 获取用户信息时发生错误:', error);
-            // 在捕获到任何获取用户信息的错误时，仅抛出错误，不强制登出
-            // setSessionError(true); // 可以考虑在这里设置会话错误
-            throw error;
+            setSessionError(true);
+            // 不再向上抛出错误，避免App.vue中的全局错误处理器强制登出
+            // throw error; 
         }
     }
 
     return {
-        // 状态
         userInfo,
         token,
         sessionError,
-
-        // Getters
         isLoggedIn,
         userRole,
         userAvatar,
         userRealName,
         userId,
         hasSessionError,
-
-        // Actions
         setUserInfo,
         setToken,
         setSessionError,

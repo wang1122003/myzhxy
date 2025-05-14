@@ -214,12 +214,6 @@ const routes = [
                 meta: {title: '论坛管理', icon: ChatDotRound, showInSidebar: true}
             },
             {
-                path: 'notices',
-                name: 'AdminNotices',
-                component: () => import('../views/admin/Notice.vue'),
-                meta: {title: '通知公告', icon: Bell, showInSidebar: true}
-            },
-            {
                 path: 'classroom-usage',
                 name: 'AdminClassroomUsage',
                 component: () => import('../views/common/ClassroomUsage.vue'),
@@ -260,60 +254,79 @@ const router = createRouter({
 // 移除旧的 tryRestoreUserSession 函数
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
-    // 使用Pinia store获取登录状态
+router.beforeEach(async (to, from, next) => {
+    // Pinia store instance
     const userStore = useUserStore();
-    const _isLoggedIn = userStore.isLoggedIn();
-    const _userRole = userStore.userRole();
 
-    console.log(`路由跳转：${from.path} -> ${to.path}`);
+    // 关键：确保 Pinia store 实例有效
+    if (!userStore) {
+        console.error("[RouterGuard] 严重错误: User store 不可用! 重定向到 /error。");
+        // 确保 '/error' 路由存在，或者以其他方式处理此严重错误
+        return next({name: 'Error', query: {message: '应用程序严重错误：用户会话管理失败。'}});
+    }
+
+    // 从 Pinia store 获取状态 (Pinia 会为 setup stores 自动解包 ref/computed)
+    const isLoggedIn = userStore.isLoggedIn;
+    const userRole = userStore.userRole;
+
+    console.log(`[RouterGuard] 导航: 从 "${from.path}" 到 "${to.path}". 用户登录状态: ${isLoggedIn}, 角色: "${userRole}"`);
 
     // 设置页面标题
-    if (to.meta.title) {
-        document.title = to.meta.title + ' - 智慧化校园服务系统'
+    if (to.meta && to.meta.title) {
+        document.title = `${to.meta.title} - 智慧化校园服务系统`;
     } else {
-        document.title = '智慧化校园服务系统'
+        document.title = '智慧化校园服务系统';
     }
 
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-    const requiredRole = to.meta.role;
+    const requiredRouteRole = to.meta.role; // 路由 meta 中定义的目标角色
 
     if (requiresAuth) {
         // 1. 目标路由需要认证
-        if (!_isLoggedIn) {
-            // 1.1 未登录 -> 跳转登录页
-            console.log('需要认证，但未登录，跳转到 /');
+        if (!isLoggedIn) {
+            // 1.1 用户未登录
+            console.log(`[RouterGuard] 路由 "${to.path}" 需要认证。用户未登录。重定向到登录页 "/"。`);
             next({path: '/', query: {redirect: to.fullPath}});
         } else {
-            // 1.2 已登录
-            if (requiredRole && _userRole !== requiredRole) {
-                // 1.2.1 角色不匹配 -> 跳转错误页
-                console.warn(`权限不足: 目标路由 ${to.path} 需要 ${requiredRole}, 当前角色为 ${_userRole}，跳转到 /error`);
-                next('/error');
+            // 1.2 用户已登录，检查角色权限
+            if (requiredRouteRole) {
+                // 1.2.1 路由需要特定角色
+                if (userRole === requiredRouteRole) {
+                    console.log(`[RouterGuard] 路由 "${to.path}" 需要角色 "${requiredRouteRole}"。用户角色匹配。允许访问。`);
+                    next();
+                } else {
+                    console.warn(`[RouterGuard] 路由 "${to.path}" 需要角色 "${requiredRouteRole}"。用户角色为 "${userRole}"。访问被拒绝。重定向到错误页。`);
+                    next({name: 'Error', query: {code: '403', message: '访问被拒绝：您没有查看此页面的权限。'}});
+                }
             } else {
-                // 1.2.2 角色匹配 或 路由不需要特定角色 -> 允许访问
-                console.log(`认证通过 (${requiredRole ? '角色匹配' : '无需特定角色'})，放行到 ${to.path}`);
+                // 1.2.2 路由需要认证，但不需要特定角色
+                console.log(`[RouterGuard] 路由 "${to.path}" 需要认证。用户已登录（无需特定角色）。允许访问。`);
                 next();
             }
         }
     } else {
-        // 2. 目标路由不需要认证
-        if (to.name === 'Home' && _isLoggedIn) {
-            // 2.1 访问的是主页，但用户已登录 -> 重定向到角色首页
-            console.log(`已登录，访问首页，重定向到角色首页 (${_userRole})`);
-            if (_userRole === 'admin') {
-                next('/admin/notice');
-            } else if (_userRole === 'teacher') {
-                next('/teacher');
-            } else if (_userRole === 'student') {
-                next('/student');
-            } else {
-                console.warn('未知角色，重定向到 /');
-                next('/');
+        // 2. 目标路由是公共页面 (不需要认证)
+        // 如果用户已登录，并且尝试访问仅为未登录用户设计的主页 (例如 '/')
+        if (to.name === 'Home' && isLoggedIn) {
+            console.log(`[RouterGuard] 用户已登录并尝试访问公共主页 "Home"。根据角色 "${userRole}" 重定向到用户仪表盘。`);
+            switch (userRole) {
+                case 'admin':
+                    next({path: '/admin/notice'}); // 请根据实际的管理员主页路径调整
+                    break;
+                case 'teacher':
+                    next({path: '/teacher'});     // 请根据实际的教师主页路径调整
+                    break;
+                case 'student':
+                    next({path: '/student'});     // 请根据实际的学生主页路径调整
+                    break;
+                default:
+                    console.warn(`[RouterGuard] 已登录用户角色 "${userRole}" 未知或不应从 "Home" 重定向。重定向到 "/"。`);
+                    next('/'); // 对于未知角色，或如果 "Home" 页面也可以作为已登录用户的某种着陆页
+                    break;
             }
         } else {
-            // 2.2 访问其他公共页面 -> 允许访问
-            console.log(`访问公共页面 ${to.path}，放行`);
+            // 2.1 访问其他公共页面，或未登录用户访问 "Home"
+            console.log(`[RouterGuard] 路由 "${to.path}" 是公共页面。允许访问。`);
             next();
         }
     }

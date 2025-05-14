@@ -37,7 +37,122 @@
       </el-tab-pane>
 
       <el-tab-pane label="评论管理" name="comment">
-        <CommentManagement/>
+        <!-- 内联 CommentManagement 的内容 -->
+        <div class="comment-management-container">
+          <div class="header"
+               style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <!-- <h3>评论管理</h3> -->
+            <div class="filter-actions">
+              <el-select v-model="commentFilterStatus" clearable placeholder="评论状态"
+                         @change="handleCommentFilterChange">
+                <el-option label="全部" value=""/>
+                <el-option :value="1" label="正常"/>
+                <el-option :value="0" label="待审核"/>
+                <el-option :value="-1" label="已删除"/>
+              </el-select>
+              <el-input
+                  v-model="commentSearchKeyword"
+                  clearable
+                  placeholder="搜索评论内容"
+                  style="width: 200px; margin-left: 10px;"
+                  @keyup.enter="handleCommentSearch"
+              >
+                <template #suffix>
+                  <el-icon class="el-input__icon" @click="handleCommentSearch">
+                    <Search/>
+                  </el-icon>
+                </template>
+              </el-input>
+            </div>
+          </div>
+
+          <el-table
+              v-loading="commentLoading"
+              :data="comments"
+              border
+              style="width: 100%"
+          >
+            <el-table-column type="expand">
+              <template #default="props">
+                <div class="comment-detail" style="padding: 10px 20px;">
+                  <p><strong>评论内容：</strong></p>
+                  <p>{{ props.row.content }}</p>
+                  <p v-if="props.row.postTitle"><strong>帖子标题：</strong> {{ props.row.postTitle }}</p>
+                  <p v-if="props.row.parentId"><strong>回复对象：</strong> {{ props.row.replyToName }}</p>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="评论内容" min-width="200" show-overflow-tooltip>
+              <template #default="scope">
+                {{ truncateCommentContent(scope.row.content) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="发布者" prop="authorName" width="120"/>
+            <el-table-column label="帖子标题" min-width="150" prop="postTitle" show-overflow-tooltip/>
+            <el-table-column label="点赞数" prop="likeCount" sortable width="80"/>
+            <el-table-column label="状态" width="100">
+              <template #default="scope">
+                <el-tag v-if="scope.row.status === 1" type="success">正常</el-tag>
+                <el-tag v-else-if="scope.row.status === 0" type="warning">待审核</el-tag>
+                <el-tag v-else-if="scope.row.status === -1" type="danger">已删除</el-tag>
+                <el-tag v-else type="info">未知</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="发布时间" width="180">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.createTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="200">
+              <template #default="scope">
+                <el-button
+                    v-if="scope.row.status === 0"
+                    size="small"
+                    type="success"
+                    @click="handleApproveComment(scope.row)"
+                >
+                  审核通过
+                </el-button>
+                <el-button
+                    v-if="scope.row.status !== -1"
+                    size="small"
+                    type="danger"
+                    @click="handleDeleteComment(scope.row)"
+                >
+                  删除
+                </el-button>
+                <el-button
+                    v-if="scope.row.status === -1"
+                    size="small"
+                    type="primary"
+                    @click="handleRestoreComment(scope.row)"
+                >
+                  恢复
+                </el-button>
+                <el-button
+                    size="small"
+                    @click="viewCommentPost(scope.row)"
+                >
+                  查看帖子
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页控件 -->
+          <div v-if="commentTotal > 0" class="pagination-container"
+               style="margin-top: 20px; display: flex; justify-content: flex-end;">
+            <el-pagination
+                v-model:current-page="commentCurrentPage"
+                v-model:page-size="commentPageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                :total="commentTotal"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleCommentSizeChange"
+                @current-change="handleCommentCurrentChange"
+            />
+          </div>
+        </div>
       </el-tab-pane>
 
       <!-- 移除分类管理 Tab -->
@@ -47,7 +162,7 @@
     </el-tabs>
 
     <!-- 编辑帖子对话框 -->
-    <el-dialog v-model="editPostDialogVisible" :close-on-click-modal="false" title="编辑帖子" width="70%">
+    <DialogWrapper v-model:visible="editPostDialogVisible" :close-on-click-modal="false" title="编辑帖子" width="70%">
       <el-form ref="editPostFormRef" :model="currentPost" :rules="editPostRules" label-width="80px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="currentPost.title" placeholder="请输入标题"/>
@@ -62,10 +177,10 @@
           <el-button :loading="editSubmitting" type="primary" @click="submitEditPost">保存</el-button>
         </span>
       </template>
-    </el-dialog>
+    </DialogWrapper>
 
-    <!-- 查看帖子对话框 -->
-    <NoticeDetailDialog v-model="viewPostDialogVisible" :notice-id="currentPostId"/>
+    <!-- 查看帖子对话框 (移除，因为原组件已删除) -->
+    <!-- <NoticeDetailDialog v-model="viewPostDialogVisible" :notice-id="currentPostId"/> -->
 
   </PageContainer>
 </template>
@@ -75,7 +190,6 @@ import {onBeforeUnmount, onMounted, reactive, ref, computed, watch, h, resolveCo
 import {
   ElButton,
   ElCard,
-  ElDialog,
   ElDropdown,
   ElDropdownItem,
   ElDropdownMenu,
@@ -103,16 +217,22 @@ import {
   getPosts as getPostsAdmin,
   updatePost as updatePostAdmin,
   setPostTop,
-  setPostEssence
+  setPostEssence,
+  getCommentsAdmin,
+  updateCommentStatusAdmin
 } from '@/api/post'
 // Import child components if they exist and are used
 // 移除 CategoryManagement 导入
 // import CategoryManagement from '@/components/forum/CategoryManagement.vue' // Corrected path
-import CommentManagement from '@/components/forum/CommentManagement.vue' // Corrected path
-import RichTextEditor from '@/components/common/RichTextEditor.vue' // Adjust path if needed
-import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue' // Assuming this is for viewing posts
+// import CommentManagement from '@/components/forum/CommentManagement.vue' // Corrected path
+import RichTextEditor from '@/views/ui/RichTextEditor.vue' // 更新路径
+// import NoticeDetailDialog from '@/components/common/NoticeDetailDialog.vue' 
 import {formatDateTime} from '@/utils/formatters' // Corrected import path
-// import TableView from '@/components/common/TableView.vue' // 假设有 TableView 组件 -> Removed incorrect import
+import {useRouter} from 'vue-router'
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue';
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue';
+import TableView from '@/views/ui/TableView.vue';
 
 // Tab state
 const activeTab = ref('post');
@@ -129,9 +249,17 @@ const postFilters = reactive({
 });
 const selectedPosts = ref([]); // 用于存储表格选中的行
 
+// --- Comment Management State (Migrated) ---
+const commentLoading = ref(false);
+const comments = ref([]);
+const commentTotal = ref(0);
+const commentCurrentPage = ref(1);
+const commentPageSize = ref(10);
+const commentFilterStatus = ref('');
+const commentSearchKeyword = ref('');
+
 // --- Dialog and Form State ---
 const editPostDialogVisible = ref(false);
-const viewPostDialogVisible = ref(false);
 const editSubmitting = ref(false);
 const currentPost = reactive({id: null, title: '', content: ''});
 const currentPostId = ref(null); // 用于查看详情
@@ -218,6 +346,7 @@ const postActionColumnConfig = computed(() => ({
 }));
 
 // --- Methods ---
+const router = useRouter();
 
 // Fetch Posts
 const fetchPosts = async () => {
@@ -229,8 +358,14 @@ const fetchPosts = async () => {
       ...postFilters
     };
     const res = await getPostsAdmin(params);
-    postList.value = res.data.records || [];
+    if (res && res.data) {
+      postList.value = res.data.records || [];
       postTotal.value = res.data.total || 0;
+    } else {
+      postList.value = [];
+      postTotal.value = 0;
+      // ElMessage.error('获取帖子列表失败，响应数据格式不正确'); // Optional: user notification
+    }
   } catch (error) {
     console.error("获取帖子列表失败:", error);
     // 错误由拦截器处理
@@ -239,24 +374,45 @@ const fetchPosts = async () => {
   }
 };
 
-// Fetch Categories (移除)
-// const fetchCategories = async () => {
-//   try {
-//     const res = await getCategoriesAdmin();
-//     categories.value = res.data || [];
-//   } catch (error) {
-//     console.error("获取分类列表失败:", error);
-//     ElMessage.error("获取分类列表失败");
-//   }
-// };
+// Fetch Comments
+const fetchComments = async () => {
+  commentLoading.value = true;
+  try {
+    const params = {
+      page: commentCurrentPage.value,
+      size: commentPageSize.value,
+      status: commentFilterStatus.value !== '' ? commentFilterStatus.value : null,
+      keyword: commentSearchKeyword.value || null
+    };
+    const res = await getCommentsAdmin(params);
+    if (res.code === 200 && res.data) {
+      // 兼容不同分页格式
+      comments.value = res.data.records || res.data.rows || res.data.list || [];
+      commentTotal.value = res.data.total || 0;
+    } else {
+      ElMessage.error(res.message || '获取评论列表失败');
+      comments.value = [];
+      commentTotal.value = 0;
+    }
+  } catch (error) {
+    console.error('获取评论列表失败:', error);
+    ElMessage.error('获取评论列表失败');
+    comments.value = [];
+    commentTotal.value = 0;
+  } finally {
+    commentLoading.value = false;
+  }
+};
 
 // Handle Tab Change
 const handleTabChange = (tab) => {
-  activeTab.value = tab.paneName;
+  activeTab.value = tab;
   if (activeTab.value === 'post' && postList.value.length === 0) {
     fetchPosts();
   }
-  // 如果有 CommentManagement 或其他 Tab，也可能需要刷新
+  if (activeTab.value === 'comment' && comments.value.length === 0) {
+    fetchComments();
+  }
 };
 
 // Handle Pagination
@@ -282,7 +438,7 @@ const handleAddPost = () => {
 
 const handleViewPost = (row) => {
   currentPostId.value = row.id;
-  viewPostDialogVisible.value = true;
+  // viewPostDialogVisible.value = true;
 };
 
 const handleEditPost = (row) => {
@@ -392,8 +548,9 @@ const getPostStatusType = (status) => {
 // Lifecycle Hook
 onMounted(() => {
   fetchPosts();
-  // 移除 fetchCategories 调用
-  // fetchCategories(); 
+  if (activeTab.value === 'comment') {
+    fetchComments();
+  }
 });
 
 // 帖子筛选搜索
@@ -449,6 +606,92 @@ onBeforeUnmount(() => {
   if (editorInstance) {
     editorInstance.destroy();
     editorInstance = null;
+  }
+});
+
+// --- Comment Methods (Migrated and Renamed) ---
+const truncateCommentContent = (content) => {
+  if (!content) return '';
+  const maxLength = 50;
+  return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+};
+
+const handleApproveComment = async (comment) => {
+  try {
+    await updateCommentStatusAdmin(comment.id, comment.postId, 1);
+    ElMessage.success('评论已通过审核');
+    fetchComments(); // 刷新列表
+  } catch (error) {
+    console.error('审核评论失败:', error);
+    ElMessage.error(error.response?.data?.message || error.message || '操作失败');
+  }
+};
+
+const handleDeleteComment = (comment) => {
+  ElMessageBox.confirm(`确定要删除此评论吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await updateCommentStatusAdmin(comment.id, comment.postId, -1);
+      ElMessage.success('评论已删除');
+      fetchComments(); // 刷新列表
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      ElMessage.error(error.response?.data?.message || error.message || '删除失败');
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除');
+  });
+};
+
+const handleRestoreComment = async (comment) => {
+  try {
+    await updateCommentStatusAdmin(comment.id, comment.postId, 1);
+    ElMessage.success('评论已恢复');
+    fetchComments(); // 刷新列表
+  } catch (error) {
+    console.error('恢复评论失败:', error);
+    ElMessage.error(error.response?.data?.message || error.message || '操作失败');
+  }
+};
+
+const viewCommentPost = (comment) => {
+  if (comment.postId) {
+    // 路由到帖子详情页
+    // window.open(`/forum/post/${comment.postId}`, '_blank'); // 或使用 router.push
+    router.push(`/forum/post/${comment.postId}`);
+  } else {
+    ElMessage.warning('无法获取帖子信息');
+  }
+};
+
+const handleCommentFilterChange = () => {
+  commentCurrentPage.value = 1;
+  fetchComments();
+};
+
+const handleCommentSearch = () => {
+  commentCurrentPage.value = 1;
+  fetchComments();
+};
+
+const handleCommentSizeChange = (val) => {
+  commentPageSize.value = val;
+  commentCurrentPage.value = 1;
+  fetchComments();
+};
+
+const handleCommentCurrentChange = (val) => {
+  commentCurrentPage.value = val;
+  fetchComments();
+};
+
+// Watch for tab changes to load comments if needed
+watch(activeTab, (newTab) => {
+  if (newTab === 'comment' && comments.value.length === 0) { // Only load if comments haven't been loaded yet
+    fetchComments();
   }
 });
 

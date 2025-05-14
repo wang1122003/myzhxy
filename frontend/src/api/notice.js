@@ -14,7 +14,8 @@ const API = {
     UPDATE: (id) => `/notifications/${id}`, // 更新通知
     DELETE: (id) => `/notifications/${id}`, // 删除通知
     BATCH_DELETE: '/notifications/batch', // 批量删除通知
-    UPDATE_STATUS: (id) => `/notifications/status/${id}` // 更新通知状态 (路径格式似乎不同，请核对 Controller 映射)
+    UPDATE_STATUS: (id) => `/notifications/status/${id}`, // 更新通知状态 (发布/草稿等)
+    UPDATE_TOP: (id) => `/notifications/top/${id}` // 更新通知置顶状态
 };
 
 // 获取所有通知 (非分页)
@@ -128,8 +129,16 @@ export function updateNotificationStatus(id, status) {
     return request({
         url: API.UPDATE_STATUS(id),
         method: 'put', // 或 PATCH
-        // data: { status } // 原方式，发送 Request Body
-        params: {status} // 修正：使用 params 匹配后端的 @RequestParam
+        params: {status} // 使用 params 匹配后端的 @RequestParam
+    });
+}
+
+// 更新通知置顶状态
+export function updateNotificationTopStatus(id, isTop) {
+    return request({
+        url: API.UPDATE_TOP(id),
+        method: 'put',
+        params: {isTop}
     });
 }
 

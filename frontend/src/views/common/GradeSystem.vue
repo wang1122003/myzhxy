@@ -30,9 +30,9 @@ import TeacherGradeManagement from './grade/TeacherGradeManagement.vue';
 const userStore = useUserStore();
 const selectedCourse = ref(null);
 
-// 使用计算属性获取用户角色，而不是ref
+// 获取用户角色
 const userRole = computed(() => {
-  return userStore.userRole();
+  return userStore.userRole.value;
 });
 
 // 选择要管理成绩的课程

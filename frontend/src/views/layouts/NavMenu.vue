@@ -248,52 +248,56 @@ export default {
 }
 
 .nav-menu {
-  border-right: none;
-  height: calc(100% - #{$header-height});
-}
+  height: calc(100% - #{$header-height}); /* Ensure menu takes full available height */
+  border-right: none; /* Remove default border */
 
-.nav-menu:not(.el-menu--collapse) {
-  width: var(--sidebar-width, $sidebar-width);
-}
-
-.el-sub-menu__title {
-  transition: all 0.3s;
-}
-
-.el-menu-item {
-  transition: all 0.3s;
-}
-
-/* 在折叠模式下隐藏菜单标题 */
-.is-collapsed .menu-title {
-  display: none;
-}
-
-/* 手机模式下的样式 */
-.is-mobile .menu-header {
-  display: none;
-}
-
-.is-mobile .nav-menu {
-  width: 100%;
-  height: auto;
-}
-
-/* Element Plus 菜单样式覆盖 (如果需要) */
-:deep(.el-menu-item) {
-  &:hover {
-    background-color: $menu-hover-background !important;
+  &:not(.el-menu--collapse) {
+    width: 100%;
   }
 
-  &.is-active {
-    background-color: $menu-active-background !important;
-    color: $menu-active-text-color !important;
+  // Mobile specific styles
+  &.el-menu--horizontal {
+    border-bottom: none;
+  }
+
+  // Deep styling for menu items
+  ::v-deep(.el-menu-item),
+  ::v-deep(.el-sub-menu__title) {
+    &:hover {
+      background-color: var(--sidebar-hover-background, $sidebar-hover-background) !important;
+    }
+  }
+
+  ::v-deep(.el-menu-item.is-active) {
+    background-color: var(--sidebar-active-background, $sidebar-active-background) !important;
   }
 }
 
-:deep(.el-sub-menu__title) {
-  &:hover {
-    background-color: $menu-hover-background !important;
+// Hide text when collapsed but not in mobile mode
+.el-menu--collapse {
+  .el-sub-menu.is-active .el-sub-menu__title,
+  .el-menu-item.is-active {
+    background-color: var(--sidebar-active-background, $sidebar-active-background) !important;
+  }
+
+  // Ensure icons are centered when collapsed
+  .el-menu-item,
+  .el-sub-menu__title {
+    justify-content: center;
+
+    i,
+    .el-icon {
+      margin-right: 0;
+    }
+  }
+
+  span {
+    display: none;
+  }
+
+  .el-sub-menu__icon-arrow {
+    display: none;
   }
 }
+
 </style> 

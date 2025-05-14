@@ -33,8 +33,8 @@
         />
 
     <!-- 添加/编辑活动对话框 -->
-    <el-dialog
-        v-model="dialogVisible"
+    <DialogWrapper
+        v-model:visible="dialogVisible"
         :close-on-click-modal="false"
         :title="dialogTitle"
         top="5vh"
@@ -182,13 +182,38 @@
           </el-button>
       </div>
       </template>
-    </el-dialog>
+    </DialogWrapper>
 
-    <!-- 报名情况弹窗 -->
-    <EnrollmentListDialog
-        v-model="enrollmentDialogVisible"
-        :activity-id="currentActivityId"
-    />
+    <!-- 查看报名列表对话框 (内联替代 EnrollmentListDialog) -->
+    <DialogWrapper
+        v-model:visible="enrollmentDialogVisible"
+        destroy-on-close
+        title="活动报名列表"
+        top="5vh"
+        width="70%"
+    >
+      <div v-loading="enrollmentLoading">
+        <div class="toolbar" style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+          <span>共 {{ totalEnrollments }} 人报名</span>
+          <!-- Export button removed/commented out -->
+        </div>
+        <TableView
+            v-model:current-page="enrollmentCurrentPage"
+            v-model:page-size="enrollmentPageSize"
+            :columns="enrollmentTableColumns"
+            :data="enrollmentList"
+            :loading="enrollmentLoading"
+            :show-action-column="false"
+            :total="totalEnrollments"
+            @refresh="fetchEnrollments"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="enrollmentDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </DialogWrapper>
 
   </PageContainer>
 </template>
@@ -196,14 +221,28 @@
 <script setup>
 import {computed, h, onBeforeUnmount, onMounted, reactive, ref, resolveComponent, shallowRef, watch} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Plus} from '@element-plus/icons-vue'
-import {addActivity, deleteActivity, getAllActivities, updateActivity} from '@/api/activity'
-// import { uploadActivityPosterFile } from '@/api/file' // 引入海报上传 API - Commented out
-import EnrollmentListDialog from '@/components/admin/EnrollmentListDialog.vue' // 引入报名列表弹窗组件
-import {formatDateTime} from '@/utils/formatters' // Corrected import path
-// 富文本编辑器相关
-import '@wangeditor/editor/dist/css/style.css'
+import {Plus, Upload, Search, View, Edit, Delete, Download} from '@element-plus/icons-vue'
 import {Editor, Toolbar} from '@wangeditor/editor-for-vue'
+import '@wangeditor/editor/dist/css/style.css'
+import {
+  getAllActivities,
+  getActivityById,
+  addActivity,
+  updateActivity,
+  deleteActivity,
+  updateActivityStatus,
+  getActivityEnrollments // 确保导入
+} from '@/api/activity'
+import {downloadFile} from '@/api/file' // 确保导入
+import {useUserStore} from '@/stores/userStore'
+import {formatDateTime} from '@/utils/formatters' // 确保导入
+import PageContainer from '@/views/layouts/EnhancedPageContainer.vue'
+import TableView from '@/views/ui/TableView.vue'
+import FilterForm from '@/views/ui/AdvancedFilterForm.vue'
+import RichTextEditor from '@/views/ui/RichTextEditor.vue'
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
+// 移除 EnrollmentListDialog 导入
+// import EnrollmentListDialog from '@/components/admin/EnrollmentListDialog.vue' // 引入报名列表弹窗组件
 
 // --- Constants & Enums ---
 const ACTIVITY_STATUS = {
@@ -252,8 +291,14 @@ const activityForm = reactive({
   status: ACTIVITY_STATUS.PUBLISHED // 默认发布状态
 })
 
+// 活动报名列表对话框相关状态
 const enrollmentDialogVisible = ref(false)
-const currentActivityId = ref(null)
+const enrollmentLoading = ref(false)
+const enrollmentList = ref([])
+const totalEnrollments = ref(0)
+const enrollmentCurrentPage = ref(1)
+const enrollmentPageSize = ref(10)
+const currentActivityIdForEnrollment = ref(null)
 
 // 富文本编辑器实例 (必须用 shallowRef)
 const editorRef = shallowRef()
@@ -349,6 +394,19 @@ const actionColumnConfig = computed(() => ({
   ]
 }))
 
+// 新增：报名列表表格列配置
+const enrollmentTableColumns = computed(() => [
+  {prop: 'student.studentId', label: '学号', width: 150},
+  {prop: 'student.realName', label: '姓名', width: 120},
+  {prop: 'student.className', label: '班级', minWidth: 180},
+  {
+    prop: 'enrollTime',
+    label: '报名时间',
+    width: 180,
+    formatter: (row) => formatDateTime(row.enrollTime) // formatDateTime 应已存在
+  }
+]);
+
 // --- Methods ---
 
 // 获取活动列表
@@ -361,8 +419,25 @@ const fetchActivities = async () => {
       ...searchParams
     }
     const res = await getAllActivities(params)
-    activityList.value = res.data.records || []
-    total.value = res.data.total || 0
+    if (res && res.data) {
+      if (res.data.records) { // Standard IPage format
+        activityList.value = res.data.records;
+        total.value = res.data.total;
+      } else if (res.data.list) { // Custom format { list: [], total: ...}
+        activityList.value = res.data.list;
+        total.value = res.data.total;
+      } else if (Array.isArray(res.data)) { // Direct array if no pagination on backend
+        activityList.value = res.data;
+        total.value = res.data.length;
+      } else {
+        console.warn('Unknown activity data structure:', res.data);
+        activityList.value = [];
+        total.value = 0;
+      }
+    } else {
+      activityList.value = [];
+      total.value = 0;
+    }
   } catch (error) {
     console.error("获取活动列表失败:", error)
     // 错误由拦截器处理
@@ -485,11 +560,14 @@ const handleDeleteActivity = (row) => {
   })
 }
 
-// 查看报名情况
-const viewEnrollments = (row) => {
-  currentActivityId.value = row.id
-  enrollmentDialogVisible.value = true
-}
+// 查看报名列表
+const handleViewEnrollments = (activity) => {
+  currentActivityIdForEnrollment.value = activity.id;
+  enrollmentCurrentPage.value = 1; // 重置页码
+  enrollmentDialogVisible.value = true;
+  fetchEnrollments(); // 加载数据
+  // enrollmentDialogVisible.value = true; // 在加载后显示，避免看到空数据
+};
 
 // 弹窗关闭回调
 const handleDialogClose = () => {
@@ -584,6 +662,28 @@ const activityFormRules = reactive({
   status: [{required: true, message: '请选择活动状态', trigger: 'change'}]
 })
 
+// 新增：获取报名列表
+const fetchEnrollments = async () => {
+  if (!currentActivityIdForEnrollment.value) return;
+  enrollmentLoading.value = true;
+  try {
+    const params = {
+      page: enrollmentCurrentPage.value,
+      size: enrollmentPageSize.value,
+    };
+    const res = await getActivityEnrollments(currentActivityIdForEnrollment.value, params); // API 已导入
+    enrollmentList.value = res.data?.records || [];
+    totalEnrollments.value = res.data?.total || 0;
+  } catch (error) {
+    console.error('获取报名列表失败:', error);
+    ElMessage.error('获取报名列表失败');
+    enrollmentList.value = [];
+    totalEnrollments.value = 0;
+  } finally {
+    enrollmentLoading.value = false;
+  }
+};
+
 // --- Lifecycle Hooks ---
 onMounted(() => {
   fetchActivities()
@@ -599,6 +699,13 @@ onBeforeUnmount(() => {
 // 监听分页变化 (TableView 内部处理)
 watch([currentPage, pageSize], () => {
   fetchActivities();
+}, {immediate: false});
+
+// 添加对报名列表分页的监听
+watch([enrollmentCurrentPage, enrollmentPageSize], () => {
+  if (enrollmentDialogVisible.value && currentActivityIdForEnrollment.value) {
+    fetchEnrollments();
+  }
 }, {immediate: false});
 
 </script>

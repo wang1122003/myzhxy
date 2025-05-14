@@ -153,16 +153,12 @@ const fetchTerms = async () => {
 const fetchCourses = async () => {
   loading.value = true;
   try {
-    // 直接从userStore中获取用户ID
-    // userStore.userId可能是函数，需要正确处理
-    let teacherId = null;
-
-    if (userStore.userInfo && userStore.userInfo.userId) {
-      teacherId = userStore.userInfo.userId;
-    } else if (typeof userStore.userId === 'function') {
-      teacherId = userStore.userId();
-    } else {
-      teacherId = userStore.userId;
+    let teacherId = userStore.userId.value;
+    if (!teacherId) {
+      // 尝试从 userInfo 获取，以防 userId getter 在特定场景下未立即更新
+      if (userStore.userInfo && userStore.userInfo.userId) {
+        teacherId = userStore.userInfo.userId;
+      }
     }
 
     const params = {

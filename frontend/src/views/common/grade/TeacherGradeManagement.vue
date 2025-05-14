@@ -198,8 +198,8 @@
       </div>
 
       <!-- 批量提交对话框 -->
-      <el-dialog
-          v-model="batchSubmitDialogVisible"
+      <DialogWrapper
+          v-model:visible="batchSubmitDialogVisible"
           title="提交成绩修改"
           width="500px"
       >
@@ -213,7 +213,7 @@
             <el-button type="primary" @click="submitGradeChanges">确认提交</el-button>
           </span>
         </template>
-      </el-dialog>
+      </DialogWrapper>
     </el-card>
   </div>
 </template>
@@ -223,6 +223,7 @@ import {computed, onMounted, ref, watch} from 'vue';
 import {Search} from '@element-plus/icons-vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {getCourseStudents, saveStudentGrades} from '@/api/grade';
+import DialogWrapper from '@/views/ui/DialogWrapper.vue';
 
 const props = defineProps({
   course: {

@@ -311,6 +311,24 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationDao, Notifi
 
     @Override
     @Transactional
+    public boolean updateNotificationTopStatus(Long id, Integer isTop) {
+        if (id == null || isTop == null) {
+            throw new IllegalArgumentException("通知ID和置顶状态不能为空");
+        }
+
+        // 确保isTop值为0或1
+        if (isTop != 0 && isTop != 1) {
+            throw new IllegalArgumentException("置顶状态只能为0或1");
+        }
+
+        return update(Wrappers.<Notification>lambdaUpdate()
+                .eq(Notification::getId, id)
+                .set(Notification::getIsTop, isTop)
+                .set(Notification::getUpdateTime, new Date()));
+    }
+
+    @Override
+    @Transactional
     public boolean incrementViewCount(Long id) {
         if (id == null) return false;
         return update(Wrappers.<Notification>lambdaUpdate()
